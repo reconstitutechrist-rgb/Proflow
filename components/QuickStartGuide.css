@@ -1,0 +1,203 @@
+.quick-start-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.quick-start-card {
+  background: white;
+  border-radius: 16px;
+  max-width: 500px;
+  width: 90%;
+  padding: 40px;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.quick-start-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.quick-start-close:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.quick-start-content {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.quick-start-icon {
+  font-size: 80px;
+  margin-bottom: 16px;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.quick-start-step {
+  font-size: 13px;
+  color: #4CAF50;
+  font-weight: 600;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.quick-start-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.quick-start-description {
+  font-size: 16px;
+  color: #666;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.quick-start-progress {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.progress-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.progress-dot:hover {
+  background: #bdbdbd;
+  transform: scale(1.2);
+}
+
+.progress-dot.active {
+  background: #4CAF50;
+  width: 32px;
+  border-radius: 5px;
+}
+
+.progress-dot.completed {
+  background: #4CAF50;
+}
+
+.quick-start-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.quick-start-btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  outline: none;
+}
+
+.quick-start-btn.primary {
+  background: #4CAF50;
+  color: white;
+}
+
+.quick-start-btn.primary:hover {
+  background: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.quick-start-btn.secondary {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.quick-start-btn.secondary:hover {
+  background: #e0e0e0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .quick-start-card {
+    padding: 30px 24px;
+  }
+
+  .quick-start-icon {
+    font-size: 64px;
+  }
+
+  .quick-start-title {
+    font-size: 24px;
+  }
+
+  .quick-start-description {
+    font-size: 15px;
+  }
+
+  .quick-start-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+}

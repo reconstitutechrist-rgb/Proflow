@@ -1,0 +1,287 @@
+.cost-estimator-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.cost-estimator-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.cost-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cost-header h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #333;
+}
+
+.cost-close {
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.cost-close:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.cost-body {
+  padding: 24px;
+}
+
+.cost-operation {
+  margin-bottom: 20px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.cost-operation strong {
+  color: #333;
+}
+
+.cost-breakdown {
+  margin-bottom: 20px;
+}
+
+.cost-breakdown h4 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.breakdown-list {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.breakdown-item {
+  padding: 12px;
+  border-bottom: 1px solid #dee2e6;
+  background: white;
+}
+
+.breakdown-item:last-child {
+  border-bottom: none;
+}
+
+.breakdown-item:nth-child(even) {
+  background: #f8f9fa;
+}
+
+.breakdown-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.breakdown-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.token-count {
+  color: #666;
+}
+
+.cost-amount {
+  font-weight: 600;
+  color: #4CAF50;
+}
+
+.cost-total {
+  padding: 16px;
+  background: #f0f8f0;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.total-row:last-child {
+  margin-bottom: 0;
+}
+
+.total-row.main-total {
+  padding-top: 12px;
+  border-top: 2px solid #4CAF50;
+  margin-top: 8px;
+}
+
+.total-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.main-total .total-label {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.total-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4CAF50;
+}
+
+.main-total .total-value {
+  font-size: 20px;
+}
+
+.cost-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  color: #856404;
+  font-size: 13px;
+}
+
+.warning-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.cost-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #d1ecf1;
+  border: 1px solid #17a2b8;
+  border-radius: 8px;
+  color: #0c5460;
+  font-size: 13px;
+}
+
+.info-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.cost-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #dee2e6;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.cost-btn {
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  outline: none;
+}
+
+.cost-btn-cancel {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.cost-btn-cancel:hover {
+  background: #e0e0e0;
+}
+
+.cost-btn-confirm {
+  background: #4CAF50;
+  color: white;
+}
+
+.cost-btn-confirm:hover {
+  background: #45a049;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cost-estimator-modal {
+    width: 95%;
+  }
+
+  .cost-header {
+    padding: 16px;
+  }
+
+  .cost-body {
+    padding: 16px;
+  }
+
+  .cost-footer {
+    padding: 12px 16px;
+  }
+
+  .cost-btn {
+    flex: 1;
+  }
+}

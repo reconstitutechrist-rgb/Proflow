@@ -80,6 +80,19 @@ import { ragHelper } from "@/api/functions";
 import { exportSessionToPdf } from "@/api/functions";
 import { useWorkspace } from "../components/workspace/WorkspaceContext";
 
+// Import new enhancement components
+import OnboardingTutorial from "./components/OnboardingTutorial";
+import DocumentSidebar from "./components/DocumentSidebar";
+import MessageActions from "./components/MessageActions";
+import SessionTemplates from "./components/SessionTemplates";
+import CostEstimator from "./components/CostEstimator";
+import DragDropZone from "./components/DragDropZone";
+import ContextualTooltip from "./components/ContextualTooltip";
+import SuggestedQuestions from "./components/SuggestedQuestions";
+import ProgressIndicator from "./components/ProgressIndicator";
+import QuickStartGuide from "./components/QuickStartGuide";
+import KeyboardShortcuts from "./components/KeyboardShortcuts";
+
 const MEMORY_LIMITS = {
   MAX_DOCUMENTS: 50,
   MAX_MESSAGES: 200,
@@ -137,6 +150,33 @@ export default function AskAIPage() {
   const [retryAttempt, setRetryAttempt] = useState(0);
   const MAX_RETRIES = 3;
   const retryTimeoutRef = useRef(null); // Added useRef for retry timeout
+
+  // Enhancement feature states
+  const [showOnboardingTutorial, setShowOnboardingTutorial] = useState(false);
+  const [showQuickStartGuide, setShowQuickStartGuide] = useState(false);
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [showSessionTemplates, setShowSessionTemplates] = useState(false);
+  const [showCostEstimator, setShowCostEstimator] = useState(false);
+  const [costEstimatorData, setCostEstimatorData] = useState(null);
+  const [documentSidebarCollapsed, setDocumentSidebarCollapsed] = useState(false);
+  const [selectedMessages, setSelectedMessages] = useState(new Set());
+  const [undoStack, setUndoStack] = useState([]);
+  const [sessionTags, setSessionTags] = useState([]);
+  const [sessionNotes, setSessionNotes] = useState({});
+  const [relevanceThreshold, setRelevanceThreshold] = useState(0.5);
+  const [multiQueryEnabled, setMultiQueryEnabled] = useState(false);
+  const [hybridSearchEnabled, setHybridSearchEnabled] = useState(false);
+  const [confidenceScores, setConfidenceScores] = useState({});
+  const [operationProgress, setOperationProgress] = useState(null);
+
+  // Check if first-time user
+  useEffect(() => {
+    const hasVisited = localStorage.getItem('askAI_hasVisited');
+    if (!hasVisited) {
+      setShowQuickStartGuide(true);
+      localStorage.setItem('askAI_hasVisited', 'true');
+    }
+  }, []);
 
   // IMPORTANT: Define ALL callback functions BEFORE useEffects that use them
   
@@ -1317,6 +1357,139 @@ export default function AskAIPage() {
   const docsWithSemanticChunking = uploadedDocuments.filter(d => d.chunkingStrategy === 'semantic');
   const docsWithSimpleChunking = uploadedDocuments.filter(d => d.chunkingStrategy === 'simple');
 
+  // Enhancement functions
+  const handleSessionTemplateSelect = (template) => {
+    setUseRAG(template.settings.ragEnabled);
+    toast.success(`Applied template: ${template.name}`);
+  };
+
+  const handleSuggestedQuestion = (question) => {
+    setInputMessage(question);
+  };
+
+  const handleDocumentRemove = (docIndex) => {
+    const newDocs = [...uploadedDocuments];
+    newDocs.splice(docIndex, 1);
+    setUploadedDocuments(newDocs);
+    setSessionModified(true);
+    toast.success('Document removed');
+  };
+
+  const handleDocumentExclude = (docIndex) => {
+    const newDocs = [...uploadedDocuments];
+    newDocs[docIndex] = { ...newDocs[docIndex], includedInContext: false };
+    setUploadedDocuments(newDocs);
+    setSessionModified(true);
+  };
+
+  const handleDocumentInclude = (docIndex) => {
+    const newDocs = [...uploadedDocuments];
+    newDocs[docIndex] = { ...newDocs[docIndex], includedInContext: true };
+    setUploadedDocuments(newDocs);
+    setSessionModified(true);
+  };
+
+  const handleMessageCopy = (message) => {
+    toast.success('Message copied to clipboard');
+  };
+
+  const handleMessageEdit = (messageIndex) => {
+    const message = messages[messageIndex];
+    if (message.role === 'user') {
+      setInputMessage(message.content);
+      toast.info('Message loaded for editing');
+    }
+  };
+
+  const handleMessageRegenerate = async (messageIndex) => {
+    const message = messages[messageIndex];
+    if (message.role === 'assistant' && messageIndex > 0) {
+      // Get the user message before this assistant message
+      const userMessage = messages[messageIndex - 1];
+      if (userMessage && userMessage.role === 'user') {
+        setInputMessage(userMessage.content);
+        toast.info('Regenerating response...');
+      }
+    }
+  };
+
+  const handleMessageDelete = (messageIndex) => {
+    const newMessages = [...messages];
+    newMessages.splice(messageIndex, 1);
+    setMessages(newMessages);
+    setSessionModified(true);
+    toast.success('Message deleted');
+  };
+
+  const handleDragDropFiles = async (files) => {
+    // Create a synthetic event object that matches what handleFileUpload expects
+    const syntheticEvent = {
+      target: {
+        files: files
+      }
+    };
+    await handleFileUpload(syntheticEvent);
+  };
+
+  // Keyboard shortcuts handler
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ctrl/Cmd + Enter: Send message
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && inputMessage.trim()) {
+        e.preventDefault();
+        handleSendMessage();
+      }
+
+      // Ctrl/Cmd + U: Focus file upload
+      if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+        e.preventDefault();
+        fileInputRef.current?.click();
+      }
+
+      // Ctrl/Cmd + N: New conversation
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        handleNewConversation();
+      }
+
+      // Ctrl/Cmd + S: Save session
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (currentSession) {
+          handleSaveSession();
+        } else {
+          setIsSaveDialogOpen(true);
+        }
+      }
+
+      // ?: Show keyboard shortcuts
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        const activeElement = document.activeElement;
+        const isInputField = activeElement && (
+          activeElement.tagName === 'INPUT' ||
+          activeElement.tagName === 'TEXTAREA' ||
+          activeElement.isContentEditable
+        );
+        if (!isInputField) {
+          e.preventDefault();
+          setShowKeyboardShortcuts(true);
+        }
+      }
+
+      // Escape: Close dialogs
+      if (e.key === 'Escape') {
+        setShowKeyboardShortcuts(false);
+        setShowQuickStartGuide(false);
+        setShowOnboardingTutorial(false);
+        setShowSessionTemplates(false);
+        setShowCostEstimator(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [inputMessage, currentSession]);
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
@@ -1338,14 +1511,43 @@ export default function AskAIPage() {
         </div>
         
         <div className="flex items-center gap-3">
-          {/* RAG Toggle */}
-          <div className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-gray-800 rounded-xl border">
-            <Brain className={`w-5 h-5 ${useRAG ? 'text-blue-600' : 'text-gray-400'}`} />
-            <Label htmlFor="rag-toggle" className="text-sm font-medium cursor-pointer">
-              Smart RAG
-            </Label>
-            <Switch 
-              id="rag-toggle"
+          {/* Session Templates Button */}
+          <Button
+            variant="outline"
+            onClick={() => setShowSessionTemplates(true)}
+            className="rounded-xl"
+            title="Choose from pre-configured templates"
+          >
+            <Layers className="w-4 h-4 mr-2" />
+            Templates
+          </Button>
+
+          {/* Keyboard Shortcuts Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowKeyboardShortcuts(true)}
+            className="rounded-xl"
+            title="Show keyboard shortcuts (Press ?)"
+          >
+            <Info className="w-4 h-4" />
+          </Button>
+
+          {/* RAG Toggle with Tooltip */}
+          <div className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-gray-800 rounded-xl border" id="rag-toggle">
+            <ContextualTooltip
+              content="Enable Retrieval-Augmented Generation to search through your documents for relevant context before answering questions"
+              position="bottom"
+            >
+              <div className="flex items-center gap-3">
+                <Brain className={`w-5 h-5 ${useRAG ? 'text-blue-600' : 'text-gray-400'}`} />
+                <Label htmlFor="rag-switch" className="text-sm font-medium cursor-pointer">
+                  Smart RAG
+                </Label>
+              </div>
+            </ContextualTooltip>
+            <Switch
+              id="rag-switch"
               checked={useRAG}
               onCheckedChange={setUseRAG}
               disabled={isProcessing || isProcessingEmbeddings}
@@ -1646,7 +1848,7 @@ export default function AskAIPage() {
               </Select>
             </div>
 
-            <div className="mb-4">
+            <div className="mb-4" id="upload-zone">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -1656,45 +1858,45 @@ export default function AskAIPage() {
                 disabled={isUploading || uploadedDocuments.length >= MEMORY_LIMITS.MAX_DOCUMENTS}
                 className="hidden"
               />
-              <Button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading || uploadedDocuments.length >= MEMORY_LIMITS.MAX_DOCUMENTS}
-                className="w-full bg-blue-600 hover:bg-blue-700 rounded-xl"
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload Documents
-                  </>
-                )}
-              </Button>
+
+              {uploadedDocuments.length === 0 ? (
+                <DragDropZone
+                  onFilesSelected={handleDragDropFiles}
+                  accept=".txt,.pdf,.doc,.docx,.md,.csv,.json"
+                  multiple={true}
+                  disabled={isUploading || uploadedDocuments.length >= MEMORY_LIMITS.MAX_DOCUMENTS}
+                />
+              ) : (
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading || uploadedDocuments.length >= MEMORY_LIMITS.MAX_DOCUMENTS}
+                  className="w-full bg-blue-600 hover:bg-blue-700 rounded-xl"
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload More Documents
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
 
             {isProcessingEmbeddings && (
-              <Card className="mb-4 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-3">
-                    <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                        Generating embeddings...
-                      </p>
-                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                        {embeddingProgress.current}/{embeddingProgress.total} documents
-                      </p>
-                      <Progress 
-                        value={embeddingProgress.total > 0 ? (embeddingProgress.current / embeddingProgress.total) * 100 : 0} 
-                        className="h-1.5 mt-2"
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="mb-4">
+                <ProgressIndicator
+                  operation="Generating embeddings"
+                  current={embeddingProgress.current}
+                  total={embeddingProgress.total}
+                  message="Processing documents and creating vector embeddings..."
+                  canCancel={false}
+                />
+              </div>
             )}
 
             {excludedDocumentCount > 0 && (
@@ -1889,19 +2091,28 @@ export default function AskAIPage() {
                             </Badge>
                           )}
                           {(message.type === 'user' || message.type === 'assistant') && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 ml-auto"
-                              onClick={() => toggleMessageInContext(message.id)}
-                              title={message.excludedFromContext ? "Include in context" : "Exclude from context"}
-                            >
-                              {message.excludedFromContext ? (
-                                <EyeOff className="w-3.5 h-3.5 text-gray-400" />
-                              ) : (
-                                <Eye className="w-3.5 h-3.5 text-gray-600" />
-                              )}
-                            </Button>
+                            <div className="flex items-center gap-2 ml-auto">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => toggleMessageInContext(message.id)}
+                                title={message.excludedFromContext ? "Include in context" : "Exclude from context"}
+                              >
+                                {message.excludedFromContext ? (
+                                  <EyeOff className="w-3.5 h-3.5 text-gray-400" />
+                                ) : (
+                                  <Eye className="w-3.5 h-3.5 text-gray-600" />
+                                )}
+                              </Button>
+                              <MessageActions
+                                message={message}
+                                onEdit={() => handleMessageEdit(messages.findIndex(m => m.id === message.id))}
+                                onCopy={() => handleMessageCopy(message)}
+                                onRegenerate={() => handleMessageRegenerate(messages.findIndex(m => m.id === message.id))}
+                                onDelete={() => handleMessageDelete(messages.findIndex(m => m.id === message.id))}
+                              />
+                            </div>
                           )}
                         </div>
                         
@@ -1925,22 +2136,51 @@ export default function AskAIPage() {
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
                       Start a Conversation
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-6 text-center">
+                    <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
                       Upload documents and ask questions to get intelligent answers powered by {useRAG ? 'advanced semantic chunking and OpenAI embeddings' : 'AI'}
                     </p>
-                    <div className="space-y-2 text-sm text-gray-500 dark:text-gray-400 text-left">
+                    <div className="space-y-2 text-sm text-gray-500 dark:text-gray-400 text-left mb-6">
                       <p>• Upload up to {MEMORY_LIMITS.MAX_DOCUMENTS} documents</p>
                       <p>• Chat for up to {MEMORY_LIMITS.MAX_MESSAGES} messages</p>
                       <p>• Automatic semantic chunking for better context</p>
                       <p>• Save and resume conversations anytime</p>
                     </div>
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowOnboardingTutorial(true)}
+                        className="rounded-xl"
+                      >
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Take a Tour
+                      </Button>
+                      <Button
+                        variant="default"
+                        onClick={() => setShowSessionTemplates(true)}
+                        className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600"
+                      >
+                        <Layers className="w-4 h-4 mr-2" />
+                        Browse Templates
+                      </Button>
+                    </div>
                   </div>
                 )}
                 <div ref={messagesEndRef} />
               </div>
+
+              {/* Suggested Questions */}
+              {messages.length > 0 && uploadedDocuments.length > 0 && (
+                <div className="px-4 pb-4">
+                  <SuggestedQuestions
+                    documents={uploadedDocuments}
+                    lastMessage={messages[messages.length - 1]}
+                    onSelectQuestion={handleSuggestedQuestion}
+                  />
+                </div>
+              )}
             </ScrollArea>
 
-            <div className="border-t p-4 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
+            <div className="border-t p-4 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0" id="message-input">
               <div className="flex gap-3">
                 <Textarea
                   value={inputMessage}
@@ -2190,6 +2430,54 @@ export default function AskAIPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Enhancement Overlays */}
+      {showQuickStartGuide && (
+        <QuickStartGuide
+          onClose={() => setShowQuickStartGuide(false)}
+          onStartTutorial={() => {
+            setShowQuickStartGuide(false);
+            setShowOnboardingTutorial(true);
+          }}
+        />
+      )}
+
+      {showOnboardingTutorial && (
+        <OnboardingTutorial
+          onClose={() => setShowOnboardingTutorial(false)}
+          onComplete={() => {
+            setShowOnboardingTutorial(false);
+            toast.success('Welcome to Ask AI! Let\'s get started.');
+          }}
+        />
+      )}
+
+      {showKeyboardShortcuts && (
+        <KeyboardShortcuts
+          isOpen={showKeyboardShortcuts}
+          onClose={() => setShowKeyboardShortcuts(false)}
+        />
+      )}
+
+      {showSessionTemplates && (
+        <SessionTemplates
+          onSelectTemplate={handleSessionTemplateSelect}
+          onClose={() => setShowSessionTemplates(false)}
+        />
+      )}
+
+      {showCostEstimator && costEstimatorData && (
+        <CostEstimator
+          documents={costEstimatorData.documents}
+          estimatedTokens={costEstimatorData.tokens}
+          onConfirm={() => {
+            setShowCostEstimator(false);
+            costEstimatorData.onConfirm && costEstimatorData.onConfirm();
+          }}
+          onCancel={() => setShowCostEstimator(false)}
+          operation={costEstimatorData.operation}
+        />
+      )}
     </div>
   );
 }

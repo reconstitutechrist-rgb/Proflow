@@ -1422,10 +1422,13 @@ export default function AskAIPage() {
   };
 
   const handleDragDropFiles = async (files) => {
-    const fileArray = Array.from(files);
-    for (const file of fileArray) {
-      await handleFileSelect({ target: { files: [file] } });
-    }
+    // Create a synthetic event object that matches what handleFileUpload expects
+    const syntheticEvent = {
+      target: {
+        files: files
+      }
+    };
+    await handleFileUpload(syntheticEvent);
   };
 
   // Keyboard shortcuts handler
@@ -1443,10 +1446,10 @@ export default function AskAIPage() {
         fileInputRef.current?.click();
       }
 
-      // Ctrl/Cmd + N: New session
+      // Ctrl/Cmd + N: New conversation
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault();
-        handleNewSession();
+        handleNewConversation();
       }
 
       // Ctrl/Cmd + S: Save session

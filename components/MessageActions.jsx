@@ -24,7 +24,7 @@ const MessageActions = ({ message, onEdit, onCopy, onRegenerate, onDelete, posit
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(message.text);
+      await navigator.clipboard.writeText(message.content || message.text || '');
       setCopied(true);
       onCopy && onCopy();
       setTimeout(() => setCopied(false), 2000);
@@ -65,7 +65,7 @@ const MessageActions = ({ message, onEdit, onCopy, onRegenerate, onDelete, posit
 
       {isOpen && (
         <div className="actions-menu">
-          {onEdit && message.role === 'user' && (
+          {onEdit && (message.role === 'user' || message.type === 'user') && (
             <button className="action-item" onClick={handleEdit}>
               <span className="action-icon">✏️</span>
               <span>Edit</span>
@@ -77,7 +77,7 @@ const MessageActions = ({ message, onEdit, onCopy, onRegenerate, onDelete, posit
             <span>{copied ? 'Copied!' : 'Copy'}</span>
           </button>
 
-          {onRegenerate && message.role === 'assistant' && (
+          {onRegenerate && (message.role === 'assistant' || message.type === 'assistant') && (
             <button className="action-item" onClick={handleRegenerate}>
               <span className="action-icon">🔄</span>
               <span>Regenerate</span>

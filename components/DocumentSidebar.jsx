@@ -40,10 +40,11 @@ const DocumentSidebar = ({ documents, onRemove, onExclude, onInclude, isCollapse
   };
 
   const getDocumentStats = (doc) => {
-    if (!doc.text) return { pages: 0, words: 0, chars: 0 };
+    const textContent = doc.text || doc.content || '';
+    if (!textContent) return { pages: 0, words: 0, chars: 0 };
 
-    const words = doc.text.split(/\s+/).filter(w => w.length > 0).length;
-    const chars = doc.text.length;
+    const words = textContent.split(/\s+/).filter(w => w.length > 0).length;
+    const chars = textContent.length;
     // Estimate pages (assuming ~500 words per page)
     const pages = Math.ceil(words / 500);
 

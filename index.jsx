@@ -30,6 +30,8 @@ import Documentation from "./Documentation";
 
 import DocumentStudio from "./DocumentStudio";
 
+import DocumentWorkshop from "./DocumentWorkshop";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -63,7 +65,9 @@ const PAGES = {
     Documentation: Documentation,
     
     DocumentStudio: DocumentStudio,
-    
+
+    DocumentWorkshop: DocumentWorkshop,
+
 }
 
 function _getCurrentPage(url) {
@@ -120,7 +124,9 @@ function PagesContent() {
                 <Route path="/Documentation" element={<Documentation />} />
                 
                 <Route path="/DocumentStudio" element={<DocumentStudio />} />
-                
+
+                <Route path="/DocumentWorkshop" element={<DocumentWorkshop />} />
+
             </Routes>
         </Layout>
     );

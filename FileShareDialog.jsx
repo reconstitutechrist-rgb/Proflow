@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, Share2 } from "lucide-react"; // Removed Upload, File, X; Added Share2
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { toast } from "sonner";
 
 export default function FileShareDialog({ file, isOpen, onClose, onShared }) {

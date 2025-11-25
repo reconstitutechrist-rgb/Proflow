@@ -50,8 +50,32 @@ export const invokeFunction = async (functionName, params) => {
   };
 };
 
+// Export session to PDF - stub implementation
+export const exportSessionToPdf = async (params) => {
+  const { sessionTitle, exportDate, assignment, documents, messages } = params;
+
+  console.log('exportSessionToPdf called with:', { sessionTitle, messagesCount: messages?.length });
+
+  // Stub implementation - returns a basic PDF blob
+  // In production, replace with actual PDF generation (e.g., using pdfkit, jspdf, etc.)
+  const pdfContent = `
+    Session: ${sessionTitle}
+    Date: ${exportDate}
+    Messages: ${messages?.length || 0}
+  `;
+
+  const blob = new Blob([pdfContent], { type: 'application/pdf' });
+  
+  return {
+    success: true,
+    data: await blob.arrayBuffer(),
+    message: 'PDF export placeholder. Please set up actual PDF generation.',
+  };
+};
+
 export default {
   anthropicResearch,
   ragHelper,
   invokeFunction,
+  exportSessionToPdf,
 };

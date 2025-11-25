@@ -15,7 +15,7 @@ import {
   Clock,
   X // Added X icon for close button
 } from "lucide-react";
-import { useWorkspace } from "../workspace/WorkspaceContext"; // Added WorkspaceContext import
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // Added WorkspaceContext import
 import { toast } from "sonner"; // Assuming sonner for toasts
 import { base44 } from "@/lib/base44"; // Assuming base44 SDK is imported from here
 

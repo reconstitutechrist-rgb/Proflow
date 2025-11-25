@@ -32,8 +32,8 @@ import DocumentVersionHistory from "./DocumentVersionHistory";
 import DocumentComments from "./DocumentComments";
 
 // NEW IMPORTS FOR WORKSPACE SCOPING
-import { useWorkspace } from "../workspace/WorkspaceContext";
-import { validateWorkspaceAccess } from "../workspace/CrossWorkspaceValidator";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { validateWorkspaceAccess } from "@/components/workspace/CrossWorkspaceValidator";
 
 // IMPORTANT: The outline references `base44.entities.Document.update`.
 // Since `base44` is not imported in the provided current file code or specified in the outline,

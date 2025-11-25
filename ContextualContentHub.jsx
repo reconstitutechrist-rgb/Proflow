@@ -20,7 +20,7 @@ import {
   RefreshCw,
   Lightbulb
 } from "lucide-react";
-import { useWorkspace } from "../workspace/WorkspaceContext"; // Added import
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // Added import
 
 export default function ContextualContentHub({ currentUser, assignmentId }) { // Changed prop from selectedAssignment to assignmentId
   const [contentInsights, setContentInsights] = useState(null); // AI generated insights

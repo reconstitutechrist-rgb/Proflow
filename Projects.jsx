@@ -24,10 +24,10 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
-import ProjectForm from "../components/projects/ProjectForm";
-import ProjectGrid from "../components/projects/ProjectGrid";
-import ProjectDetails from "../components/projects/ProjectDetails";
-import { useWorkspace } from "../components/workspace/WorkspaceContext";
+import ProjectForm from "@/components/projects/ProjectForm";
+import ProjectGrid from "@/components/projects/ProjectGrid";
+import ProjectDetails from "@/components/projects/ProjectDetails";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState([]);

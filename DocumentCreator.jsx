@@ -54,14 +54,14 @@ import { toast } from "sonner";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
-import OutlineGenerator from "../components/document-creator/OutlineGenerator";
-import AIWritingAssistant from "../components/document-creator/AIWritingAssistant";
-import AIImageGenerator from "../components/document-creator/AIImageGenerator";
-import AIReviewPanel from "../components/document-creator/AIReviewPanel";
-import VoiceInput from "../components/document-creator/VoiceInput";
-import ExportOptions from "../components/document-creator/ExportOptions";
-import AudienceRewriter from "../components/generation/AudienceRewriter";
-import { useWorkspace } from "../components/workspace/WorkspaceContext"; // NEW: Import useWorkspace
+import OutlineGenerator from "@/components/document-creator/OutlineGenerator";
+import AIWritingAssistant from "@/components/document-creator/AIWritingAssistant";
+import AIImageGenerator from "@/components/document-creator/AIImageGenerator";
+import AIReviewPanel from "@/components/document-creator/AIReviewPanel";
+import VoiceInput from "@/components/document-creator/VoiceInput";
+import ExportOptions from "@/components/document-creator/ExportOptions";
+import AudienceRewriter from "@/components/generation/AudienceRewriter";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // NEW: Import useWorkspace
 
 const AUTOSAVE_INTERVAL = 30000; // 30 seconds
 

@@ -19,7 +19,7 @@ import {
   Loader2,
   Lightbulb,
 } from "lucide-react";
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import toast from "react-hot-toast";
 
 // Temporary mock for base44 based on the outline's usage

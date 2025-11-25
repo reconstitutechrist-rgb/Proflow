@@ -146,7 +146,7 @@ export default function DocumentationPage() {
 All workspace logic is centralized in \`components/workspace/WorkspaceContext.jsx\`
 
 \`\`\`javascript
-import { useWorkspace } from "../components/workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 const { 
   currentWorkspace,        // Current workspace object
@@ -169,7 +169,7 @@ const tasks = await base44.entities.Task.list();
 
 **✅ CORRECT:**
 \`\`\`javascript
-import { useWorkspace } from "../components/workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 const { currentWorkspaceId } = useWorkspace();
 const tasks = await base44.entities.Task.filter({

@@ -38,7 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import RelatedContentSuggestions from "../ai/RelatedContentSuggestions";
+import RelatedContentSuggestions from "@/ai/RelatedContentSuggestions";
 
 export default function AssignmentDetails({
   assignment,

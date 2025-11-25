@@ -25,8 +25,8 @@ import {
   AlertCircle,
   Loader2
 } from "lucide-react";
-import { useWorkspace } from "../workspace/WorkspaceContext";
-import { validateSameWorkspace } from "../workspace/CrossWorkspaceValidator";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { validateSameWorkspace } from "@/components/workspace/CrossWorkspaceValidator";
 import { useToast } from "@/components/ui/use-toast"; // Assuming useToast is available for shadcn/ui toasts
 
 export default function LinkDocumentToAssignmentDialog({ 

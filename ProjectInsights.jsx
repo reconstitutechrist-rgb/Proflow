@@ -23,7 +23,7 @@ import {
   UserCog,      // Added for resource suggestions
   ListChecks    // Added for recommended actions
 } from "lucide-react";
-import { useWorkspace } from "../workspace/WorkspaceContext"; // New import
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // New import
 import base44 from '@/lib/base44'; // Assuming base44 SDK is imported from this path
 import { toast } from 'sonner'; // Assuming sonner is used for toasts
 

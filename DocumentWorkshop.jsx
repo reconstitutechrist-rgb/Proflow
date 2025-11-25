@@ -63,14 +63,14 @@ import "react-quill/dist/quill.snow.css";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
 
-import OutlineGenerator from "./components/document-creator/OutlineGenerator";
-import AIReviewPanel from "./components/document-creator/AIReviewPanel";
-import ExportOptions from "./components/document-creator/ExportOptions";
-import AudienceRewriter from "./components/generation/AudienceRewriter";
-import AIImageGenerator from "./components/document-creator/AIImageGenerator";
-import ConversationalAssistant from "./components/document-creator/ConversationalAssistant";
+import OutlineGenerator from "@/components/document-creator/OutlineGenerator";
+import AIReviewPanel from "@/components/document-creator/AIReviewPanel";
+import ExportOptions from "@/components/document-creator/ExportOptions";
+import AudienceRewriter from "@/components/generation/AudienceRewriter";
+import AIImageGenerator from "@/components/document-creator/AIImageGenerator";
+import ConversationalAssistant from "@/components/document-creator/ConversationalAssistant";
 import PromptBuilderWizard from "./PromptBuilderWizard";
-import { useWorkspace } from "./components/workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { createPageUrl } from "@/utils";
 import { InvokeLLM, UploadFile } from "@/api/integrations";
 

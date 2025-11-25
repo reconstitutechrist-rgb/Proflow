@@ -16,7 +16,7 @@ import {
   Calendar
 } from "lucide-react";
 // NEW: Import useWorkspace for workspace context
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 // NEW: Import toast for notifications
 import { toast } from "react-hot-toast"; // Assuming react-hot-toast or similar
 

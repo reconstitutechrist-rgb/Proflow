@@ -34,10 +34,10 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
-import AIResearchAssistant from "../components/ai/AIResearchAssistant";
-import ResearchSuggestions from "../components/research/ResearchSuggestions";
-import { ErrorBoundary } from "../components/ErrorBoundary";
-import { useWorkspace } from "../components/workspace/WorkspaceContext";
+import AIResearchAssistant from "@/components/ai/AIResearchAssistant";
+import ResearchSuggestions from "@/components/research/ResearchSuggestions";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { useNavigate } from "react-router-dom"; // Assumed import for navigation
 import { createPageUrl } from "@/lib/utils"; // Assumed utility for URL creation
 

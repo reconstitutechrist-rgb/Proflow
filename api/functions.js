@@ -50,8 +50,23 @@ export const invokeFunction = async (functionName, params) => {
   };
 };
 
+// Export session to PDF - stub implementation
+export const exportSessionToPdf = async (params) => {
+  const { session, messages, title } = params;
+  
+  console.log('exportSessionToPdf called with:', { session, messagesCount: messages?.length, title });
+  
+  // Stub implementation
+  return {
+    success: true,
+    message: 'PDF export not configured. Please set up your preferred PDF generation library.',
+    pdfUrl: null,
+  };
+};
+
 export default {
   anthropicResearch,
   ragHelper,
   invokeFunction,
+  exportSessionToPdf,
 };

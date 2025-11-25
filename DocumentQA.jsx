@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessageCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { base44 } from "@/lib/base44"; // Assuming base44 is imported from this path
 
 export default function DocumentQA({ documentId }) {

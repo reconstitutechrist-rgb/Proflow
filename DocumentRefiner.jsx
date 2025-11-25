@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import * as Core from "@/api/integrations"; // For InvokeLLM - This will be replaced
 import { Document } from "@/api/entities"; // This will be replaced
-import { useWorkspace } from "../workspace/WorkspaceContext"; // For currentWorkspaceId
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // For currentWorkspaceId
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -24,8 +24,8 @@ import {
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { anthropicResearch } from "@/api/functions"; // Not used in the new changes, but was there
-import ContentRewriter from "../tools/ContentRewriter";
-import GrammarAssistant from "../tools/GrammarAssistant";
+import ContentRewriter from "@/ContentRewriter";
+import GrammarAssistant from "@/GrammarAssistant";
 import AudienceRewriter from "./AudienceRewriter";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";

@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox"; // NEW import
 import { toast } from "sonner";
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 // File size limit: 100 MB
 const MAX_FILE_SIZE = 100 * 1024 * 1024;

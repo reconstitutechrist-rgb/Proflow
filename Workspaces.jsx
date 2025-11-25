@@ -42,7 +42,7 @@ import {
   Loader2
 } from "lucide-react";
 import { toast } from "sonner";
-import { useWorkspace } from "../components/workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 export default function WorkspacesPage() {
   // Use context instead of duplicating logic

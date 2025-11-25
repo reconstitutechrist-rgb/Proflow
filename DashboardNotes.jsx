@@ -41,7 +41,7 @@ import { Label } from "@/components/ui/label";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { toast } from "sonner";
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 export default function DashboardNotes({ currentUser }) {
   const [notes, setNotes] = useState([]);

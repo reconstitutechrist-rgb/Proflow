@@ -21,8 +21,8 @@ import {
   Lightbulb
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { useWorkspace } from "../workspace/WorkspaceContext"; // New import
+import { createPageUrl } from "@/lib/utils";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // New import
 
 export default function RelatedContentSuggestions({ 
   currentItem, 

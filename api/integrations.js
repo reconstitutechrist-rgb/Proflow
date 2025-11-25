@@ -59,6 +59,20 @@ export const GetFile = async (fileId) => {
   return files.find(f => f.id === fileId) || null;
 };
 
+// Extract data from uploaded file - stub implementation
+export const ExtractDataFromUploadedFile = async (params) => {
+  const { file_url, json_schema } = params;
+  
+  // This is a stub implementation
+  console.log('ExtractDataFromUploadedFile called with:', { file_url, json_schema });
+  
+  return {
+    success: true,
+    message: 'File extraction not configured. Please set up your preferred file extraction provider.',
+    data: json_schema ? {} : null,
+  };
+};
+
 // Re-export dataClient for convenience (renamed from base44)
 export { dataClient };
 
@@ -66,5 +80,6 @@ export default {
   InvokeLLM,
   UploadFile,
   GetFile,
+  ExtractDataFromUploadedFile,
   dataClient,
 };

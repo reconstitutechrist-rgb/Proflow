@@ -9,8 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { toast } from "react-hot-toast";
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { toast } from "sonner";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 import {
   Lightbulb,

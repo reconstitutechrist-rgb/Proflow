@@ -16,10 +16,10 @@ import {
 } from "lucide-react";
 import { useSearchParams } from "react-router-dom"; // Added useSearchParams import
 
-import ConversationalDocumentStudio from "../components/generation/ConversationalDocumentStudio";
-import { ErrorBoundary } from "../components/ErrorBoundary";
+import ConversationalDocumentStudio from "@/ConversationalDocumentStudio";
+import { ErrorBoundary } from "@/ErrorBoundary";
 import { Toaster, toast } from "sonner";
-import { useWorkspace } from "../components/workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 export default function GeneratePage() {
   const [assignments, setAssignments] = useState([]);

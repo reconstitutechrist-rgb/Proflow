@@ -15,7 +15,7 @@ import {
   FolderPlus, // Changed from Plus, Folder
   Loader2     // New import for loading spinner
 } from "lucide-react";
-import { useWorkspace } from "../workspace/WorkspaceContext"; // New import
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // New import
 import { toast } from "sonner"; // New import
 import { base44 } from "@/api/base44Client"; // New import as per outline
 

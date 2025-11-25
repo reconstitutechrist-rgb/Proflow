@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Task } from "@/api/entities"; // Assuming Task entity is globally available or imported as such
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { toast } from "sonner";
 import {
   GitBranch,

@@ -30,12 +30,12 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/lib/utils";
 
 // DocToPdfConverter is removed from usage in this file, so its import can be removed.
-// import DocToPdfConverter from "../components/tools/DocToPdfConverter"; 
-import DocumentUploader from "../components/documents/DocumentUploader";
-import { useWorkspace } from "../components/workspace/WorkspaceContext";
+// import DocToPdfConverter from "@/DocToPdfConverter"; 
+import DocumentUploader from "@/DocumentUploader";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState([]);

@@ -63,15 +63,15 @@ import "react-quill/dist/quill.snow.css";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
 
-import OutlineGenerator from "./components/document-creator/OutlineGenerator";
-import AIReviewPanel from "./components/document-creator/AIReviewPanel";
-import ExportOptions from "./components/document-creator/ExportOptions";
-import AudienceRewriter from "./components/generation/AudienceRewriter";
-import AIImageGenerator from "./components/document-creator/AIImageGenerator";
-import ConversationalAssistant from "./components/document-creator/ConversationalAssistant";
+import OutlineGenerator from "@/OutlineGenerator";
+import AIReviewPanel from "@/AIReviewPanel";
+import ExportOptions from "@/ExportOptions";
+import AudienceRewriter from "@/AudienceRewriter";
+import AIImageGenerator from "@/AIImageGenerator";
+import ConversationalAssistant from "@/ConversationalAssistant";
 import PromptBuilderWizard from "./PromptBuilderWizard";
-import { useWorkspace } from "./components/workspace/WorkspaceContext";
-import { createPageUrl } from "@/utils";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { createPageUrl } from "@/lib/utils";
 import { InvokeLLM, UploadFile } from "@/api/integrations";
 
 const AUTOSAVE_INTERVAL = 30000; // 30 seconds

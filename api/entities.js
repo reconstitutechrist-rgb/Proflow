@@ -15,6 +15,7 @@ export const Workspace = dataClient.entities.Workspace;
 export const ChatSession = dataClient.entities.ChatSession;
 export const Note = dataClient.entities.Note;
 export const Folder = dataClient.entities.Folder;
+export const AIResearchChat = dataClient.entities.AIResearchChat;
 
 export default {
   Task,
@@ -30,4 +31,5 @@ export default {
   ChatSession,
   Note,
   Folder,
+  AIResearchChat,
 };

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 // New imports
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { toast } from "sonner";
 import * as base44 from "@/lib/base44"; // Assuming base44 is available at this path
 

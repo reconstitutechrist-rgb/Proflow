@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/lib/base44"; // Assuming base44 is available here
-import { useWorkspace } from "../workspace/WorkspaceContext"; // Import useWorkspace hook
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // Import useWorkspace hook
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

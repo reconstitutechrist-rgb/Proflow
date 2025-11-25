@@ -26,7 +26,7 @@ import {
   AlertTriangle
 } from "lucide-react";
 import { toast } from 'react-hot-toast'; // Assuming react-hot-toast is used for notifications
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 // Assuming base44 is available globally or imported from a utility file
 // Adjust the import path if necessary based on your project structure

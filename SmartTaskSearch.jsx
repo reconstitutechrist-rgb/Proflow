@@ -7,7 +7,7 @@ import {
   Loader2,
   Target
 } from "lucide-react";
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 // Assuming base44 is globally available or provided by the framework,
 // and it now encapsulates access to Task entities and LLM integrations.

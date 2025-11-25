@@ -36,7 +36,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useWorkspace } from "../workspace/WorkspaceContext"; // CRITICAL: New import
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // CRITICAL: New import
 
 export default function AISummaryButton({
   contentType = "document", // Changed from 'type' to 'contentType'

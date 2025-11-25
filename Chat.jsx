@@ -55,14 +55,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import ConversationSidebar from "../components/chat/ConversationSidebar";
-import EnhancedMessage from "../components/chat/EnhancedMessage";
-import RichTextEditor from "../components/chat/RichTextEditor";
-import ThreadSearch from "../components/chat/ThreadSearch";
-import ChatSummaryButton from "../components/chat/ChatSummaryButton";
+import ConversationSidebar from "@/components/chat/ConversationSidebar";
+import EnhancedMessage from "@/components/chat/EnhancedMessage";
+import RichTextEditor from "@/components/chat/RichTextEditor";
+import ThreadSearch from "@/components/chat/ThreadSearch";
+import ChatSummaryButton from "@/components/chat/ChatSummaryButton";
 import { toast } from "sonner";
 import { UploadFile } from "@/api/integrations";
-import { useWorkspace } from "../components/workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 // Define VirtualizedMessageList component (simplified, not truly virtualized without a library)
 // It maps over messages and renders EnhancedMessage, passing necessary props.

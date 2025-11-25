@@ -78,20 +78,20 @@ import ReactMarkdown from "react-markdown";
 
 import { ragHelper } from "@/api/functions";
 import { exportSessionToPdf } from "@/api/functions";
-import { useWorkspace } from "../components/workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 // Import new enhancement components
-import OnboardingTutorial from "./components/OnboardingTutorial";
-import DocumentSidebar from "./components/DocumentSidebar";
-import MessageActions from "./components/MessageActions";
-import SessionTemplates from "./components/SessionTemplates";
-import CostEstimator from "./components/CostEstimator";
-import DragDropZone from "./components/DragDropZone";
-import ContextualTooltip from "./components/ContextualTooltip";
-import SuggestedQuestions from "./components/SuggestedQuestions";
-import ProgressIndicator from "./components/ProgressIndicator";
-import QuickStartGuide from "./components/QuickStartGuide";
-import KeyboardShortcuts from "./components/KeyboardShortcuts";
+import OnboardingTutorial from "@/components/OnboardingTutorial";
+import DocumentSidebar from "@/components/DocumentSidebar";
+import MessageActions from "@/components/MessageActions";
+import SessionTemplates from "@/components/SessionTemplates";
+import CostEstimator from "@/components/CostEstimator";
+import DragDropZone from "@/components/DragDropZone";
+import ContextualTooltip from "@/components/ContextualTooltip";
+import SuggestedQuestions from "@/components/SuggestedQuestions";
+import ProgressIndicator from "@/components/ProgressIndicator";
+import QuickStartGuide from "@/components/QuickStartGuide";
+import KeyboardShortcuts from "@/components/KeyboardShortcuts";
 
 const MEMORY_LIMITS = {
   MAX_DOCUMENTS: 50,

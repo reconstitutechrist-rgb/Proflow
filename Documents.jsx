@@ -33,9 +33,9 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 // DocToPdfConverter is removed from usage in this file, so its import can be removed.
-// import DocToPdfConverter from "../components/tools/DocToPdfConverter"; 
-import DocumentUploader from "../components/documents/DocumentUploader";
-import { useWorkspace } from "../components/workspace/WorkspaceContext";
+// import DocToPdfConverter from "@/components/tools/DocToPdfConverter"; 
+import DocumentUploader from "@/components/documents/DocumentUploader";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState([]);

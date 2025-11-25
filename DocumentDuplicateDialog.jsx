@@ -11,7 +11,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { toast } from "sonner";
 import { Loader2, Copy } from "lucide-react";
 import { base44 } from "@/api/base44Client";

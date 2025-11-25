@@ -14,7 +14,7 @@ import {
   Clock,
   Loader2
 } from "lucide-react";
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { toast } from "sonner"; // Changed toast import
 import { base44 } from "@/api/base44Client"; // Added base44 import
 

@@ -37,7 +37,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { useWorkspace } from "../workspace/WorkspaceContext"; // NEW IMPORT
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // NEW IMPORT
 import { base44 } from "@/lib/api"; // Assuming base44 is imported from here
 
 const statusConfig = {

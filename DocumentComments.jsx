@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
-import { useWorkspace } from "../workspace/WorkspaceContext"; // Added import
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // Added import
 
 const commentTypeIcons = {
   general: MessageSquare,

@@ -31,7 +31,7 @@ import {
   Eye
 } from "lucide-react";
 import { format } from "date-fns";
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { toast } from "sonner";
 
 // Error Boundary

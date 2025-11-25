@@ -48,7 +48,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
 import PromptBuilderWizard from "./PromptBuilderWizard";
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 // Assuming createPageUrl is a utility function available in the project
 // If not, this import path will need to be adjusted or the function defined inline.

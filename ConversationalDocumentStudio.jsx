@@ -22,11 +22,11 @@ import {
 import { toast } from "sonner";
 import { UploadFile, InvokeLLM } from "@/api/integrations";
 import { anthropicResearch } from "@/api/functions";
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 import DocumentGenerator from "./DocumentGenerator";
 import DocumentRefiner from "./DocumentRefiner";
-import DocToPdfConverter from "../tools/DocToPdfConverter";
+import DocToPdfConverter from "@/components/tools/DocToPdfConverter";
 
 export default function ConversationalDocumentStudio({ assignment, currentUser, assignments, onDocumentCreated }) {
   const [activeMode, setActiveMode] = useState("chat");

@@ -50,7 +50,30 @@ export const invokeFunction = async (functionName, params) => {
   };
 };
 
-// Export session to PDF - stub implementation
+/**
+ * Export a chat/research session to PDF format.
+ * 
+ * @description This is a stub implementation. To enable PDF export,
+ * integrate with a PDF generation library (e.g., jsPDF, pdfmake, or Puppeteer)
+ * or a server-side PDF generation service.
+ * 
+ * @param {Object} params - Export parameters
+ * @param {Object} params.session - Session metadata (id, name, dates, etc.)
+ * @param {Array<Object>} params.messages - Array of message objects to include in the PDF
+ * @param {string} params.title - Title for the PDF document
+ * 
+ * @returns {Promise<Object>} Export result
+ * @returns {boolean} returns.success - Whether the export was successful
+ * @returns {string} returns.message - Status message
+ * @returns {string|null} returns.pdfUrl - URL to download the generated PDF (null if not configured)
+ * 
+ * @example
+ * const result = await exportSessionToPdf({
+ *   session: { id: 'sess-123', name: 'Research Session' },
+ *   messages: [{ content: 'Hello', author: 'user@example.com' }],
+ *   title: 'My Research Export'
+ * });
+ */
 export const exportSessionToPdf = async (params) => {
   const { session, messages, title } = params;
   

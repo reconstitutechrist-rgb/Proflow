@@ -59,7 +59,28 @@ export const GetFile = async (fileId) => {
   return files.find(f => f.id === fileId) || null;
 };
 
-// Extract data from uploaded file - stub implementation
+/**
+ * Extract structured data from an uploaded file.
+ * 
+ * @description This is a stub implementation. To enable file extraction,
+ * integrate with a document processing service (e.g., AWS Textract, Google Document AI,
+ * or a custom LLM-based extraction pipeline).
+ * 
+ * @param {Object} params - Extraction parameters
+ * @param {string} params.file_url - URL or identifier of the uploaded file
+ * @param {Object} [params.json_schema] - Optional JSON schema defining the expected output structure
+ * 
+ * @returns {Promise<Object>} Extraction result
+ * @returns {boolean} returns.success - Whether the extraction was successful
+ * @returns {string} returns.message - Status message
+ * @returns {Object|null} returns.data - Extracted data (null if no schema provided)
+ * 
+ * @example
+ * const result = await ExtractDataFromUploadedFile({
+ *   file_url: 'local://file-123',
+ *   json_schema: { type: 'object', properties: { name: { type: 'string' } } }
+ * });
+ */
 export const ExtractDataFromUploadedFile = async (params) => {
   const { file_url, json_schema } = params;
   

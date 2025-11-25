@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -128,22 +128,27 @@ export default function ConversationSidebar({
   const pinnedThreads = filteredThreads.filter(t => t.is_pinned);
   const unpinnedThreads = filteredThreads.filter(t => !t.is_pinned);
 
-  const getUnreadCount = (thread) => {
-    // const user = base44.auth.currentUser; // Using currentUser prop
+  // Create a lookup map for team members for O(1) access
+  const teamMemberMap = useMemo(() => 
+    new Map(teamMembers.map(m => [m.email, m])),
+    [teamMembers]
+  );
+
+  const getUnreadCount = useCallback((thread) => {
     if (!currentUser || !thread.unread_counts) return 0;
     const userUnread = thread.unread_counts.find(uc => uc.user_email === currentUser.email);
     return userUnread?.unread_count || 0;
-  };
+  }, [currentUser?.email]);
 
-  const getParticipantAvatars = (thread) => {
-    if (!thread.participants || !teamMembers.length) return [];
+  const getParticipantAvatars = useCallback((thread) => {
+    if (!thread.participants || teamMemberMap.size === 0) return [];
     return thread.participants
       .slice(0, 3)
-      .map(email => teamMembers.find(m => m.email === email))
+      .map(email => teamMemberMap.get(email))
       .filter(Boolean);
-  };
+  }, [teamMemberMap]);
 
-  const getPriorityColor = (priority) => {
+  const getPriorityColor = useCallback((priority) => {
     switch (priority) {
       case 'urgent': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
       case 'high': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
@@ -151,9 +156,10 @@ export default function ConversationSidebar({
       case 'low': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
     }
-  };
+  }, []);
 
-  const ThreadItem = ({ thread }) => {
+  // Memoize ThreadItem component to prevent unnecessary re-renders
+  const ThreadItem = memo(({ thread }) => {
     const unreadCount = getUnreadCount(thread);
     const participants = getParticipantAvatars(thread);
     const isSelected = selectedThread?.id === thread.id;
@@ -264,7 +270,7 @@ export default function ConversationSidebar({
         )}
       </div>
     );
-  };
+  });
 
   return (
     <div className="flex flex-col h-full">

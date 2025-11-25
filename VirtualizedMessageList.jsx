@@ -1,7 +1,7 @@
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import React, { useRef, useEffect, useState, useCallback, useMemo, memo } from "react";
 import EnhancedMessage from "./EnhancedMessage";
 
-export default function VirtualizedMessageList({
+const VirtualizedMessageList = memo(function VirtualizedMessageList({
   messages = [],
   currentUser,
   replyToMessageData = {},
@@ -108,14 +108,22 @@ export default function VirtualizedMessageList({
     }
   }, [messages.length, shouldAutoScroll]);
 
-  // Calculate visible messages
-  const visibleMessages = messages.slice(
+  // Memoize calculated values to prevent recalculation on every render
+  // Note: BUFFER_SIZE and ESTIMATED_MESSAGE_HEIGHT are constants, so they don't need to be in the dependency array
+  const visibleMessages = useMemo(() => messages.slice(
     Math.max(0, visibleRange.start - BUFFER_SIZE),
     Math.min(messages.length, visibleRange.end + BUFFER_SIZE)
-  );
+  ), [messages, visibleRange.start, visibleRange.end]);
 
-  const topSpacerHeight = Math.max(0, (visibleRange.start - BUFFER_SIZE)) * ESTIMATED_MESSAGE_HEIGHT;
-  const bottomSpacerHeight = Math.max(0, (messages.length - (visibleRange.end + BUFFER_SIZE))) * ESTIMATED_MESSAGE_HEIGHT;
+  const topSpacerHeight = useMemo(() => 
+    Math.max(0, (visibleRange.start - BUFFER_SIZE)) * ESTIMATED_MESSAGE_HEIGHT,
+    [visibleRange.start]
+  );
+  
+  const bottomSpacerHeight = useMemo(() => 
+    Math.max(0, (messages.length - (visibleRange.end + BUFFER_SIZE))) * ESTIMATED_MESSAGE_HEIGHT,
+    [messages.length, visibleRange.end]
+  );
 
   // Get reply-to message for a message
   const getReplyToMessage = useCallback((message) => {
@@ -172,4 +180,6 @@ export default function VirtualizedMessageList({
       <div ref={scrollToBottomRef} />
     </div>
   );
-}
+});
+
+export default VirtualizedMessageList;

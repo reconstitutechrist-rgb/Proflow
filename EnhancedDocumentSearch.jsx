@@ -22,7 +22,7 @@ import {
   Sparkles,
   Loader2
 } from "lucide-react";
-import { useWorkspace } from "../workspace/WorkspaceContext"; // Added import
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // Added import
 
 export default function EnhancedDocumentSearch({
   // Removed: documents, onResultsChange

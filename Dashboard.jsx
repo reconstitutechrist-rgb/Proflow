@@ -21,12 +21,12 @@ import {
   Activity
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import StatsOverview from "../components/dashboard/StatsOverview";
-import RecentActivity from "../components/dashboard/RecentActivity";
-import AssignmentProgress from "../components/dashboard/AssignmentProgress";
-import DashboardNotes from "../components/dashboard/DashboardNotes";
-import { useWorkspace } from "../components/workspace/WorkspaceContext";
+import { createPageUrl } from "@/lib/utils";
+import StatsOverview from "@/StatsOverview";
+import RecentActivity from "@/RecentActivity";
+import AssignmentProgress from "@/AssignmentProgress";
+import DashboardNotes from "@/DashboardNotes";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);

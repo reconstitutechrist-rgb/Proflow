@@ -29,9 +29,9 @@ import {
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
-import AssignmentForm from "../components/assignments/AssignmentForm";
-import AssignmentDetails from "../components/assignments/AssignmentDetails";
-import { useWorkspace } from "../components/workspace/WorkspaceContext";
+import AssignmentForm from "@/AssignmentForm";
+import AssignmentDetails from "@/AssignmentDetails";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 export default function AssignmentsPage() {
   const [searchParams, setSearchParams] = useSearchParams();

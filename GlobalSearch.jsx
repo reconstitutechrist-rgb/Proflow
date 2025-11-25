@@ -19,7 +19,7 @@ import {
   Loader2,
   Target
 } from "lucide-react";
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 export default function GlobalSearch({ isOpen, onClose }) {
   const [searchQuery, setSearchQuery] = useState("");

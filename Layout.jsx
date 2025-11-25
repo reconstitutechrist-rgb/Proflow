@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/lib/utils";
 import { User } from "@/api/entities";
 import { Task } from "@/api/entities";
 import { Assignment } from "@/api/entities";
@@ -71,17 +71,17 @@ import {
   Target // Added Target icon
 } from "lucide-react";
 
-import { TutorialProvider } from "./components/tutorial/TutorialProvider";
-import TutorialOverlay from "./components/tutorial/TutorialOverlay";
-import TutorialButton from "./components/tutorial/TutorialButton";
-import AIAssistantWidget from "./components/ai/AIAssistantWidget";
-import WorkspaceSwitcher from './components/workspace/WorkspaceSwitcher';
-import { WorkspaceProvider } from './components/workspace/WorkspaceContext'; // Fixed import path
-import WorkspaceErrorBoundary from './components/workspace/WorkspaceErrorBoundary'; // Added WorkspaceErrorBoundary import
-import WorkspacePerformanceMonitor from './components/workspace/WorkspacePerformanceMonitor'; // Added WorkspacePerformanceMonitor import
+import { TutorialProvider } from "@/TutorialProvider";
+import TutorialOverlay from "@/TutorialOverlay";
+import TutorialButton from "@/TutorialButton";
+import AIAssistantWidget from "@/AIAssistantWidget";
+import WorkspaceSwitcher from '@/WorkspaceSwitcher';
+import { WorkspaceProvider } from '@/components/workspace/WorkspaceContext'; // Fixed import path
+import WorkspaceErrorBoundary from '@/WorkspaceErrorBoundary'; // Added WorkspaceErrorBoundary import
+import WorkspacePerformanceMonitor from '@/WorkspacePerformanceMonitor'; // Added WorkspacePerformanceMonitor import
 
 const GlobalSearch = React.lazy(() =>
-  import("./components/search/GlobalSearch").catch(() => ({
+  import("@/GlobalSearch").catch(() => ({
     default: ({ isOpen, onClose }) => (
       <CommandDialog open={isOpen} onOpenChange={onClose}>
         <div className="p-8 text-center">

@@ -36,11 +36,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
-import TaskForm from "../components/tasks/TaskForm";
-import TaskBoard from "../components/tasks/TaskBoard";
-import ShareButton from "../components/share/ShareButton";
-import AITaskAssistantPanel from "../components/tasks/AITaskAssistantPanel";
-import { useWorkspace } from "../components/workspace/WorkspaceContext";
+import TaskForm from "@/TaskForm";
+import TaskBoard from "@/TaskBoard";
+import ShareButton from "@/ShareButton";
+import AITaskAssistantPanel from "@/AITaskAssistantPanel";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 export default function TasksPage() {
   const location = useLocation();

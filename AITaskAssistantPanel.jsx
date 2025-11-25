@@ -67,7 +67,7 @@ import {
   setDay
 } from "date-fns";
 import ReactMarkdown from 'react-markdown';
-import { useWorkspace } from "../workspace/WorkspaceContext"; // Added import
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // Added import
 
 const MAX_CONVERSATION_MESSAGES = 50;
 const DRAFT_STORAGE_KEY = "ai_task_maker_draft";

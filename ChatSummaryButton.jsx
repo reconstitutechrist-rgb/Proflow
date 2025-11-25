@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import AISummaryButton from "../documents/AISummaryButton";
+import AISummaryButton from "@/AISummaryButton";
 import { Assignment } from "@/api/entities";
 import { Document } from "@/api/entities";
 

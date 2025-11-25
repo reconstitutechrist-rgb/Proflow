@@ -11,9 +11,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Plus, User, FolderOpen, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useWorkspace } from "../workspace/WorkspaceContext"; // Added useWorkspace
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // Added useWorkspace
 import base44 from "@/api/integrations/base44"; // Assuming base44 entity access
-import toast from "react-hot-toast"; // Assuming react-hot-toast for toast notifications
+import { toast } from "sonner"; // Assuming react-hot-toast for toast notifications
 
 export default function TaskForm({ task, assignmentId, currentUser, onSubmit, onCancel }) { // Changed assignment to assignmentId, onSave to onSubmit. Removed 'assignments' and 'users' props.
     const [users, setUsers] = React.useState([]); // State to hold fetched users

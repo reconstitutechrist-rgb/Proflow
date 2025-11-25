@@ -16,9 +16,9 @@ import {
   Calendar
 } from "lucide-react";
 // NEW: Import useWorkspace for workspace context
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 // NEW: Import toast for notifications
-import { toast } from "react-hot-toast"; // Assuming react-hot-toast or similar
+import { toast } from "sonner"; // Assuming react-hot-toast or similar
 
 // NOTE: 'base44' is used for entity operations and is assumed to be an SDK or API client
 // available globally or implicitly. If it requires an explicit import, please add it here,

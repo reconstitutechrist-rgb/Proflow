@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { base44 } from "@/api/base44Client"; // Added import
 
 export default function AudienceRewriter({ document, onRewriteComplete }) {

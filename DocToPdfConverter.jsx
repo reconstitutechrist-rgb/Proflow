@@ -11,7 +11,7 @@ import {
   Zap
 } from "lucide-react";
 import { toast } from "sonner";
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { base44 } from "@/api/base44Client";
 
 export default function DocToPdfConverter({ documentId }) {

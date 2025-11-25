@@ -15,7 +15,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import { InvokeLLM } from "@/api/integrations"; // This import is used directly for LLM invocation
-import { useWorkspace } from "../workspace/WorkspaceContext";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 

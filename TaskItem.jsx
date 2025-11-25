@@ -35,7 +35,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import RelatedContentSuggestions from "../ai/RelatedContentSuggestions";
+import RelatedContentSuggestions from "@/RelatedContentSuggestions";
 
 export default function TaskItem({ task, assignment, assignedUser, onStatusChange, onEdit, onDelete, showRelated = false }) {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);

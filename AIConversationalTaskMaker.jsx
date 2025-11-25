@@ -72,7 +72,7 @@ import {
   getDay,
   setDay
 } from "date-fns";
-import { useWorkspace } from "../workspace/WorkspaceContext"; // ADDED: Workspace Context
+import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // ADDED: Workspace Context
 
 const MAX_CONVERSATION_MESSAGES = 50;
 const DRAFT_STORAGE_KEY = "ai_task_maker_draft";

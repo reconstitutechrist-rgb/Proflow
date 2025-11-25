@@ -17,12 +17,7 @@ import {
   Zap,
   Bot
 } from "lucide-react";
-
-// A simple mock for createPageUrl, assuming it generates paths from page names.
-// In a real application, this would be imported from a utility file or context,
-// or passed as a prop. For this implementation, we define a basic version
-// to ensure the code is fully functioning and compiles.
-const createPageUrl = (pageName) => `/${pageName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+import { createPageUrl } from "@/utils";
 
 
 export default function ResearchSuggestions({ assignment, onResearchStart }) {

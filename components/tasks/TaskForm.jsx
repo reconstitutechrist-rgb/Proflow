@@ -143,7 +143,7 @@ Return only the JSON array, no other text.`;
             onSubmit(submitData); // Changed onSubmit
         } catch (error) {
             console.error("Error saving task:", error);
-            alert("Failed to save task. Please try again.");
+            toast.error("Failed to save task. Please try again.");
         }
     };
 

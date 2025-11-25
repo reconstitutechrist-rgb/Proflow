@@ -8,6 +8,50 @@ This document provides a comprehensive analysis of each page in the Proflow appl
 
 ---
 
+## Security Summary
+
+### CodeQL Analysis Results
+
+CodeQL identified 21 security alerts in the document processing components, primarily related to HTML sanitization:
+
+| Alert Type | Count | Severity | Files Affected |
+|------------|-------|----------|----------------|
+| Incomplete URL scheme check | 3 | Medium | AIReviewPanel.jsx, OutlineGenerator.jsx |
+| Bad tag filter regex | 3 | Low | AIReviewPanel.jsx, OutlineGenerator.jsx |
+| Double escaping | 2 | Low | ExportOptions.jsx |
+| Incomplete multi-character sanitization | 13 | Medium | AIReviewPanel.jsx, OutlineGenerator.jsx, ExportOptions.jsx |
+
+### Recommended Security Fixes
+
+1. **Replace custom HTML sanitizer with DOMPurify:**
+```jsx
+import DOMPurify from 'dompurify';
+
+// Instead of custom sanitizeHTML function
+const sanitizedContent = DOMPurify.sanitize(htmlContent, {
+  ALLOWED_TAGS: ['p', 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'br'],
+  ALLOWED_ATTR: ['href', 'class']
+});
+```
+
+2. **Add comprehensive URL scheme validation:**
+```jsx
+const isSafeUrl = (url) => {
+  try {
+    const parsed = new URL(url);
+    return ['http:', 'https:'].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+};
+```
+
+3. **Use Content Security Policy headers** in production deployment
+
+**Note:** These security issues exist in pre-existing code that was reorganized during this PR. A follow-up security-focused PR is recommended to address these issues.
+
+---
+
 ## Critical Issues (Fixed)
 
 ### 1. Build Failure - Path Resolution Issue ✅ FIXED

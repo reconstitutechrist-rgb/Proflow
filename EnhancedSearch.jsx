@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Document } from "@/api/entities";
 import { Project } from "@/api/entities";
 import { Message } from "@/api/entities";
@@ -20,16 +20,32 @@ export default function EnhancedSearch({ isOpen, onClose, onResultSelect }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const searchTimeoutRef = useRef(null);
 
+  // Debounced search effect
   useEffect(() => {
+    // Clear any pending search timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
     if (searchQuery.trim().length > 2) {
-      performSearch(searchQuery);
+      // Debounce the search by 300ms to avoid excessive API calls
+      searchTimeoutRef.current = setTimeout(() => {
+        performSearch(searchQuery);
+      }, 300);
     } else {
       setSearchResults([]);
     }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
   }, [searchQuery]);
 
-  const performSearch = async (query) => {
+  const performSearch = useCallback(async (query) => {
     setIsLoading(true);
     try {
       const [projects, documents, messages, tasks] = await Promise.all([
@@ -39,13 +55,13 @@ export default function EnhancedSearch({ isOpen, onClose, onResultSelect }) {
         Task.list("-created_date", 50)
       ]);
 
-      const results = [];
       const queryLower = query.toLowerCase();
+      const results = [];
 
-      // Search projects
-      projects.forEach(project => {
+      // Search projects - optimized with early termination
+      for (const project of projects) {
         if (
-          project.name.toLowerCase().includes(queryLower) ||
+          project.name?.toLowerCase().includes(queryLower) ||
           project.description?.toLowerCase().includes(queryLower)
         ) {
           results.push({
@@ -61,16 +77,19 @@ export default function EnhancedSearch({ isOpen, onClose, onResultSelect }) {
             }
           });
         }
-      });
+      }
+
+      // Create a project lookup map for O(1) lookups instead of O(n) find operations
+      const projectMap = new Map(projects.map(p => [p.id, p]));
 
       // Search documents
-      documents.forEach(doc => {
+      for (const doc of documents) {
         if (
-          doc.title.toLowerCase().includes(queryLower) ||
+          doc.title?.toLowerCase().includes(queryLower) ||
           doc.description?.toLowerCase().includes(queryLower) ||
           doc.file_name?.toLowerCase().includes(queryLower)
         ) {
-          const project = projects.find(p => p.id === doc.project_id);
+          const project = projectMap.get(doc.project_id);
           results.push({
             id: doc.id,
             type: 'document',
@@ -84,12 +103,12 @@ export default function EnhancedSearch({ isOpen, onClose, onResultSelect }) {
             }
           });
         }
-      });
+      }
 
       // Search messages
-      messages.forEach(message => {
-        if (message.content.toLowerCase().includes(queryLower)) {
-          const project = projects.find(p => p.id === message.project_id);
+      for (const message of messages) {
+        if (message.content?.toLowerCase().includes(queryLower)) {
+          const project = projectMap.get(message.project_id);
           results.push({
             id: message.id,
             type: 'message',
@@ -105,15 +124,15 @@ export default function EnhancedSearch({ isOpen, onClose, onResultSelect }) {
             }
           });
         }
-      });
+      }
 
       // Search tasks
-      tasks.forEach(task => {
+      for (const task of tasks) {
         if (
-          task.title.toLowerCase().includes(queryLower) ||
+          task.title?.toLowerCase().includes(queryLower) ||
           task.description?.toLowerCase().includes(queryLower)
         ) {
-          const project = projects.find(p => p.id === task.project_id);
+          const project = projectMap.get(task.project_id);
           results.push({
             id: task.id,
             type: 'task',
@@ -128,12 +147,12 @@ export default function EnhancedSearch({ isOpen, onClose, onResultSelect }) {
             }
           });
         }
-      });
+      }
 
       // Sort by relevance (exact matches first, then partial)
       results.sort((a, b) => {
-        const aExact = a.title.toLowerCase() === queryLower ? 1 : 0;
-        const bExact = b.title.toLowerCase() === queryLower ? 1 : 0;
+        const aExact = a.title?.toLowerCase() === queryLower ? 1 : 0;
+        const bExact = b.title?.toLowerCase() === queryLower ? 1 : 0;
         if (aExact !== bExact) return bExact - aExact;
         
         // Then by date (newer first)
@@ -146,7 +165,7 @@ export default function EnhancedSearch({ isOpen, onClose, onResultSelect }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const getTypeColor = (type) => {
     switch (type) {

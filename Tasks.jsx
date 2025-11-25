@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { User } from "@/api/entities";
 import { base44 } from "@/api/base44Client";
@@ -299,15 +299,26 @@ export default function TasksPage() {
   const canDeleteTask = (task) => true;
   const canAssignTask = true;
 
-  const getAssignmentName = (assignmentId) => {
-    const assignment = assignments.find(a => a.id === assignmentId);
-    return assignment?.name || "Unknown Assignment";
-  };
+  // Create lookup maps for O(1) access instead of O(n) find operations
+  const assignmentMap = useMemo(() => 
+    new Map(assignments.map(a => [a.id, a])),
+    [assignments]
+  );
+  
+  const userMap = useMemo(() => 
+    new Map(users.map(u => [u.email, u])),
+    [users]
+  );
 
-  const getUserName = (userEmail) => {
-    const user = users.find(u => u.email === userEmail);
+  const getAssignmentName = useCallback((assignmentId) => {
+    const assignment = assignmentMap.get(assignmentId);
+    return assignment?.name || "Unknown Assignment";
+  }, [assignmentMap]);
+
+  const getUserName = useCallback((userEmail) => {
+    const user = userMap.get(userEmail);
     return user?.full_name || userEmail;
-  };
+  }, [userMap]);
 
   return (
     <div className="h-full flex flex-col">

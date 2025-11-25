@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import {
   CommandDialog,
@@ -21,61 +21,54 @@ import {
 } from "lucide-react";
 import { useWorkspace } from "../workspace/WorkspaceContext";
 
+// Empty results constant to avoid recreating object on every render
+const EMPTY_RESULTS = {
+  projects: [],
+  assignments: [],
+  documents: [],
+  tasks: [],
+  messages: []
+};
+
 export default function GlobalSearch({ isOpen, onClose }) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [results, setResults] = useState({
-    projects: [],
-    assignments: [],
-    documents: [],
-    tasks: [],
-    messages: []
-  });
+  const [results, setResults] = useState(EMPTY_RESULTS);
   const [loading, setLoading] = useState(false);
-  const [searchTimeout, setSearchTimeout] = useState(null);
+  const searchTimeoutRef = useRef(null);
 
   const { currentWorkspaceId } = useWorkspace();
 
+  // Clear state when dialog closes
   useEffect(() => {
     if (!isOpen) {
       setSearchQuery("");
-      setResults({
-        projects: [],
-        assignments: [],
-        documents: [],
-        tasks: [],
-        messages: []
-      });
+      setResults(EMPTY_RESULTS);
     }
   }, [isOpen]);
 
+  // Debounced search effect using ref to avoid state updates
   useEffect(() => {
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
 
     if (searchQuery.trim().length < 2) {
-      setResults({
-        projects: [],
-        assignments: [],
-        documents: [],
-        tasks: [],
-        messages: []
-      });
+      setResults(EMPTY_RESULTS);
       return;
     }
 
-    const timeout = setTimeout(() => {
+    searchTimeoutRef.current = setTimeout(() => {
       performSearch(searchQuery);
     }, 300);
 
-    setSearchTimeout(timeout);
-
     return () => {
-      if (timeout) clearTimeout(timeout);
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
     };
   }, [searchQuery, currentWorkspaceId]);
 
-  const performSearch = async (query) => {
+  const performSearch = useCallback(async (query) => {
     if (!currentWorkspaceId) {
       return;
     }
@@ -149,9 +142,9 @@ export default function GlobalSearch({ isOpen, onClose }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentWorkspaceId]);
 
-  const handleResultClick = (result, type) => {
+  const handleResultClick = useCallback((result, type) => {
     onClose();
     // Navigation will be handled by the parent via onResultClick callback
     if (typeof window !== 'undefined') {
@@ -160,14 +153,17 @@ export default function GlobalSearch({ isOpen, onClose }) {
       });
       window.dispatchEvent(event);
     }
-  };
+  }, [onClose]);
 
-  const totalResults = 
+  // Memoize totalResults to avoid recalculation on every render
+  const totalResults = useMemo(() => 
     results.projects.length +
     results.assignments.length +
     results.documents.length +
     results.tasks.length +
-    results.messages.length;
+    results.messages.length,
+    [results]
+  );
 
   return (
     <CommandDialog open={isOpen} onOpenChange={onClose}>

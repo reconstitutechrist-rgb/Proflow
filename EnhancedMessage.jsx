@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, memo, useCallback, useMemo } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,7 @@ import { format } from "date-fns";
 import MessageReactions from "./MessageReactions";
 import ReactMarkdown from "react-markdown";
 
-export default function EnhancedMessage({
+const EnhancedMessage = memo(function EnhancedMessage({
   message,
   previousMessage,
   currentUser,
@@ -39,27 +39,54 @@ export default function EnhancedMessage({
 }) {
   const [showActions, setShowActions] = useState(false);
 
-  // Check if this message should be grouped with the previous one
-  const shouldGroup = previousMessage &&
-    previousMessage.author_email === message.author_email &&
-    previousMessage.message_type === message.message_type &&
-    !previousMessage.is_pinned &&
-    !message.is_pinned &&
-    (new Date(message.created_date) - new Date(previousMessage.created_date)) < 5 * 60 * 1000; // Within 5 minutes
+  // Memoize expensive computations to prevent recalculation on every render
+  const shouldGroup = useMemo(() => {
+    if (!previousMessage) return false;
+    return previousMessage.author_email === message.author_email &&
+      previousMessage.message_type === message.message_type &&
+      !previousMessage.is_pinned &&
+      !message.is_pinned &&
+      (new Date(message.created_date) - new Date(previousMessage.created_date)) < 5 * 60 * 1000; // Within 5 minutes
+  }, [
+    previousMessage?.author_email, 
+    previousMessage?.message_type, 
+    previousMessage?.is_pinned, 
+    previousMessage?.created_date,
+    message.author_email, 
+    message.message_type, 
+    message.is_pinned, 
+    message.created_date
+  ]);
 
-  const isOwnMessage = currentUser && message.author_email === currentUser.email;
-  const isBookmarked = message.is_bookmarked_by?.includes(currentUser?.email);
+  const isOwnMessage = useMemo(() => 
+    currentUser && message.author_email === currentUser.email, 
+    [currentUser?.email, message.author_email]
+  );
+  
+  const isBookmarked = useMemo(() => 
+    message.is_bookmarked_by?.includes(currentUser?.email),
+    [message.is_bookmarked_by, currentUser?.email]
+  );
 
   // Find the message being replied to
   const replyToMessage = message.reply_to_message;
+
+  // Memoize callbacks to prevent recreation on every render
+  const handleMouseEnter = useCallback(() => setShowActions(true), []);
+  const handleMouseLeave = useCallback(() => setShowActions(false), []);
+  const handleReply = useCallback(() => onReply(message), [onReply, message]);
+  const handleEdit = useCallback(() => onEdit(message), [onEdit, message]);
+  const handleBookmark = useCallback(() => onBookmark(message.id), [onBookmark, message.id]);
+  const handlePin = useCallback(() => onPin(message.id), [onPin, message.id]);
+  const handleDelete = useCallback(() => onDelete(message.id), [onDelete, message.id]);
 
   return (
     <div
       className={`group relative ${viewMode === 'compact' ? 'py-1' : 'py-2'} ${
         shouldGroup ? '' : 'mt-4'
       }`}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className="flex items-start gap-3">
         {/* Avatar - Only show if not grouped */}
@@ -196,7 +223,7 @@ export default function EnhancedMessage({
                   variant="ghost"
                   size="sm"
                   className="h-7 px-2"
-                  onClick={() => onReply(message)}
+                  onClick={handleReply}
                   title="Reply"
                 >
                   <Reply className="w-3 h-3" />
@@ -206,7 +233,7 @@ export default function EnhancedMessage({
                     variant="ghost"
                     size="sm"
                     className="h-7 px-2"
-                    onClick={() => onEdit(message)}
+                    onClick={handleEdit}
                     title="Edit"
                   >
                     <Edit className="w-3 h-3" />
@@ -216,7 +243,7 @@ export default function EnhancedMessage({
                   variant="ghost"
                   size="sm"
                   className="h-7 px-2"
-                  onClick={() => onBookmark(message.id)}
+                  onClick={handleBookmark}
                   title="Bookmark"
                 >
                   <Bookmark className={`w-3 h-3 ${isBookmarked ? 'fill-current text-blue-600' : ''}`} />
@@ -225,7 +252,7 @@ export default function EnhancedMessage({
                   variant="ghost"
                   size="sm"
                   className="h-7 px-2"
-                  onClick={() => onPin(message.id)}
+                  onClick={handlePin}
                   title="Pin"
                 >
                   <Pin className={`w-3 h-3 ${message.is_pinned ? 'text-yellow-600' : ''}`} />
@@ -239,7 +266,7 @@ export default function EnhancedMessage({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
-                        onClick={() => onDelete(message.id)}
+                        onClick={handleDelete}
                         className="text-red-600 dark:text-red-400"
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
@@ -263,4 +290,6 @@ export default function EnhancedMessage({
       </div>
     </div>
   );
-}
+});
+
+export default EnhancedMessage;

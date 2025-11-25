@@ -311,11 +311,11 @@ export default function ChatPage() {
     }
   }, [currentThread?.id, currentUser?.email]);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, []);
 
-  const markThreadAsRead = async () => {
+  const markThreadAsRead = useCallback(async () => {
     if (!currentThread || !currentUser) return;
 
     try {
@@ -328,22 +328,29 @@ export default function ChatPage() {
         unread_counts: updatedUnreadCounts
       });
 
-      // Mark all messages as read
+      // Mark all messages as read - batch update for better performance
       const threadMessages = messages.filter(m => m.thread_id === currentThread.id);
-      for (const msg of threadMessages) {
+      const unreadMessages = threadMessages.filter(msg => {
         const readBy = msg.read_by || [];
-        if (!readBy.some(r => r.user_email === currentUser.email)) {
-          await base44.entities.Message.update(msg.id, {
-            read_by: [...readBy, { user_email: currentUser.email, read_at: new Date().toISOString() }]
-          });
-        }
+        return !readBy.some(r => r.user_email === currentUser.email);
+      });
+
+      // Use Promise.all to update messages in parallel instead of sequentially
+      if (unreadMessages.length > 0) {
+        await Promise.all(
+          unreadMessages.map(msg =>
+            base44.entities.Message.update(msg.id, {
+              read_by: [...(msg.read_by || []), { user_email: currentUser.email, read_at: new Date().toISOString() }]
+            })
+          )
+        );
       }
 
       loadData(); // Reload threads to update unread counts on sidebar
     } catch (error) {
       console.error("Error marking thread as read:", error);
     }
-  };
+  }, [currentThread, currentUser, messages, loadData]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !currentUser || !currentThread || !currentWorkspaceId) return;
@@ -751,12 +758,21 @@ export default function ChatPage() {
     }
   };
 
-  const currentThreadMessages = currentThread
-    ? messages.filter((m) => m.thread_id === currentThread.id)
-    : [];
+  // Memoize filtered message lists to prevent recalculation on every render
+  const currentThreadMessages = useMemo(() => 
+    currentThread ? messages.filter((m) => m.thread_id === currentThread.id) : [],
+    [currentThread?.id, messages]
+  );
 
-  const pinnedMessages = currentThreadMessages.filter(m => m.is_pinned);
-  const regularMessages = currentThreadMessages.filter(m => !m.is_pinned);
+  const pinnedMessages = useMemo(() => 
+    currentThreadMessages.filter(m => m.is_pinned),
+    [currentThreadMessages]
+  );
+  
+  const regularMessages = useMemo(() => 
+    currentThreadMessages.filter(m => !m.is_pinned),
+    [currentThreadMessages]
+  );
 
   if (loading) {
     return (

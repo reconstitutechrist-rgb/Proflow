@@ -1,5 +1,6 @@
-// Re-export base44 client for imports that expect it at this path
-import { base44 } from '../base44Client';
+// Re-export dataClient for imports that expect it at this path
+// This maintains backward compatibility with existing import patterns
+import { dataClient } from '../base44Client';
 
-export default base44;
-export { base44 };
+export default dataClient;
+export { dataClient, dataClient as base44 };

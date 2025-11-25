@@ -1,20 +1,57 @@
-import { base44 } from './base44Client';
+import { InvokeLLM } from './integrations';
 
-// Export custom functions from the base44 client
-// These are app-specific functions that may use LLM or other integrations
-export const anthropicResearch = base44.functions?.anthropicResearch || (async (params) => {
-  // Fallback implementation if function is not available
-  console.warn('anthropicResearch function not available, using fallback');
-  return { result: null, error: 'Function not configured' };
-});
+// Research function - stub implementation
+// Can be replaced with actual research API integration
+export const anthropicResearch = async (params) => {
+  const { query, context } = params;
 
-export const ragHelper = base44.functions?.ragHelper || (async (params) => {
-  // Fallback implementation if function is not available
-  console.warn('ragHelper function not available, using fallback');
-  return { result: null, error: 'Function not configured' };
-});
+  console.log('anthropicResearch called with:', { query, context });
+
+  // Stub implementation - returns placeholder data
+  return {
+    success: true,
+    message: 'Research function not configured. Please set up your preferred research API.',
+    results: [],
+    summary: 'Research results placeholder',
+  };
+};
+
+// RAG (Retrieval Augmented Generation) helper - stub implementation
+export const ragHelper = async (params) => {
+  const { query, documents, context } = params;
+
+  console.log('ragHelper called with:', { query, documents: documents?.length });
+
+  // Stub implementation
+  return {
+    success: true,
+    message: 'RAG helper not configured. Please set up your preferred RAG implementation.',
+    response: 'RAG response placeholder',
+    sources: [],
+  };
+};
+
+// Generic function invoker for any custom functions
+export const invokeFunction = async (functionName, params) => {
+  console.log(`invokeFunction called: ${functionName}`, params);
+
+  const functions = {
+    anthropicResearch,
+    ragHelper,
+  };
+
+  if (functions[functionName]) {
+    return functions[functionName](params);
+  }
+
+  return {
+    success: false,
+    error: `Function ${functionName} not found`,
+  };
+};
 
 export default {
   anthropicResearch,
   ragHelper,
+  invokeFunction,
 };

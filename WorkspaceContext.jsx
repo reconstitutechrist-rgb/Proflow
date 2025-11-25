@@ -1,8 +1,32 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { base44 } from '@/api/base44Client';
+import { dataClient } from '@/api/base44Client';
 import { toast } from 'sonner';
 
 const WorkspaceContext = createContext();
+
+// Simple user management without external auth
+const getCurrentUser = () => {
+  const stored = localStorage.getItem('proflow_current_user');
+  if (stored) {
+    return JSON.parse(stored);
+  }
+  // Create a default user
+  const defaultUser = {
+    id: 'default-user',
+    email: 'user@proflow.local',
+    full_name: 'Proflow User',
+    active_workspace_id: null,
+  };
+  localStorage.setItem('proflow_current_user', JSON.stringify(defaultUser));
+  return defaultUser;
+};
+
+const updateCurrentUser = (updates) => {
+  const user = getCurrentUser();
+  const updated = { ...user, ...updates };
+  localStorage.setItem('proflow_current_user', JSON.stringify(updated));
+  return updated;
+};
 
 export function WorkspaceProvider({ children }) {
   const [currentWorkspace, setCurrentWorkspace] = useState(null);
@@ -10,24 +34,18 @@ export function WorkspaceProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
 
-  // Load user and workspaces with retry logic
+  // Load user and workspaces
   const loadWorkspaces = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const user = await base44.auth.me();
+
+      const user = getCurrentUser();
       setCurrentUser(user);
 
-      // Small delay to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 150));
-
-      // Load all workspaces where user is a member - FIXED: Use proper array filter
-      const workspaces = await base44.entities.Workspace.filter({
-        members: { $in: [user.email] }
-      }, '-updated_date');
+      // Load all workspaces
+      const workspaces = await dataClient.entities.Workspace.list();
 
       setAvailableWorkspaces(workspaces);
 
@@ -40,7 +58,7 @@ export function WorkspaceProvider({ children }) {
         activeWorkspace = workspaces.find(w => w.id === localStorageWorkspaceId);
       }
 
-      // Priority 2: Check user entity preference
+      // Priority 2: Check user preference
       if (!activeWorkspace && user.active_workspace_id) {
         activeWorkspace = workspaces.find(w => w.id === user.active_workspace_id);
       }
@@ -57,70 +75,38 @@ export function WorkspaceProvider({ children }) {
 
       // Priority 5: Create a default personal workspace if none exist
       if (!activeWorkspace) {
-        // Check one more time to avoid race condition
-        const existingDefault = await base44.entities.Workspace.filter({
+        const newWorkspace = await dataClient.entities.Workspace.create({
+          name: `${user.full_name}'s Workspace`,
+          description: 'My personal workspace',
           owner_email: user.email,
-          is_default: true
-        }, '-created_date', 1);
-        
-        if (existingDefault.length > 0) {
-          activeWorkspace = existingDefault[0];
-        } else {
-          const newWorkspace = await base44.entities.Workspace.create({
-            name: `${user.full_name}'s Workspace`,
-            description: 'My personal workspace',
-            owner_email: user.email,
-            members: [user.email],
-            type: 'personal',
-            is_default: true,
-            settings: {
-              color: '#3B82F6',
-              icon: '👤'
-            }
-          });
-          activeWorkspace = newWorkspace;
-        }
-        setAvailableWorkspaces([activeWorkspace]);
+          members: [user.email],
+          type: 'personal',
+          is_default: true,
+          settings: {
+            color: '#3B82F6',
+            icon: '👤'
+          }
+        });
+        activeWorkspace = newWorkspace;
+        setAvailableWorkspaces([newWorkspace]);
       }
 
       setCurrentWorkspace(activeWorkspace);
-      
-      // Sync to both local storage and user entity
+
+      // Sync to local storage
       localStorage.setItem('active_workspace_id', activeWorkspace.id);
       if (user.active_workspace_id !== activeWorkspace.id) {
-        await base44.auth.updateMe({ active_workspace_id: activeWorkspace.id });
+        updateCurrentUser({ active_workspace_id: activeWorkspace.id });
       }
-
-      // Reset retry count on success
-      setRetryCount(0);
 
     } catch (err) {
       console.error('Error loading workspaces:', err);
-      
-      if (err.message && err.message.includes('Rate limit')) {
-        if (retryCount < 3) {
-          // Retry with exponential backoff
-          const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
-          toast.error(`Loading workspaces... Retrying in ${delay/1000}s`, {
-            duration: delay
-          });
-          
-          setTimeout(() => {
-            setRetryCount(prev => prev + 1);
-            loadWorkspaces();
-          }, delay);
-        } else {
-          setError('Rate limit exceeded. Please refresh the page in a moment.');
-          toast.error('Rate limit exceeded. Please refresh the page.');
-        }
-      } else {
-        setError(err.message || 'Failed to load workspaces. Please refresh the page.');
-        toast.error('Failed to load workspaces');
-      }
+      setError(err.message || 'Failed to load workspaces. Please refresh the page.');
+      toast.error('Failed to load workspaces');
     } finally {
       setLoading(false);
     }
-  }, [retryCount]);
+  }, []);
 
   // Switch workspace
   const switchWorkspace = useCallback(async (workspaceId) => {
@@ -131,16 +117,12 @@ export function WorkspaceProvider({ children }) {
     }
 
     setCurrentWorkspace(workspace);
-    
+
     // Update local storage
     localStorage.setItem('active_workspace_id', workspaceId);
-    
-    // Update user entity preference
-    try {
-      await base44.auth.updateMe({ active_workspace_id: workspaceId });
-    } catch (error) {
-      console.error('Error updating user workspace preference:', error);
-    }
+
+    // Update user preference
+    updateCurrentUser({ active_workspace_id: workspaceId });
 
     // Reload page to refresh all data with new workspace context
     window.location.reload();
@@ -153,7 +135,7 @@ export function WorkspaceProvider({ children }) {
 
   useEffect(() => {
     loadWorkspaces();
-  }, []); // Only run once on mount
+  }, []);
 
   const value = {
     currentWorkspace,

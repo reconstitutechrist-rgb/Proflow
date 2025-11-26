@@ -1,18 +1,17 @@
-
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { 
-  Bot, 
-  Send, 
-  Loader2, 
-  FileText, 
+import {
+  Bot,
+  Send,
+  Loader2,
+  FileText,
   User,
   Sparkles,
-  MessageSquare
+  MessageSquare,
 } from "lucide-react";
 import { InvokeLLM } from "@/api/integrations"; // This import is used directly for LLM invocation
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
@@ -62,7 +61,13 @@ export default function AIProjectExpert({ assignmentId }) {
       setChatHistory([]);
       setIsContextLoading(false);
     }
-  }, [assignmentId, currentWorkspaceId, currentAuthUser, loadChatHistory, loadContext]); // Dependencies for re-fetching
+  }, [
+    assignmentId,
+    currentWorkspaceId,
+    currentAuthUser,
+    loadChatHistory,
+    loadContext,
+  ]); // Dependencies for re-fetching
 
   // Effect to scroll to the bottom of the chat when new messages arrive
   useEffect(() => {
@@ -76,33 +81,52 @@ export default function AIProjectExpert({ assignmentId }) {
   // useCallback for loadContext to prevent unnecessary re-creations
   const loadContext = useCallback(async () => {
     if (!assignmentId || !currentWorkspaceId) {
-      console.warn("loadContext called without assignmentId or currentWorkspaceId");
+      console.warn(
+        "loadContext called without assignmentId or currentWorkspaceId"
+      );
       setIsContextLoading(false);
       return;
     }
     try {
       // CRITICAL: Only load data from the current workspace for security
       const [assignments, tasks, documents] = await Promise.all([
-        base44.entities.Assignment.filter({
-          workspace_id: currentWorkspaceId,
-          id: assignmentId
-        }, "-updated_date", 1), // Fetching a single assignment
-        base44.entities.Task.filter({
-          workspace_id: currentWorkspaceId,
-          assignment_id: assignmentId
-        }, "-updated_date"),
-        base44.entities.Document.filter({
-          workspace_id: currentWorkspaceId,
-          assigned_to_assignments: { $in: [assignmentId] }
-        }, "-updated_date")
+        base44.entities.Assignment.filter(
+          {
+            workspace_id: currentWorkspaceId,
+            id: assignmentId,
+          },
+          "-updated_date",
+          1
+        ), // Fetching a single assignment
+        base44.entities.Task.filter(
+          {
+            workspace_id: currentWorkspaceId,
+            assignment_id: assignmentId,
+          },
+          "-updated_date"
+        ),
+        base44.entities.Document.filter(
+          {
+            workspace_id: currentWorkspaceId,
+            assigned_to_assignments: { $in: [assignmentId] },
+          },
+          "-updated_date"
+        ),
       ]);
 
       const currentAssignment = assignments[0];
 
       // CRITICAL: Validate that the fetched assignment belongs to the current workspace
-      if (!currentAssignment || currentAssignment.workspace_id !== currentWorkspaceId) {
-        console.error("Security violation: Assignment not in current workspace or not found.");
-        toast.error("Cannot access assignment from other workspaces or assignment not found.");
+      if (
+        !currentAssignment ||
+        currentAssignment.workspace_id !== currentWorkspaceId
+      ) {
+        console.error(
+          "Security violation: Assignment not in current workspace or not found."
+        );
+        toast.error(
+          "Cannot access assignment from other workspaces or assignment not found."
+        );
         setContext(null); // Clear context if security violation or not found
         setIsContextLoading(false);
         return;
@@ -111,10 +135,9 @@ export default function AIProjectExpert({ assignmentId }) {
       setContext({
         assignment: currentAssignment,
         tasks: tasks,
-        documents: documents
+        documents: documents,
       });
       setIsContextLoading(false);
-
     } catch (error) {
       console.error("Error loading context:", error);
       toast.error("Failed to load assignment context.");
@@ -126,21 +149,29 @@ export default function AIProjectExpert({ assignmentId }) {
   // useCallback for loadChatHistory to prevent unnecessary re-creations
   const loadChatHistory = useCallback(async () => {
     if (!assignmentId || !currentWorkspaceId || !currentAuthUser) {
-      console.warn("loadChatHistory called without assignmentId, currentWorkspaceId, or currentAuthUser");
+      console.warn(
+        "loadChatHistory called without assignmentId, currentWorkspaceId, or currentAuthUser"
+      );
       return;
     }
     try {
       // CRITICAL: Only load chat history from the current workspace for security
-      const history = await base44.entities.AIChat.filter({
-        workspace_id: currentWorkspaceId,
-        assignment_id: assignmentId
-      }, "-created_date", 100); // Fetching up to 100 recent messages
+      const history = await base44.entities.AIChat.filter(
+        {
+          workspace_id: currentWorkspaceId,
+          assignment_id: assignmentId,
+        },
+        "-created_date",
+        100
+      ); // Fetching up to 100 recent messages
 
       // Map to add `isUser` flag for rendering, and reverse to display chronologically ascending
-      const formattedHistory = history.map(msg => ({
-        ...msg,
-        isUser: msg.user_email === currentAuthUser?.email
-      })).reverse();
+      const formattedHistory = history
+        .map((msg) => ({
+          ...msg,
+          isUser: msg.user_email === currentAuthUser?.email,
+        }))
+        .reverse();
 
       setChatHistory(formattedHistory);
     } catch (error) {
@@ -151,8 +182,15 @@ export default function AIProjectExpert({ assignmentId }) {
 
   const handleAskQuestion = async () => {
     // Basic validations
-    if (!question.trim() || !context?.assignment || !currentWorkspaceId || !currentAuthUser) {
-      toast.error("Please provide a question, ensure project context is loaded, and you are logged in.");
+    if (
+      !question.trim() ||
+      !context?.assignment ||
+      !currentWorkspaceId ||
+      !currentAuthUser
+    ) {
+      toast.error(
+        "Please provide a question, ensure project context is loaded, and you are logged in."
+      );
       return;
     }
     if (loading) return; // Prevent multiple submissions
@@ -179,23 +217,31 @@ export default function AIProjectExpert({ assignmentId }) {
       isUser: true,
       confidence_score: 100, // User messages are 100% confident
     };
-    setChatHistory(prev => [...prev, tempUserMessage]);
+    setChatHistory((prev) => [...prev, tempUserMessage]);
     scrollToBottom(); // Scroll to show the new message
 
     try {
       // Prepare context for the AI prompt
       const documentContext = context.documents
-        .filter(doc => doc.ai_analysis?.summary)
-        .map(doc => `Document: ${doc.title}\nSummary: ${doc.ai_analysis.summary}\nKey Points: ${doc.ai_analysis.key_points?.join(', ') || 'None'}`)
-        .join('\n\n');
+        .filter((doc) => doc.ai_analysis?.summary)
+        .map(
+          (doc) =>
+            `Document: ${doc.title}\nSummary: ${
+              doc.ai_analysis.summary
+            }\nKey Points: ${doc.ai_analysis.key_points?.join(", ") || "None"}`
+        )
+        .join("\n\n");
 
       const projectContext = `Project: ${context.assignment.name}\nDescription: ${context.assignment.description}\nStatus: ${context.assignment.status}\nPriority: ${context.assignment.priority}`;
 
       // Include recent chat history in the prompt for conversational context
-      const recentChatHistoryForPrompt = chatHistory.slice(-5).map(msg => {
+      const recentChatHistoryForPrompt = chatHistory
+        .slice(-5)
+        .map((msg) => {
           if (msg.isUser) return `User: ${msg.question}`;
           return `AI: ${msg.response}`;
-      }).join('\n');
+        })
+        .join("\n");
 
       const prompt = `You are an AI project expert assistant helping team members understand their project. Answer the user's question based on the project information and uploaded documents.
 
@@ -224,15 +270,15 @@ If this is a new team member asking basic questions, provide extra context to he
             confidence: { type: "number" },
             source_documents: {
               type: "array",
-              items: { type: "string" }
+              items: { type: "string" },
             },
             suggestions: {
               type: "array",
-              items: { type: "string" }
-            }
+              items: { type: "string" },
+            },
           },
-          required: ["answer"] // 'answer' is always required
-        }
+          required: ["answer"], // 'answer' is always required
+        },
       });
 
       // Save the AI chat record to the database
@@ -244,42 +290,51 @@ If this is a new team member asking basic questions, provide extra context to he
         response: aiResponse.answer, // Use the structured answer from AI
         source_documents: aiResponse.source_documents || [], // Use source documents from AI
         confidence_score: aiResponse.confidence || 85, // Use confidence from AI, or default
-        chat_type: 'assignment_question',
+        chat_type: "assignment_question",
         created_date: new Date().toISOString(), // Record creation date for sorting
       });
 
       // Update chat history: remove the temporary user message and add the final AI response
       // `suggestions` are not persisted in `AIChat` entity, so they are merged for immediate display.
-      setChatHistory(prev => {
-        const updatedHistory = prev.filter(msg => msg.id !== tempUserMessage.id);
-        return [...updatedHistory, {
-          ...aiChatRecord,
-          isUser: false,
-          suggestions: aiResponse.suggestions || [] // Add suggestions to the latest AI message object
-        }];
+      setChatHistory((prev) => {
+        const updatedHistory = prev.filter(
+          (msg) => msg.id !== tempUserMessage.id
+        );
+        return [
+          ...updatedHistory,
+          {
+            ...aiChatRecord,
+            isUser: false,
+            suggestions: aiResponse.suggestions || [], // Add suggestions to the latest AI message object
+          },
+        ];
       });
       scrollToBottom();
-
     } catch (error) {
       console.error("Error getting AI response:", error);
       toast.error("Failed to get AI response. Please try again.");
 
       // If an error occurs, update chat history with an error message
-      setChatHistory(prev => {
-        const updatedHistory = prev.filter(msg => msg.id !== tempUserMessage.id); // Remove temporary user message
-        return [...updatedHistory, {
-          id: `error-${Date.now()}`, // Unique ID for error message
-          question: userQuestion,
-          response: "I'm sorry, I encountered an error while processing your question. Please try again.",
-          user_email: "ai-error",
-          assignment_id: assignmentId, // Use assignmentId
-          created_date: new Date().toISOString(),
-          isUser: false,
-          confidence_score: 0,
-        }];
+      setChatHistory((prev) => {
+        const updatedHistory = prev.filter(
+          (msg) => msg.id !== tempUserMessage.id
+        ); // Remove temporary user message
+        return [
+          ...updatedHistory,
+          {
+            id: `error-${Date.now()}`, // Unique ID for error message
+            question: userQuestion,
+            response:
+              "I'm sorry, I encountered an error while processing your question. Please try again.",
+            user_email: "ai-error",
+            assignment_id: assignmentId, // Use assignmentId
+            created_date: new Date().toISOString(),
+            isUser: false,
+            confidence_score: 0,
+          },
+        ];
       });
       scrollToBottom();
-
     } finally {
       setLoading(false); // End loading state
     }
@@ -291,7 +346,7 @@ If this is a new team member asking basic questions, provide extra context to he
     "Who are the main stakeholders?",
     "What features are we building?",
     "What are the technical requirements?",
-    "Tell me about the project timeline"
+    "Tell me about the project timeline",
   ];
 
   // Render loading state while user or workspace information is being fetched
@@ -299,7 +354,9 @@ If this is a new team member asking basic questions, provide extra context to he
     return (
       <Card className="border-0 shadow-lg h-[600px] flex flex-col items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-purple-600 mb-4" />
-        <p className="text-gray-600">Loading user and workspace information...</p>
+        <p className="text-gray-600">
+          Loading user and workspace information...
+        </p>
       </Card>
     );
   }
@@ -316,15 +373,18 @@ If this is a new team member asking basic questions, provide extra context to he
 
   // Render if no assignment is found or selected
   if (!context?.assignment) {
-      return (
-          <Card className="border-0 shadow-lg h-[600px] flex flex-col items-center justify-center">
-              <MessageSquare className="w-16 h-16 text-gray-300 mb-4" />
-              <h3 className="font-semibold text-gray-900 mb-2">No Project Selected or Found</h3>
-              <p className="text-gray-600">Please select an assignment to start chatting with the AI expert.</p>
-          </Card>
-      );
+    return (
+      <Card className="border-0 shadow-lg h-[600px] flex flex-col items-center justify-center">
+        <MessageSquare className="w-16 h-16 text-gray-300 mb-4" />
+        <h3 className="font-semibold text-gray-900 mb-2">
+          No Project Selected or Found
+        </h3>
+        <p className="text-gray-600">
+          Please select an assignment to start chatting with the AI expert.
+        </p>
+      </Card>
+    );
   }
-
 
   return (
     <Card className="border-0 shadow-lg h-[600px] flex flex-col">
@@ -338,7 +398,8 @@ If this is a new team member asking basic questions, provide extra context to he
           </Badge>
         </CardTitle>
         <p className="text-sm text-gray-600">
-          Ask me anything about {context.assignment.name}. I've analyzed all project documents to help answer your questions.
+          Ask me anything about {context.assignment.name}. I've analyzed all
+          project documents to help answer your questions.
         </p>
         {/* The 'Analyze Project' button and insights display have been removed as per the new outline. */}
       </CardHeader>
@@ -348,12 +409,16 @@ If this is a new team member asking basic questions, provide extra context to he
         {chatHistory.length === 0 ? (
           <div className="text-center py-8">
             <Bot className="w-16 h-16 mx-auto mb-4 text-purple-300" />
-            <h3 className="font-semibold text-gray-900 mb-2">Welcome to AI Project Expert!</h3>
-            <p className="text-gray-600 mb-6">I can help you understand this project. Try asking:</p>
+            <h3 className="font-semibold text-gray-900 mb-2">
+              Welcome to AI Project Expert!
+            </h3>
+            <p className="text-gray-600 mb-6">
+              I can help you understand this project. Try asking:
+            </p>
             <div className="space-y-2">
-              {suggestedQuestions.slice(0, 3).map((questionText, index) => (
+              {suggestedQuestions.slice(0, 3).map((questionText) => (
                 <Button
-                  key={index}
+                  key={questionText}
                   variant="outline"
                   size="sm"
                   onClick={() => setQuestion(questionText)}
@@ -366,7 +431,10 @@ If this is a new team member asking basic questions, provide extra context to he
           </div>
         ) : (
           chatHistory.map((message) => (
-            <div key={message.id} className={`flex gap-3 ${message.isUser ? 'justify-end' : ''}`}>
+            <div
+              key={message.id}
+              className={`flex gap-3 ${message.isUser ? "justify-end" : ""}`}
+            >
               {!message.isUser && (
                 <Avatar className="w-8 h-8">
                   <AvatarFallback className="bg-purple-100">
@@ -375,11 +443,13 @@ If this is a new team member asking basic questions, provide extra context to he
                 </Avatar>
               )}
 
-              <div className={`max-w-md rounded-lg p-3 ${
-                message.isUser
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border shadow-sm'
-              }`}>
+              <div
+                className={`max-w-md rounded-lg p-3 ${
+                  message.isUser
+                    ? "bg-blue-600 text-white"
+                    : "bg-white border shadow-sm"
+                }`}
+              >
                 {message.isUser ? (
                   <p>{message.question}</p>
                 ) : (
@@ -402,11 +472,13 @@ If this is a new team member asking basic questions, provide extra context to he
 
                     {message.suggestions?.length > 0 && (
                       <div className="mt-3 pt-2 border-t border-gray-100">
-                        <p className="text-xs text-gray-500 mb-2">You might also ask:</p>
+                        <p className="text-xs text-gray-500 mb-2">
+                          You might also ask:
+                        </p>
                         <div className="space-y-1">
-                          {message.suggestions.slice(0, 2).map((suggestion, index) => (
+                          {message.suggestions.slice(0, 2).map((suggestion) => (
                             <Button
-                              key={index}
+                              key={suggestion}
                               variant="ghost"
                               size="sm"
                               onClick={() => setQuestion(suggestion)}
@@ -428,7 +500,11 @@ If this is a new team member asking basic questions, provide extra context to he
               {message.isUser && (
                 <Avatar className="w-8 h-8">
                   <AvatarFallback>
-                    {currentAuthUser?.full_name?.split(' ').map(n => n[0]).join('') || currentAuthUser?.email?.charAt(0).toUpperCase()}
+                    {currentAuthUser?.full_name
+                      ?.split(" ")
+                      .map((n) => n[0])
+                      .join("") ||
+                      currentAuthUser?.email?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               )}
@@ -462,11 +538,14 @@ If this is a new team member asking basic questions, provide extra context to he
             placeholder="Ask about features, requirements, deadlines..."
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAskQuestion()}
+            onKeyPress={(e) => e.key === "Enter" && handleAskQuestion()}
             disabled={loading || !context?.assignment} // Disable if loading or no assignment context
             className="flex-1"
           />
-          <Button onClick={handleAskQuestion} disabled={loading || !question.trim() || !context?.assignment}>
+          <Button
+            onClick={handleAskQuestion}
+            disabled={loading || !question.trim() || !context?.assignment}
+          >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (

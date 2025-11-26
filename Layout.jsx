@@ -79,6 +79,7 @@ import WorkspaceSwitcher from '@/WorkspaceSwitcher';
 import { WorkspaceProvider } from '@/components/workspace/WorkspaceContext'; // Fixed import path
 import WorkspaceErrorBoundary from '@/WorkspaceErrorBoundary'; // Added WorkspaceErrorBoundary import
 import WorkspacePerformanceMonitor from '@/WorkspacePerformanceMonitor'; // Added WorkspacePerformanceMonitor import
+import { ErrorBoundary } from '@/ErrorBoundary'; // Import shared ErrorBoundary
 
 const GlobalSearch = React.lazy(() =>
   import("@/GlobalSearch").catch(() => ({
@@ -92,41 +93,6 @@ const GlobalSearch = React.lazy(() =>
     )
   }))
 );
-
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error, errorInfo) {
-    console.error("ErrorBoundary caught an error:", error, errorInfo);
-    this.setState({ error, errorInfo });
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-red-50 dark:bg-red-950 text-red-800 dark:text-red-100 rounded-xl shadow-lg">
-          <X className="w-16 h-16 mb-4 text-red-600 dark:text-red-300" />
-          <h1 className="text-2xl font-bold mb-2">Something went wrong.</h1>
-          <p className="text-lg mb-4">We're sorry for the inconvenience. Please try again later.</p>
-          {this.props.showDetails && this.state.error && (
-            <details className="mt-4 p-4 bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded-lg text-left max-w-lg overflow-auto">
-              <summary className="font-semibold cursor-pointer">Error Details</summary>
-              <pre className="mt-2 whitespace-pre-wrap break-all text-sm">
-                {this.state.error.toString()}
-                <br />
-                {this.state.errorInfo.componentStack}
-              </pre>
-            </details>
-          )}
-          <Button onClick={() => window.location.reload()} className="mt-6">
-            Reload Page
           </Button>
         </div>
       );

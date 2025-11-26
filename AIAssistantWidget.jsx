@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +18,7 @@ import {
   Copy,
   Edit2,
   Trash2,
-  Check
+  Check,
 } from "lucide-react";
 import {
   Dialog,
@@ -36,12 +35,13 @@ import SmartContextDetector from "./SmartContextDetector";
 
 const showToast = {
   success: (message) => console.log("✅", message),
-  error: (message) => console.error("❌", message)
+  error: (message) => console.error("❌", message),
 };
 
 const classNames = (...classes) => classes.filter(Boolean).join(" ");
 
-export default function AIAssistantWidget({ currentPageName, workspaceId }) { // Added workspaceId prop
+export default function AIAssistantWidget({ currentPageName, workspaceId }) {
+  // Added workspaceId prop
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -61,27 +61,27 @@ export default function AIAssistantWidget({ currentPageName, workspaceId }) { //
   const [copiedMessageId, setCopiedMessageId] = useState(null);
   const [seenTips, setSeenTips] = useState(() => {
     try {
-      const saved = localStorage.getItem('ai_assistant_seen_tips');
+      const saved = localStorage.getItem("ai_assistant_seen_tips");
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
     }
   });
-  
+
   const [feedbackDialog, setFeedbackDialog] = useState({
     isOpen: false,
     messageId: null,
     rating: null,
-    comment: ""
+    comment: "",
   });
 
   const [editDialog, setEditDialog] = useState({
     isOpen: false,
     messageId: null,
     originalContent: "",
-    editedContent: ""
+    editedContent: "",
   });
-  
+
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const isMountedRef = useRef(true);
@@ -113,51 +113,70 @@ export default function AIAssistantWidget({ currentPageName, workspaceId }) { //
     const context = {
       current_page: currentPageName,
       url: window.location.pathname,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
-    if (urlParams.has('assignment')) {
-      context.current_entity_type = 'assignment';
-      context.current_entity_id = urlParams.get('assignment');
-    } else if (urlParams.has('doc') || urlParams.has('document')) {
-      context.current_entity_type = 'document';
-      context.current_entity_id = urlParams.get('doc') || urlParams.get('document');
-    } else if (urlParams.has('task')) {
-      context.current_entity_type = 'task';
-      context.current_entity_id = urlParams.get('task');
-    } else if (urlParams.has('thread')) {
-      context.current_entity_type = 'conversation_thread';
-      context.current_entity_id = urlParams.get('thread');
+    if (urlParams.has("assignment")) {
+      context.current_entity_type = "assignment";
+      context.current_entity_id = urlParams.get("assignment");
+    } else if (urlParams.has("doc") || urlParams.has("document")) {
+      context.current_entity_type = "document";
+      context.current_entity_id =
+        urlParams.get("doc") || urlParams.get("document");
+    } else if (urlParams.has("task")) {
+      context.current_entity_type = "task";
+      context.current_entity_id = urlParams.get("task");
+    } else if (urlParams.has("thread")) {
+      context.current_entity_type = "conversation_thread";
+      context.current_entity_id = urlParams.get("thread");
     }
 
     return context;
   }, [currentPageName]);
 
-  const pageTips = useCallback(() => ({
-    'Dashboard': "💡 Tip: You can quickly access key metrics and recent activity here. Try asking me about your assignment statistics!",
-    'Assignments': "💡 Tip: After creating an assignment, you can auto-generate tasks using workflow patterns. Just ask me how!",
-    'Documents': "💡 Tip: You can use AI to analyze any document for key points, compliance issues, or generate summaries. Want to try?",
-    'Tasks': "💡 Tip: Drag tasks between columns to update their status, or ask me to create tasks based on your assignment needs.",
-    'Chat': "💡 Tip: You can capture important decisions from conversations and convert them to action items automatically!",
-    'AskAI': "💡 Tip: Upload documents here and ask specific questions. The AI will search through your documents to answer!",
-    'Research': "💡 Tip: Use this for complex research like permits, licenses, or compliance requirements. The AI searches the web for you!",
-    'Generate': "💡 Tip: You can generate professional documents from templates or even have a conversation to build content iteratively."
-  }), []);
+  const pageTips = useCallback(
+    () => ({
+      Dashboard:
+        "💡 Tip: You can quickly access key metrics and recent activity here. Try asking me about your assignment statistics!",
+      Assignments:
+        "💡 Tip: After creating an assignment, you can auto-generate tasks using workflow patterns. Just ask me how!",
+      Documents:
+        "💡 Tip: You can use AI to analyze any document for key points, compliance issues, or generate summaries. Want to try?",
+      Tasks:
+        "💡 Tip: Drag tasks between columns to update their status, or ask me to create tasks based on your assignment needs.",
+      Chat: "💡 Tip: You can capture important decisions from conversations and convert them to action items automatically!",
+      AskAI:
+        "💡 Tip: Upload documents here and ask specific questions. The AI will search through your documents to answer!",
+      Research:
+        "💡 Tip: Use this for complex research like permits, licenses, or compliance requirements. The AI searches the web for you!",
+      Generate:
+        "💡 Tip: You can generate professional documents from templates or even have a conversation to build content iteratively.",
+    }),
+    []
+  );
 
   useEffect(() => {
     const tips = pageTips();
-    if (currentPageName && tips[currentPageName] && !isOpen && !seenTips.includes(currentPageName)) {
+    if (
+      currentPageName &&
+      tips[currentPageName] &&
+      !isOpen &&
+      !seenTips.includes(currentPageName)
+    ) {
       setCurrentTip(tips[currentPageName]);
       setShowTip(true);
-      
+
       const updatedSeenTips = [...seenTips, currentPageName];
       setSeenTips(updatedSeenTips);
       try {
-        localStorage.setItem('ai_assistant_seen_tips', JSON.stringify(updatedSeenTips));
+        localStorage.setItem(
+          "ai_assistant_seen_tips",
+          JSON.stringify(updatedSeenTips)
+        );
       } catch (err) {
-        console.error('Failed to save seen tips:', err);
+        console.error("Failed to save seen tips:", err);
       }
-      
+
       const timer = setTimeout(() => {
         if (isMountedRef.current) {
           setShowTip(false);
@@ -170,24 +189,24 @@ export default function AIAssistantWidget({ currentPageName, workspaceId }) { //
 
   const initConversation = useCallback(async () => {
     try {
-      const currentPage = currentPageName; 
+      const currentPage = currentPageName;
       const conversation = await base44.agents.createConversation({
         agent_name: "ProjectFlowExpert",
         metadata: {
           name: `ProjectFlow Session - ${new Date().toLocaleString()}`,
           description: `AI Assistant conversation on ${currentPage} page`,
-          page: currentPage
-        }
+          page: currentPage,
+        },
       });
-      
+
       if (!isMountedRef.current) return;
 
       setConversationId(conversation.id);
       setAgentConversation(conversation);
-      
+
       const welcomeMessage = {
-        id: 'welcome',
-        role: 'assistant',
+        id: "welcome",
+        role: "assistant",
         content: `👋 Hi! I'm your ProjectFlow AI Assistant. I'm here to help you navigate the app, answer questions, and **execute tasks for you**.
 
 **I can help you with:**
@@ -201,48 +220,63 @@ export default function AIAssistantWidget({ currentPageName, workspaceId }) { //
 **Just tell me what you want to do, and I'll handle it for you** (with your confirmation, of course)!
 
 What can I help you with today?`,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-      
+
       setMessages([welcomeMessage]);
-      
-      const unsubscribe = base44.agents.subscribeToConversation(conversation.id, (data) => {
-        if (isMountedRef.current) {
-          const agentMessages = data.messages.filter(msg => msg.id !== 'welcome').map(msg => ({
-            id: msg.id || `msg_${Date.now()}_${Math.random().toString(36).substring(7)}`, // Ensure unique ID
-            role: msg.role,
-            content: msg.content || '',
-            timestamp: msg.timestamp || new Date().toISOString(),
-            tool_calls: msg.tool_calls || undefined,
-            is_tool_call: !!msg.tool_calls // Flag for rendering, if MessageBubble needs it
-          }));
-          
-          setMessages(prev => {
-            const currentWelcome = prev.find(m => m.id === 'welcome');
-            return currentWelcome ? [currentWelcome, ...agentMessages] : [...agentMessages];
-          });
 
-          if (data.status === 'processing' || data.status === 'awaiting_tool_code') {
-             setIsLoading(true);
-          } else {
-             setIsLoading(false); 
-          }
+      const unsubscribe = base44.agents.subscribeToConversation(
+        conversation.id,
+        (data) => {
+          if (isMountedRef.current) {
+            const agentMessages = data.messages
+              .filter((msg) => msg.id !== "welcome")
+              .map((msg) => ({
+                id:
+                  msg.id ||
+                  `msg_${Date.now()}_${Math.random()
+                    .toString(36)
+                    .substring(7)}`, // Ensure unique ID
+                role: msg.role,
+                content: msg.content || "",
+                timestamp: msg.timestamp || new Date().toISOString(),
+                tool_calls: msg.tool_calls || undefined,
+                is_tool_call: !!msg.tool_calls, // Flag for rendering, if MessageBubble needs it
+              }));
 
-          if (data.status === 'failed') {
-            setError(data.error_message || "An error occurred with the AI assistant.");
-            showToast.error("AI Assistant encountered an error.");
-          } else {
-            setError(null);
+            setMessages((prev) => {
+              const currentWelcome = prev.find((m) => m.id === "welcome");
+              return currentWelcome
+                ? [currentWelcome, ...agentMessages]
+                : [...agentMessages];
+            });
+
+            if (
+              data.status === "processing" ||
+              data.status === "awaiting_tool_code"
+            ) {
+              setIsLoading(true);
+            } else {
+              setIsLoading(false);
+            }
+
+            if (data.status === "failed") {
+              setError(
+                data.error_message || "An error occurred with the AI assistant."
+              );
+              showToast.error("AI Assistant encountered an error.");
+            } else {
+              setError(null);
+            }
           }
         }
-      });
-      
+      );
+
       return () => {
         if (unsubscribe) {
           unsubscribe();
         }
       };
-
     } catch (error) {
       console.error("Error initializing conversation:", error);
       showToast.error("Failed to initialize AI assistant");
@@ -283,51 +317,86 @@ What can I help you with today?`,
     if (!messageText) {
       setInputValue("");
     }
-    
+
     if (!agentConversation) {
       showToast.error("AI Assistant not ready. Please refresh.");
       return;
     }
 
     const userMessage = {
-      id: 'msg_' + Date.now(),
-      role: 'user',
+      id: "msg_" + Date.now(),
+      role: "user",
       content: textToSend,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
-    
-    setMessages(prev => [...prev, userMessage]);
+
+    setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
     setError(null);
     setSmartSuggestion(null);
 
     try {
       const context = getEnhancedContext();
-      
+
       const [tasks, assignments, projects, user] = await Promise.all([
-        base44.entities.Task.list('-updated_date', 50).catch(err => { console.warn("Failed to fetch tasks:", err); return []; }),
-        base44.entities.Assignment.list().catch(err => { console.warn("Failed to fetch assignments:", err); return []; }),
-        base44.entities.Project.list().catch(err => { console.warn("Failed to fetch projects:", err); return []; }),
-        base44.auth.me().catch(err => { console.warn("Failed to fetch current user:", err); return null; }) // Changed from base44.entities.User.me()
+        base44.entities.Task.list("-updated_date", 50).catch((err) => {
+          console.warn("Failed to fetch tasks:", err);
+          return [];
+        }),
+        base44.entities.Assignment.list().catch((err) => {
+          console.warn("Failed to fetch assignments:", err);
+          return [];
+        }),
+        base44.entities.Project.list().catch((err) => {
+          console.warn("Failed to fetch projects:", err);
+          return [];
+        }),
+        base44.auth.me().catch((err) => {
+          console.warn("Failed to fetch current user:", err);
+          return null;
+        }), // Changed from base44.entities.User.me()
       ]);
-      
+
       const contextInfo = `
 Current System Context:
 - Page: ${context.current_page}
 - URL: ${context.url}
-${context.current_entity_type ? `- Viewing: ${context.current_entity_type} (ID: ${context.current_entity_id})` : ''}
-- User Email: ${user?.email || 'Unknown'}
-- User ID: ${user?.id || 'Unknown'}
-- User Role: ${user?.user_role || 'Unknown'}
+${
+  context.current_entity_type
+    ? `- Viewing: ${context.current_entity_type} (ID: ${context.current_entity_id})`
+    : ""
+}
+- User Email: ${user?.email || "Unknown"}
+- User ID: ${user?.id || "Unknown"}
+- User Role: ${user?.user_role || "Unknown"}
 
-Recent Projects (${projects.length > 0 ? projects.length : 'none'}):
-${projects.slice(0, 5).map(p => `- ${p.name} (ID: ${p.id}, Status: ${p.status || 'N/A'})`).join('\n')}
+Recent Projects (${projects.length > 0 ? projects.length : "none"}):
+${projects
+  .slice(0, 5)
+  .map((p) => `- ${p.name} (ID: ${p.id}, Status: ${p.status || "N/A"})`)
+  .join("\n")}
 
-Recent Assignments (${assignments.length > 0 ? assignments.length : 'none'}):
-${assignments.slice(0, 10).map(a => `- ${a.name} (ID: ${a.id}, Status: ${a.status || 'N/A'}, Project ID: ${a.project_id || 'None'})`).join('\n')}
+Recent Assignments (${assignments.length > 0 ? assignments.length : "none"}):
+${assignments
+  .slice(0, 10)
+  .map(
+    (a) =>
+      `- ${a.name} (ID: ${a.id}, Status: ${a.status || "N/A"}, Project ID: ${
+        a.project_id || "None"
+      })`
+  )
+  .join("\n")}
 
-Recent Tasks (${tasks.length > 0 ? tasks.length : 'none'}):
-${tasks.slice(0, 10).map(t => `- [${t.status}] ${t.title} (ID: ${t.id}, Assigned: ${t.assigned_to_email || t.assigned_to || 'Unassigned'})`).join('\n')}
+Recent Tasks (${tasks.length > 0 ? tasks.length : "none"}):
+${tasks
+  .slice(0, 10)
+  .map(
+    (t) =>
+      `- [${t.status}] ${t.title} (ID: ${t.id}, Assigned: ${
+        t.assigned_to_email || t.assigned_to || "Unassigned"
+      })`
+  )
+  .join("\n")}
 
 User Input: ${textToSend}
 
@@ -336,25 +405,24 @@ If the user's input implies an action (like creating a task), use the available 
 Always confirm with the user before performing destructive actions like deletion.
 Be specific and clear about what you are doing.
 `;
-      
+
       await base44.agents.addMessage(agentConversation, {
-        role: 'user',
-        content: contextInfo
+        role: "user",
+        content: contextInfo,
       });
-      
     } catch (error) {
       console.error("Error sending message:", error);
       if (isMountedRef.current) {
         setError("Failed to get response from AI Assistant. Please try again.");
         showToast.error("Failed to send message to AI Assistant");
-        
+
         const errorMessage = {
-          id: 'msg_' + (Date.now() + 1),
-          role: 'assistant',
+          id: "msg_" + (Date.now() + 1),
+          role: "assistant",
           content: "I apologize, but I encountered an error. Please try again.",
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
-        setMessages(prev => [...prev, errorMessage]);
+        setMessages((prev) => [...prev, errorMessage]);
       }
     } finally {
       // setIsLoading(false) is now handled by the subscription based on agent status
@@ -378,31 +446,33 @@ Be specific and clear about what you are doing.
       isOpen: true,
       messageId,
       originalContent: content,
-      editedContent: content
+      editedContent: content,
     });
   };
 
   const handleSaveEdit = async () => {
     const { messageId, editedContent } = editDialog;
-    
+
     if (!editedContent.trim()) {
       showToast.error("Message cannot be empty");
       return;
     }
 
     // Update the message locally for immediate feedback
-    setMessages(prev => prev.map(msg => 
-      msg.id === messageId 
-        ? { ...msg, content: editedContent, edited: true }
-        : msg
-    ));
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === messageId
+          ? { ...msg, content: editedContent, edited: true }
+          : msg
+      )
+    );
 
     // Close dialog
     setEditDialog({
       isOpen: false,
       messageId: null,
       originalContent: "",
-      editedContent: ""
+      editedContent: "",
     });
 
     // Resend the conversation with edited message
@@ -410,20 +480,20 @@ Be specific and clear about what you are doing.
   };
 
   const handleDeleteMessage = (messageId) => {
-    setMessages(prev => prev.filter(msg => msg.id !== messageId));
+    setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
     showToast.success("Message deleted");
   };
 
   const handleSearch = (query) => {
     setSearchQuery(query);
-    
+
     if (!query.trim()) {
       setHighlightedMessageId(null);
       return;
     }
 
     // Find first matching message
-    const matchingMessage = messages.find(msg => 
+    const matchingMessage = messages.find((msg) =>
       msg.content.toLowerCase().includes(query.toLowerCase())
     );
 
@@ -431,54 +501,61 @@ Be specific and clear about what you are doing.
       setHighlightedMessageId(matchingMessage.id);
       // Scroll to message
       document.getElementById(`message-${matchingMessage.id}`)?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
+        behavior: "smooth",
+        block: "center",
       });
     } else {
       setHighlightedMessageId(null);
     }
   };
 
-  const filteredMessages = searchQuery 
-    ? messages.filter(msg => msg.content.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredMessages = searchQuery
+    ? messages.filter((msg) =>
+        msg.content.toLowerCase().includes(searchQuery.toLowerCase())
+      )
     : messages;
 
   const handleFeedback = async (messageId, isPositive) => {
-    const rating = isPositive ? 'positive' : 'negative';
-    
-    setMessageFeedback(prev => ({
+    const rating = isPositive ? "positive" : "negative";
+
+    setMessageFeedback((prev) => ({
       ...prev,
-      [messageId]: rating
+      [messageId]: rating,
     }));
 
     setFeedbackDialog({
       isOpen: true,
       messageId,
       rating,
-      comment: ""
+      comment: "",
     });
   };
 
   const saveFeedback = async () => {
     const { messageId, rating, comment } = feedbackDialog;
-    
+
     if (!currentUser || !conversationId || !messageId) {
-      showToast.error("Unable to save feedback: Missing user, conversation, or message info.");
+      showToast.error(
+        "Unable to save feedback: Missing user, conversation, or message info."
+      );
       return;
     }
     // P0 Critical Fix: Workspace scoping validation
     if (!workspaceId) {
       showToast.error("Unable to save feedback: Workspace context missing.");
-      console.error("Critical: workspaceId is null or undefined when trying to save feedback.");
+      console.error(
+        "Critical: workspaceId is null or undefined when trying to save feedback."
+      );
       return;
     }
 
     try {
-      const message = messages.find(m => m.id === messageId);
+      const message = messages.find((m) => m.id === messageId);
       const messageContent = message?.content || "";
       const enhancedContext = getEnhancedContext();
 
-      await base44.entities.AIAssistantFeedback.create({ // Changed to base44.entities.AIAssistantFeedback
+      await base44.entities.AIAssistantFeedback.create({
+        // Changed to base44.entities.AIAssistantFeedback
         workspace_id: workspaceId, // ADDED: Workspace scoping
         conversation_id: conversationId,
         message_id: messageId,
@@ -486,24 +563,26 @@ Be specific and clear about what you are doing.
         user_email: currentUser.email,
         rating: rating,
         feedback_comment: comment || undefined,
-        context: { // Structured context as per outline
+        context: {
+          // Structured context as per outline
           page: enhancedContext.current_page,
           entity_type: enhancedContext.current_entity_type || null,
-          entity_id: enhancedContext.current_entity_id || null
+          entity_id: enhancedContext.current_entity_id || null,
         },
-        agent_name: "ProjectFlowExpert"
+        agent_name: "ProjectFlowExpert",
       });
 
-      showToast.success(rating === 'positive' 
-        ? "Thanks for the feedback! 👍" 
-        : "Thanks for the feedback. I'll try to improve! 👎"
+      showToast.success(
+        rating === "positive"
+          ? "Thanks for the feedback! 👍"
+          : "Thanks for the feedback. I'll try to improve! 👎"
       );
 
       setFeedbackDialog({
         isOpen: false,
         messageId: null,
         rating: null,
-        comment: ""
+        comment: "",
       });
     } catch (error) {
       console.error("Error saving feedback:", error);
@@ -524,7 +603,7 @@ Be specific and clear about what you are doing.
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
@@ -536,12 +615,16 @@ Be specific and clear about what you are doing.
     setSearchQuery("");
   };
 
-  const handleSmartSuggestion = useCallback((suggestion) => {
-    if (!isOpen && suggestion) { // Ensure suggestion is only shown when widget is closed
-      setSmartSuggestion(suggestion);
-      setShowTip(true);
-    }
-  }, [isOpen]);
+  const handleSmartSuggestion = useCallback(
+    (suggestion) => {
+      if (!isOpen && suggestion) {
+        // Ensure suggestion is only shown when widget is closed
+        setSmartSuggestion(suggestion);
+        setShowTip(true);
+      }
+    },
+    [isOpen]
+  );
 
   // The previous if (!isOpen) return (...) block is removed and its content is integrated below.
 
@@ -549,7 +632,7 @@ Be specific and clear about what you are doing.
     <>
       <SmartContextDetector onSuggestion={handleSmartSuggestion} />
 
-      {(showTip && (currentTip || smartSuggestion)) && !isOpen && (
+      {showTip && (currentTip || smartSuggestion) && !isOpen && (
         <div className="fixed bottom-24 right-6 z-40 max-w-sm animate-in slide-in-from-bottom-5">
           <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 border-blue-200 dark:border-blue-800 shadow-lg">
             <div className="flex items-start gap-3">
@@ -563,29 +646,32 @@ Be specific and clear about what you are doing.
                     <p className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-line mb-3">
                       {smartSuggestion.message}
                     </p>
-                    {smartSuggestion.actions && smartSuggestion.actions.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {smartSuggestion.actions.map((action, idx) => (
-                          <Button
-                            key={idx}
-                            size="sm"
-                            variant="outline"
-                            className="text-xs h-7"
-                            onClick={() => {
-                              setIsOpen(true);
-                              setTimeout(() => {
-                                handleSendMessage(action.prompt);
-                              }, 500);
-                            }}
-                          >
-                            {action.label}
-                          </Button>
-                        ))}
-                      </div>
-                    )}
+                    {smartSuggestion.actions &&
+                      smartSuggestion.actions.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {smartSuggestion.actions.map((action) => (
+                            <Button
+                              key={action.label}
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-7"
+                              onClick={() => {
+                                setIsOpen(true);
+                                setTimeout(() => {
+                                  handleSendMessage(action.prompt);
+                                }, 500);
+                              }}
+                            >
+                              {action.label}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
                   </>
                 ) : (
-                  <p className="text-xs text-gray-700 dark:text-gray-300">{currentTip}</p>
+                  <p className="text-xs text-gray-700 dark:text-gray-300">
+                    {currentTip}
+                  </p>
                 )}
               </div>
               <Button
@@ -627,7 +713,7 @@ Be specific and clear about what you are doing.
 
       {/* Main AI Assistant Card, only visible when isOpen is true */}
       {isOpen && (
-        <Card 
+        <Card
           className={classNames(
             "fixed bottom-6 right-6 shadow-2xl border-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl z-50 flex flex-col",
             "w-[calc(100vw-3rem)] sm:w-96",
@@ -645,10 +731,15 @@ Be specific and clear about what you are doing.
                 <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-green-400 rounded-full border border-white"></div>
               </div>
               <h3 className="font-semibold text-sm truncate">ProjectFlow AI</h3>
-              <p className="text-xs opacity-90 truncate">Can manage tasks & assignments</p>
+              <p className="text-xs opacity-90 truncate">
+                Can manage tasks & assignments
+              </p>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
-              <Badge variant="secondary" className="text-[10px] bg-white/20 text-white border-0 hidden sm:inline-flex">
+              <Badge
+                variant="secondary"
+                className="text-[10px] bg-white/20 text-white border-0 hidden sm:inline-flex"
+              >
                 {currentPageName}
               </Badge>
               <Button
@@ -676,7 +767,11 @@ Be specific and clear about what you are doing.
                 onClick={() => setIsMinimized(!isMinimized)}
                 aria-label={isMinimized ? "Maximize" : "Minimize"}
               >
-                {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+                {isMinimized ? (
+                  <Maximize2 className="w-4 h-4" />
+                ) : (
+                  <Minimize2 className="w-4 h-4" />
+                )}
               </Button>
               <Button
                 variant="ghost"
@@ -720,7 +815,8 @@ Be specific and clear about what you are doing.
                   </div>
                   {searchQuery && (
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                      Found {filteredMessages.length} message{filteredMessages.length !== 1 ? 's' : ''}
+                      Found {filteredMessages.length} message
+                      {filteredMessages.length !== 1 ? "s" : ""}
                     </p>
                   )}
                 </div>
@@ -739,19 +835,20 @@ Be specific and clear about what you are doing.
                     </div>
                   </div>
                 )}
-                
+
                 {filteredMessages.map((message) => (
-                  <div 
-                    key={message.id} 
+                  <div
+                    key={message.id}
                     id={`message-${message.id}`}
                     className={classNames(
                       "space-y-2 transition-all",
-                      highlightedMessageId === message.id && "bg-yellow-100 dark:bg-yellow-900/20 -mx-2 px-2 py-1 rounded-lg"
+                      highlightedMessageId === message.id &&
+                        "bg-yellow-100 dark:bg-yellow-900/20 -mx-2 px-2 py-1 rounded-lg"
                     )}
                   >
                     <MessageBubble message={message} />
-                    
-                    {message.role === 'user' && message.id !== 'welcome' && (
+
+                    {message.role === "user" && message.id !== "welcome" && (
                       <div className="flex items-center gap-1 ml-11">
                         <Button
                           variant="ghost"
@@ -770,7 +867,9 @@ Be specific and clear about what you are doing.
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6"
-                          onClick={() => handleEditMessage(message.id, message.content)}
+                          onClick={() =>
+                            handleEditMessage(message.id, message.content)
+                          }
                           title="Edit and resend"
                         >
                           <Edit2 className="w-3 h-3" />
@@ -786,64 +885,76 @@ Be specific and clear about what you are doing.
                         </Button>
                       </div>
                     )}
-                    
-                    {message.role === 'assistant' && message.id !== 'welcome' && (
-                      <div className="flex items-center gap-2 ml-11">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => handleCopyMessage(message.content)}
-                          title="Copy message"
-                        >
-                          {copiedMessageId === message.id ? (
-                            <Check className="w-3 h-3 text-green-600" />
-                          ) : (
-                            <Copy className="w-3 h-3" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={classNames(
-                            "h-6 w-6",
-                            messageFeedback[message.id] === 'positive' && "text-green-600"
-                          )}
-                          onClick={() => handleFeedback(message.id, true)}
-                          title="Good response"
-                        >
-                          <ThumbsUp className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={classNames(
-                            "h-6 w-6",
-                            messageFeedback[message.id] === 'negative' && "text-red-600"
-                          )}
-                          onClick={() => handleFeedback(message.id, false)}
-                          title="Bad response"
-                        >
-                          <ThumbsDown className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    )}
+
+                    {message.role === "assistant" &&
+                      message.id !== "welcome" && (
+                        <div className="flex items-center gap-2 ml-11">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => handleCopyMessage(message.content)}
+                            title="Copy message"
+                          >
+                            {copiedMessageId === message.id ? (
+                              <Check className="w-3 h-3 text-green-600" />
+                            ) : (
+                              <Copy className="w-3 h-3" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={classNames(
+                              "h-6 w-6",
+                              messageFeedback[message.id] === "positive" &&
+                                "text-green-600"
+                            )}
+                            onClick={() => handleFeedback(message.id, true)}
+                            title="Good response"
+                          >
+                            <ThumbsUp className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={classNames(
+                              "h-6 w-6",
+                              messageFeedback[message.id] === "negative" &&
+                                "text-red-600"
+                            )}
+                            onClick={() => handleFeedback(message.id, false)}
+                            title="Bad response"
+                          >
+                            <ThumbsDown className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      )}
                   </div>
                 ))}
-                
+
                 {isLoading && (
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
                       <Bot className="w-4 h-4 text-white" />
                     </div>
                     <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0ms" }}
+                      />
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "150ms" }}
+                      />
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "300ms" }}
+                      />
                     </div>
                   </div>
                 )}
-                
+
                 <div ref={messagesEndRef} />
               </div>
 
@@ -900,66 +1011,78 @@ Be specific and clear about what you are doing.
       )}
 
       {/* Feedback Dialog */}
-      <Dialog open={feedbackDialog.isOpen} onOpenChange={(open) => {
-        if (!open) {
-          setFeedbackDialog({
-            isOpen: false,
-            messageId: null,
-            rating: null,
-            comment: ""
-          });
-        }
-      }}>
+      <Dialog
+        open={feedbackDialog.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setFeedbackDialog({
+              isOpen: false,
+              messageId: null,
+              rating: null,
+              comment: "",
+            });
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {feedbackDialog.rating === 'positive' ? '👍 Thanks for the positive feedback!' : '👎 Help us improve'}
+              {feedbackDialog.rating === "positive"
+                ? "👍 Thanks for the positive feedback!"
+                : "👎 Help us improve"}
             </DialogTitle>
             <DialogDescription>
-              {feedbackDialog.rating === 'positive' 
-                ? 'Would you like to add any comments about what worked well?'
-                : 'We\'d love to know what we can improve. Your feedback helps us get better!'
-              }
+              {feedbackDialog.rating === "positive"
+                ? "Would you like to add any comments about what worked well?"
+                : "We'd love to know what we can improve. Your feedback helps us get better!"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Textarea
               placeholder="Optional: Share your thoughts..."
               value={feedbackDialog.comment}
-              onChange={(e) => setFeedbackDialog(prev => ({ ...prev, comment: e.target.value }))}
+              onChange={(e) =>
+                setFeedbackDialog((prev) => ({
+                  ...prev,
+                  comment: e.target.value,
+                }))
+              }
               className="min-h-[100px]"
             />
           </div>
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setFeedbackDialog({
-                isOpen: false,
-                messageId: null,
-                rating: null,
-                comment: ""
-              })}
+              onClick={() =>
+                setFeedbackDialog({
+                  isOpen: false,
+                  messageId: null,
+                  rating: null,
+                  comment: "",
+                })
+              }
             >
               Skip
             </Button>
-            <Button onClick={saveFeedback}>
-              Submit Feedback
-            </Button>
+            <Button onClick={saveFeedback}>Submit Feedback</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Edit Message Dialog */}
-      <Dialog open={editDialog.isOpen} onOpenChange={(open) => {
-        if (!open) {
-          setEditDialog({
-            isOpen: false,
-            messageId: null,
-            originalContent: "",
-            editedContent: ""
-          });
-        }
-      }}>
+      <Dialog
+        open={editDialog.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditDialog({
+              isOpen: false,
+              messageId: null,
+              originalContent: "",
+              editedContent: "",
+            });
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Message</DialogTitle>
@@ -970,7 +1093,12 @@ Be specific and clear about what you are doing.
           <div className="space-y-4">
             <Textarea
               value={editDialog.editedContent}
-              onChange={(e) => setEditDialog(prev => ({ ...prev, editedContent: e.target.value }))}
+              onChange={(e) =>
+                setEditDialog((prev) => ({
+                  ...prev,
+                  editedContent: e.target.value,
+                }))
+              }
               className="min-h-[150px]"
               placeholder="Edit your message..."
             />
@@ -978,18 +1106,18 @@ Be specific and clear about what you are doing.
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setEditDialog({
-                isOpen: false,
-                messageId: null,
-                originalContent: "",
-                editedContent: ""
-              })}
+              onClick={() =>
+                setEditDialog({
+                  isOpen: false,
+                  messageId: null,
+                  originalContent: "",
+                  editedContent: "",
+                })
+              }
             >
               Cancel
             </Button>
-            <Button onClick={handleSaveEdit}>
-              Save & Resend
-            </Button>
+            <Button onClick={handleSaveEdit}>Save & Resend</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

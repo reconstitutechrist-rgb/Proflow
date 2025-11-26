@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +16,10 @@ import {
   Pencil,
   Trash2,
   MoreVertical,
-  AlertCircle as AlertCircleIcon
+  AlertCircle as AlertCircleIcon,
+  ArrowRightLeft,
 } from "lucide-react";
+import TaskHandoff from "@/TaskHandoff";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,7 +48,7 @@ const statusConfig = {
     borderColor: "border-gray-200",
     icon: Circle,
     iconColor: "text-gray-600",
-    tabColor: "text-gray-700 border-gray-300"
+    tabColor: "text-gray-700 border-gray-300",
   },
   todo: {
     title: "To Do",
@@ -55,7 +56,7 @@ const statusConfig = {
     borderColor: "border-gray-200",
     icon: Circle,
     iconColor: "text-gray-400",
-    tabColor: "text-gray-700 border-gray-300"
+    tabColor: "text-gray-700 border-gray-300",
   },
   in_progress: {
     title: "In Progress",
@@ -63,7 +64,7 @@ const statusConfig = {
     borderColor: "border-blue-200",
     icon: ArrowUpCircle,
     iconColor: "text-blue-600",
-    tabColor: "text-blue-700 border-blue-500"
+    tabColor: "text-blue-700 border-blue-500",
   },
   review: {
     title: "Review",
@@ -71,7 +72,7 @@ const statusConfig = {
     borderColor: "border-purple-200",
     icon: Clock,
     iconColor: "text-purple-600",
-    tabColor: "text-purple-700 border-purple-500"
+    tabColor: "text-purple-700 border-purple-500",
   },
   completed: {
     title: "Completed",
@@ -79,15 +80,15 @@ const statusConfig = {
     borderColor: "border-green-200",
     icon: CheckCircle,
     iconColor: "text-green-600",
-    tabColor: "text-green-700 border-green-500"
-  }
+    tabColor: "text-green-700 border-green-500",
+  },
 };
 
 const priorityColors = {
   low: "bg-blue-100 text-blue-800",
   medium: "bg-yellow-100 text-yellow-800",
   high: "bg-orange-100 text-orange-800",
-  urgent: "bg-red-100 text-red-800"
+  urgent: "bg-red-100 text-red-800",
 };
 
 export default function TaskBoard({
@@ -111,20 +112,21 @@ export default function TaskBoard({
   const [loading, setLoading] = useState(true); // NEW STATE
   const [activeTab, setActiveTab] = useState(() => {
     // Persist active tab in localStorage
-    return localStorage.getItem('taskBoardActiveTab') || 'todo';
+    return localStorage.getItem("taskBoardActiveTab") || "todo";
   });
-  
+
   const [dragState, setDragState] = useState({
     isDragging: false,
-    draggedTaskId: null
+    draggedTaskId: null,
   });
   const [deleteConfirmTask, setDeleteConfirmTask] = useState(null);
+  const [handoffTask, setHandoffTask] = useState(null); // Task handoff state
 
   const { currentWorkspaceId } = useWorkspace(); // NEW USAGE
 
   // Persist active tab whenever it changes
   useEffect(() => {
-    localStorage.setItem('taskBoardActiveTab', activeTab);
+    localStorage.setItem("taskBoardActiveTab", activeTab);
   }, [activeTab]);
 
   // Load tasks based on assignmentId and currentWorkspaceId
@@ -141,10 +143,13 @@ export default function TaskBoard({
   const loadTasks = async () => {
     try {
       setLoading(true);
-      const tasksData = await base44.entities.Task.filter({
-        workspace_id: currentWorkspaceId,
-        assignment_id: assignmentId
-      }, "order");
+      const tasksData = await base44.entities.Task.filter(
+        {
+          workspace_id: currentWorkspaceId,
+          assignment_id: assignmentId,
+        },
+        "order"
+      );
       setTasks(tasksData);
     } catch (error) {
       console.error("Error loading tasks:", error);
@@ -161,25 +166,25 @@ export default function TaskBoard({
       todo: 0,
       in_progress: 0,
       review: 0,
-      completed: 0
+      completed: 0,
     };
-    
-    tasks.forEach(task => {
+
+    tasks.forEach((task) => {
       if (counts.hasOwnProperty(task.status)) {
         counts[task.status]++;
       }
     });
-    
+
     return counts;
   }, [tasks]);
 
   // Tasks in other tabs that match current filters
   const tasksInOtherTabs = useMemo(() => {
-    if (activeTab === 'all') return {};
-    
+    if (activeTab === "all") return {};
+
     const otherTabs = {};
-    tasks.forEach(task => {
-      if (task.status !== activeTab && task.status !== 'all') {
+    tasks.forEach((task) => {
+      if (task.status !== activeTab && task.status !== "all") {
         if (!otherTabs[task.status]) {
           otherTabs[task.status] = 0;
         }
@@ -191,34 +196,39 @@ export default function TaskBoard({
 
   // Filter tasks by active tab
   const filteredTasks = useMemo(() => {
-    const filtered = activeTab === 'all' 
-      ? tasks 
-      : tasks.filter(task => task.status === activeTab);
-    
+    const filtered =
+      activeTab === "all"
+        ? tasks
+        : tasks.filter((task) => task.status === activeTab);
+
     return filtered.sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [tasks, activeTab]);
 
   const handleDragStart = (start) => {
     setDragState({
       isDragging: true,
-      draggedTaskId: start.draggableId
+      draggedTaskId: start.draggableId,
     });
   };
 
-  const handleDragEnd = async (result) => { // MODIFIED LOGIC
+  const handleDragEnd = async (result) => {
+    // MODIFIED LOGIC
     setDragState({
       isDragging: false,
-      draggedTaskId: null
+      draggedTaskId: null,
     });
 
     if (!result.destination) return;
 
     const { source, destination, draggableId } = result;
-    const task = tasks.find(t => t.id === draggableId);
+    const task = tasks.find((t) => t.id === draggableId);
 
     if (!task) return;
 
-    if (source.droppableId === destination.droppableId && source.index === destination.index) {
+    if (
+      source.droppableId === destination.droppableId &&
+      source.index === destination.index
+    ) {
       return;
     }
 
@@ -226,12 +236,12 @@ export default function TaskBoard({
       const newStatus = destination.droppableId;
       const updates = {
         status: newStatus,
-        order: destination.index // Assuming order is an integer index here, based on outline
+        order: destination.index, // Assuming order is an integer index here, based on outline
       };
 
-      if (newStatus === 'completed' && !task.completed_date) {
+      if (newStatus === "completed" && !task.completed_date) {
         updates.completed_date = new Date().toISOString();
-      } else if (newStatus !== 'completed' && task.completed_date) {
+      } else if (newStatus !== "completed" && task.completed_date) {
         updates.completed_date = null;
       }
 
@@ -248,7 +258,8 @@ export default function TaskBoard({
     }
   };
 
-  const handleUpdateTask = async (taskId, updates) => { // NEW FUNCTION
+  const handleUpdateTask = async (taskId, updates) => {
+    // NEW FUNCTION
     try {
       await base44.entities.Task.update(taskId, updates);
       loadTasks(); // Reload tasks after update
@@ -263,17 +274,17 @@ export default function TaskBoard({
   };
 
   const getAssignmentName = (assignmentId) => {
-    const assignment = assignments?.find(a => a.id === assignmentId);
+    const assignment = assignments?.find((a) => a.id === assignmentId);
     return assignment?.name || "Unknown Assignment";
   };
 
   const getUserName = (userEmail) => {
-    const user = users?.find(u => u.email === userEmail);
+    const user = users?.find((u) => u.email === userEmail);
     return user?.full_name || userEmail;
   };
 
   const isOverdue = (task) => {
-    if (!task.due_date || task.status === 'completed') return false;
+    if (!task.due_date || task.status === "completed") return false;
     const today = new Date();
     today.setHours(23, 59, 59, 999);
     const dueDate = new Date(task.due_date);
@@ -291,7 +302,7 @@ export default function TaskBoard({
     try {
       await onDelete(deleteConfirmTask); // Still uses the onDelete prop
       toast.success("Task deleted successfully", {
-        description: `"${deleteConfirmTask.title}" has been removed.`
+        description: `"${deleteConfirmTask.title}" has been removed.`,
       });
       setDeleteConfirmTask(null);
       loadTasks(); // Reload tasks after delete
@@ -301,16 +312,22 @@ export default function TaskBoard({
     } catch (error) {
       console.error("Error deleting task:", error);
       toast.error("Failed to delete task", {
-        description: error.message || "Please try again."
+        description: error.message || "Please try again.",
       });
     }
   };
 
   const handleEditClick = (task, e) => {
     e.stopPropagation();
-    if (onEdit) { // Still uses onEdit prop
+    if (onEdit) {
+      // Still uses onEdit prop
       onEdit(task);
     }
+  };
+
+  const handleHandoffClick = (task, e) => {
+    e.stopPropagation();
+    setHandoffTask(task);
   };
 
   const handleStatusChangeClick = async (task, newStatus, e) => {
@@ -349,7 +366,7 @@ export default function TaskBoard({
           const Icon = config.icon;
           const isActive = activeTab === status;
           const count = taskCounts[status];
-          
+
           return (
             <button
               key={status}
@@ -357,14 +374,22 @@ export default function TaskBoard({
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium text-sm transition-all ${
                 isActive
                   ? `${config.color} ${config.tabColor} border-2 shadow-sm`
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 border-2 border-transparent'
+                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 border-2 border-transparent"
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? config.iconColor : 'text-gray-400'}`} />
+              <Icon
+                className={`w-4 h-4 ${
+                  isActive ? config.iconColor : "text-gray-400"
+                }`}
+              />
               <span>{config.title}</span>
-              <Badge 
-                variant={isActive ? "default" : "secondary"} 
-                className={`ml-1 text-xs ${isActive ? config.iconColor.replace('text-', 'bg-') + ' text-white' : ''}`}
+              <Badge
+                variant={isActive ? "default" : "secondary"}
+                className={`ml-1 text-xs ${
+                  isActive
+                    ? config.iconColor.replace("text-", "bg-") + " text-white"
+                    : ""
+                }`}
               >
                 {count}
               </Badge>
@@ -374,14 +399,14 @@ export default function TaskBoard({
       </div>
 
       {/* Hint for tasks in other tabs */}
-      {activeTab !== 'all' && Object.keys(tasksInOtherTabs).length > 0 && (
+      {activeTab !== "all" && Object.keys(tasksInOtherTabs).length > 0 && (
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex items-start gap-2">
           <AlertCircleIcon className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
           <div className="text-sm text-blue-900 dark:text-blue-100">
-            <span className="font-medium">Tasks found in other tabs:</span>{' '}
+            <span className="font-medium">Tasks found in other tabs:</span>{" "}
             {Object.entries(tasksInOtherTabs).map(([status, count], index) => (
               <span key={status}>
-                {index > 0 && ', '}
+                {index > 0 && ", "}
                 <button
                   onClick={() => setActiveTab(status)}
                   className="underline hover:no-underline font-medium"
@@ -398,7 +423,10 @@ export default function TaskBoard({
       {onSelectTask && onSelectAll && filteredTasks.length > 0 && (
         <div className="flex items-center gap-3 px-4">
           <Checkbox
-            checked={selectedTasks.length === filteredTasks.length && filteredTasks.length > 0}
+            checked={
+              selectedTasks.length === filteredTasks.length &&
+              filteredTasks.length > 0
+            }
             onCheckedChange={(checked) => onSelectAll(checked)}
           />
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -409,7 +437,7 @@ export default function TaskBoard({
 
       {/* Tasks List with Drag-and-Drop */}
       <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        {activeTab === 'all' ? (
+        {activeTab === "all" ? (
           // All Tasks View - No drag and drop between statuses in "All" view
           <div className="space-y-3">
             {filteredTasks.length === 0 ? (
@@ -435,6 +463,7 @@ export default function TaskBoard({
                   onEditClick={handleEditClick}
                   onDeleteClick={handleDeleteClick}
                   onStatusChangeClick={handleStatusChangeClick}
+                  onHandoffClick={handleHandoffClick}
                   renderTaskActions={renderTaskActions}
                   selectedTasks={selectedTasks}
                   onSelectTask={onSelectTask}
@@ -451,14 +480,18 @@ export default function TaskBoard({
                 ref={provided.innerRef}
                 {...provided.droppableProps}
                 className={`space-y-3 min-h-[200px] rounded-xl transition-colors p-2 ${
-                  snapshot.isDraggingOver ? 'bg-gray-100 dark:bg-gray-800' : ''
+                  snapshot.isDraggingOver ? "bg-gray-100 dark:bg-gray-800" : ""
                 }`}
               >
                 {filteredTasks.length === 0 ? (
                   <div className="text-center py-12 text-gray-400 dark:text-gray-600">
                     <StatusIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p className="text-sm font-medium">No {currentConfig.title.toLowerCase()} tasks</p>
-                    <p className="text-xs mt-1">Tasks you add will appear here</p>
+                    <p className="text-sm font-medium">
+                      No {currentConfig.title.toLowerCase()} tasks
+                    </p>
+                    <p className="text-xs mt-1">
+                      Tasks you add will appear here
+                    </p>
                   </div>
                 ) : (
                   filteredTasks.map((task, index) => (
@@ -466,7 +499,9 @@ export default function TaskBoard({
                       key={task.id}
                       draggableId={task.id}
                       index={index}
-                      isDragDisabled={selectedTasks && selectedTasks.includes(task.id)}
+                      isDragDisabled={
+                        selectedTasks && selectedTasks.includes(task.id)
+                      }
                     >
                       {(provided, snapshot) => (
                         <div
@@ -475,10 +510,11 @@ export default function TaskBoard({
                           {...provided.dragHandleProps}
                           className={`group transition-all duration-200 ${
                             snapshot.isDragging
-                              ? 'rotate-2 shadow-xl scale-105 opacity-90'
-                              : (dragState.draggedTaskId === task.id && dragState.isDragging)
-                                ? 'opacity-50'
-                                : ''
+                              ? "rotate-2 shadow-xl scale-105 opacity-90"
+                              : dragState.draggedTaskId === task.id &&
+                                dragState.isDragging
+                              ? "opacity-50"
+                              : ""
                           }`}
                         >
                           <TaskCard
@@ -495,6 +531,7 @@ export default function TaskBoard({
                             onEditClick={handleEditClick}
                             onDeleteClick={handleDeleteClick}
                             onStatusChangeClick={handleStatusChangeClick}
+                            onHandoffClick={handleHandoffClick}
                             renderTaskActions={renderTaskActions}
                             selectedTasks={selectedTasks}
                             onSelectTask={onSelectTask}
@@ -514,10 +551,10 @@ export default function TaskBoard({
       </DragDropContext>
 
       {/* Drop Zones for other tabs when dragging */}
-      {dragState.isDragging && activeTab !== 'all' && (
+      {dragState.isDragging && activeTab !== "all" && (
         <div className="grid grid-cols-3 gap-3 mt-4">
           {Object.entries(statusConfig)
-            .filter(([status]) => status !== activeTab && status !== 'all')
+            .filter(([status]) => status !== activeTab && status !== "all")
             .map(([status, config]) => {
               const Icon = config.icon;
               return (
@@ -528,13 +565,20 @@ export default function TaskBoard({
                       {...provided.droppableProps}
                       className={`
                         border-2 border-dashed rounded-lg p-4 text-center transition-all
-                        ${snapshot.isDraggingOver 
-                          ? `${config.color} ${config.borderColor} border-solid shadow-lg` 
-                          : 'border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600'
+                        ${
+                          snapshot.isDraggingOver
+                            ? `${config.color} ${config.borderColor} border-solid shadow-lg`
+                            : "border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
                         }
                       `}
                     >
-                      <Icon className={`w-6 h-6 mx-auto mb-2 ${snapshot.isDraggingOver ? config.iconColor : 'text-gray-400'}`} />
+                      <Icon
+                        className={`w-6 h-6 mx-auto mb-2 ${
+                          snapshot.isDraggingOver
+                            ? config.iconColor
+                            : "text-gray-400"
+                        }`}
+                      />
                       <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         {config.title}
                       </p>
@@ -551,12 +595,19 @@ export default function TaskBoard({
       )}
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deleteConfirmTask} onOpenChange={(open) => !open && setDeleteConfirmTask(null)}>
+      <AlertDialog
+        open={!!deleteConfirmTask}
+        onOpenChange={(open) => !open && setDeleteConfirmTask(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Task?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "<span className="font-medium text-gray-900 dark:text-white">{deleteConfirmTask?.title}</span>"?
+              Are you sure you want to delete "
+              <span className="font-medium text-gray-900 dark:text-white">
+                {deleteConfirmTask?.title}
+              </span>
+              "?
               {deleteConfirmTask?.auto_generated && (
                 <span className="block mt-2 text-purple-600 dark:text-purple-400">
                   ⚠️ This is an AI-generated task.
@@ -578,6 +629,21 @@ export default function TaskBoard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Task Handoff Dialog */}
+      {handoffTask && (
+        <TaskHandoff
+          task={handoffTask}
+          users={users}
+          currentUser={currentUser}
+          onClose={() => setHandoffTask(null)}
+          onSuccess={() => {
+            setHandoffTask(null);
+            loadTasks();
+            if (onTaskUpdate) onTaskUpdate();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -597,20 +663,23 @@ function TaskCard({
   onEditClick,
   onDeleteClick,
   onStatusChangeClick,
+  onHandoffClick,
   renderTaskActions,
   selectedTasks,
   onSelectTask,
-  isDraggable
+  isDraggable,
 }) {
   const taskStatusConfig = statusConfig[task.status];
   const StatusIcon = taskStatusConfig?.icon || Circle;
 
   return (
-    <Card className={`hover:shadow-md transition-all cursor-pointer ${
-      selectedTasks && selectedTasks.includes(task.id)
-        ? 'ring-2 ring-green-500 bg-green-50 dark:bg-green-900/20'
-        : 'bg-white dark:bg-gray-800'
-    }`}>
+    <Card
+      className={`hover:shadow-md transition-all cursor-pointer ${
+        selectedTasks && selectedTasks.includes(task.id)
+          ? "ring-2 ring-green-500 bg-green-50 dark:bg-green-900/20"
+          : "bg-white dark:bg-gray-800"
+      }`}
+    >
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           {/* Selection Checkbox */}
@@ -623,11 +692,22 @@ function TaskCard({
             />
           )}
 
-          <div className="flex-1 min-w-0" onClick={() => onTaskClick && onTaskClick(task)}>
+          <div
+            className="flex-1 min-w-0"
+            onClick={() => onTaskClick && onTaskClick(task)}
+          >
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="flex items-center gap-2 flex-wrap">
-                <StatusIcon className={`w-4 h-4 ${taskStatusConfig?.iconColor || 'text-gray-400'}`} />
-                <Badge className={priorityColors[task.priority] || priorityColors.medium}>
+                <StatusIcon
+                  className={`w-4 h-4 ${
+                    taskStatusConfig?.iconColor || "text-gray-400"
+                  }`}
+                />
+                <Badge
+                  className={
+                    priorityColors[task.priority] || priorityColors.medium
+                  }
+                >
                   {task.priority}
                 </Badge>
                 {isOverdue(task) && (
@@ -637,14 +717,20 @@ function TaskCard({
                   </Badge>
                 )}
                 {task.auto_generated && (
-                  <Badge variant="outline" className="bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border-purple-200 dark:border-purple-800">
+                  <Badge
+                    variant="outline"
+                    className="bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border-purple-200 dark:border-purple-800"
+                  >
                     AI
                   </Badge>
                 )}
               </div>
 
               <DropdownMenu>
-                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <DropdownMenuTrigger
+                  asChild
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Button
                     variant="ghost"
                     size="icon"
@@ -658,17 +744,25 @@ function TaskCard({
                     <Pencil className="w-4 h-4 mr-2" />
                     Edit Task
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => onHandoffClick(task, e)}>
+                    <ArrowRightLeft className="w-4 h-4 mr-2" />
+                    Hand Off to Partner
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {Object.entries(statusConfig)
-                    .filter(([status]) => status !== task.status && status !== 'all')
+                    .filter(
+                      ([status]) => status !== task.status && status !== "all"
+                    )
                     .map(([status, config]) => {
                       const Icon = config.icon;
                       return (
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           key={status}
                           onClick={(e) => onStatusChangeClick(task, status, e)}
                         >
-                          <Icon className={`w-4 h-4 mr-2 ${config.iconColor}`} />
+                          <Icon
+                            className={`w-4 h-4 mr-2 ${config.iconColor}`}
+                          />
                           Move to {config.title}
                         </DropdownMenuItem>
                       );

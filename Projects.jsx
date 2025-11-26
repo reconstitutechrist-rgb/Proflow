@@ -2,16 +2,8 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Plus,
-  Search,
-  Loader2,
-  Target
-} from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
+import { Plus, Search, Loader2, Target } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -27,6 +19,7 @@ import { createPageUrl } from "@/lib/utils";
 import ProjectForm from "@/ProjectForm";
 import ProjectGrid from "@/ProjectGrid";
 import ProjectDetails from "@/ProjectDetails";
+import ConfirmationDialog from "@/ConfirmationDialog";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 export default function ProjectsPage() {
@@ -35,14 +28,18 @@ export default function ProjectsPage() {
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+
+  // Delete confirmation dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState(null);
 
   const navigate = useNavigate();
   const { currentWorkspaceId } = useWorkspace();
@@ -56,12 +53,19 @@ export default function ProjectsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [projectsData, assignmentsData, usersData, user] = await Promise.all([
-        base44.entities.Project.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        base44.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        base44.entities.User.list(),
-        base44.auth.me()
-      ]);
+      const [projectsData, assignmentsData, usersData, user] =
+        await Promise.all([
+          base44.entities.Project.filter(
+            { workspace_id: currentWorkspaceId },
+            "-updated_date"
+          ),
+          base44.entities.Assignment.filter(
+            { workspace_id: currentWorkspaceId },
+            "-updated_date"
+          ),
+          base44.entities.User.list(),
+          base44.auth.me(),
+        ]);
 
       setProjects(projectsData);
       setAssignments(assignmentsData);
@@ -93,7 +97,7 @@ export default function ProjectsPage() {
       } else {
         await base44.entities.Project.create({
           ...projectData,
-          workspace_id: currentWorkspaceId
+          workspace_id: currentWorkspaceId,
         });
         toast.success("Project created successfully");
       }
@@ -107,18 +111,24 @@ export default function ProjectsPage() {
   };
 
   const handleDeleteProject = async (project) => {
-    if (!confirm(`Are you sure you want to delete "${project.name}"? This action cannot be undone.`)) {
-      return;
-    }
+    setProjectToDelete(project);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!projectToDelete) return;
 
     try {
-      await base44.entities.Project.delete(project.id);
+      await base44.entities.Project.delete(projectToDelete.id);
       toast.success("Project deleted successfully");
       setSelectedProject(null);
       loadData();
     } catch (error) {
       console.error("Error deleting project:", error);
       toast.error("Failed to delete project");
+    } finally {
+      setDeleteDialogOpen(false);
+      setProjectToDelete(null);
     }
   };
 
@@ -126,13 +136,16 @@ export default function ProjectsPage() {
     navigate(createPageUrl("Assignments") + `?project=${projectId}`);
   };
 
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = searchQuery === "" || 
+  const filteredProjects = projects.filter((project) => {
+    const matchesSearch =
+      searchQuery === "" ||
       project.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === "all" || project.status === statusFilter;
-    const matchesPriority = priorityFilter === "all" || project.priority === priorityFilter;
+
+    const matchesStatus =
+      statusFilter === "all" || project.status === statusFilter;
+    const matchesPriority =
+      priorityFilter === "all" || project.priority === priorityFilter;
 
     return matchesSearch && matchesStatus && matchesPriority;
   });
@@ -155,10 +168,14 @@ export default function ProjectsPage() {
             Projects
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {filteredProjects.length} {filteredProjects.length === 1 ? 'project' : 'projects'}
+            {filteredProjects.length}{" "}
+            {filteredProjects.length === 1 ? "project" : "projects"}
           </p>
         </div>
-        <Button onClick={handleCreateProject} className="bg-purple-600 hover:bg-purple-700">
+        <Button
+          onClick={handleCreateProject}
+          className="bg-purple-600 hover:bg-purple-700"
+        >
           <Plus className="w-4 h-4 mr-2" />
           New Project
         </Button>
@@ -226,12 +243,19 @@ export default function ProjectsPage() {
               No projects found
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {searchQuery || statusFilter !== 'all' || priorityFilter !== 'all'
-                ? 'Try adjusting your filters'
-                : 'Get started by creating your first project'}
+              {searchQuery || statusFilter !== "all" || priorityFilter !== "all"
+                ? "Try adjusting your filters"
+                : "Get started by creating your first project"}
             </p>
-            {!(searchQuery || statusFilter !== 'all' || priorityFilter !== 'all') && (
-              <Button onClick={handleCreateProject} className="bg-purple-600 hover:bg-purple-700">
+            {!(
+              searchQuery ||
+              statusFilter !== "all" ||
+              priorityFilter !== "all"
+            ) && (
+              <Button
+                onClick={handleCreateProject}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Project
               </Button>
@@ -257,7 +281,10 @@ export default function ProjectsPage() {
       </Dialog>
 
       {/* Project Details Dialog */}
-      <Dialog open={!!selectedProject} onOpenChange={(open) => !open && setSelectedProject(null)}>
+      <Dialog
+        open={!!selectedProject}
+        onOpenChange={(open) => !open && setSelectedProject(null)}
+      >
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           {selectedProject && (
             <ProjectDetails
@@ -271,6 +298,21 @@ export default function ProjectsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setProjectToDelete(null);
+        }}
+        onConfirm={confirmDeleteProject}
+        title="Delete Project"
+        description={`Are you sure you want to delete "${projectToDelete?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

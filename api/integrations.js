@@ -59,7 +59,37 @@ export const GetFile = async (fileId) => {
   return files.find(f => f.id === fileId) || null;
 };
 
-// Extract data from uploaded file - stub implementation
+/**
+ * Extract data from an uploaded file.
+ * 
+ * @description This is a stub implementation that should be replaced with actual
+ * file processing logic for production use (e.g., PDF text extraction, OCR, etc.).
+ * Consider integrating with services like Adobe PDF Extract API, AWS Textract,
+ * or open-source libraries like pdf.js for PDF processing.
+ * 
+ * @param {Object} params - The extraction parameters
+ * @param {string} params.file_url - The URL or identifier of the uploaded file to process
+ * @param {Object} params.json_schema - JSON schema defining the expected structure of extracted data
+ * @param {Object} params.json_schema.properties - Properties to extract from the file
+ * 
+ * @returns {Promise<Object>} The extraction result
+ * @returns {string} returns.status - 'success' or 'error'
+ * @returns {Object} returns.output - The extracted data matching the provided schema
+ * @returns {string} returns.output.full_text - The full text content extracted from the file
+ * @returns {number} [returns.output.page_count] - Number of pages (for documents)
+ * 
+ * @example
+ * const result = await ExtractDataFromUploadedFile({
+ *   file_url: 'local://file-123',
+ *   json_schema: {
+ *     type: 'object',
+ *     properties: {
+ *       full_text: { type: 'string', description: 'Complete text content' },
+ *       page_count: { type: 'number', description: 'Number of pages' }
+ *     }
+ *   }
+ * });
+ */
 export const ExtractDataFromUploadedFile = async (params) => {
   const { file_url, json_schema } = params;
   

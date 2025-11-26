@@ -16,7 +16,6 @@ import { base44 } from "@/api/base44Client"; // Added import
 export default function AudienceRewriter({ document, onRewriteComplete }) {
   const [rewriting, setRewriting] = useState(false);
   const [targetAudience, setTargetAudience] = useState("general");
-  const [showDialog, setShowDialog] = useState(false); // This state is introduced but its opening logic is not provided in the outline
 
   const { currentWorkspaceId } = useWorkspace();
 
@@ -89,7 +88,6 @@ Return the rewritten content as HTML with proper formatting.`;
       });
 
       toast.success(`Document rewritten for ${selectedOption?.label}`);
-      setShowDialog(false); // This line implies a dialog might have been opened, but no opening logic is provided.
 
       if (onRewriteComplete) {
         onRewriteComplete(response); // Callback to notify parent of rewrite

@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { UploadFile } from "@/api/integrations"; // Keep this for clarity, though `base44.integrations.Core.UploadFile` will be used
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,16 @@ import {
   Zap // NEW import
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox"; // NEW import
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
@@ -52,8 +62,29 @@ export default function DocumentUploader({
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({}); // Keep existing for multi-file UI
+  const [conversionDialogOpen, setConversionDialogOpen] = useState(false);
+  const [conversionDialogFile, setConversionDialogFile] = useState(null);
+  const conversionResolveRef = useRef(null);
 
   const { currentWorkspaceId } = useWorkspace(); // ADDED: Get current workspace ID
+
+  // Helper to show conversion failure dialog and wait for user response
+  const showConversionFailureDialog = useCallback((fileName) => {
+    return new Promise((resolve) => {
+      setConversionDialogFile(fileName);
+      conversionResolveRef.current = resolve;
+      setConversionDialogOpen(true);
+    });
+  }, []);
+
+  const handleConversionDialogResponse = useCallback((continueWithOriginal) => {
+    setConversionDialogOpen(false);
+    if (conversionResolveRef.current) {
+      conversionResolveRef.current(continueWithOriginal);
+      conversionResolveRef.current = null;
+    }
+    setConversionDialogFile(null);
+  }, []);
 
   const handleFileSelect = (e) => {
     const selectedFiles = Array.from(e.target.files);
@@ -326,7 +357,7 @@ export default function DocumentUploader({
       const conversionSuccess = await convertFileToPdf(fileData);
       if (!conversionSuccess) {
         // If conversion fails, ask user if they want to continue with original
-        const continueWithOriginal = confirm(`Failed to convert "${fileData.file.name}" to PDF. Do you want to upload the original file instead?`);
+        const continueWithOriginal = await showConversionFailureDialog(fileData.file.name);
         if (continueWithOriginal) {
           setFiles(prev => prev.map(f =>
             f.id === fileData.id ? { ...f, convertToPdf: false, conversionError: null, error: null, status: "pending" } : f
@@ -944,6 +975,26 @@ export default function DocumentUploader({
           </Button>
         </div>
       )}
+
+      {/* Conversion Failure Dialog */}
+      <AlertDialog open={conversionDialogOpen} onOpenChange={setConversionDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>PDF Conversion Failed</AlertDialogTitle>
+            <AlertDialogDescription>
+              Failed to convert "{conversionDialogFile}" to PDF. Do you want to upload the original file instead?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => handleConversionDialogResponse(false)}>
+              Cancel Upload
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConversionDialogResponse(true)}>
+              Upload Original
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

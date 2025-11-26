@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Bot,
   Send,
@@ -92,6 +102,11 @@ export default function AITaskAssistantPanel({
   const [existingTasks, setExistingTasks] = useState([]);
   const [duplicateWarnings, setDuplicateWarnings] = useState([]);
   const [showTemplates, setShowTemplates] = useState(true); // NEW: Show templates initially
+  
+  // Dialog states for replacing window.confirm
+  const [resumeDraftDialogOpen, setResumeDraftDialogOpen] = useState(false);
+  const [resumeDraftData, setResumeDraftData] = useState(null);
+  const [clearConversationDialogOpen, setClearConversationDialogOpen] = useState(false);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -159,19 +174,15 @@ export default function AITaskAssistantPanel({
       const ONE_HOUR = 60 * 60 * 1000;
 
       if (draftAge < ONE_HOUR && draft.proposedTasks?.length > 0) {
-        const resume = window.confirm(
-          `You have an unsaved draft from ${new Date(draft.timestamp).toLocaleTimeString()}.\n\n` +
-          `${draft.proposedTasks.length} proposed task(s) found.\n\n` +
-          `Would you like to resume?`
-        );
-
-        if (resume) {
-          setMessages(draft.messages || []);
-          setProposedTasks(draft.proposedTasks || []);
-          toast.success("Draft restored");
-          setShowTemplates(false); // If restoring draft, hide templates
-          return;
-        }
+        // Show dialog instead of window.confirm
+        setResumeDraftData({
+          timestamp: draft.timestamp,
+          taskCount: draft.proposedTasks.length,
+          messages: draft.messages || [],
+          proposedTasks: draft.proposedTasks || []
+        });
+        setResumeDraftDialogOpen(true);
+        return;
       }
 
       localStorage.removeItem(DRAFT_STORAGE_KEY);
@@ -935,18 +946,22 @@ Extract all task information and return JSON with analysis, tasks array, suggest
 
   const handleClearConversation = () => {
     if (proposedTasks.length > 0 || failedTasks.length > 0) {
-      const confirmed = window.confirm(
-        `You have ${proposedTasks.length} proposed task(s) and ${failedTasks.length} failed task(s). Clear conversation?`
-      );
-      if (!confirmed) return;
+      // Show dialog instead of window.confirm
+      setClearConversationDialogOpen(true);
+      return;
     }
 
+    performClearConversation();
+  };
+
+  const performClearConversation = () => {
     setMessages([]);
     setProposedTasks([]);
     setFailedTasks([]);
     setDuplicateWarnings([]);
     clearDraftFromStorage();
     initializeConversation(); // Re-initialize convo, will show templates
+    setClearConversationDialogOpen(false);
   };
 
   const handleKeyPress = (e) => {
@@ -1398,6 +1413,61 @@ Extract all task information and return JSON with analysis, tasks array, suggest
           </div>
         )}
       </div>
+
+      {/* Resume Draft Dialog */}
+      <AlertDialog open={resumeDraftDialogOpen} onOpenChange={setResumeDraftDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Resume Draft?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have an unsaved draft from {resumeDraftData ? new Date(resumeDraftData.timestamp).toLocaleTimeString() : ''}.
+              {resumeDraftData && ` ${resumeDraftData.taskCount} proposed task(s) found.`}
+              {' '}Would you like to resume?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setResumeDraftDialogOpen(false);
+              setResumeDraftData(null);
+              localStorage.removeItem(DRAFT_STORAGE_KEY);
+              initializeConversation();
+            }}>
+              Discard
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (resumeDraftData) {
+                setMessages(resumeDraftData.messages);
+                setProposedTasks(resumeDraftData.proposedTasks);
+                toast.success("Draft restored");
+                setShowTemplates(false);
+              }
+              setResumeDraftDialogOpen(false);
+              setResumeDraftData(null);
+            }}>
+              Resume
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Clear Conversation Dialog */}
+      <AlertDialog open={clearConversationDialogOpen} onOpenChange={setClearConversationDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear Conversation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have {proposedTasks.length} proposed task(s) and {failedTasks.length} failed task(s). 
+              Are you sure you want to clear the conversation?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={performClearConversation}>
+              Clear
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

@@ -14,7 +14,7 @@ import {
 // New imports
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { toast } from "sonner";
-import * as base44 from "@/lib/base44"; // Assuming base44 is available at this path
+import { base44 } from "@/api/base44Client";
 
 import CreateFolderDialog from "./CreateFolderDialog";
 

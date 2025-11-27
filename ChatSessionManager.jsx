@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { base44 } from "@/lib/base44"; // Assuming base44 is available here
+import { base44 } from "@/api/base44Client";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // Import useWorkspace hook
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

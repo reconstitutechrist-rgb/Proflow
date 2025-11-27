@@ -28,9 +28,7 @@ import {
 import { toast } from 'react-hot-toast'; // Assuming react-hot-toast is used for notifications
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
-// Assuming base44 is available globally or imported from a utility file
-// Adjust the import path if necessary based on your project structure
-import * as base44 from '@/lib/base44'; 
+import { base44 } from "@/api/base44Client"; 
 
 export default function DecisionCapture({
   isOpen,

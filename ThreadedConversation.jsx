@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // Added WorkspaceContext import
 import { toast } from "sonner"; // Assuming sonner for toasts
-import { base44 } from "@/lib/base44"; // Assuming base44 SDK is imported from here
+import { base44 } from "@/api/base44Client";
 
 export default function ThreadedConversation({
   thread,

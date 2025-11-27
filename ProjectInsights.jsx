@@ -24,7 +24,7 @@ import {
   ListChecks    // Added for recommended actions
 } from "lucide-react";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // New import
-import base44 from '@/lib/base44'; // Assuming base44 SDK is imported from this path
+import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner'; // Assuming sonner is used for toasts
 
 export default function ProjectInsights({ projectId }) { // Changed component signature

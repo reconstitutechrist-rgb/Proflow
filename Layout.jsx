@@ -93,14 +93,6 @@ const GlobalSearch = React.lazy(() =>
     )
   }))
 );
-          </Button>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
 
 function LayoutContent({ children, currentPageName }) {
   const location = useLocation();

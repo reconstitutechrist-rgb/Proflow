@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(npm install:*)",
+      "Bash(taskkill:*)",
+      "Bash(curl:*)",
+      "Bash(node verify-db-connection.js:*)",
+      "Bash(node verify-db-node.js:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

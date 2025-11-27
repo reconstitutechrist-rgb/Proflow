@@ -1,174 +1,268 @@
-// Local storage-based data client (replaces base44)
-// This provides a simple API for CRUD operations using localStorage
+// Supabase-based data client
+import { supabase } from './supabaseClient';
 
-const STORAGE_PREFIX = 'proflow_';
+// Helper to generate UUIDs
+const generateId = () => {
+  // Generate a UUID v4
+  return crypto.randomUUID();
+};
 
-// Helper to get storage key for an entity
-const getStorageKey = (entityName) => `${STORAGE_PREFIX}${entityName.toLowerCase()}`;
+// Map entity names to table names (handles pluralization)
+const entityToTableName = (entityName) => {
+  const tableMap = {
+    'Workspace': 'workspaces',
+    'Project': 'projects',
+    'Task': 'tasks',
+    'Document': 'documents',
+    'User': 'users',
+    'Assignment': 'assignments',
+    'WorkspaceMember': 'workspace_members',
+    'DocumentVersion': 'document_versions',
+    'Comment': 'comments',
+    'DocumentComment': 'document_comments',
+    'Tag': 'tags',
+    'Message': 'messages',
+    'WorkflowPattern': 'workflow_patterns',
+    'ConversationThread': 'conversation_threads',
+    'ChatSession': 'chat_sessions',
+    'Note': 'notes',
+    'Folder': 'folders',
+    'AIResearchChat': 'ai_research_chats',
+  };
 
-// Helper to generate unique IDs
-const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return tableMap[entityName] || entityName.toLowerCase();
+};
 
 // Create an entity manager for a specific entity type
 const createEntityManager = (entityName) => {
-  const storageKey = getStorageKey(entityName);
-
-  const getAll = () => {
-    try {
-      const data = localStorage.getItem(storageKey);
-      return data ? JSON.parse(data) : [];
-    } catch (e) {
-      console.error(`Error reading ${entityName}:`, e);
-      return [];
-    }
-  };
-
-  const saveAll = (items) => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(items));
-    } catch (e) {
-      console.error(`Error saving ${entityName}:`, e);
-    }
-  };
+  const tableName = entityToTableName(entityName);
 
   return {
     // List all items with optional filtering
     list: async (filters = {}) => {
-      let items = getAll();
+      let query = supabase.from(tableName).select('*');
 
       // Apply filters if provided
       if (filters && Object.keys(filters).length > 0) {
-        items = items.filter(item => {
-          return Object.entries(filters).every(([key, value]) => {
-            if (value === undefined || value === null) return true;
-            return item[key] === value;
-          });
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            query = query.eq(key, value);
+          }
         });
       }
 
-      return items;
+      const { data, error } = await query;
+
+      if (error) {
+        console.error(`Error listing ${entityName}:`, error);
+        return [];
+      }
+
+      return data || [];
     },
 
     // Filter items - supports both object filters and function filters
     filter: async (filterArg) => {
-      const items = getAll();
-
       if (typeof filterArg === 'function') {
-        return items.filter(filterArg);
+        // For function filters, we need to get all items first
+        const { data, error } = await supabase.from(tableName).select('*');
+        if (error) {
+          console.error(`Error filtering ${entityName}:`, error);
+          return [];
+        }
+        return (data || []).filter(filterArg);
       }
 
-      // Object-based filtering
-      if (filterArg && typeof filterArg === 'object') {
-        return items.filter(item => {
-          return Object.entries(filterArg).every(([key, value]) => {
-            if (value === undefined || value === null) return true;
-            return item[key] === value;
-          });
-        });
-      }
-
-      return items;
+      // Object-based filtering uses the list method
+      return createEntityManager(entityName).list(filterArg);
     },
 
     // Get a single item by ID
     get: async (id) => {
-      const items = getAll();
-      return items.find(item => item.id === id) || null;
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error(`Error getting ${entityName}:`, error);
+        return null;
+      }
+
+      return data;
     },
 
     // Create a new item
     create: async (data) => {
-      const items = getAll();
+      // Let Supabase auto-generate the ID unless explicitly provided
       const newItem = {
         ...data,
-        id: data.id || generateId(),
-        created_date: new Date().toISOString(),
+        created_date: data.created_date || new Date().toISOString(),
         updated_date: new Date().toISOString(),
       };
-      items.push(newItem);
-      saveAll(items);
-      return newItem;
+
+      // Only add ID if explicitly provided in the data
+      if (data.id) {
+        newItem.id = data.id;
+      }
+
+      const { data: created, error } = await supabase
+        .from(tableName)
+        .insert([newItem])
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error creating ${entityName}:`, error);
+        throw error;
+      }
+
+      return created;
     },
 
     // Bulk create multiple items
     bulkCreate: async (dataArray) => {
-      const items = getAll();
       const newItems = dataArray.map(data => ({
         ...data,
         id: data.id || generateId(),
-        created_date: new Date().toISOString(),
+        created_date: data.created_date || new Date().toISOString(),
         updated_date: new Date().toISOString(),
       }));
-      items.push(...newItems);
-      saveAll(items);
-      return newItems;
+
+      const { data: created, error } = await supabase
+        .from(tableName)
+        .insert(newItems)
+        .select();
+
+      if (error) {
+        console.error(`Error bulk creating ${entityName}:`, error);
+        throw error;
+      }
+
+      return created || [];
     },
 
     // Update an existing item
     update: async (id, data) => {
-      const items = getAll();
-      const index = items.findIndex(item => item.id === id);
-      if (index === -1) {
-        throw new Error(`${entityName} with id ${id} not found`);
-      }
-      items[index] = {
-        ...items[index],
+      const updateData = {
         ...data,
         updated_date: new Date().toISOString(),
       };
-      saveAll(items);
-      return items[index];
+
+      const { data: updated, error } = await supabase
+        .from(tableName)
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error updating ${entityName}:`, error);
+        throw new Error(`${entityName} with id ${id} not found`);
+      }
+
+      return updated;
     },
 
     // Delete an item
     delete: async (id) => {
-      const items = getAll();
-      const filtered = items.filter(item => item.id !== id);
-      saveAll(filtered);
+      const { error } = await supabase
+        .from(tableName)
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error(`Error deleting ${entityName}:`, error);
+        throw error;
+      }
+
       return { success: true };
     },
 
     // Count items with optional filtering
     count: async (filters = {}) => {
-      const items = await createEntityManager(entityName).filter(filters);
-      return items.length;
+      let query = supabase.from(tableName).select('*', { count: 'exact', head: true });
+
+      // Apply filters if provided
+      if (filters && Object.keys(filters).length > 0) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            query = query.eq(key, value);
+          }
+        });
+      }
+
+      const { count, error } = await query;
+
+      if (error) {
+        console.error(`Error counting ${entityName}:`, error);
+        return 0;
+      }
+
+      return count || 0;
     },
   };
 };
 
-// Auth management (localStorage-based)
+// Auth management using Supabase Auth
 const auth = {
   me: async () => {
-    const stored = localStorage.getItem('proflow_current_user');
-    if (stored) {
-      return JSON.parse(stored);
+    const { data: { user }, error } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      console.error('Error getting user:', error);
+      // Return a default user for development
+      return {
+        id: 'default-user',
+        email: 'user@proflow.local',
+        full_name: 'Proflow User',
+        active_workspace_id: null,
+        created_date: new Date().toISOString(),
+      };
     }
-    // Create a default user
-    const defaultUser = {
-      id: 'default-user',
-      email: 'user@proflow.local',
-      full_name: 'Proflow User',
-      active_workspace_id: null,
-      created_date: new Date().toISOString(),
+
+    return {
+      id: user.id,
+      email: user.email,
+      full_name: user.user_metadata?.full_name || user.email,
+      active_workspace_id: user.user_metadata?.active_workspace_id || null,
+      created_date: user.created_at,
     };
-    localStorage.setItem('proflow_current_user', JSON.stringify(defaultUser));
-    return defaultUser;
   },
 
   updateMe: async (updates) => {
-    const stored = localStorage.getItem('proflow_current_user');
-    const user = stored ? JSON.parse(stored) : {};
-    const updated = { ...user, ...updates, updated_date: new Date().toISOString() };
-    localStorage.setItem('proflow_current_user', JSON.stringify(updated));
-    return updated;
+    const { data, error } = await supabase.auth.updateUser({
+      data: updates
+    });
+
+    if (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+
+    return {
+      id: data.user.id,
+      email: data.user.email,
+      full_name: data.user.user_metadata?.full_name || data.user.email,
+      active_workspace_id: data.user.user_metadata?.active_workspace_id || null,
+      updated_date: new Date().toISOString(),
+    };
   },
 
-  // Check if user is logged in (always true for local storage)
-  isLoggedIn: () => true,
+  // Check if user is logged in
+  isLoggedIn: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return !!session;
+  },
 
-  // Logout (clears user data)
+  // Logout
   logout: async () => {
-    localStorage.removeItem('proflow_current_user');
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error signing out:', error);
+      throw error;
+    }
     return { success: true };
   },
 };
@@ -186,30 +280,26 @@ const integrations = {
       };
     },
     UploadFile: async (file) => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const fileData = {
-            id: `file-${generateId()}`,
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            data: reader.result,
-            uploaded_date: new Date().toISOString(),
-          };
-          const files = JSON.parse(localStorage.getItem('proflow_files') || '[]');
-          files.push(fileData);
-          localStorage.setItem('proflow_files', JSON.stringify(files));
-          resolve({
-            success: true,
-            file_url: `local://${fileData.id}`,
-            file_id: fileData.id,
-            file_name: fileData.name,
-          });
-        };
-        reader.onerror = () => reject(new Error('Failed to read file'));
-        reader.readAsDataURL(file);
-      });
+      const fileName = `${Date.now()}-${file.name}`;
+      const { data, error } = await supabase.storage
+        .from('uploads')
+        .upload(fileName, file);
+
+      if (error) {
+        console.error('Error uploading file:', error);
+        throw error;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('uploads')
+        .getPublicUrl(fileName);
+
+      return {
+        success: true,
+        file_url: publicUrl,
+        file_id: data.path,
+        file_name: file.name,
+      };
     },
   },
 };

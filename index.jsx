@@ -1,74 +1,43 @@
+import React, { Suspense } from "react";
+import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import Layout from "./Layout.jsx";
 
-import Dashboard from "./Dashboard";
-
-import Documents from "./Documents";
-
-import Users from "./Users";
-
-import Chat from "./Chat";
-
-import Tasks from "./Tasks";
-
-import Research from "./Research";
-
-import Generate from "./Generate";
-
-import Assignments from "./Assignments";
-
-import AskAI from "./AskAI";
-
-import Preferences from "./Preferences";
-
-import DocumentCreator from "./DocumentCreator";
-
-import Projects from "./Projects";
-
-import Workspaces from "./Workspaces";
-
-import Documentation from "./Documentation";
-
-import DocumentStudio from "./DocumentStudio";
-
-import DocumentWorkshop from "./DocumentWorkshop";
-
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+// Lazy load all page components for code splitting
+const Dashboard = React.lazy(() => import("./Dashboard"));
+const Documents = React.lazy(() => import("./Documents"));
+const Users = React.lazy(() => import("./Users"));
+const Chat = React.lazy(() => import("./Chat"));
+const Tasks = React.lazy(() => import("./Tasks"));
+const Research = React.lazy(() => import("./Research"));
+const Generate = React.lazy(() => import("./Generate"));
+const Assignments = React.lazy(() => import("./Assignments"));
+const AskAI = React.lazy(() => import("./AskAI"));
+const Preferences = React.lazy(() => import("./Preferences"));
+const DocumentCreator = React.lazy(() => import("./DocumentCreator"));
+const Projects = React.lazy(() => import("./Projects"));
+const Workspaces = React.lazy(() => import("./Workspaces"));
+const Documentation = React.lazy(() => import("./Documentation"));
+const DocumentStudio = React.lazy(() => import("./DocumentStudio"));
+const DocumentWorkshop = React.lazy(() => import("./DocumentWorkshop"));
 
 const PAGES = {
-    
-    Dashboard: Dashboard,
-    
-    Documents: Documents,
-    
-    Users: Users,
-    
-    Chat: Chat,
-    
-    Tasks: Tasks,
-    
-    Research: Research,
-    
-    Generate: Generate,
-    
-    Assignments: Assignments,
-    
-    AskAI: AskAI,
-    
-    Preferences: Preferences,
-    
-    DocumentCreator: DocumentCreator,
-    
-    Projects: Projects,
-    
-    Workspaces: Workspaces,
-    
-    Documentation: Documentation,
-    
-    DocumentStudio: DocumentStudio,
-
-    DocumentWorkshop: DocumentWorkshop,
-
-}
+    Dashboard,
+    Documents,
+    Users,
+    Chat,
+    Tasks,
+    Research,
+    Generate,
+    Assignments,
+    AskAI,
+    Preferences,
+    DocumentCreator,
+    Projects,
+    Workspaces,
+    Documentation,
+    DocumentStudio,
+    DocumentWorkshop,
+};
 
 function _getCurrentPage(url) {
     if (url.endsWith('/')) {
@@ -83,51 +52,46 @@ function _getCurrentPage(url) {
     return pageName || Object.keys(PAGES)[0];
 }
 
+// Loading fallback component
+function PageLoader() {
+    return (
+        <div className="flex items-center justify-center min-h-[400px]">
+            <div className="flex flex-col items-center gap-3">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                <p className="text-sm text-muted-foreground">Loading...</p>
+            </div>
+        </div>
+    );
+}
+
 // Create a wrapper component that uses useLocation inside the Router context
 function PagesContent() {
     const location = useLocation();
     const currentPage = _getCurrentPage(location.pathname);
-    
+
     return (
         <Layout currentPageName={currentPage}>
-            <Routes>            
-                
+            <Suspense fallback={<PageLoader />}>
+                <Routes>
                     <Route path="/" element={<Dashboard />} />
-                
-                
-                <Route path="/Dashboard" element={<Dashboard />} />
-                
-                <Route path="/Documents" element={<Documents />} />
-                
-                <Route path="/Users" element={<Users />} />
-                
-                <Route path="/Chat" element={<Chat />} />
-                
-                <Route path="/Tasks" element={<Tasks />} />
-                
-                <Route path="/Research" element={<Research />} />
-                
-                <Route path="/Generate" element={<Generate />} />
-                
-                <Route path="/Assignments" element={<Assignments />} />
-                
-                <Route path="/AskAI" element={<AskAI />} />
-                
-                <Route path="/Preferences" element={<Preferences />} />
-                
-                <Route path="/DocumentCreator" element={<DocumentCreator />} />
-                
-                <Route path="/Projects" element={<Projects />} />
-                
-                <Route path="/Workspaces" element={<Workspaces />} />
-                
-                <Route path="/Documentation" element={<Documentation />} />
-                
-                <Route path="/DocumentStudio" element={<DocumentStudio />} />
-
-                <Route path="/DocumentWorkshop" element={<DocumentWorkshop />} />
-
-            </Routes>
+                    <Route path="/Dashboard" element={<Dashboard />} />
+                    <Route path="/Documents" element={<Documents />} />
+                    <Route path="/Users" element={<Users />} />
+                    <Route path="/Chat" element={<Chat />} />
+                    <Route path="/Tasks" element={<Tasks />} />
+                    <Route path="/Research" element={<Research />} />
+                    <Route path="/Generate" element={<Generate />} />
+                    <Route path="/Assignments" element={<Assignments />} />
+                    <Route path="/AskAI" element={<AskAI />} />
+                    <Route path="/Preferences" element={<Preferences />} />
+                    <Route path="/DocumentCreator" element={<DocumentCreator />} />
+                    <Route path="/Projects" element={<Projects />} />
+                    <Route path="/Workspaces" element={<Workspaces />} />
+                    <Route path="/Documentation" element={<Documentation />} />
+                    <Route path="/DocumentStudio" element={<DocumentStudio />} />
+                    <Route path="/DocumentWorkshop" element={<DocumentWorkshop />} />
+                </Routes>
+            </Suspense>
         </Layout>
     );
 }

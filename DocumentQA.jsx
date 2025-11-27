@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { MessageCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
-import { base44 } from "@/lib/base44"; // Assuming base44 is imported from this path
+import { base44 } from "@/api/base44Client";
 
 export default function DocumentQA({ documentId }) {
   const [document, setDocument] = useState(null); // New state for the loaded document

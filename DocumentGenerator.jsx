@@ -42,8 +42,7 @@ import {
   X,
   Edit3 // Added Edit3 for the Document Studio button
 } from "lucide-react";
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
@@ -848,16 +847,6 @@ You can now ask me to refine it using conversational commands.`,
     });
   };
 
-  const modules = {
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      ['link'],
-      ['clean']
-    ],
-  };
-
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'urgent': return 'bg-red-100 text-red-800 border-red-200';
@@ -1121,15 +1110,11 @@ You can now ask me to refine it using conversational commands.`,
                   </div>
                 </div>
 
-                <div className="border rounded-lg">
-                  <ReactQuill
-                    value={generatedContent}
-                    onChange={setGeneratedContent}
-                    modules={modules}
-                    theme="snow"
-                    className="min-h-[400px]"
-                  />
-                </div>
+                <RichTextEditor
+                  value={generatedContent}
+                  onChange={setGeneratedContent}
+                  minHeight="400px"
+                />
 
                 {isConversationMode && generatedContent && (
                   <div className="text-sm text-gray-600 dark:text-gray-400 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded p-3">

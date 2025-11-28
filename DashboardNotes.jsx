@@ -38,8 +38,7 @@ import {
   Tag
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { toast } from "sonner";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
@@ -78,26 +77,6 @@ export default function DashboardNotes({ currentUser }) {
     { value: "#A78BFA", label: "Purple" },
     { value: "#FB923C", label: "Orange" },
     { value: "#EC4899", label: "Pink" }
-  ];
-
-  const quillModules = {
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'indent': '-1'}, { 'indent': '+1' }],
-      ['link'],
-      [{ 'color': [] }, { 'background': [] }],
-      ['clean']
-    ]
-  };
-
-  const quillFormats = [
-    'header',
-    'bold', 'italic', 'underline', 'strike',
-    'list', 'bullet', 'indent',
-    'link',
-    'color', 'background'
   ];
 
   useEffect(() => {
@@ -609,18 +588,12 @@ Return only a JSON array of search term strings.`;
 
             <div className="space-y-2">
               <Label htmlFor="content">Content *</Label>
-              <div className="border rounded-lg overflow-hidden">
-                <ReactQuill
-                  theme="snow"
-                  value={noteForm.content}
-                  onChange={(value) => setNoteForm({ ...noteForm, content: value })}
-                  modules={quillModules}
-                  formats={quillFormats}
-                  placeholder="Write your note here... Use the toolbar for formatting"
-                  className="bg-white dark:bg-gray-800"
-                  style={{ minHeight: "200px" }}
-                />
-              </div>
+              <RichTextEditor
+                value={noteForm.content}
+                onChange={(value) => setNoteForm({ ...noteForm, content: value })}
+                placeholder="Write your note here... Use the toolbar for formatting"
+                minHeight="200px"
+              />
             </div>
 
             <div className="space-y-2">

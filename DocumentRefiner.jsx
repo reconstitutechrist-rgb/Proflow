@@ -21,8 +21,7 @@ import {
   Download,
   Users
 } from "lucide-react";
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { anthropicResearch } from "@/api/functions"; // Not used in the new changes, but was there
 import ContentRewriter from "@/ContentRewriter";
 import GrammarAssistant from "@/GrammarAssistant";
@@ -36,7 +35,6 @@ export default function DocumentRefiner({ document, onRefineComplete }) {
   const [loading, setLoading] = useState(false);
   const [refining, setRefining] = useState(false); // New state for AI refinement
   const [activeRefinementTool, setActiveRefinementTool] = useState("ai-refiner"); // Default to new AI refiner tab
-  const quillRef = React.useRef(null);
 
   const [refineOptions, setRefineOptions] = useState({
     improveClarity: false,
@@ -165,17 +163,6 @@ Return the refined document maintaining the same general structure but improved 
     }
   };
 
-
-  const modules = {
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      ['link'],
-      ['clean']
-    ],
-  };
-
   return (
     <div className="space-y-6">
       <Card className="border-0 shadow-md">
@@ -204,15 +191,12 @@ Return the refined document maintaining the same general structure but improved 
                   <Label>Document Content</Label>
                   {/* Removed the 'Save Refined Version' button as handleRefine now handles saving */}
                 </div>
-                <div className="relative border rounded-lg">
-                  <ReactQuill
-                    ref={quillRef}
+                <div className="relative">
+                  <RichTextEditor
                     value={editorContent}
                     onChange={setEditorContent}
-                    modules={modules}
-                    theme="snow"
-                    className="min-h-[300px]"
-                    readOnly={loading || refining}
+                    minHeight="300px"
+                    editable={!(loading || refining)}
                   />
                   {(loading || refining) && (
                     <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-10 rounded-lg">
@@ -321,7 +305,6 @@ Return the refined document maintaining the same general structure but improved 
                     <AudienceRewriter
                       initialText={editorContent}
                       onApplyRewrite={handleApplyChanges}
-                      quillRef={quillRef}
                       disabled={loading || refining}
                     />
                   </TabsContent>

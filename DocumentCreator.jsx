@@ -51,8 +51,7 @@ import {
   Users
 } from "lucide-react";
 import { toast } from "sonner";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 import OutlineGenerator from "@/OutlineGenerator";
 import AIWritingAssistant from "@/AIWritingAssistant";
@@ -764,14 +763,12 @@ export default function DocumentCreatorPage() {
               </div>
 
               <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden flex flex-col">
-                <ReactQuill
-                  ref={quillRef}
-                  theme="snow"
+                <RichTextEditor
                   value={content}
                   onChange={setContent}
-                  modules={modules}
-                  className="flex-1 h-full [&_.ql-container]:!h-[calc(100%-42px)] [&_.ql-editor]:!min-h-full"
                   placeholder="Start writing your document..."
+                  minHeight="100%"
+                  className="flex-1 h-full"
                 />
               </div>
             </>

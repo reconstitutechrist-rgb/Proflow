@@ -15,7 +15,9 @@
       "Bash(npm update:*)",
       "Bash(npx @tailwindcss/upgrade@next)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nchore: upgrade to Tailwind CSS v4\n\n- Install tailwindcss@4 and @tailwindcss/vite\n- Update vite.config.js to use Tailwind Vite plugin\n- Migrate index.css to use @import \"tailwindcss\" and @theme directive\n- Remove tailwindcss from PostCSS config (now using Vite plugin)\n- Update react-day-picker to latest version\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nchore: upgrade to Tailwind CSS v4\n\n- Install tailwindcss@4 and @tailwindcss/vite\n- Update vite.config.js to use Tailwind Vite plugin\n- Migrate index.css to use @import \"tailwindcss\" and @theme directive\n- Remove tailwindcss from PostCSS config (now using Vite plugin)\n- Update react-day-picker to latest version\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(npm ls:*)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": [],
     "ask": []

@@ -37,6 +37,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // CRITICAL: New import
+import { db } from "@/api/db";
 
 export default function AISummaryButton({
   contentType = "document", // Changed from 'type' to 'contentType'
@@ -104,9 +105,9 @@ export default function AISummaryButton({
 
     try {
       const contentHash = generateHash(content);
-      const { base44 } = await import("@/api/integrations"); // Dynamic import for base44
+      // db already imported at top level
 
-      const existingSummaries = await base44.entities.AISummary.filter({
+      const existingSummaries = await db.entities.AISummary.filter({
         workspace_id: currentWorkspaceId,
         content_type: contentType,
         content_id: contentId,
@@ -182,9 +183,9 @@ Provide a comprehensive summary with:
 
 Format as JSON with the following keys: executive_summary, key_points, action_items (array of objects), decisions (array of strings), dates (array of strings).`;
 
-      // CRITICAL: Use base44.integrations.Core.InvokeLLM
-      const { base44 } = await import("@/api/integrations"); // Dynamic import for base44
-      const response = await base44.integrations.Core.InvokeLLM({
+      // CRITICAL: Use db.integrations.Core.InvokeLLM
+      // db already imported at top level
+      const response = await db.integrations.Core.InvokeLLM({
         prompt: prompt,
         response_json_schema: {
           type: "object",
@@ -211,7 +212,7 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
       });
 
       // CRITICAL: Fetch user for requested_by
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
 
       // CRITICAL: Create summary with workspace_id and other new fields
       const summaryData = {
@@ -232,7 +233,7 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
         requested_by: user ? user.email : "system" // CRITICAL: User's email
       };
 
-      const newSummary = await base44.entities.AISummary.create(summaryData);
+      const newSummary = await db.entities.AISummary.create(summaryData);
 
       setSummary(newSummary);
 
@@ -403,11 +404,11 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
       const blob = new Blob([formattedContent], { type: 'text/plain' });
       const file = new File([blob], `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_summary.txt`, { type: 'text/plain' });
 
-      // CRITICAL: Use base44.integrations.Core.UploadFile
-      const { base44 } = await import("@/api/integrations"); // Dynamic import for base44
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      // CRITICAL: Use db.integrations.Core.UploadFile
+      // db already imported at top level
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
 
-      // CRITICAL: Create document record with base44.entities.Document
+      // CRITICAL: Create document record with db.entities.Document
       const documentData = {
         workspace_id: currentWorkspaceId, // CRITICAL: Workspace scoping
         title: `${title} - AI Summary`,
@@ -426,7 +427,7 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
         documentData.linked_content_type = contentType;
       }
 
-      await base44.entities.Document.create(documentData);
+      await db.entities.Document.create(documentData);
 
       toast.success("Summary saved as document");
       setIsOpen(false);

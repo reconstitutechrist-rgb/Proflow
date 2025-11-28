@@ -14,7 +14,7 @@ import {
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { toast } from "sonner";
 import { Loader2, Copy } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 
 export default function DocumentDuplicateDialog({ document, isOpen, onClose, onSuccess }) {
   const [duplicateName, setDuplicateName] = useState("");
@@ -77,7 +77,7 @@ export default function DocumentDuplicateDialog({ document, isOpen, onClose, onS
         embedding_cache: undefined
       };
 
-      const newDocument = await base44.entities.Document.create(duplicateData);
+      const newDocument = await db.entities.Document.create(duplicateData);
 
       toast.success(`Document duplicated successfully as "${duplicateName}"`);
       onClose();

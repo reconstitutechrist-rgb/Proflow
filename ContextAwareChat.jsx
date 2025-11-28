@@ -19,10 +19,7 @@ import {
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 // NEW: Import toast for notifications
 import { toast } from "sonner"; // Assuming react-hot-toast or similar
-
-// NOTE: 'base44' is used for entity operations and is assumed to be an SDK or API client
-// available globally or implicitly. If it requires an explicit import, please add it here,
-// e.g., `import * as base44 from "@/lib/base44";`
+import { db } from "@/api/db";
 
 export default function ContextAwareChat({
   assignmentId,
@@ -62,17 +59,17 @@ export default function ContextAwareChat({
       setLoading(true); // Set loading to true before fetching data
       const [messagesData, threadsData, documentsData] = await Promise.all([
         // Filter messages by workspace_id and assignment_id, ordered by creation date
-        base44.entities.Message.filter({
+        db.entities.Message.filter({
           workspace_id: currentWorkspaceId,
           assignment_id: assignmentId
         }, "created_date"),
         // Filter threads by workspace_id and assignment_id, ordered by last activity
-        base44.entities.ConversationThread.filter({
+        db.entities.ConversationThread.filter({
           workspace_id: currentWorkspaceId,
           assignment_id: assignmentId
         }, "-last_activity"),
         // Filter documents by workspace_id and those assigned to the current assignment
-        base44.entities.Document.filter({
+        db.entities.Document.filter({
           workspace_id: currentWorkspaceId,
           assigned_to_assignments: { $in: [assignmentId] }
         }, "-updated_date")
@@ -207,13 +204,13 @@ Be contextually relevant and helpful.`,
         created_date: new Date().toISOString() // Ensure created_date is set
       };
 
-      await base44.entities.Message.create(messageData);
+      await db.entities.Message.create(messageData);
 
       // If a thread is selected, update its last_activity and message_count
       if (selectedThread) {
         // Find the current state of the thread to ensure message_count is accurate before updating
         const currentThread = threads.find(t => t.id === selectedThread.id);
-        await base44.entities.ConversationThread.update(selectedThread.id, {
+        await db.entities.ConversationThread.update(selectedThread.id, {
           last_activity: new Date().toISOString(),
           message_count: (currentThread?.message_count || 0) + 1 // Increment message count
         });

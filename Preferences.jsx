@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,7 +59,7 @@ export default function PreferencesPage() {
   const loadUserData = async () => {
     try {
       setLoading(true);
-      const userData = await base44.auth.me(); // FIXED: Use base44.auth.me()
+      const userData = await db.auth.me(); // FIXED: Use db.auth.me()
       setUser(userData);
 
       setFormData({
@@ -110,7 +110,7 @@ export default function PreferencesPage() {
     try {
       setSaving(true);
       setError(""); // Clear previous errors
-      await base44.auth.updateMe(formData); // FIXED: Use base44.auth.updateMe()
+      await db.auth.updateMe(formData); // FIXED: Use db.auth.updateMe()
       setUser({ ...user, ...formData }); // Update local user state
       setSaved(true); // Using existing success state for consistency
       setTimeout(() => setSaved(false), 3000); // Using existing timeout for consistency

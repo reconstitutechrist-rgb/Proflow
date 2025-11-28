@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { base44 } from "@/api/base44Client"; // NEW: base44 client import
+import { db } from "@/api/db";
 import { InvokeLLM, UploadFile, ExtractDataFromUploadedFile } from "@/api/integrations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -296,7 +296,7 @@ export default function AskAIPage() {
       setLoadingSessions(true);
 
       // Load user data first
-      const userData = await base44.auth.me();
+      const userData = await db.auth.me();
       setCurrentUser(userData);
 
       // Longer delay to avoid rate limiting - exponential backoff
@@ -304,7 +304,7 @@ export default function AskAIPage() {
       const delay = baseDelay * Math.pow(2, currentRetry);
       await new Promise(resolve => setTimeout(resolve, delay));
 
-      const assignmentsData = await base44.entities.Assignment.filter(
+      const assignmentsData = await db.entities.Assignment.filter(
         { workspace_id: currentWorkspaceId }, 
         "-updated_date", 
         20
@@ -314,7 +314,7 @@ export default function AskAIPage() {
       // Another delay
       await new Promise(resolve => setTimeout(resolve, delay));
 
-      const sessionsData = await base44.entities.AIChatSession.filter(
+      const sessionsData = await db.entities.AIChatSession.filter(
         { workspace_id: currentWorkspaceId }, 
         "-last_activity", 
         50
@@ -474,7 +474,7 @@ export default function AskAIPage() {
           // Attempt to load embeddings from Document entity cache first
           let cachedEmbeddingData = null;
           try {
-            const existingDocsInDb = await base44.entities.Document.filter({ contentHash: contentHash }, "", 1);
+            const existingDocsInDb = await db.entities.Document.filter({ contentHash: contentHash }, "", 1);
             if (existingDocsInDb.length > 0 && existingDocsInDb[0].embedding_cache) {
               cachedEmbeddingData = existingDocsInDb[0].embedding_cache;
             }
@@ -529,7 +529,7 @@ export default function AskAIPage() {
                     estimated_cost: data.estimatedCost
                   }
                 };
-                await base44.entities.Document.create(docRecord); 
+                await db.entities.Document.create(docRecord); 
                 console.log(`Cached newly generated embeddings for ${file.name} (hash: ${contentHash.substring(0, 8)}...) in database.`);
               } catch (cacheError) {
                 console.error("Failed to cache embeddings in Document entity:", cacheError);
@@ -782,7 +782,7 @@ export default function AskAIPage() {
 
   const handleDeleteSession = async (sessionId) => {
     try {
-      await base44.entities.AIChatSession.delete(sessionId);
+      await db.entities.AIChatSession.delete(sessionId);
       setSessions(prev => prev.filter(s => s.id !== sessionId));
       
       if (currentSession?.id === sessionId) {
@@ -1168,12 +1168,12 @@ export default function AskAIPage() {
       };
 
       if (currentSession) {
-        await base44.entities.AIChatSession.update(currentSession.id, sessionData);
+        await db.entities.AIChatSession.update(currentSession.id, sessionData);
         setCurrentSession({ ...currentSession, ...sessionData });
         setSessionModified(false);
         toast.success("Session updated successfully");
       } else {
-        const newSession = await base44.entities.AIChatSession.create({
+        const newSession = await db.entities.AIChatSession.create({
           ...sessionData,
           workspace_id: currentWorkspaceId, // Add workspace_id when creating new session
         });

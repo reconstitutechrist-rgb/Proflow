@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { MessageCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 
 export default function DocumentQA({ documentId }) {
   const [document, setDocument] = useState(null); // New state for the loaded document
@@ -35,7 +35,7 @@ export default function DocumentQA({ documentId }) {
   const loadDocument = async () => {
     if (!currentWorkspaceId || !documentId) return;
     try {
-      const docs = await base44.entities.Document.filter({
+      const docs = await db.entities.Document.filter({
         workspace_id: currentWorkspaceId,
         id: documentId
       }, "-updated_date", 1); // Get latest document by ID, limit 1
@@ -64,7 +64,7 @@ export default function DocumentQA({ documentId }) {
     if (!currentWorkspaceId || !documentId) return;
     try {
       // CRITICAL: Load only Q&A from current workspace
-      const history = await base44.entities.AIChat.filter({
+      const history = await db.entities.AIChat.filter({
         workspace_id: currentWorkspaceId,
         chat_type: 'document_query'
       }, "-created_date", 50); // Get recent chats, increased limit to 50 for more history
@@ -114,15 +114,15 @@ User Question: ${userQuestionForProcessing}
 
 Provide a clear, specific answer based only on the information in the document. If the answer isn't in the document, say so.`;
 
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await db.integrations.Core.InvokeLLM({
         prompt: prompt
       });
 
       setAnswer(response); // Temporarily display the response
 
       // CRITICAL: Save Q&A with workspace_id
-      const user = await base44.auth.me(); // Get current user info
-      await base44.entities.AIChat.create({
+      const user = await db.auth.me(); // Get current user info
+      await db.entities.AIChat.create({
         workspace_id: currentWorkspaceId, // CRITICAL: Workspace scoping
         assignment_id: document.assigned_to_assignments?.[0] || null, // Use the first assignment ID if available
         user_email: user.email,

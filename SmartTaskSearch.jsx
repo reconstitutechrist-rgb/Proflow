@@ -8,13 +8,7 @@ import {
   Target
 } from "lucide-react";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
-
-// Assuming base44 is globally available or provided by the framework,
-// and it now encapsulates access to Task entities and LLM integrations.
-// The original imports for Task and InvokeLLM are no longer needed
-// as they are accessed via base44.
-// Removed: import { Task } from "@/api/entities";
-// Removed: import { InvokeLLM } from "@/api/integrations";
+import { db } from "@/api/db";
 
 export default function SmartTaskSearch({
   assignmentId, // New prop for filtering tasks by assignment
@@ -51,8 +45,8 @@ export default function SmartTaskSearch({
       if (assignmentId) {
         filter.assignment_id = assignmentId;
       }
-      // Accessing Task entity through the assumed global 'base44' object
-      const tasksData = await base44.entities.Task.filter(filter, "-updated_date");
+      // Accessing Task entity through db
+      const tasksData = await db.entities.Task.filter(filter, "-updated_date");
       setTasks(tasksData);
       setFilteredTasks(tasksData); // Initially, all loaded tasks are filtered tasks
     } catch (error) {
@@ -77,8 +71,8 @@ export default function SmartTaskSearch({
 Include synonyms, related concepts, and task-specific terms.
 Return as JSON array of 5-8 keywords.`;
 
-      // Accessing LLM integration through the assumed global 'base44' object
-      const response = await base44.integrations.Core.InvokeLLM({
+      // Accessing LLM integration through db
+      const response = await db.integrations.Core.InvokeLLM({
         prompt,
         response_json_schema: {
           type: "object",

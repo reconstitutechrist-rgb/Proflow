@@ -305,7 +305,7 @@ const integrations = {
 };
 
 // Main client object with entities, integrations, and auth
-export const dataClient = {
+export const db = {
   entities: new Proxy({}, {
     get: (target, entityName) => {
       if (!target[entityName]) {
@@ -318,6 +318,4 @@ export const dataClient = {
   auth,
 };
 
-// Export for backward compatibility with existing imports
-export const base44 = dataClient;
-export default dataClient;
+export default db;

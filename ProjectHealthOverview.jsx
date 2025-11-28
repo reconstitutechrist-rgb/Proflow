@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { toast } from "sonner"; // Changed toast import
-import { base44 } from "@/api/base44Client"; // Added base44 import
+import { db } from "@/api/db";
 
 export default function ProjectHealthOverview({ projectId }) {
   const [loading, setLoading] = useState(true);
@@ -34,17 +34,17 @@ export default function ProjectHealthOverview({ projectId }) {
       setLoading(true);
 
       // CRITICAL: Load only data from current workspace
-      // Assuming base44.entities.Project, Assignment, Task are available
+      // Assuming db.entities.Project, Assignment, Task are available
       const [projectResult, assignmentsResult, tasksResult] = await Promise.all([
-        base44.entities.Project.filter({
+        db.entities.Project.filter({
           workspace_id: currentWorkspaceId,
           id: projectId
         }, "-updated_date", 1), // Limiting to 1 project
-        base44.entities.Assignment.filter({
+        db.entities.Assignment.filter({
           workspace_id: currentWorkspaceId,
           project_id: projectId
         }, "-updated_date"),
-        base44.entities.Task.filter({
+        db.entities.Task.filter({
           workspace_id: currentWorkspaceId
         }, "-updated_date")
       ]);

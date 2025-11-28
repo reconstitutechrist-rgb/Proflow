@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Task } from "@/api/entities"; // Assuming Task entity is globally available or imported as such
+import { db } from "@/api/db";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
@@ -31,37 +31,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-
-// Assuming 'base44' is a global object for entity management as implied by the outline.
-// If not, this would need to be replaced with actual import statements for Task entity.
-const base44 = {
-  entities: {
-    Task: {
-      filter: async (query, orderBy, limit) => {
-        // Mock implementation for task filtering, replace with actual API call
-        console.log(`Filtering tasks with query: ${JSON.stringify(query)}, orderBy: ${orderBy}, limit: ${limit}`);
-        // In a real app, this would hit an API endpoint. For now, filter from a dummy list.
-        // The original component used `Task.filter`, so we will use the global/imported Task.
-        // Assuming Task.filter returns an array of tasks.
-        if (query.id) {
-          const task = await Task.get(query.id); // Assuming Task.get exists
-          return task ? [task] : [];
-        }
-        return await Task.filter(query, orderBy, limit);
-      },
-      update: async (id, data) => {
-        // Mock implementation for task update, replace with actual API call
-        console.log(`Updating task ${id} with data: ${JSON.stringify(data)}`);
-        return await Task.update(id, data);
-      },
-      get: async (id) => {
-        // Mock implementation for task get, replace with actual API call
-        console.log(`Getting task ${id}`);
-        return await Task.get(id);
-      }
-    }
-  }
-};
 
 
 export default function TaskDependencyTracker({ task, allTasks, onDependencyUpdate }) {
@@ -149,7 +118,7 @@ export default function TaskDependencyTracker({ task, allTasks, onDependencyUpda
 
       const updatedDependencies = [...(task.dependencies || []), newDependency];
 
-      await base44.entities.Task.update(task.id, {
+      await db.entities.Task.update(task.id, {
         dependencies: updatedDependencies,
         workspace_id: currentWorkspaceId // CRITICAL: Maintain workspace_id
       });
@@ -187,7 +156,7 @@ export default function TaskDependencyTracker({ task, allTasks, onDependencyUpda
         dep => dep.task_id !== dependencyTaskId
       );
 
-      await base44.entities.Task.update(task.id, {
+      await db.entities.Task.update(task.id, {
         dependencies: updatedDependencies,
         workspace_id: currentWorkspaceId // CRITICAL: Maintain workspace_id
       });

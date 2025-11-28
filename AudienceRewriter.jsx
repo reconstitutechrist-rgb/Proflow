@@ -11,7 +11,7 @@ import {
 import { Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
-import { base44 } from "@/api/base44Client"; // Added import
+import { db } from "@/api/db";
 
 export default function AudienceRewriter({ document, onRewriteComplete }) {
   const [rewriting, setRewriting] = useState(false);
@@ -61,8 +61,8 @@ Rewrite the content to be appropriate for this audience while maintaining the co
 
 Return the rewritten content as HTML with proper formatting.`;
 
-      // Assuming base44.integrations.Core.InvokeLLM is accessible
-      const response = await base44.integrations.Core.InvokeLLM({
+      // Assuming db.integrations.Core.InvokeLLM is accessible
+      const response = await db.integrations.Core.InvokeLLM({
         prompt: prompt
       });
 
@@ -71,8 +71,8 @@ Return the rewritten content as HTML with proper formatting.`;
       }
 
       // CRITICAL: Update document while maintaining workspace_id
-      // Assuming base44.entities.Document.update is accessible
-      await base44.entities.Document.update(document.id, {
+      // Assuming db.entities.Document.update is accessible
+      await db.entities.Document.update(document.id, {
         content: response,
         workspace_id: currentWorkspaceId, // CRITICAL: Maintain workspace_id
         version: `${parseFloat(document.version || "1.0") + 0.1}`,

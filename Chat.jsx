@@ -5,7 +5,7 @@ import { Message } from "@/api/entities";
 import { Document } from "@/api/entities";
 import { ConversationThread } from "@/api/entities";
 import { User } from "@/api/entities";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -165,11 +165,11 @@ export default function ChatPage() {
     try {
       setLoading(true);
       const [threadsData, assignmentsData, documentsData, usersData, user] = await Promise.all([
-        base44.entities.ConversationThread.filter({ workspace_id: currentWorkspaceId }, "-last_activity"),
-        base44.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        base44.entities.Document.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        base44.entities.User.list(),
-        base44.auth.me()
+        db.entities.ConversationThread.filter({ workspace_id: currentWorkspaceId }, "-last_activity"),
+        db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
+        db.entities.Document.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
+        db.entities.User.list(),
+        db.auth.me()
       ]);
 
       setAssignments(assignmentsData);
@@ -219,7 +219,7 @@ export default function ChatPage() {
     }
 
     try {
-      const threadMessages = await base44.entities.Message.filter({
+      const threadMessages = await db.entities.Message.filter({
         workspace_id: currentWorkspaceId,
         thread_id: currentThread.id
       }, "created_date");
@@ -240,7 +240,7 @@ export default function ChatPage() {
           uniqueReplyToIds.map(async (id) => {
             try {
               // Assuming Message.filter returns an array, and we need the first item
-              const messages = await base44.entities.Message.filter({ id: id }, "created_date", 1);
+              const messages = await db.entities.Message.filter({ id: id }, "created_date", 1);
               return messages.length > 0 ? { id: id, message: messages[0] } : null;
             } catch (error) {
               console.error(`Error loading reply-to message ${id}:`, error);
@@ -324,7 +324,7 @@ export default function ChatPage() {
         uc.user_email === currentUser.email ? { ...uc, unread_count: 0 } : uc
       );
 
-      await base44.entities.ConversationThread.update(currentThread.id, {
+      await db.entities.ConversationThread.update(currentThread.id, {
         unread_counts: updatedUnreadCounts
       });
 
@@ -333,7 +333,7 @@ export default function ChatPage() {
       for (const msg of threadMessages) {
         const readBy = msg.read_by || [];
         if (!readBy.some(r => r.user_email === currentUser.email)) {
-          await base44.entities.Message.update(msg.id, {
+          await db.entities.Message.update(msg.id, {
             read_by: [...readBy, { user_email: currentUser.email, read_at: new Date().toISOString() }]
           });
         }
@@ -361,12 +361,12 @@ export default function ChatPage() {
         mentioned_users: extractMentions(newMessage)
       };
 
-      await base44.entities.Message.create(messageData);
+      await db.entities.Message.create(messageData);
       setNewMessage("");
       setReplyToMessage(null);
 
       // Update thread activity and message count
-      await base44.entities.ConversationThread.update(currentThread.id, {
+      await db.entities.ConversationThread.update(currentThread.id, {
         last_activity: new Date().toISOString(),
         message_count: (currentThread.message_count || 0) + 1
       });
@@ -391,7 +391,7 @@ export default function ChatPage() {
         edited_by: currentUser.email
       });
 
-      await base44.entities.Message.update(message.id, {
+      await db.entities.Message.update(message.id, {
         content: newMessage,
         is_edited: true,
         last_edited_at: new Date().toISOString(),
@@ -410,7 +410,7 @@ export default function ChatPage() {
 
   const handleDeleteMessage = async (messageId) => {
     try {
-      await base44.entities.Message.delete(messageId);
+      await db.entities.Message.delete(messageId);
       loadMessages();
       toast.success("Message deleted");
     } catch (error) {
@@ -424,7 +424,7 @@ export default function ChatPage() {
       const message = messages.find(m => m.id === messageId);
       if (!message) return;
 
-      await base44.entities.Message.update(messageId, {
+      await db.entities.Message.update(messageId, {
         is_pinned: !message.is_pinned,
         pinned_by: currentUser.email,
         pinned_at: new Date().toISOString()
@@ -446,7 +446,7 @@ export default function ChatPage() {
       const bookmarkedBy = message.is_bookmarked_by || [];
       const isBookmarked = bookmarkedBy.includes(currentUser.email);
 
-      await base44.entities.Message.update(messageId, {
+      await db.entities.Message.update(messageId, {
         is_bookmarked_by: isBookmarked
           ? bookmarkedBy.filter(email => email !== currentUser.email)
           : [...bookmarkedBy, currentUser.email]
@@ -473,7 +473,7 @@ export default function ChatPage() {
         timestamp: new Date().toISOString()
       });
 
-      await base44.entities.Message.update(messageId, { reactions });
+      await db.entities.Message.update(messageId, { reactions });
       loadMessages();
     } catch (error) {
       console.error("Error adding reaction:", error);
@@ -490,7 +490,7 @@ export default function ChatPage() {
         r => !(r.emoji === emoji && r.user_email === currentUser.email)
       );
 
-      await base44.entities.Message.update(messageId, { reactions });
+      await db.entities.Message.update(messageId, { reactions });
       loadMessages();
     } catch (error) {
       console.error("Error removing reaction:", error);
@@ -504,7 +504,7 @@ export default function ChatPage() {
 
     setUploadingFile(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
 
       const messageData = {
         workspace_id: currentWorkspaceId,
@@ -518,7 +518,7 @@ export default function ChatPage() {
         file_name: file.name
       };
 
-      await base44.entities.Message.create(messageData);
+      await db.entities.Message.create(messageData);
       loadMessages();
       toast.success("File uploaded");
     } catch (error) {
@@ -576,7 +576,7 @@ export default function ChatPage() {
 
     setUploadingFile(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
 
       const messageData = {
         workspace_id: currentWorkspaceId,
@@ -590,7 +590,7 @@ export default function ChatPage() {
         file_name: file.name
       };
 
-      await base44.entities.Message.create(messageData);
+      await db.entities.Message.create(messageData);
       loadMessages();
       toast.success("File uploaded");
     } catch (error) {
@@ -634,7 +634,7 @@ export default function ChatPage() {
           ]
         : typingUsers.filter(u => u.user_email !== currentUser.email);
 
-      await base44.entities.ConversationThread.update(currentThread.id, {
+      await db.entities.ConversationThread.update(currentThread.id, {
         typing_users: updatedTypingUsers
       });
 
@@ -703,7 +703,7 @@ export default function ChatPage() {
         last_activity: new Date().toISOString() // Added based on outline
       };
 
-      const newThread = await base44.entities.ConversationThread.create(threadData);
+      const newThread = await db.entities.ConversationThread.create(threadData);
       loadData(); // Reload threads to update sidebar
       setCurrentThread(newThread); // Set the newly created thread as current
       setIsThreadFormOpen(false);
@@ -718,7 +718,7 @@ export default function ChatPage() {
 
   const handlePinThread = async (thread) => {
     try {
-      await base44.entities.ConversationThread.update(thread.id, {
+      await db.entities.ConversationThread.update(thread.id, {
         is_pinned: !thread.is_pinned,
         pinned_by: currentUser.email,
         pinned_at: new Date().toISOString()
@@ -733,7 +733,7 @@ export default function ChatPage() {
 
   const handleArchiveThread = async (thread) => {
     try {
-      await base44.entities.ConversationThread.update(thread.id, {
+      await db.entities.ConversationThread.update(thread.id, {
         status: thread.status === 'archived' ? 'active' : 'archived'
       });
       loadData(); // Reload threads to update sidebar

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import {
   CommandDialog,
   CommandEmpty,
@@ -85,19 +85,19 @@ export default function GlobalSearch({ isOpen, onClose }) {
       const searchLower = query.toLowerCase();
 
       const [projects, assignments, documents, tasks, messages] = await Promise.allSettled([
-        base44.entities.Project.filter({ 
+        db.entities.Project.filter({ 
           workspace_id: currentWorkspaceId 
         }, "-updated_date", 20),
-        base44.entities.Assignment.filter({ 
+        db.entities.Assignment.filter({ 
           workspace_id: currentWorkspaceId 
         }, "-updated_date", 20),
-        base44.entities.Document.filter({ 
+        db.entities.Document.filter({ 
           workspace_id: currentWorkspaceId 
         }, "-updated_date", 20),
-        base44.entities.Task.filter({ 
+        db.entities.Task.filter({ 
           workspace_id: currentWorkspaceId 
         }, "-updated_date", 20),
-        base44.entities.Message.filter({ 
+        db.entities.Message.filter({ 
           workspace_id: currentWorkspaceId 
         }, "-created_date", 20).catch(() => [])
       ]);

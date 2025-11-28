@@ -48,7 +48,7 @@ import {
 
 import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // New import
 import { toast } from "sonner"; // New import
-import { base44 } from "@/api/base44Client"; // Corrected import for base44
+import { db } from "@/api/db";
 
 export default function DocumentPackager({ assignmentId, isOpen, onClose, onPackageCreated }) {
   const [packageName, setPackageName] = useState("");
@@ -102,7 +102,7 @@ export default function DocumentPackager({ assignmentId, isOpen, onClose, onPack
       setLoading(true);
 
       // CRITICAL: Only load documents from current workspace and assigned to the specific assignment
-      const docs = await base44.entities.Document.filter({
+      const docs = await db.entities.Document.filter({
         workspace_id: currentWorkspaceId,
         assigned_to_assignments: { $in: [assignmentId] }
       }, "-updated_date"); // Sort by updated_date descending
@@ -232,7 +232,7 @@ export default function DocumentPackager({ assignmentId, isOpen, onClose, onPack
         status: "generating"
       };
 
-      const newPackage = await base44.entities.DocumentPackage.create(packageData);
+      const newPackage = await db.entities.DocumentPackage.create(packageData);
 
       toast.success("Document package created successfully.");
       onClose(); // Close the dialog

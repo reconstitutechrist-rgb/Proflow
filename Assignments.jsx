@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -75,12 +75,12 @@ export default function AssignmentsPage() {
     try {
       setLoading(true);
       const [assignmentsData, tasksData, documentsData, usersData, projectsData, user] = await Promise.all([
-        base44.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        base44.entities.Task.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        base44.entities.Document.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        base44.entities.User.list(),
-        base44.entities.Project.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        base44.auth.me()
+        db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
+        db.entities.Task.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
+        db.entities.Document.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
+        db.entities.User.list(),
+        db.entities.Project.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
+        db.auth.me()
       ]);
       
       setAssignments(assignmentsData);
@@ -100,10 +100,10 @@ export default function AssignmentsPage() {
   const handleSubmit = async (assignmentData) => {
     try {
       if (editingAssignment) {
-        await base44.entities.Assignment.update(editingAssignment.id, assignmentData);
+        await db.entities.Assignment.update(editingAssignment.id, assignmentData);
         toast.success("Assignment updated successfully");
       } else {
-        await base44.entities.Assignment.create({
+        await db.entities.Assignment.create({
           ...assignmentData,
           workspace_id: currentWorkspaceId
         });
@@ -127,7 +127,7 @@ export default function AssignmentsPage() {
     if (!window.confirm("Delete this assignment?")) return;
     
     try {
-      await base44.entities.Assignment.delete(assignmentId);
+      await db.entities.Assignment.delete(assignmentId);
       toast.success("Assignment deleted");
       setSelectedAssignment(null);
       setSearchParams({});

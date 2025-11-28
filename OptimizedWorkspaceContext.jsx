@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { dataClient } from '@/api/base44Client';
+import { db } from '@/api/db';
 
 const WorkspaceContext = createContext();
 
@@ -74,7 +74,7 @@ export function OptimizedWorkspaceProvider({ children }) {
       setCurrentUser(user);
 
       // Load workspaces
-      const workspaces = await dataClient.entities.Workspace.list();
+      const workspaces = await db.entities.Workspace.list();
 
       setAvailableWorkspaces(workspaces);
       lastLoadTimeRef.current = now;
@@ -105,7 +105,7 @@ export function OptimizedWorkspaceProvider({ children }) {
 
       // 5. Create default workspace if none exist
       if (!activeWorkspace) {
-        const newWorkspace = await dataClient.entities.Workspace.create({
+        const newWorkspace = await db.entities.Workspace.create({
           name: `${user.full_name}'s Workspace`,
           description: 'My personal workspace',
           owner_email: user.email,

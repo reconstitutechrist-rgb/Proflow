@@ -1,5 +1,5 @@
 // Test entity mapping fix
-import { dataClient } from './api/base44Client.js';
+import { db } from './api/db.js';
 import { readFileSync } from 'fs';
 
 // Read environment variables
@@ -24,17 +24,17 @@ async function testMapping() {
   try {
     // Test Workspace entity
     console.log('Testing Workspace entity...');
-    const workspaces = await dataClient.entities.Workspace.list();
+    const workspaces = await db.entities.Workspace.list();
     console.log('✅ Workspace query successful! Found', workspaces.length, 'workspace(s)');
 
     // Test Project entity
     console.log('Testing Project entity...');
-    const projects = await dataClient.entities.Project.list();
+    const projects = await db.entities.Project.list();
     console.log('✅ Project query successful! Found', projects.length, 'project(s)');
 
     // Test Task entity
     console.log('Testing Task entity...');
-    const tasks = await dataClient.entities.Task.list();
+    const tasks = await db.entities.Task.list();
     console.log('✅ Task query successful! Found', tasks.length, 'task(s)');
 
     console.log('\n🎉 All entity mappings working correctly!');

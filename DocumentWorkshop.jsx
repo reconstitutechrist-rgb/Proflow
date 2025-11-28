@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Document } from "@/api/entities";
 import { Assignment } from "@/api/entities";
 import { Task } from "@/api/entities";
@@ -267,9 +267,9 @@ export default function DocumentWorkshop() {
       const [assignmentsData, tasksData, usersData, allDocuments, user] = await Promise.all([
         Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
         Task.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        base44.entities.User.list(),
+        db.entities.User.list(),
         Document.filter({ workspace_id: currentWorkspaceId }, "-updated_date", 100),
-        base44.auth.me()
+        db.auth.me()
       ]);
 
       setAssignments(assignmentsData || []);
@@ -385,14 +385,14 @@ export default function DocumentWorkshop() {
       const htmlFile = new File([blob], finalFileName, { type: 'text/html' });
 
       try {
-        const uploadResult = await base44.integrations.Core.UploadFile({ file: htmlFile });
+        const uploadResult = await db.integrations.Core.UploadFile({ file: htmlFile });
         fileUrl = uploadResult.file_url;
 
         // Convert to PDF if requested
         if (saveAsPdf) {
           toast.info("Converting to PDF...", { duration: 3000 });
 
-          const convertResponse = await base44.functions.invoke('convertUploadToPdf', {
+          const convertResponse = await db.functions.invoke('convertUploadToPdf', {
             fileUrl: fileUrl,
             fileName: finalFileName,
             workspaceId: currentWorkspaceId
@@ -924,7 +924,7 @@ export default function DocumentWorkshop() {
                 // Generate document content
                 setIsGenerating(true);
                 try {
-                  const response = await base44.integrations.Core.InvokeLLM({
+                  const response = await db.integrations.Core.InvokeLLM({
                     prompt: customPrompt,
                     add_context_from_internet: false
                   });

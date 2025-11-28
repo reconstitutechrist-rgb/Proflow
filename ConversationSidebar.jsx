@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/select";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { toast } from "sonner";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 
 export default function ConversationSidebar({
   currentUser, // NEW prop
@@ -65,7 +65,7 @@ export default function ConversationSidebar({
   useEffect(() => {
     const loadTeamMembers = async () => {
       try {
-        const users = await base44.entities.User.list();
+        const users = await db.entities.User.list();
         setTeamMembers(users);
       } catch (error) {
         console.error("Error loading team members:", error);
@@ -129,7 +129,7 @@ export default function ConversationSidebar({
   const unpinnedThreads = filteredThreads.filter(t => !t.is_pinned);
 
   const getUnreadCount = (thread) => {
-    // const user = base44.auth.currentUser; // Using currentUser prop
+    // const user = db.auth.currentUser; // Using currentUser prop
     if (!currentUser || !thread.unread_counts) return 0;
     const userUnread = thread.unread_counts.find(uc => uc.user_email === currentUser.email);
     return userUnread?.unread_count || 0;

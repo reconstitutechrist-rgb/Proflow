@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Sparkles, Image as ImageIcon, RefreshCw, Plus, AlertTriangle, Info, BarChart3, TrendingUp, PieChart } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { toast } from "sonner";
 
 export default function AIImageGenerator({ onInsertImage, documentContext }) {
@@ -347,7 +347,7 @@ Requirements:
 
       console.log('Generating image with prompt:', enhancedPrompt);
 
-      const response = await base44.integrations.Core.GenerateImage({
+      const response = await db.integrations.Core.GenerateImage({
         prompt: enhancedPrompt
       });
 

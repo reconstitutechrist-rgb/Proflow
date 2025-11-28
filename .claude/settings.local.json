@@ -6,7 +6,8 @@
       "Bash(taskkill:*)",
       "Bash(curl:*)",
       "Bash(node verify-db-connection.js:*)",
-      "Bash(node verify-db-node.js:*)"
+      "Bash(node verify-db-node.js:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

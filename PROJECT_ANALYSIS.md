@@ -38,7 +38,7 @@ Proflow is designed as a unified productivity platform that combines:
 - **Recharts 2.15** - Chart library for analytics and dashboards
 
 ### Backend Integration
-- **Base44 SDK** - API client for backend communication
+- **Supabase** - Backend database and API client
 - Integration with AI services (LLM invocation, RAG, document analysis)
 
 ## Core Architecture
@@ -77,7 +77,7 @@ The project uses a flat component structure with **172 JSX files** in the root d
 - **Error Boundaries** - Comprehensive error handling and recovery
 
 ### Data Architecture
-The platform uses a **Base44 backend** with entity-based data model:
+The platform uses a **Supabase backend** with entity-based data model:
 - **Workspace** - Top-level organization boundary
 - **User** - Authentication and user profiles
 - **Project** - High-level project containers
@@ -405,17 +405,17 @@ The platform implements strict workspace boundaries:
 
 ## API Integration
 
-The platform uses the **Base44 SDK** for backend communication:
+The platform uses a **db client** wrapper for Supabase backend communication:
 
 **Entity Operations:**
-- `base44.entities.[Entity].list()` - List entities
-- `base44.entities.[Entity].filter()` - Filtered queries
-- `base44.entities.[Entity].create()` - Create new
-- `base44.entities.[Entity].update()` - Update existing
-- `base44.entities.[Entity].delete()` - Remove entity
+- `db.entities.[Entity].list()` - List entities
+- `db.entities.[Entity].filter()` - Filtered queries
+- `db.entities.[Entity].create()` - Create new
+- `db.entities.[Entity].update()` - Update existing
+- `db.entities.[Entity].delete()` - Remove entity
 
 **Auth Operations:**
-- `base44.auth.me()` - Get current user
+- `db.auth.me()` - Get current user
 
 **AI Integrations:**
 - `InvokeLLM` - Call language models

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -67,7 +67,7 @@ export default function DocumentsPage() {
       try {
         setLoading(true);
 
-        const user = await base44.auth.me();
+        const user = await db.auth.me();
         setCurrentUser(user);
 
         // Longer delays with exponential backoff for internal calls
@@ -75,14 +75,14 @@ export default function DocumentsPage() {
         const delay = baseDelay * Math.pow(2, currentRetry);
         await new Promise((resolve) => setTimeout(resolve, delay));
 
-        const assignmentsData = await base44.entities.Assignment.filter({
+        const assignmentsData = await db.entities.Assignment.filter({
           workspace_id: currentWorkspaceId,
         });
         setAssignments(assignmentsData);
 
         await new Promise((resolve) => setTimeout(resolve, delay));
 
-        const docs = await base44.entities.Document.filter(
+        const docs = await db.entities.Document.filter(
           { workspace_id: currentWorkspaceId },
           "-created_date"
         );

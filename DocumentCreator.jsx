@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Document } from "@/api/entities";
 import { Assignment } from "@/api/entities";
 import { Task } from "@/api/entities";
@@ -201,9 +201,9 @@ export default function DocumentCreatorPage() {
       const [assignmentsData, tasksData, usersData, allDocuments, user] = await Promise.all([
         Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
         Task.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        base44.entities.User.list(), // Users are typically global, not workspace-filtered by default
+        db.entities.User.list(), // Users are typically global, not workspace-filtered by default
         Document.filter({ workspace_id: currentWorkspaceId }, "-updated_date", 100),
-        base44.auth.me()
+        db.auth.me()
       ]);
 
       setAssignments(assignmentsData || []);
@@ -360,7 +360,7 @@ export default function DocumentCreatorPage() {
       let fileUrl = null;
 
       try {
-        const uploadResult = await base44.integrations.Core.UploadFile({ file });
+        const uploadResult = await db.integrations.Core.UploadFile({ file });
         fileUrl = uploadResult.file_url;
       } catch (uploadError) {
         console.error("File upload error:", uploadError);

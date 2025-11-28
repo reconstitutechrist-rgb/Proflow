@@ -34,24 +34,7 @@ import DocumentComments from "./DocumentComments";
 // NEW IMPORTS FOR WORKSPACE SCOPING
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { validateWorkspaceAccess } from "@/CrossWorkspaceValidator";
-
-// IMPORTANT: The outline references `base44.entities.Document.update`.
-// Since `base44` is not imported in the provided current file code or specified in the outline,
-// we're including a minimal mock here to ensure the file is functional and compiles.
-// In a real application, you would import `base44` from its actual module (e.g., "@/lib/base44").
-const base44 = {
-  entities: {
-    Document: {
-      update: async (id, data) => {
-        console.log(`Mock base44.entities.Document.update called for id: ${id}`, data);
-        // Simulate an API call delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        // Return a mock success response
-        return { success: true, data };
-      }
-    }
-  }
-};
+import { db } from "@/api/db";
 
 
 export default function DocumentPreview({
@@ -157,8 +140,8 @@ export default function DocumentPreview({
 
     try {
       setIsSaving(true);
-      // Assuming 'base44' is an API client available in scope (or properly imported)
-      await base44.entities.Document.update(editedDocument.id, editedDocument);
+      // Using db client for entity operations
+      await db.entities.Document.update(editedDocument.id, editedDocument);
       toast.success("Document updated successfully!");
       if (onUpdate) {
         onUpdate();

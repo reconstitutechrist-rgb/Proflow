@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Loader2, Send, Bot, User, Sparkles, FileText, Lightbulb, Wand2, CheckCircle } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
@@ -113,7 +113,7 @@ ${strippedContent.length > 0 && strippedContent.length < 2000 ? `Current Documen
 
 Provide your response:`;
 
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await db.integrations.Core.InvokeLLM({
         prompt: fullPrompt,
         add_context_from_internet: false,
         file_urls: referenceDocuments && referenceDocuments.length > 0 ? referenceDocuments : undefined

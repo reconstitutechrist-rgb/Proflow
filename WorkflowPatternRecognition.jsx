@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { toast } from "sonner";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 
 export default function WorkflowPatternRecognition({
   assignment, // Changed from tasks, assignments, currentAssignment
@@ -62,8 +62,8 @@ export default function WorkflowPatternRecognition({
       setLoading(true);
 
       // CRITICAL: Only load patterns from current workspace
-      // Using base44.entities directly as per outline
-      const workflowPatterns = await base44.entities.WorkflowPattern.filter({
+      // Using db.entities directly as per outline
+      const workflowPatterns = await db.entities.WorkflowPattern.filter({
         workspace_id: currentWorkspaceId
       }, "-usage_count", 10); // Filter by usage count descending, limit 10
 
@@ -101,7 +101,7 @@ Provide a reasoning for the suggestion and a confidence score.
 
 Return the pattern name that best matches, or suggest a custom pattern.`;
 
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await db.integrations.Core.InvokeLLM({
         prompt: prompt,
         response_json_schema: {
           type: "object",
@@ -198,7 +198,7 @@ Return the pattern name that best matches, or suggest a custom pattern.`;
 
       // Create all tasks
       if (tasksToCreate.length > 0) {
-        await base44.entities.Task.bulkCreate(tasksToCreate);
+        await db.entities.Task.bulkCreate(tasksToCreate);
       } else {
         toast.info(`Pattern '${pattern.name}' has no tasks to create.`);
       }
@@ -206,7 +206,7 @@ Return the pattern name that best matches, or suggest a custom pattern.`;
 
       // Update pattern usage count
       // CRITICAL: Maintain workspace_id (though update by ID generally handles this implicitly in secured ORMs)
-      await base44.entities.WorkflowPattern.update(pattern.id, {
+      await db.entities.WorkflowPattern.update(pattern.id, {
         usage_count: (pattern.usage_count || 0) + 1,
         last_updated: new Date().toISOString(),
         // workspace_id: currentWorkspaceId // Redundant if updating by ID, but harmless if ORM uses it for context
@@ -234,7 +234,7 @@ Return the pattern name that best matches, or suggest a custom pattern.`;
 
     try {
       // CRITICAL: Create pattern with workspace_id
-      const newPattern = await base44.entities.WorkflowPattern.create({
+      const newPattern = await db.entities.WorkflowPattern.create({
         ...patternData,
         workspace_id: currentWorkspaceId, // CRITICAL: Workspace scoping
         usage_count: 0,

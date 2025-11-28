@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Share2, Loader2 } from "lucide-react";
 import { User } from "@/api/entities";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { toast } from "sonner";
 
@@ -51,7 +51,7 @@ export default function ShareButton({
       setLoading(true);
 
       // Get current user
-      const currentUser = await base44.auth.me();
+      const currentUser = await db.auth.me();
 
       // Get all users
       const allUsers = await User.list();
@@ -85,7 +85,7 @@ export default function ShareButton({
 
       // Get the entity and update its shared_with field
       const entityManager =
-        base44.entities[
+        db.entities[
           entityType.charAt(0).toUpperCase() + entityType.slice(1)
         ];
 
@@ -97,7 +97,7 @@ export default function ShareButton({
           await entityManager.update(entityId, {
             shared_with: [...currentShared, selectedUser],
             last_shared_date: new Date().toISOString(),
-            last_shared_by: (await base44.auth.me()).email,
+            last_shared_by: (await db.auth.me()).email,
           });
         }
       }

@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from "react";
-import { base44 } from "@/api/base44Client";
-import { UploadFile } from "@/api/integrations"; // Keep this for clarity, though `base44.integrations.Core.UploadFile` will be used
+import { db } from "@/api/db";
+import { UploadFile } from "@/api/integrations"; // Keep this for clarity, though `db.integrations.Core.UploadFile` will be used
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -192,11 +192,11 @@ export default function DocumentUploader({
       ));
 
       // First upload the original file to our S3, so CloudConvert can access it
-      const uploadResult = await base44.integrations.Core.UploadFile({ file: fileData.file });
+      const uploadResult = await db.integrations.Core.UploadFile({ file: fileData.file });
       const fileUrl = uploadResult.file_url;
 
       // Call conversion function on the backend
-      const response = await base44.functions.invoke('convertUploadToPdf', {
+      const response = await db.functions.invoke('convertUploadToPdf', {
         fileUrl: fileUrl,
         fileName: fileData.file.name,
         workspaceId: currentWorkspaceId
@@ -245,7 +245,7 @@ export default function DocumentUploader({
   // Upload with timeout wrapper
   const uploadWithTimeout = async (file, timeoutMs) => {
     return Promise.race([
-      base44.integrations.Core.UploadFile({ file }), // Changed to base44 client
+      db.integrations.Core.UploadFile({ file }), // Using db client
       new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Upload timeout - file too large or connection too slow')), timeoutMs)
       )
@@ -432,7 +432,7 @@ export default function DocumentUploader({
             ];
             
             // Update existing document with new file details and version
-            await base44.entities.Document.update(fileData.existingDocId, { // Changed to base44 client
+            await db.entities.Document.update(fileData.existingDocId, { // Using db client
               workspace_id: currentWorkspaceId, // ADDED: Workspace scoping
               title: fileData.title,
               description: fileData.description,
@@ -452,7 +452,7 @@ export default function DocumentUploader({
           }
         } else {
           // Create new document
-          await base44.entities.Document.create({ // Changed to base44 client
+          await db.entities.Document.create({ // Using db client
             workspace_id: currentWorkspaceId, // ADDED: Workspace scoping
             title: fileData.title,
             description: fileData.description,

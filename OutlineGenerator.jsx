@@ -123,7 +123,7 @@ Make it comprehensive but concise.
 DO NOT include any script tags, event handlers, or javascript code.
 Use <p> tags for descriptions and <ul><li> for bullet points where appropriate.`;
 
-      const response = await InvokeLLM({ // Changed from base44.integrations.Core.InvokeLLM to InvokeLLM as per import
+      const response = await InvokeLLM({ // Using InvokeLLM from integrations
         prompt,
         add_context_from_internet: false
       });

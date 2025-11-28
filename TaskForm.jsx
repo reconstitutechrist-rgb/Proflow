@@ -12,7 +12,7 @@ import { format } from "date-fns";
 import { Calendar as CalendarIcon, Plus, User, FolderOpen, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // Added useWorkspace
-import base44 from "@/api/integrations/base44"; // Assuming base44 entity access
+import { db } from "@/api/db";
 import { toast } from "sonner"; // Assuming react-hot-toast for toast notifications
 
 export default function TaskForm({ task, assignmentId, currentUser, onSubmit, onCancel }) { // Changed assignment to assignmentId, onSave to onSubmit. Removed 'assignments' and 'users' props.
@@ -45,7 +45,7 @@ export default function TaskForm({ task, assignmentId, currentUser, onSubmit, on
     const loadUsers = async () => {
         try {
             // Fetch users, filtered by the current workspace
-            const usersData = await base44.entities.User.list({
+            const usersData = await db.entities.User.list({
                 filter: { workspace_id: currentWorkspaceId }
             });
             setUsers(usersData);
@@ -58,7 +58,7 @@ export default function TaskForm({ task, assignmentId, currentUser, onSubmit, on
     const loadAssignments = async () => {
         try {
             // Fetch assignments, filtered by the current workspace
-            const assignmentsData = await base44.entities.Assignment.list({
+            const assignmentsData = await db.entities.Assignment.list({
                 filter: { workspace_id: currentWorkspaceId }
             });
             setAssignmentsList(assignmentsData);

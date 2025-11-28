@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // NEW IMPORT
-import { base44 } from "@/api/base44Client"; // Assuming base44 is imported from here
+import { db } from "@/api/db";
 
 const statusConfig = {
   all: {
@@ -94,7 +94,7 @@ const priorityColors = {
 export default function TaskBoard({
   assignmentId, // NEW PROP
   tasks: initialTasks, // RENAMED PROP
-  onTaskUpdate, // This prop is now primarily for parent notification after internal base44 calls
+  onTaskUpdate, // This prop is used for parent notification after internal db calls
   currentUser,
   assignments,
   users,
@@ -143,7 +143,7 @@ export default function TaskBoard({
   const loadTasks = async () => {
     try {
       setLoading(true);
-      const tasksData = await base44.entities.Task.filter(
+      const tasksData = await db.entities.Task.filter(
         {
           workspace_id: currentWorkspaceId,
           assignment_id: assignmentId,
@@ -245,7 +245,7 @@ export default function TaskBoard({
         updates.completed_date = null;
       }
 
-      await base44.entities.Task.update(task.id, updates);
+      await db.entities.Task.update(task.id, updates);
 
       loadTasks(); // Reload tasks after update
       if (onTaskUpdate) {
@@ -261,7 +261,7 @@ export default function TaskBoard({
   const handleUpdateTask = async (taskId, updates) => {
     // NEW FUNCTION
     try {
-      await base44.entities.Task.update(taskId, updates);
+      await db.entities.Task.update(taskId, updates);
       loadTasks(); // Reload tasks after update
       if (onTaskUpdate) {
         onTaskUpdate(); // Notify parent

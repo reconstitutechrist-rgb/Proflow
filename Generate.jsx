@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Assignment } from "@/api/entities";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +55,7 @@ export default function GeneratePage() {
     try {
       setLoading(true);
       
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       setCurrentUser(user);
       
       // Add delay with exponential backoff
@@ -63,7 +63,7 @@ export default function GeneratePage() {
       const delay = baseDelay * Math.pow(2, currentRetry);
       await new Promise(resolve => setTimeout(resolve, delay));
       
-      const assignmentsData = await base44.entities.Assignment.filter(
+      const assignmentsData = await db.entities.Assignment.filter(
         { workspace_id: currentWorkspaceId }, 
         "-updated_date"
       );

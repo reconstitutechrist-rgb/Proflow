@@ -5,7 +5,7 @@ import {
   useEffect,
   useCallback,
 } from "react";
-import { dataClient } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { toast } from "sonner";
 
 const WorkspaceContext = createContext();
@@ -51,7 +51,7 @@ export function WorkspaceProvider({ children }) {
       setCurrentUser(user);
 
       // Load all workspaces
-      const workspaces = await dataClient.entities.Workspace.list();
+      const workspaces = await db.entities.Workspace.list();
 
       setAvailableWorkspaces(workspaces);
 
@@ -87,7 +87,7 @@ export function WorkspaceProvider({ children }) {
 
       // Priority 5: Create a default personal workspace if none exist
       if (!activeWorkspace) {
-        const newWorkspace = await dataClient.entities.Workspace.create({
+        const newWorkspace = await db.entities.Workspace.create({
           name: `${user.full_name}'s Workspace`,
           description: "My personal workspace",
           owner_email: user.email,

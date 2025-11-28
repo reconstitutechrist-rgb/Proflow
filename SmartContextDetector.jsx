@@ -1,8 +1,6 @@
 import React, { useEffect, useCallback, useRef } from "react";
-import { Assignment } from "@/api/entities";
-import { Task } from "@/api/entities";
-import { Document } from "@/api/entities";
-import { User } from "@/api/entities";
+import { Assignment, Task, Document } from "@/api/entities";
+import { db } from "@/api/db";
 
 export default function SmartContextDetector({ onSuggestion }) {
   const lastSuggestionRef = useRef(null);
@@ -55,7 +53,7 @@ export default function SmartContextDetector({ onSuggestion }) {
       // Tasks page - check for overdue tasks
       else if (currentPage.includes('Tasks')) {
         try {
-          const user = await User.me();
+          const user = await db.auth.me();
           const tasks = await Task.filter({ 
             assigned_to: user.email,
             status: { $nin: ['completed'] }
@@ -123,7 +121,7 @@ export default function SmartContextDetector({ onSuggestion }) {
       // Dashboard - general productivity suggestion
       else if (currentPage.includes('Dashboard') || currentPage === '/') {
         try {
-          const user = await User.me();
+          const user = await db.auth.me();
           const tasks = await Task.filter({ 
             assigned_to: user.email,
             status: 'todo'

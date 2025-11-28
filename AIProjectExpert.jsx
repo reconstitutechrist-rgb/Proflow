@@ -16,12 +16,10 @@ import {
 import { InvokeLLM } from "@/api/integrations"; // This import is used directly for LLM invocation
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { toast } from "sonner";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 
-// IMPORTANT: The outline implies `base44` is a globally available object or implicitly imported
-// for its entities and authentication functions (e.g., `base44.entities.Assignment`, `base44.auth.me()`).
-// This implementation assumes `base44.entities` and `base44.auth` are accessible in this manner.
-// If not, specific imports for these modules would be required (e.g., import { entities, auth } from '@base44/client';).
+// The db client provides access to entities and authentication functions
+// (e.g., `db.entities.Assignment`, `db.auth.me()`).
 
 export default function AIProjectExpert({ assignmentId }) {
   const [question, setQuestion] = useState("");
@@ -39,7 +37,7 @@ export default function AIProjectExpert({ assignmentId }) {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const user = await base44.auth.me(); // Assumes base44.auth.me() exists and returns user info
+        const user = await db.auth.me(); // Assumes db.auth.me() exists and returns user info
         setCurrentAuthUser(user);
       } catch (error) {
         console.error("Error fetching current user:", error);
@@ -90,7 +88,7 @@ export default function AIProjectExpert({ assignmentId }) {
     try {
       // CRITICAL: Only load data from the current workspace for security
       const [assignments, tasks, documents] = await Promise.all([
-        base44.entities.Assignment.filter(
+        db.entities.Assignment.filter(
           {
             workspace_id: currentWorkspaceId,
             id: assignmentId,
@@ -98,14 +96,14 @@ export default function AIProjectExpert({ assignmentId }) {
           "-updated_date",
           1
         ), // Fetching a single assignment
-        base44.entities.Task.filter(
+        db.entities.Task.filter(
           {
             workspace_id: currentWorkspaceId,
             assignment_id: assignmentId,
           },
           "-updated_date"
         ),
-        base44.entities.Document.filter(
+        db.entities.Document.filter(
           {
             workspace_id: currentWorkspaceId,
             assigned_to_assignments: { $in: [assignmentId] },
@@ -156,7 +154,7 @@ export default function AIProjectExpert({ assignmentId }) {
     }
     try {
       // CRITICAL: Only load chat history from the current workspace for security
-      const history = await base44.entities.AIChat.filter(
+      const history = await db.entities.AIChat.filter(
         {
           workspace_id: currentWorkspaceId,
           assignment_id: assignmentId,
@@ -282,7 +280,7 @@ If this is a new team member asking basic questions, provide extra context to he
       });
 
       // Save the AI chat record to the database
-      const aiChatRecord = await base44.entities.AIChat.create({
+      const aiChatRecord = await db.entities.AIChat.create({
         workspace_id: currentWorkspaceId, // CRITICAL: Ensure workspace scoping for saved chats
         assignment_id: assignmentId,
         user_email: currentAuthUser.email,

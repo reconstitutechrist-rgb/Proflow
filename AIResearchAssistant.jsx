@@ -37,7 +37,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 
 export default function AIResearchAssistant({ assignment, documents, currentUser, onResearchComplete, allAssignments }) {
   const navigate = useNavigate();
@@ -88,7 +88,7 @@ export default function AIResearchAssistant({ assignment, documents, currentUser
         : null;
 
       // Call our custom Anthropic backend function with web search parameter
-      const { data: response } = await base44.functions.invoke('anthropicResearch', {
+      const { data: response } = await db.functions.invoke('anthropicResearch', {
         question: input,
         assignment: linkedAssignment || null,
         documents: linkedAssignment ? documents : [],
@@ -138,7 +138,7 @@ export default function AIResearchAssistant({ assignment, documents, currentUser
             researchData.assignment_id = selectedAssignmentId;
           }
 
-          await base44.entities.AIResearchChat.create(researchData);
+          await db.entities.AIResearchChat.create(researchData);
           
           if (onResearchComplete) {
             onResearchComplete();

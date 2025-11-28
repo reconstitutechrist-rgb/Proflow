@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { User } from "@/api/entities";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -133,10 +133,10 @@ export default function TasksPage() {
     try {
       setLoading(true);
       const [tasksData, assignmentsData, usersData, user] = await Promise.all([
-        base44.entities.Task.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        base44.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
+        db.entities.Task.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
+        db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
         User.list(),
-        base44.auth.me()
+        db.auth.me()
       ]);
 
       setTasks(tasksData);
@@ -154,10 +154,10 @@ export default function TasksPage() {
   const handleSubmit = async (taskData) => {
     try {
       if (editingTask) {
-        await base44.entities.Task.update(editingTask.id, taskData);
+        await db.entities.Task.update(editingTask.id, taskData);
         toast.success("Task updated successfully");
       } else {
-        await base44.entities.Task.create({
+        await db.entities.Task.create({
           ...taskData,
           workspace_id: currentWorkspaceId,
           assigned_by: currentUser?.email
@@ -179,7 +179,7 @@ export default function TasksPage() {
         status: newStatus,
         completed_date: newStatus === 'completed' ? new Date().toISOString().split('T')[0] : null
       };
-      await base44.entities.Task.update(task.id, updateData);
+      await db.entities.Task.update(task.id, updateData);
       loadData();
     } catch (error) {
       console.error("Error updating task status:", error);
@@ -194,7 +194,7 @@ export default function TasksPage() {
 
   const handleDeleteTask = async (task) => {
     try {
-      await base44.entities.Task.delete(task.id);
+      await db.entities.Task.delete(task.id);
       toast.success("Task deleted successfully");
       loadData();
     } catch (error) {
@@ -210,7 +210,7 @@ export default function TasksPage() {
 
   const handleTaskUpdate = async (taskId, updatedFields) => {
     try {
-      await base44.entities.Task.update(taskId, updatedFields);
+      await db.entities.Task.update(taskId, updatedFields);
       loadData();
     } catch (error) {
       console.error("Error updating task from board:", error);
@@ -240,7 +240,7 @@ export default function TasksPage() {
 
     try {
       const updatePromises = selectedTasks.map(taskId =>
-        base44.entities.Task.update(taskId, {
+        db.entities.Task.update(taskId, {
           status: newStatus,
           completed_date: newStatus === 'completed' ? new Date().toISOString().split('T')[0] : null
         })
@@ -261,7 +261,7 @@ export default function TasksPage() {
 
     try {
       const updatePromises = selectedTasks.map(taskId =>
-        base44.entities.Task.update(taskId, { priority: newPriority })
+        db.entities.Task.update(taskId, { priority: newPriority })
       );
 
       await Promise.all(updatePromises);
@@ -279,7 +279,7 @@ export default function TasksPage() {
 
     try {
       setBulkDeleteLoading(true);
-      const deletePromises = selectedTasks.map(taskId => base44.entities.Task.delete(taskId));
+      const deletePromises = selectedTasks.map(taskId => db.entities.Task.delete(taskId));
       await Promise.all(deletePromises);
 
       toast.success(`${selectedTasks.length} tasks deleted successfully`);

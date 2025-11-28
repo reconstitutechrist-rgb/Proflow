@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { toast } from "sonner";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 
 export default function ThreadSearch({ assignmentId, onThreadSelect }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -36,7 +36,7 @@ export default function ThreadSearch({ assignmentId, onThreadSelect }) {
   const loadRecentThreads = async () => {
     try {
       // CRITICAL: Only load threads from current workspace
-      const threads = await base44.entities.ConversationThread.filter({
+      const threads = await db.entities.ConversationThread.filter({
         workspace_id: currentWorkspaceId,
         ...(assignmentId && { assignment_id: assignmentId })
       }, "-last_activity", 10);
@@ -56,11 +56,11 @@ export default function ThreadSearch({ assignmentId, onThreadSelect }) {
 
       // CRITICAL: Search only in current workspace
       const [threads, messages] = await Promise.all([
-        base44.entities.ConversationThread.filter({
+        db.entities.ConversationThread.filter({
           workspace_id: currentWorkspaceId,
           ...(assignmentId && { assignment_id: assignmentId })
         }, "-last_activity", 50),
-        base44.entities.Message.filter({
+        db.entities.Message.filter({
           workspace_id: currentWorkspaceId,
           ...(assignmentId && { assignment_id: assignmentId })
         }, "-created_date", 100)

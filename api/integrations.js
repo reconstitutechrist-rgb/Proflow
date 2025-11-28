@@ -1,4 +1,4 @@
-import { dataClient } from './base44Client';
+import { db } from './db';
 
 // LLM Integration - stub that can be replaced with actual API
 // To use a real LLM, replace this with your preferred provider (OpenAI, Anthropic, etc.)
@@ -61,20 +61,20 @@ export const GetFile = async (fileId) => {
 
 /**
  * Extract structured data from an uploaded file.
- * 
+ *
  * @description This is a stub implementation. To enable file extraction,
  * integrate with a document processing service (e.g., AWS Textract, Google Document AI,
  * or a custom LLM-based extraction pipeline).
- * 
+ *
  * @param {Object} params - Extraction parameters
  * @param {string} params.file_url - URL or identifier of the uploaded file
  * @param {Object} [params.json_schema] - Optional JSON schema defining the expected output structure
- * 
+ *
  * @returns {Promise<Object>} Extraction result
  * @returns {boolean} returns.success - Whether the extraction was successful
  * @returns {string} returns.message - Status message
  * @returns {Object|null} returns.data - Extracted data (null if no schema provided)
- * 
+ *
  * @example
  * const result = await ExtractDataFromUploadedFile({
  *   file_url: 'local://file-123',
@@ -83,10 +83,10 @@ export const GetFile = async (fileId) => {
  */
 export const ExtractDataFromUploadedFile = async (params) => {
   const { file_url, json_schema } = params;
-  
+
   // This is a stub implementation
   console.log('ExtractDataFromUploadedFile called with:', { file_url, json_schema });
-  
+
   return {
     success: true,
     message: 'File extraction not configured. Please set up your preferred file extraction provider.',
@@ -94,13 +94,13 @@ export const ExtractDataFromUploadedFile = async (params) => {
   };
 };
 
-// Re-export dataClient for convenience (renamed from base44)
-export { dataClient };
+// Re-export db for convenience
+export { db };
 
 export default {
   InvokeLLM,
   UploadFile,
   GetFile,
   ExtractDataFromUploadedFile,
-  dataClient,
+  db,
 };

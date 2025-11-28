@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, Sparkles, Copy, Check, Lightbulb, PenTool, Zap, Info } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { toast } from "sonner";
 
 export default function AIWritingAssistant({
@@ -129,7 +129,7 @@ ${mode === "brainstorm" ? "Use bullet points and clear formatting." : ""}
 ${mode === "draft" ? "Write in complete, well-structured paragraphs." : ""}
 ${mode === "refine" ? "Provide the improved version of the text." : ""}`;
 
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await db.integrations.Core.InvokeLLM({
         prompt: fullPrompt,
         add_context_from_internet: false
       });

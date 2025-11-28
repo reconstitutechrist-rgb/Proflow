@@ -14,7 +14,7 @@ import {
 // New imports
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { toast } from "sonner";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 
 import CreateFolderDialog from "./CreateFolderDialog";
 
@@ -167,7 +167,7 @@ export default function FolderStructure({
 
       // Only delete if a placeholder document exists for the folder
       if (folderDoc) {
-        await base44.entities.Document.delete(folderDoc.id);
+        await db.entities.Document.delete(folderDoc.id);
         toast.success("Folder deleted successfully");
         if (onRefresh) {
           onRefresh();

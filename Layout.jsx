@@ -6,7 +6,7 @@ import { createPageUrl } from "@/lib/utils";
 import { User } from "@/api/entities";
 import { Task } from "@/api/entities";
 import { Assignment } from "@/api/entities";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -361,7 +361,7 @@ function LayoutContent({ children, currentPageName }) {
 
   const loadUser = async () => {
     try {
-      const currentUser = await base44.auth.me(); 
+      const currentUser = await db.auth.me(); 
       setUser(currentUser);
     } catch (error) {
       console.log("User not authenticated");
@@ -370,7 +370,7 @@ function LayoutContent({ children, currentPageName }) {
 
   const handleLogout = async () => {
     try {
-      await base44.auth.logout(); // FIXED: Use base44.auth.logout()
+      await db.auth.logout(); // FIXED: Use db.auth.logout()
       window.location.reload();
     } catch (error) {
         console.error("Logout failed:", error);

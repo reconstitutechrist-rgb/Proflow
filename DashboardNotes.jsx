@@ -3,7 +3,7 @@ import { Note } from "@/api/entities";
 import { Assignment } from "@/api/entities";
 import { Task } from "@/api/entities";
 import { Document } from "@/api/entities";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -155,7 +155,7 @@ Generate keywords that capture:
 
 Return only a JSON array of keyword strings.`;
 
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await db.integrations.Core.InvokeLLM({
         prompt: prompt,
         response_json_schema: {
           type: "object",
@@ -190,7 +190,7 @@ Consider synonyms, related concepts, and common variations.
 
 Return only a JSON array of search term strings.`;
 
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await db.integrations.Core.InvokeLLM({
         prompt: prompt,
         response_json_schema: {
           type: "object",

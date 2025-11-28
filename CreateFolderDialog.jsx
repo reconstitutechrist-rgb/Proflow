@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // New import
 import { toast } from "sonner"; // New import
-import { base44 } from "@/api/base44Client"; // New import as per outline
+import { db } from "@/api/db";
 
 export default function CreateFolderDialog({ 
   parentPath = "/", // Renamed from currentPath, with default value
@@ -62,11 +62,8 @@ export default function CreateFolderDialog({
         assigned_to_assignments: [] // Added as per new document structure
       };
 
-      // Assuming base44 is globally available or imported in a parent context
-      // If `Document` from "@/api/entities" is still the correct way,
-      // this line would need adjustment to match the `base44` structure.
-      // Based on the outline, `base44.entities.Document.create` is expected.
-      const newFolder = await base44.entities.Document.create(folderDocument);
+      // Using db.entities.Document.create to create folder documents
+      const newFolder = await db.entities.Document.create(folderDocument);
 
       toast.success(`Folder "${folderName}" created successfully`);
       

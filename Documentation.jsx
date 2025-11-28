@@ -164,7 +164,7 @@ const {
 
 **❌ WRONG:**
 \`\`\`javascript
-const tasks = await base44.entities.Task.list();
+const tasks = await db.entities.Task.list();
 \`\`\`
 
 **✅ CORRECT:**
@@ -172,7 +172,7 @@ const tasks = await base44.entities.Task.list();
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 const { currentWorkspaceId } = useWorkspace();
-const tasks = await base44.entities.Task.filter({
+const tasks = await db.entities.Task.filter({
   workspace_id: currentWorkspaceId
 }, "-updated_date");
 \`\`\`
@@ -181,7 +181,7 @@ const tasks = await base44.entities.Task.filter({
 
 **❌ WRONG:**
 \`\`\`javascript
-await base44.entities.Task.create({
+await db.entities.Task.create({
   title: "New Task",
   assignment_id: assignmentId
 });
@@ -191,7 +191,7 @@ await base44.entities.Task.create({
 \`\`\`javascript
 const { currentWorkspaceId } = useWorkspace();
 
-await base44.entities.Task.create({
+await db.entities.Task.create({
   workspace_id: currentWorkspaceId,  // CRITICAL
   title: "New Task",
   assignment_id: assignmentId
@@ -204,7 +204,7 @@ await base44.entities.Task.create({
 \`\`\`javascript
 const { currentWorkspaceId } = useWorkspace();
 
-await base44.entities.Task.update(taskId, {
+await db.entities.Task.update(taskId, {
   status: "completed",
   workspace_id: currentWorkspaceId  // Maintain workspace
 });
@@ -224,7 +224,7 @@ const handleDuplicate = async (document) => {
     return;
   }
 
-  const duplicate = await base44.entities.Document.create({
+  const duplicate = await db.entities.Document.create({
     ...document,
     id: undefined,
     title: document.title + " (Copy)",
@@ -262,7 +262,7 @@ const loadData = async () => {
   try {
     setLoading(true);
     
-    const results = await base44.entities.MyEntity.filter({
+    const results = await db.entities.MyEntity.filter({
       workspace_id: currentWorkspaceId
     }, "-updated_date");
     
@@ -285,7 +285,7 @@ const handleCreate = async (formData) => {
     return;
   }
 
-  const newEntity = await base44.entities.MyEntity.create({
+  const newEntity = await db.entities.MyEntity.create({
     workspace_id: currentWorkspaceId,  // CRITICAL
     ...formData
   });
@@ -469,12 +469,12 @@ This guide helps you migrate existing ProjectFlow data to the new workspace-awar
 ### Script 1: Create Default Workspaces for All Users
 
 \`\`\`javascript
-// Run this via Base44 Dashboard → Code → Functions
+// Run this via Supabase Dashboard → Functions
 
-import { base44 } from '@base44/sdk';
+import { db } from '@/api/db';
 
 async function createDefaultWorkspaces() {
-  const serviceRole = base44.asServiceRole;
+  const serviceRole = db.asServiceRole;
   const users = await serviceRole.entities.User.list();
   
   for (const user of users) {
@@ -518,7 +518,7 @@ createDefaultWorkspaces();
 
 \`\`\`javascript
 async function assignDataToDefaultWorkspaces() {
-  const serviceRole = base44.asServiceRole;
+  const serviceRole = db.asServiceRole;
   const users = await serviceRole.entities.User.list();
   
   for (const user of users) {
@@ -558,7 +558,7 @@ assignDataToDefaultWorkspaces();
 
 \`\`\`javascript
 async function verifyMigration() {
-  const serviceRole = base44.asServiceRole;
+  const serviceRole = db.asServiceRole;
   
   const entitiesToCheck = [
     'Project',
@@ -603,7 +603,7 @@ verifyMigration();
 
 ### Issue: User has no default workspace
 \`\`\`javascript
-const workspace = await base44.asServiceRole.entities.Workspace.create({
+const workspace = await db.asServiceRole.entities.Workspace.create({
   name: \`\${user.full_name}'s Workspace\`,
   owner_email: user.email,
   members: [user.email],
@@ -611,7 +611,7 @@ const workspace = await base44.asServiceRole.entities.Workspace.create({
   is_default: true
 });
 
-await base44.asServiceRole.entities.User.update(user.id, {
+await db.asServiceRole.entities.User.update(user.id, {
   active_workspace_id: workspace.id
 });
 \`\`\`

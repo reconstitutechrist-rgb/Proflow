@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 
 export default function DocToPdfConverter({ documentId }) {
   const [converting, setConverting] = useState(false);
@@ -41,7 +41,7 @@ export default function DocToPdfConverter({ documentId }) {
     setDocumentError(null);
     setDocumentData(null);
     try {
-      const docs = await base44.entities.Document.filter({
+      const docs = await db.entities.Document.filter({
         workspace_id: currentWorkspaceId,
         id: documentId
       }, "-updated_date", 1);
@@ -86,7 +86,7 @@ export default function DocToPdfConverter({ documentId }) {
     toast.info("Starting PDF conversion...");
 
     try {
-      const response = await base44.functions.invoke('convertDocToPdf', {
+      const response = await db.functions.invoke('convertDocToPdf', {
         documentId: documentData.id,
         workspaceId: currentWorkspaceId
       });

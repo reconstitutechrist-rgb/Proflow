@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // Added WorkspaceContext import
 import { toast } from "sonner"; // Assuming sonner for toasts
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 
 export default function ThreadedConversation({
   thread,
@@ -43,7 +43,7 @@ export default function ThreadedConversation({
     if (!thread || !currentWorkspaceId) return; // Guard clause
     try {
       setLoading(true);
-      const messagesData = await base44.entities.Message.filter(
+      const messagesData = await db.entities.Message.filter(
         {
           workspace_id: currentWorkspaceId,
           thread_id: thread.id
@@ -74,10 +74,10 @@ export default function ThreadedConversation({
         message_type: 'text'
       };
 
-      await base44.entities.Message.create(messageData); // Create the new message
+      await db.entities.Message.create(messageData); // Create the new message
 
       // Update the conversation thread's last activity and message count
-      await base44.entities.ConversationThread.update(thread.id, {
+      await db.entities.ConversationThread.update(thread.id, {
         last_activity: new Date().toISOString(),
         message_count: (thread.message_count || 0) + 1
       });
@@ -119,7 +119,7 @@ export default function ThreadedConversation({
         ];
       }
 
-      await base44.entities.Message.update(messageId, {
+      await db.entities.Message.update(messageId, {
         reactions: updatedReactions
       });
 
@@ -136,7 +136,7 @@ export default function ThreadedConversation({
       const message = messages.find(m => m.id === messageId);
       if (!message) return;
 
-      await base44.entities.Message.update(messageId, {
+      await db.entities.Message.update(messageId, {
         is_pinned: !message.is_pinned,
         pinned_by: message.is_pinned ? null : currentUser.email,
         pinned_at: message.is_pinned ? null : new Date().toISOString()

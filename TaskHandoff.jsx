@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 export default function TaskHandoff({
@@ -87,7 +87,7 @@ export default function TaskHandoff({
       handoffHistory.push(newHandoff);
 
       // Update the task
-      await base44.entities.Task.update(task.id, {
+      await db.entities.Task.update(task.id, {
         assigned_to: selectedPartner.email,
         handoff_history: handoffHistory,
         handoff_notes: handoffNotes,
@@ -97,7 +97,7 @@ export default function TaskHandoff({
 
       // Create follow-up task if requested
       if (createFollowUp && followUpTitle.trim()) {
-        await base44.entities.Task.create({
+        await db.entities.Task.create({
           workspace_id: currentWorkspaceId,
           title: followUpTitle,
           description: `Follow-up from: ${task.title}\n\nOriginal handoff notes: ${handoffNotes}`,
@@ -113,7 +113,7 @@ export default function TaskHandoff({
       // Create a message in the relevant thread if available
       if (task.thread_id) {
         try {
-          await base44.entities.Message.create({
+          await db.entities.Message.create({
             workspace_id: currentWorkspaceId,
             thread_id: task.thread_id,
             author_email: currentUser.email,

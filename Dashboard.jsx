@@ -3,7 +3,7 @@ import { Assignment } from "@/api/entities";
 import { Task } from "@/api/entities";
 import { Document } from "@/api/entities";
 import { Message } from "@/api/entities";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,7 +57,7 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
 
-      const currentUser = await base44.auth.me();
+      const currentUser = await db.auth.me();
       setUser(currentUser);
 
       // Load all data filtered by workspace

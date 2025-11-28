@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // Import useWorkspace hook
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -73,14 +73,14 @@ export default function ChatSessionManager({
     setLoading(true);
 
     try {
-      const user = await base44.auth.me(); // Fetch user internally
+      const user = await db.auth.me(); // Fetch user internally
       if (!user?.email) {
         toast.error("User not authenticated.");
         setSessions([]); // Clear sessions if user is not authenticated
         return;
       }
 
-      const userSessions = await base44.entities.AIChatSession.filter({
+      const userSessions = await db.entities.AIChatSession.filter({
         workspace_id: currentWorkspaceId, // Filter by current workspace
         created_by: user.email
       }, "-last_activity");
@@ -143,7 +143,7 @@ export default function ChatSessionManager({
     }
 
     try {
-      const user = await base44.auth.me(); // Fetch user internally
+      const user = await db.auth.me(); // Fetch user internally
       if (!user?.email) {
         toast.error("User not authenticated.");
         return;
@@ -162,7 +162,7 @@ export default function ChatSessionManager({
         last_activity: new Date().toISOString()
       };
 
-      const newSession = await base44.entities.AIChatSession.create(sessionData); // Use base44 entity
+      const newSession = await db.entities.AIChatSession.create(sessionData); // Use db entity
       
       // Update local state and trigger selection
       setSessions(prev => [newSession, ...prev]);
@@ -192,7 +192,7 @@ export default function ChatSessionManager({
     }
 
     try {
-      await base44.entities.AIChatSession.update(renamingSession.id, { // Use base44 entity
+      await db.entities.AIChatSession.update(renamingSession.id, { // Use db entity
         name: newSessionName.trim(),
         description: newSessionDescription.trim() || renamingSession.description
       });
@@ -222,7 +222,7 @@ export default function ChatSessionManager({
     }
 
     try {
-      await base44.entities.AIChatSession.delete(sessionId); // Use base44 entity
+      await db.entities.AIChatSession.delete(sessionId); // Use db entity
       toast.success("Thread deleted");
 
       // Update local state without refetching
@@ -242,7 +242,7 @@ export default function ChatSessionManager({
     try {
       const newStatus = session.status === "archived" ? "active" : "archived";
 
-      await base44.entities.AIChatSession.update(session.id, { // Use base44 entity
+      await db.entities.AIChatSession.update(session.id, { // Use db entity
         status: newStatus
       });
 
@@ -264,7 +264,7 @@ export default function ChatSessionManager({
     try {
       const newStatus = session.status === "pinned" ? "active" : "pinned";
 
-      await base44.entities.AIChatSession.update(session.id, { // Use base44 entity
+      await db.entities.AIChatSession.update(session.id, { // Use db entity
         status: newStatus
       });
 
@@ -289,7 +289,7 @@ export default function ChatSessionManager({
     }
 
     try {
-      const user = await base44.auth.me(); // Fetch user internally
+      const user = await db.auth.me(); // Fetch user internally
       if (!user?.email) {
         toast.error("User not found for duplication.");
         return;
@@ -311,7 +311,7 @@ export default function ChatSessionManager({
         last_activity: new Date().toISOString()
       };
 
-      const newSession = await base44.entities.AIChatSession.create(duplicate); // Use base44 entity
+      const newSession = await db.entities.AIChatSession.create(duplicate); // Use db entity
       toast.success("Thread duplicated");
 
       // Add to local state without refetching

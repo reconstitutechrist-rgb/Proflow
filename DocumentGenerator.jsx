@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Document } from "@/api/entities";
 import { Task } from "@/api/entities";
 import { User } from "@/api/entities";
-import { base44 } from "@/api/base44Client"; // Added base44 import as per outline
+import { db } from "@/api/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -299,7 +299,7 @@ Let's create something great!`,
     
     setIsGeneratingTasks(true);
     try {
-      const response = await base44.integrations.Core.anthropicResearch({ // Updated from anthropicResearch
+      const response = await db.integrations.Core.anthropicResearch({ // Updated from anthropicResearch
         question: `Analyze this document and suggest 3-5 actionable tasks that should be created based on its content.
 
 Document Title: ${title}
@@ -363,7 +363,7 @@ Return the tasks as a JSON array with this structure:
 
     try {
       const notificationPromises = teamMembers.map(async (member) => {
-        return base44.integrations.Core.SendEmail({ // Updated from SendEmail
+        return db.integrations.Core.SendEmail({ // Updated from SendEmail
           to: member.email,
           subject: `New Document: ${documentTitle}`,
           body: `Hi ${member.full_name},
@@ -498,7 +498,7 @@ Respond helpfully to the user's request. If they're asking for:
 If they want you to modify the existing content, provide the updated version. If they're asking questions, provide helpful explanations. Always be collaborative and constructive.`;
       }
 
-      const response = await base44.integrations.Core.anthropicResearch({ // Updated from anthropicResearch
+      const response = await db.integrations.Core.anthropicResearch({ // Updated from anthropicResearch
         question: specialPrompt,
         assignment: assignment,
         documents: []
@@ -635,14 +635,13 @@ Create a comprehensive, professional document that:
 
 Make it comprehensive but not overwhelming. Think of it as something you'd be proud to share with stakeholders or clients. Don't include placeholder text - make it complete and ready to use.`;
 
-      // Changed LLM invocation from anthropicResearch to base44.integrations.Core.InvokeLLM as per outline
-      // Assuming base44 is globally available or handled by the framework.
-      const response = await base44.integrations.Core.InvokeLLM({
+      // Using db.integrations.Core.InvokeLLM for AI content generation
+      const response = await db.integrations.Core.InvokeLLM({
         prompt: prompt,
         add_context_from_internet: false
       });
 
-      // Assuming base44.integrations.Core.InvokeLLM returns the content string directly.
+      // Assuming db.integrations.Core.InvokeLLM returns the content string directly.
       setGeneratedContent(response);
 
       if (shouldGenerateTasks) {
@@ -731,7 +730,7 @@ You can now ask me to refine it using conversational commands.`,
       const blob = new Blob([htmlContent], { type: 'text/html' });
       const file = new File([blob], `${documentTitle.replace(/[^a-z0-9]/gi, '_')}.html`, { type: 'text/html' });
 
-      const uploadResult = await base44.integrations.Core.UploadFile({ file }); // Updated from UploadFile
+      const uploadResult = await db.integrations.Core.UploadFile({ file }); // Updated from UploadFile
 
       const documentData = {
         workspace_id: currentWorkspaceId, // Added workspace_id as per outline

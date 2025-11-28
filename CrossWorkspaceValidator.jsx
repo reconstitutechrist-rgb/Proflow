@@ -2,7 +2,7 @@
  * Utility component and hooks for cross-workspace validation
  * Ensures data integrity across workspace boundaries
  */
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { toast } from "sonner";
 
 /**
@@ -10,7 +10,7 @@ import { toast } from "sonner";
  */
 export async function validateWorkspaceOwnership(entityType, entityId, expectedWorkspaceId) {
   try {
-    const entities = await base44.entities[entityType].filter({ id: entityId });
+    const entities = await db.entities[entityType].filter({ id: entityId });
     
     if (entities.length === 0) {
       throw new Error(`${entityType} not found`);

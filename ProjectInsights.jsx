@@ -24,7 +24,7 @@ import {
   ListChecks    // Added for recommended actions
 } from "lucide-react";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // New import
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/db';
 import { toast } from 'sonner'; // Assuming sonner is used for toasts
 
 export default function ProjectInsights({ projectId }) { // Changed component signature
@@ -44,15 +44,15 @@ export default function ProjectInsights({ projectId }) { // Changed component si
 
       // CRITICAL: Load only data from current workspace
       const [projectData, assignmentsData, tasksData] = await Promise.all([
-        base44.entities.Project.filter({
+        db.entities.Project.filter({
           workspace_id: currentWorkspaceId,
           id: projectId
         }, "-updated_date", 1),
-        base44.entities.Assignment.filter({
+        db.entities.Assignment.filter({
           workspace_id: currentWorkspaceId,
           project_id: projectId
         }, "-updated_date"),
-        base44.entities.Task.filter({
+        db.entities.Task.filter({
           workspace_id: currentWorkspaceId
         }, "-updated_date")
       ]);
@@ -100,7 +100,7 @@ Provide:
 
 Return as JSON.`;
 
-      const response = await base44.integrations.Core.InvokeLLM({ // Changed LLM invocation structure
+      const response = await db.integrations.Core.InvokeLLM({ // Changed LLM invocation structure
         prompt: prompt,
         response_json_schema: {
           type: "object",

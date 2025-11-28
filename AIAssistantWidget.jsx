@@ -29,7 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import MessageBubble from "./AIMessageBubble";
 import SmartContextDetector from "./SmartContextDetector";
 
@@ -97,7 +97,7 @@ export default function AIAssistantWidget({ currentPageName, workspaceId }) {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const user = await base44.auth.me(); // Changed from base44.entities.User.me()
+        const user = await db.auth.me(); // Changed from db.entities.User.me()
         if (isMountedRef.current) {
           setCurrentUser(user);
         }
@@ -190,7 +190,7 @@ export default function AIAssistantWidget({ currentPageName, workspaceId }) {
   const initConversation = useCallback(async () => {
     try {
       const currentPage = currentPageName;
-      const conversation = await base44.agents.createConversation({
+      const conversation = await db.agents.createConversation({
         agent_name: "ProjectFlowExpert",
         metadata: {
           name: `ProjectFlow Session - ${new Date().toLocaleString()}`,
@@ -225,7 +225,7 @@ What can I help you with today?`,
 
       setMessages([welcomeMessage]);
 
-      const unsubscribe = base44.agents.subscribeToConversation(
+      const unsubscribe = db.agents.subscribeToConversation(
         conversation.id,
         (data) => {
           if (isMountedRef.current) {
@@ -289,8 +289,29 @@ What can I help you with today?`,
 
   useEffect(() => {
     if (isOpen) {
-      const cleanup = initConversation();
-      return cleanup;
+      let cleanup = null;
+      let cancelled = false;
+
+      const init = async () => {
+        const result = await initConversation();
+        if (cancelled) {
+          // Component unmounted before init finished, cleanup immediately
+          if (typeof result === 'function') {
+            result();
+          }
+        } else {
+          cleanup = result;
+        }
+      };
+
+      init();
+
+      return () => {
+        cancelled = true;
+        if (typeof cleanup === 'function') {
+          cleanup();
+        }
+      };
     }
   }, [isOpen, initConversation]);
 
@@ -339,22 +360,22 @@ What can I help you with today?`,
       const context = getEnhancedContext();
 
       const [tasks, assignments, projects, user] = await Promise.all([
-        base44.entities.Task.list("-updated_date", 50).catch((err) => {
+        db.entities.Task.list("-updated_date", 50).catch((err) => {
           console.warn("Failed to fetch tasks:", err);
           return [];
         }),
-        base44.entities.Assignment.list().catch((err) => {
+        db.entities.Assignment.list().catch((err) => {
           console.warn("Failed to fetch assignments:", err);
           return [];
         }),
-        base44.entities.Project.list().catch((err) => {
+        db.entities.Project.list().catch((err) => {
           console.warn("Failed to fetch projects:", err);
           return [];
         }),
-        base44.auth.me().catch((err) => {
+        db.auth.me().catch((err) => {
           console.warn("Failed to fetch current user:", err);
           return null;
-        }), // Changed from base44.entities.User.me()
+        }), // Changed from db.entities.User.me()
       ]);
 
       const contextInfo = `
@@ -406,7 +427,7 @@ Always confirm with the user before performing destructive actions like deletion
 Be specific and clear about what you are doing.
 `;
 
-      await base44.agents.addMessage(agentConversation, {
+      await db.agents.addMessage(agentConversation, {
         role: "user",
         content: contextInfo,
       });
@@ -554,8 +575,8 @@ Be specific and clear about what you are doing.
       const messageContent = message?.content || "";
       const enhancedContext = getEnhancedContext();
 
-      await base44.entities.AIAssistantFeedback.create({
-        // Changed to base44.entities.AIAssistantFeedback
+      await db.entities.AIAssistantFeedback.create({
+        // Changed to db.entities.AIAssistantFeedback
         workspace_id: workspaceId, // ADDED: Workspace scoping
         conversation_id: conversationId,
         message_id: messageId,

@@ -3,7 +3,7 @@ import { Task } from "@/api/entities";
 import { Document } from "@/api/entities";
 import { Message } from "@/api/entities";
 import { User } from "@/api/entities";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

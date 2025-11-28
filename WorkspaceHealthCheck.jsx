@@ -12,7 +12,7 @@ import {
   Users,
   Activity
 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { useWorkspace } from "./WorkspaceContext";
 import { toast } from "sonner";
 
@@ -33,7 +33,7 @@ export default function WorkspaceHealthCheck() {
     try {
       // Check 1: Workspace exists and user is member
       try {
-        const workspace = await base44.entities.Workspace.filter({
+        const workspace = await db.entities.Workspace.filter({
           id: currentWorkspaceId
         }, "-created_date", 1);
 
@@ -60,11 +60,11 @@ export default function WorkspaceHealthCheck() {
 
       // Check 2: Data isolation (sample test)
       try {
-        const projects = await base44.entities.Project.filter({
+        const projects = await db.entities.Project.filter({
           workspace_id: currentWorkspaceId
         }, "-created_date", 1);
 
-        const allProjects = await base44.entities.Project.list();
+        const allProjects = await db.entities.Project.list();
         const otherWorkspaceProjects = allProjects.filter(
           p => p.workspace_id && p.workspace_id !== currentWorkspaceId
         );
@@ -96,7 +96,7 @@ export default function WorkspaceHealthCheck() {
         const missingWorkspaceId = [];
 
         for (const entityName of entitiesToCheck) {
-          const records = await base44.entities[entityName].filter({
+          const records = await db.entities[entityName].filter({
             workspace_id: currentWorkspaceId
           }, "-created_date", 5);
 

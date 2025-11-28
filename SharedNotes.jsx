@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Note } from "@/api/entities";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -52,7 +52,7 @@ export default function SharedNotes({ compact = false }) {
 
   const loadCurrentUser = async () => {
     try {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       setCurrentUser(user);
     } catch (error) {
       console.error("Error loading user:", error);

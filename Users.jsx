@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { User } from "@/api/entities";
 import { Assignment } from "@/api/entities";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,7 +53,7 @@ export default function UsersPage() {
       const [usersData, assignmentsData, userData] = await Promise.all([
         User.list(), 
         Assignment.list(), 
-        base44.auth.me()
+        db.auth.me()
       ]);
       setUsers(usersData);
       setAssignments(assignmentsData);
@@ -165,7 +165,7 @@ export default function UsersPage() {
           <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900">
             <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             <AlertDescription className="text-amber-800 dark:text-amber-200">
-              <strong>No administrator assigned yet.</strong> To set an admin, go to the Base44 Dashboard → Data → User entity, find your user record, and set the <code className="px-1 py-0.5 bg-amber-100 dark:bg-amber-900/50 rounded text-xs">user_role</code> field to <code className="px-1 py-0.5 bg-amber-100 dark:bg-amber-900/50 rounded text-xs">admin</code>.
+              <strong>No administrator assigned yet.</strong> To set an admin, go to the Supabase Dashboard → Table Editor → users, find your user record, and set the <code className="px-1 py-0.5 bg-amber-100 dark:bg-amber-900/50 rounded text-xs">user_role</code> field to <code className="px-1 py-0.5 bg-amber-100 dark:bg-amber-900/50 rounded text-xs">admin</code>.
             </AlertDescription>
           </Alert>
         )}

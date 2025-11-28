@@ -340,7 +340,7 @@ export default function InviteDialog({ workspaceId, isOpen, onClose }) {
   
   const handleSendInvites = async () => {
     const invitePromises = invites.map(invite => 
-      base44.entities.WorkspaceInvite.create({
+      db.entities.WorkspaceInvite.create({
         workspace_id: workspaceId,
         invited_email: invite.email,
         role: invite.role,
@@ -408,7 +408,7 @@ export default function ShareButton({ document, onShare }) {
   const [permissions, setPermissions] = useState([]);
   
   const handleShare = async (email, permission) => {
-    await base44.entities.DocumentPermission.create({
+    await db.entities.DocumentPermission.create({
       document_id: document.id,
       user_email: email,
       permission_level: permission, // 'view', 'comment', 'edit'
@@ -417,7 +417,7 @@ export default function ShareButton({ document, onShare }) {
     });
     
     // Send notification to the user
-    await base44.entities.Notification.create({
+    await db.entities.Notification.create({
       recipient_email: email,
       type: 'document_shared',
       title: `${currentUser.full_name} shared a document with you`,
@@ -505,7 +505,7 @@ export const sendTaskNotification = async (task, type, recipient) => {
     }
   };
   
-  await base44.entities.Notification.create({
+  await db.entities.Notification.create({
     recipient_email: recipient,
     type,
     ...templates[type],

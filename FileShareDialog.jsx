@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/integrations"; // Assuming base44 is from Core, similar to UploadFile
+import { db } from "@/api/db";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,7 +42,7 @@ export default function FileShareDialog({ file, isOpen, onClose, onShared }) {
     try {
       setLoading(true);
       // CRITICAL: Only load threads from current workspace
-      const threadsData = await base44.entities.ConversationThread.filter(
+      const threadsData = await db.entities.ConversationThread.filter(
         {
           workspace_id: currentWorkspaceId,
           status: "active"
@@ -100,7 +100,7 @@ export default function FileShareDialog({ file, isOpen, onClose, onShared }) {
         return;
       }
 
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
 
       // Create message with file attachment in current workspace
       const messageData = {
@@ -116,10 +116,10 @@ export default function FileShareDialog({ file, isOpen, onClose, onShared }) {
         linked_documents: file?.id ? [file.id] : []
       };
 
-      await base44.entities.Message.create(messageData);
+      await db.entities.Message.create(messageData);
 
       // Update thread activity
-      await base44.entities.ConversationThread.update(selectedThread, {
+      await db.entities.ConversationThread.update(selectedThread, {
         last_activity: new Date().toISOString(),
         message_count: (thread.message_count || 0) + 1
       });

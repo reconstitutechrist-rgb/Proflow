@@ -4,7 +4,7 @@ import { Assignment } from "@/api/entities";
 import { Document } from "@/api/entities";
 import { AIResearchChat } from "@/api/entities";
 import { User } from "@/api/entities";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,12 +62,12 @@ export default function ResearchPage() {
     }
     try {
       setLoading(true);
-      // Modified to filter by workspace_id and use base44.entities
+      // Modified to filter by workspace_id and use db.entities
       const [assignmentsData, documentsData, researchData, user] = await Promise.all([
-        base44.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        base44.entities.Document.filter({ workspace_id: currentWorkspaceId }, "-updated_date"), // Keeping documents fetch with workspace filter to preserve functionality
-        base44.entities.AIResearchChat.filter({ workspace_id: currentWorkspaceId }, "-created_date", 50),
-        base44.auth.me()
+        db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
+        db.entities.Document.filter({ workspace_id: currentWorkspaceId }, "-updated_date"), // Keeping documents fetch with workspace filter to preserve functionality
+        db.entities.AIResearchChat.filter({ workspace_id: currentWorkspaceId }, "-created_date", 50),
+        db.auth.me()
       ]);
 
       setAssignments(assignmentsData);
@@ -114,7 +114,7 @@ export default function ResearchPage() {
 
   const handleResearchComplete = () => {
     // Refresh research history after a new chat is completed, filtering by workspace
-    base44.entities.AIResearchChat.filter({ workspace_id: currentWorkspaceId }, "-created_date", 50)
+    db.entities.AIResearchChat.filter({ workspace_id: currentWorkspaceId }, "-created_date", 50)
       .then(setResearchHistory)
       .catch(error => {
         console.error("Error refreshing research history:", error);
@@ -158,8 +158,8 @@ export default function ResearchPage() {
   // These functions are typically managed within the AIResearchAssistant component,
   // not directly in ResearchPage which orchestrates the view.
   // ResearchPage passes necessary props like `workspaceId` to AIResearchAssistant,
-  // and the AIResearchAssistant component itself would use `base44.functions.invoke`
-  // and `base44.entities.AIResearchChat.create` internally.
+  // and the AIResearchAssistant component itself would use `db.functions.invoke`
+  // and `db.entities.AIResearchChat.create` internally.
   // Thus, these specific function implementations from the outline are omitted here
   // as they pertain to AIResearchAssistant's internal logic, not ResearchPage's.
 

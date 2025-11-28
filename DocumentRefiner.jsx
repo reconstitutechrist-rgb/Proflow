@@ -29,7 +29,7 @@ import GrammarAssistant from "@/GrammarAssistant";
 import AudienceRewriter from "./AudienceRewriter";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { base44 } from "@/api/base44Client"; // New import for base44
+import { db } from "@/api/db";
 
 export default function DocumentRefiner({ document, onRefineComplete }) {
   const [editorContent, setEditorContent] = useState("");
@@ -128,12 +128,12 @@ ${strippedContent.substring(0, 15000)}
 
 Return the refined document maintaining the same general structure but improved according to the instructions. Format as HTML.`;
 
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await db.integrations.Core.InvokeLLM({
         prompt: prompt
       });
 
       // CRITICAL: Update document while maintaining workspace_id
-      await base44.entities.Document.update(document.id, {
+      await db.entities.Document.update(document.id, {
         content: response,
         workspace_id: currentWorkspaceId, // CRITICAL: Maintain workspace_id
         version: `${parseFloat(document.version || "1.0") + 0.1}`,

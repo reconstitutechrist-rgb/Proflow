@@ -23,7 +23,7 @@ import {
 import { Wand2, ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 
 export default function PromptBuilderWizard({ isOpen, assignmentId, onDocumentCreated, onClose }) {
   const [currentStep, setCurrentStep] = useState(0);
@@ -104,7 +104,7 @@ Keywords to include: ${keywordsArray.join(', ')}
 
 Format the document with proper headings, paragraphs, and structure. Make it professional and ready for use.`;
 
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await db.integrations.Core.InvokeLLM({
         prompt: prompt,
         add_context_from_internet: includeResearch
       });
@@ -121,7 +121,7 @@ Format the document with proper headings, paragraphs, and structure. Make it pro
         version: "1.0"
       };
 
-      const newDocument = await base44.entities.Document.create(documentData);
+      const newDocument = await db.entities.Document.create(documentData);
 
       toast.success("Document generated successfully!");
 

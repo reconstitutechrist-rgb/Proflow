@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,7 +76,7 @@ export default function WorkspacesPage() {
 
     try {
       setCreating(true);
-      await base44.entities.Workspace.create({
+      await db.entities.Workspace.create({
         name: newWorkspace.name,
         description: newWorkspace.description,
         type: newWorkspace.type,
@@ -129,7 +129,7 @@ export default function WorkspacesPage() {
     }
 
     try {
-      await base44.entities.Workspace.delete(workspace.id);
+      await db.entities.Workspace.delete(workspace.id);
       toast.success("Workspace deleted successfully");
       
       // If the deleted workspace was active, context will handle switching

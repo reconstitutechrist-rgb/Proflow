@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, Loader2, Target } from "lucide-react";
@@ -55,16 +55,16 @@ export default function ProjectsPage() {
       setLoading(true);
       const [projectsData, assignmentsData, usersData, user] =
         await Promise.all([
-          base44.entities.Project.filter(
+          db.entities.Project.filter(
             { workspace_id: currentWorkspaceId },
             "-updated_date"
           ),
-          base44.entities.Assignment.filter(
+          db.entities.Assignment.filter(
             { workspace_id: currentWorkspaceId },
             "-updated_date"
           ),
-          base44.entities.User.list(),
-          base44.auth.me(),
+          db.entities.User.list(),
+          db.auth.me(),
         ]);
 
       setProjects(projectsData);
@@ -92,10 +92,10 @@ export default function ProjectsPage() {
   const handleSubmit = async (projectData) => {
     try {
       if (editingProject) {
-        await base44.entities.Project.update(editingProject.id, projectData);
+        await db.entities.Project.update(editingProject.id, projectData);
         toast.success("Project updated successfully");
       } else {
-        await base44.entities.Project.create({
+        await db.entities.Project.create({
           ...projectData,
           workspace_id: currentWorkspaceId,
         });
@@ -119,7 +119,7 @@ export default function ProjectsPage() {
     if (!projectToDelete) return;
 
     try {
-      await base44.entities.Project.delete(projectToDelete.id);
+      await db.entities.Project.delete(projectToDelete.id);
       toast.success("Project deleted successfully");
       setSelectedProject(null);
       loadData();

@@ -28,7 +28,7 @@ import {
 import { toast } from 'react-hot-toast'; // Assuming react-hot-toast is used for notifications
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
-import { base44 } from "@/api/base44Client"; 
+import { db } from "@/api/db"; 
 
 export default function DecisionCapture({
   isOpen,
@@ -87,7 +87,7 @@ export default function DecisionCapture({
     try {
       setLoading(true);
 
-      const decisionMessage = await base44.entities.Message.create({
+      const decisionMessage = await db.entities.Message.create({
         workspace_id: currentWorkspaceId,
         content: decisionSummary,
         assignment_id: assignmentId,
@@ -106,10 +106,10 @@ export default function DecisionCapture({
       });
 
       if (threadId) {
-        // Assuming base44.entities.ConversationThread has methods like get and update
-        const thread = await base44.entities.ConversationThread.get(threadId);
+        // Assuming db.entities.ConversationThread has methods like get and update
+        const thread = await db.entities.ConversationThread.get(threadId);
         const currentDecisions = thread.decisions || [];
-        await base44.entities.ConversationThread.update(threadId, {
+        await db.entities.ConversationThread.update(threadId, {
           decisions: [...currentDecisions, decisionMessage.id],
           last_activity: new Date().toISOString()
         });

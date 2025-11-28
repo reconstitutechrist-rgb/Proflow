@@ -1,6 +1,6 @@
 # Proflow
 
-A project management application with AI-powered features built with Vite+React and Base44.
+A project management application with AI-powered features built with Vite+React and Supabase.
 
 ## AI Models Used
 
@@ -31,4 +31,4 @@ npm run dev
 npm run build
 ```
 
-For more information and support, please contact Base44 support at app@base44.com.
+For more information and support, please contact the development team.

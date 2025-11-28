@@ -9,7 +9,11 @@
       "Bash(node verify-db-node.js:*)",
       "Bash(npm run build:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nrefactor: update API layer and component imports for Supabase migration\n\n- Remove base44Client.js and base44.js integration files\n- Update entity imports across 60+ components to use new API structure\n- Add api/db.js for database connection handling\n- Clean up deprecated integration references\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(cat:*)",
+      "Bash(git checkout:*)",
+      "Bash(npm update:*)",
+      "Bash(npx @tailwindcss/upgrade@next)"
     ],
     "deny": [],
     "ask": []

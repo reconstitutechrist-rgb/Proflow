@@ -211,13 +211,16 @@ export default function AIAssistantWidget({ currentPageName, workspaceId }) {
 
 **I can help you with:**
 - Understanding features and how to use them
-- **Creating, updating, and deleting projects, assignments, tasks, and notes**
+- **Creating notes** - Just say "Create a note called [title]" or provide details
+- **Managing projects, assignments, and tasks**
 - Finding specific items across the app
-- Sending messages to team members
 - Suggesting workflows and best practices
 - Troubleshooting issues
 
-**Just tell me what you want to do, and I'll handle it for you** (with your confirmation, of course)!
+**Quick Actions:**
+- "Create a note called Meeting Summary"
+- "Help me understand the Dashboard"
+- "What can you do?"
 
 What can I help you with today?`,
         timestamp: new Date().toISOString(),
@@ -359,29 +362,42 @@ What can I help you with today?`,
     try {
       const context = getEnhancedContext();
 
-      const [tasks, assignments, projects, user] = await Promise.all([
-        db.entities.Task.list("-updated_date", 50).catch((err) => {
-          console.warn("Failed to fetch tasks:", err);
-          return [];
-        }),
-        db.entities.Assignment.list().catch((err) => {
-          console.warn("Failed to fetch assignments:", err);
-          return [];
-        }),
-        db.entities.Project.list().catch((err) => {
-          console.warn("Failed to fetch projects:", err);
-          return [];
-        }),
+      const [tasks, assignments, projects, notes, user] = await Promise.all([
+        workspaceId
+          ? db.entities.Task.filter({ workspace_id: workspaceId }, "-updated_date", 50).catch((err) => {
+              console.warn("Failed to fetch tasks:", err);
+              return [];
+            })
+          : [],
+        workspaceId
+          ? db.entities.Assignment.filter({ workspace_id: workspaceId }).catch((err) => {
+              console.warn("Failed to fetch assignments:", err);
+              return [];
+            })
+          : [],
+        workspaceId
+          ? db.entities.Project.filter({ workspace_id: workspaceId }).catch((err) => {
+              console.warn("Failed to fetch projects:", err);
+              return [];
+            })
+          : [],
+        workspaceId
+          ? db.entities.Note.filter({ workspace_id: workspaceId }, "-updated_date", 20).catch((err) => {
+              console.warn("Failed to fetch notes:", err);
+              return [];
+            })
+          : [],
         db.auth.me().catch((err) => {
           console.warn("Failed to fetch current user:", err);
           return null;
-        }), // Changed from db.entities.User.me()
+        }),
       ]);
 
       const contextInfo = `
 Current System Context:
 - Page: ${context.current_page}
 - URL: ${context.url}
+- workspace_id: ${workspaceId || "none"}
 ${
   context.current_entity_type
     ? `- Viewing: ${context.current_entity_type} (ID: ${context.current_entity_id})`
@@ -419,10 +435,20 @@ ${tasks
   )
   .join("\n")}
 
+Recent Notes (${notes.length > 0 ? notes.length : "none"}):
+${notes
+  .slice(0, 10)
+  .map(
+    (n) =>
+      `- ${n.title} (ID: ${n.id}, Tags: ${(n.tags || []).join(", ") || "none"})`
+  )
+  .join("\n")}
+
 User Input: ${textToSend}
 
 Based on the user's input and the provided system context, respond to the user.
-If the user's input implies an action (like creating a task), use the available tools to perform that action.
+If the user wants to create a note, you can create it directly with the workspace_id provided above.
+If the user's input implies an action (like creating a task or note), use the available tools to perform that action.
 Always confirm with the user before performing destructive actions like deletion.
 Be specific and clear about what you are doing.
 `;
@@ -1008,7 +1034,7 @@ Be specific and clear about what you are doing.
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Ask me to create, update, or delete tasks..."
+                    placeholder="Create a note, manage tasks, or ask for help..."
                     className="flex-1 bg-white dark:bg-gray-800"
                     disabled={isLoading}
                     aria-label="Message input"

@@ -1,6 +1,8 @@
 import React, { Suspense } from "react";
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import Layout from "./Layout.jsx";
+import { AuthProvider, useAuth } from "@/components/auth/AuthProvider";
+import AuthPage from "./AuthPage.jsx";
 
 // Lazy load all page components for code splitting
 const Dashboard = React.lazy(() => import("./Dashboard"));
@@ -64,11 +66,35 @@ function PageLoader() {
     );
 }
 
-// Create a wrapper component that uses useLocation inside the Router context
-function PagesContent() {
+// Auth loading screen
+function AuthLoader() {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100">
+            <div className="flex flex-col items-center gap-4">
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+                <p className="text-gray-600">Loading...</p>
+            </div>
+        </div>
+    );
+}
+
+// Protected routes wrapper
+function ProtectedContent() {
     const location = useLocation();
     const currentPage = _getCurrentPage(location.pathname);
+    const { isAuthenticated, loading, initialized } = useAuth();
 
+    // Show loading while checking auth
+    if (!initialized || loading) {
+        return <AuthLoader />;
+    }
+
+    // Show auth page if not authenticated
+    if (!isAuthenticated) {
+        return <AuthPage onAuthSuccess={() => window.location.reload()} />;
+    }
+
+    // Show main app if authenticated
     return (
         <Layout currentPageName={currentPage}>
             <Suspense fallback={<PageLoader />}>
@@ -98,8 +124,10 @@ function PagesContent() {
 
 export default function Pages() {
     return (
-        <Router>
-            <PagesContent />
-        </Router>
+        <AuthProvider>
+            <Router>
+                <ProtectedContent />
+            </Router>
+        </AuthProvider>
     );
 }

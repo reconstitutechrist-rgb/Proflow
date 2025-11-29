@@ -76,10 +76,11 @@ import TutorialOverlay from "@/TutorialOverlay";
 import TutorialButton from "@/TutorialButton";
 import AIAssistantWidget from "@/AIAssistantWidget";
 import WorkspaceSwitcher from '@/WorkspaceSwitcher';
-import { WorkspaceProvider } from '@/components/workspace/WorkspaceContext'; // Fixed import path
+import { WorkspaceProvider, useWorkspace } from '@/components/workspace/WorkspaceContext'; // Fixed import path
 import WorkspaceErrorBoundary from '@/WorkspaceErrorBoundary'; // Added WorkspaceErrorBoundary import
 import WorkspacePerformanceMonitor from '@/WorkspacePerformanceMonitor'; // Added WorkspacePerformanceMonitor import
 import { ErrorBoundary } from '@/ErrorBoundary'; // Import shared ErrorBoundary
+import { useAuth } from '@/components/auth/AuthProvider'; // Import auth hook
 
 const GlobalSearch = React.lazy(() =>
   import("@/GlobalSearch").catch(() => ({
@@ -96,6 +97,8 @@ const GlobalSearch = React.lazy(() =>
 
 function LayoutContent({ children, currentPageName }) {
   const location = useLocation();
+  const { user: authUser, signOut } = useAuth();
+  const { currentWorkspaceId } = useWorkspace();
   const [user, setUser] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -370,7 +373,7 @@ function LayoutContent({ children, currentPageName }) {
 
   const handleLogout = async () => {
     try {
-      await db.auth.logout(); // FIXED: Use db.auth.logout()
+      await signOut();
       window.location.reload();
     } catch (error) {
         console.error("Logout failed:", error);
@@ -957,7 +960,7 @@ function LayoutContent({ children, currentPageName }) {
       </React.Suspense>
 
       {/* AI Assistant Widget */}
-      <AIAssistantWidget currentPageName={currentPageName} />
+      <AIAssistantWidget currentPageName={currentPageName} workspaceId={currentWorkspaceId} />
 
       {/* Tutorial Overlay */}
       <TutorialOverlay />

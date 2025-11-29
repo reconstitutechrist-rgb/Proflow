@@ -31,18 +31,20 @@ export default function GeneratePage() {
   const MAX_RETRIES = 3;
   const retryTimeoutRef = useRef(null);
 
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
   const [searchParams] = useSearchParams(); // Initialized useSearchParams
 
   // Memoize the loadData function to ensure its reference is stable across renders
   // and it only re-runs when its dependencies change.
   const loadData = useCallback(async (currentRetry = 0) => {
-    // If no workspace is selected, we should not attempt to load data.
+    // If no workspace is selected or still loading, we should not attempt to load data.
     // Clear existing data and set loading to false.
-    if (!currentWorkspaceId) {
-      setLoading(false);
-      setAssignments([]);
-      setSelectedAssignment(null);
+    if (!currentWorkspaceId || workspaceLoading) {
+      if (!currentWorkspaceId) {
+        setLoading(false);
+        setAssignments([]);
+        setSelectedAssignment(null);
+      }
       return;
     }
 
@@ -113,19 +115,22 @@ export default function GeneratePage() {
     } finally {
       setLoading(false);
     }
-  }, [currentWorkspaceId]);
+  }, [currentWorkspaceId, workspaceLoading]);
 
   // This useEffect hook will trigger data loading whenever the currentWorkspaceId changes
   // or on initial component mount.
   // We also explicitly reset selectedAssignment here to ensure a clean state
   // when switching between workspaces.
   useEffect(() => {
+    // Only load data when workspace is ready (not loading)
+    if (workspaceLoading) return;
+
     // Reset selected assignment and retry attempt whenever the workspace context changes
     // or when this effect is run for the first time.
     setSelectedAssignment(null);
     setRetryAttempt(0); // Reset retry attempt to ensure a clean start for new workspace
     loadData(0);
-    
+
     // Cleanup function
     return () => {
       if (retryTimeoutRef.current) {
@@ -133,7 +138,7 @@ export default function GeneratePage() {
         retryTimeoutRef.current = null;
       }
     };
-  }, [currentWorkspaceId, loadData]); // Only depend on workspace change
+  }, [currentWorkspaceId, workspaceLoading, loadData]); // Depend on workspace change and loading state
 
   // Handle assignment selection from URL params (including fromStudio)
   useEffect(() => {

@@ -37,9 +37,12 @@ import {
   Settings,
   Trash2,
   UserPlus,
+  UserMinus,
   Star,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Mail,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
@@ -63,6 +66,17 @@ export default function WorkspacesPage() {
   });
   const [creating, setCreating] = useState(false);
 
+  // Invite members state
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [inviteWorkspace, setInviteWorkspace] = useState(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviting, setInviting] = useState(false);
+
+  // Manage members state
+  const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
+  const [membersWorkspace, setMembersWorkspace] = useState(null);
+  const [removingMember, setRemovingMember] = useState(null);
+
   const handleCreateWorkspace = async () => {
     if (!newWorkspace.name.trim()) {
       toast.error("Please enter a workspace name");
@@ -76,7 +90,7 @@ export default function WorkspacesPage() {
 
     try {
       setCreating(true);
-      await db.entities.Workspace.create({
+      const createdWorkspace = await db.entities.Workspace.create({
         name: newWorkspace.name,
         description: newWorkspace.description,
         type: newWorkspace.type,
@@ -88,6 +102,17 @@ export default function WorkspacesPage() {
           icon: newWorkspace.type === "personal" ? "👤" : newWorkspace.type === "team" ? "👥" : "🤝"
         }
       });
+
+      // Add creator to workspace_members table
+      try {
+        await db.entities.WorkspaceMember.create({
+          workspace_id: createdWorkspace.id,
+          user_id: currentUser.id,
+          role: 'owner',
+        });
+      } catch (memberError) {
+        console.warn('Could not add workspace member record:', memberError);
+      }
 
       toast.success("Workspace created successfully");
       setIsCreateDialogOpen(false);
@@ -131,12 +156,151 @@ export default function WorkspacesPage() {
     try {
       await db.entities.Workspace.delete(workspace.id);
       toast.success("Workspace deleted successfully");
-      
+
       // If the deleted workspace was active, context will handle switching
       await refreshWorkspaces();
     } catch (error) {
       console.error("Error deleting workspace:", error);
       toast.error("Failed to delete workspace");
+    }
+  };
+
+  const openInviteDialog = (workspace) => {
+    setInviteWorkspace(workspace);
+    setInviteEmail("");
+    setIsInviteDialogOpen(true);
+  };
+
+  const handleInviteMember = async () => {
+    if (!inviteEmail.trim()) {
+      toast.error("Please enter an email address");
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(inviteEmail.trim())) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (!inviteWorkspace) {
+      toast.error("No workspace selected");
+      return;
+    }
+
+    const email = inviteEmail.trim().toLowerCase();
+
+    // Check if already a member
+    if (inviteWorkspace.members?.includes(email)) {
+      toast.error("This user is already a member of this workspace");
+      return;
+    }
+
+    try {
+      setInviting(true);
+
+      // Add the email to the members array
+      const updatedMembers = [...(inviteWorkspace.members || []), email];
+
+      await db.entities.Workspace.update(inviteWorkspace.id, {
+        members: updatedMembers
+      });
+
+      // Try to add to workspace_members table if user exists
+      try {
+        // Look up user by email to get their ID
+        const users = await db.entities.User.list();
+        const invitedUser = users.find(u => u.email?.toLowerCase() === email);
+        if (invitedUser) {
+          await db.entities.WorkspaceMember.create({
+            workspace_id: inviteWorkspace.id,
+            user_id: invitedUser.id,
+            role: 'member',
+            invited_by: currentUser?.id,
+          });
+        }
+      } catch (memberError) {
+        console.warn('Could not add workspace member record:', memberError);
+      }
+
+      toast.success(`Invited ${email} to ${inviteWorkspace.name}`);
+      setIsInviteDialogOpen(false);
+      setInviteEmail("");
+      setInviteWorkspace(null);
+
+      // Refresh workspaces to show updated member count
+      await refreshWorkspaces();
+    } catch (error) {
+      console.error("Error inviting member:", error);
+      toast.error("Failed to invite member");
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const openMembersDialog = (workspace) => {
+    setMembersWorkspace(workspace);
+    setIsMembersDialogOpen(true);
+  };
+
+  const handleRemoveMember = async (email) => {
+    if (!membersWorkspace) return;
+
+    // Cannot remove the owner
+    if (email === membersWorkspace.owner_email) {
+      toast.error("Cannot remove the workspace owner");
+      return;
+    }
+
+    // Cannot remove yourself if you're not the owner
+    if (email === currentUser?.email && membersWorkspace.owner_email !== currentUser?.email) {
+      toast.error("You cannot remove yourself from this workspace");
+      return;
+    }
+
+    try {
+      setRemovingMember(email);
+
+      const updatedMembers = (membersWorkspace.members || []).filter(m => m !== email);
+
+      await db.entities.Workspace.update(membersWorkspace.id, {
+        members: updatedMembers
+      });
+
+      // Try to remove from workspace_members table
+      try {
+        const users = await db.entities.User.list();
+        const removedUser = users.find(u => u.email?.toLowerCase() === email);
+        if (removedUser) {
+          // Find and delete the workspace_member record
+          const members = await db.entities.WorkspaceMember.list();
+          const memberRecord = members.find(
+            m => m.workspace_id === membersWorkspace.id && m.user_id === removedUser.id
+          );
+          if (memberRecord) {
+            await db.entities.WorkspaceMember.delete(memberRecord.id);
+          }
+        }
+      } catch (memberError) {
+        console.warn('Could not remove workspace member record:', memberError);
+      }
+
+      // Update local state
+      setMembersWorkspace({
+        ...membersWorkspace,
+        members: updatedMembers
+      });
+
+      toast.success(`Removed ${email} from the workspace`);
+
+      // Refresh workspaces
+      await refreshWorkspaces();
+    } catch (error) {
+      console.error("Error removing member:", error);
+      toast.error("Failed to remove member");
+    } finally {
+      setRemovingMember(null);
     }
   };
 
@@ -241,9 +405,13 @@ export default function WorkspacesPage() {
                       )}
                       {isOwner && (
                         <>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openInviteDialog(workspace)}>
                             <UserPlus className="w-4 h-4 mr-2" />
                             Invite Members
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openMembersDialog(workspace)}>
+                            <Users className="w-4 h-4 mr-2" />
+                            Manage Members
                           </DropdownMenuItem>
                           <DropdownMenuItem>
                             <Settings className="w-4 h-4 mr-2" />
@@ -392,6 +560,167 @@ export default function WorkspacesPage() {
                   Create Workspace
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Members Dialog */}
+      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite Team Member</DialogTitle>
+            <DialogDescription>
+              Add a new member to {inviteWorkspace?.name || "this workspace"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="invite-email">Email Address *</Label>
+              <div className="relative mt-1">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  id="invite-email"
+                  type="email"
+                  placeholder="colleague@company.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="pl-10"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleInviteMember();
+                    }
+                  }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                The user will be added to the workspace and can access all shared content.
+              </p>
+            </div>
+
+            {/* Show current members */}
+            {inviteWorkspace?.members && inviteWorkspace.members.length > 0 && (
+              <div>
+                <Label className="text-sm text-gray-600">Current Members ({inviteWorkspace.members.length})</Label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {inviteWorkspace.members.slice(0, 5).map((email) => (
+                    <Badge key={email} variant="secondary" className="text-xs">
+                      {email}
+                      {email === inviteWorkspace.owner_email && (
+                        <Star className="w-3 h-3 ml-1 text-yellow-500 fill-yellow-500" />
+                      )}
+                    </Badge>
+                  ))}
+                  {inviteWorkspace.members.length > 5 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{inviteWorkspace.members.length - 5} more
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleInviteMember} disabled={inviting}>
+              {inviting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Inviting...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Invite Member
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Members Dialog */}
+      <Dialog open={isMembersDialogOpen} onOpenChange={setIsMembersDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manage Members</DialogTitle>
+            <DialogDescription>
+              View and manage members of {membersWorkspace?.name || "this workspace"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 max-h-80 overflow-y-auto">
+            {membersWorkspace?.members?.length === 0 && (
+              <p className="text-center text-gray-500 py-4">No members in this workspace</p>
+            )}
+            {membersWorkspace?.members?.map((email) => {
+              const isOwner = email === membersWorkspace.owner_email;
+              const isCurrentUser = email === currentUser?.email;
+
+              return (
+                <div
+                  key={email}
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                      <span className="text-sm font-medium text-blue-600 dark:text-blue-300">
+                        {email.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {email}
+                        {isCurrentUser && <span className="text-gray-500 ml-1">(you)</span>}
+                      </p>
+                      {isOwner && (
+                        <Badge variant="secondary" className="text-xs mt-0.5">
+                          <Star className="w-3 h-3 mr-1 text-yellow-500 fill-yellow-500" />
+                          Owner
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {!isOwner && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => handleRemoveMember(email)}
+                      disabled={removingMember === email}
+                    >
+                      {removingMember === email ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <UserMinus className="w-4 h-4" />
+                      )}
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => {
+                setIsMembersDialogOpen(false);
+                openInviteDialog(membersWorkspace);
+              }}
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Invite More
+            </Button>
+            <Button onClick={() => setIsMembersDialogOpen(false)} className="w-full sm:w-auto">
+              Done
             </Button>
           </DialogFooter>
         </DialogContent>

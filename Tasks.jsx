@@ -72,13 +72,13 @@ export default function TasksPage() {
   const urlParams = new URLSearchParams(location.search);
   const sortBy = urlParams.get('sortBy');
 
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
 
   useEffect(() => {
-    if (currentWorkspaceId) {
+    if (currentWorkspaceId && !workspaceLoading) {
       loadData();
     }
-  }, [currentWorkspaceId]);
+  }, [currentWorkspaceId, workspaceLoading]);
 
   const filteredTasks = useMemo(() => {
     let currentTasks = [...tasks];
@@ -160,7 +160,7 @@ export default function TasksPage() {
         await db.entities.Task.create({
           ...taskData,
           workspace_id: currentWorkspaceId,
-          assigned_by: currentUser?.email
+          assigned_by: currentUser?.id
         });
         toast.success("Task created successfully");
       }
@@ -477,7 +477,7 @@ export default function TasksPage() {
           </AnimatePresence>
 
           {/* Task Board */}
-          {loading ? (
+          {loading || workspaceLoading || !currentWorkspaceId ? (
             <div className="flex items-center justify-center h-64">
               <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
             </div>

@@ -44,13 +44,14 @@ export default function DashboardPage() {
   const [upcomingTasks, setUpcomingTasks] = useState([]);
   const [error, setError] = useState(null);
 
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
 
   useEffect(() => {
-    if (currentWorkspaceId) {
+    // Only load data when we have a workspace ID and workspace context is done loading
+    if (currentWorkspaceId && !workspaceLoading) {
       loadDashboardData();
     }
-  }, [currentWorkspaceId]);
+  }, [currentWorkspaceId, workspaceLoading]);
 
   const loadDashboardData = async () => {
     try {
@@ -124,7 +125,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading) {
+  if (loading || workspaceLoading || !currentWorkspaceId) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

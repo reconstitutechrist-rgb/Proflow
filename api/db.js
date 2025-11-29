@@ -61,20 +61,23 @@ const createEntityManager = (entityName) => {
       return data || [];
     },
 
-    // Filter items - supports both object filters and function filters
-    filter: async (filterArg) => {
+    // Filter items - only supports object filters for security (workspace isolation)
+    // Function filters are disabled to prevent loading all data without workspace filtering
+    filter: async (filterArg, sortOrder, limit) => {
       if (typeof filterArg === 'function') {
-        // For function filters, we need to get all items first
-        const { data, error } = await supabase.from(tableName).select('*');
-        if (error) {
-          console.error(`Error filtering ${entityName}:`, error);
-          return [];
-        }
-        return (data || []).filter(filterArg);
+        // SECURITY: Function filters load ALL records without workspace filtering
+        // This is a data leakage vulnerability. Use object filters instead.
+        console.error(
+          `SECURITY WARNING: Function filters are disabled for ${entityName}. ` +
+          `Use object filters with workspace_id to ensure data isolation.`
+        );
+        throw new Error(
+          'Function filters are not supported. Use object filters with workspace_id.'
+        );
       }
 
-      // Object-based filtering uses the list method
-      return createEntityManager(entityName).list(filterArg);
+      // Object-based filtering uses the list method with workspace_id enforcement
+      return createEntityManager(entityName).list(filterArg, sortOrder, limit);
     },
 
     // Get a single item by ID
@@ -114,8 +117,8 @@ const createEntityManager = (entityName) => {
         .single();
 
       if (error) {
-        console.error(`Error creating ${entityName}:`, error);
-        throw error;
+        console.error(`Error creating ${entityName}:`, error.message, error.details, error.hint, error.code);
+        throw new Error(`${error.message}${error.details ? ` - ${error.details}` : ''}${error.hint ? ` (Hint: ${error.hint})` : ''}`);
       }
 
       return created;
@@ -212,9 +215,9 @@ const auth = {
 
     if (error || !user) {
       console.error('Error getting user:', error);
-      // Return a default user for development
+      // Return a default user for development with a valid UUID
       return {
-        id: 'default-user',
+        id: '00000000-0000-0000-0000-000000000000',
         email: 'user@proflow.local',
         full_name: 'Proflow User',
         active_workspace_id: null,
@@ -267,6 +270,334 @@ const auth = {
   },
 };
 
+// Agent conversation management (stub implementation)
+// This provides a local conversation system for the AI assistant
+const agentConversations = new Map();
+const agentSubscribers = new Map();
+
+const agents = {
+  // Create a new conversation with an AI agent
+  createConversation: async ({ agent_name, metadata = {} }) => {
+    const conversationId = crypto.randomUUID();
+    const conversation = {
+      id: conversationId,
+      agent_name,
+      metadata,
+      messages: [],
+      status: 'active',
+      created_at: new Date().toISOString(),
+    };
+    agentConversations.set(conversationId, conversation);
+    return conversation;
+  },
+
+  // Subscribe to conversation updates
+  subscribeToConversation: (conversationId, callback) => {
+    if (!agentSubscribers.has(conversationId)) {
+      agentSubscribers.set(conversationId, new Set());
+    }
+    agentSubscribers.get(conversationId).add(callback);
+
+    // Return unsubscribe function
+    return () => {
+      const subscribers = agentSubscribers.get(conversationId);
+      if (subscribers) {
+        subscribers.delete(callback);
+      }
+    };
+  },
+
+  // Add a message to the conversation
+  addMessage: async (conversation, { role, content }) => {
+    const conversationData = agentConversations.get(conversation.id);
+    if (!conversationData) {
+      throw new Error('Conversation not found');
+    }
+
+    const message = {
+      id: crypto.randomUUID(),
+      role,
+      content,
+      timestamp: new Date().toISOString(),
+    };
+
+    conversationData.messages.push(message);
+
+    // If it's a user message, generate an AI response
+    if (role === 'user') {
+      conversationData.status = 'processing';
+      notifySubscribers(conversation.id, conversationData);
+
+      // Generate AI response (now async to support note creation)
+      setTimeout(async () => {
+        try {
+          const responseContent = await generateAIResponse(content, conversationData);
+          const aiResponse = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: responseContent,
+            timestamp: new Date().toISOString(),
+          };
+          conversationData.messages.push(aiResponse);
+          conversationData.status = 'active';
+          notifySubscribers(conversation.id, conversationData);
+        } catch (error) {
+          console.error('Error generating AI response:', error);
+          const errorResponse = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `I apologize, but I encountered an error: ${error.message}. Please try again.`,
+            timestamp: new Date().toISOString(),
+          };
+          conversationData.messages.push(errorResponse);
+          conversationData.status = 'active';
+          notifySubscribers(conversation.id, conversationData);
+        }
+      }, 500);
+    }
+
+    return message;
+  },
+
+  // Get conversation by ID
+  getConversation: async (conversationId) => {
+    return agentConversations.get(conversationId) || null;
+  },
+};
+
+// Helper to notify all subscribers of a conversation
+const notifySubscribers = (conversationId, data) => {
+  const subscribers = agentSubscribers.get(conversationId);
+  if (subscribers) {
+    subscribers.forEach(callback => {
+      try {
+        callback(data);
+      } catch (err) {
+        console.error('Error in conversation subscriber:', err);
+      }
+    });
+  }
+};
+
+// Parse context from AI message to extract workspace info
+const parseContextFromMessage = (message) => {
+  const context = {};
+
+  // Extract workspace_id from the context if present
+  const workspaceMatch = message.match(/workspace_id:\s*([a-f0-9-]+)/i);
+  if (workspaceMatch) {
+    context.workspace_id = workspaceMatch[1];
+  }
+
+  // Extract user info
+  const userEmailMatch = message.match(/User Email:\s*([^\n]+)/i);
+  if (userEmailMatch) {
+    context.user_email = userEmailMatch[1].trim();
+  }
+
+  const userIdMatch = message.match(/User ID:\s*([^\n]+)/i);
+  if (userIdMatch) {
+    context.user_id = userIdMatch[1].trim();
+  }
+
+  return context;
+};
+
+// Extract note details from user message
+const extractNoteDetails = (message) => {
+  const lines = message.split('\n');
+  let title = '';
+  let content = '';
+  let tags = [];
+  let color = '#FBBF24'; // Default yellow
+
+  // Look for structured input
+  for (const line of lines) {
+    const lowerLine = line.toLowerCase();
+    if (lowerLine.startsWith('title:')) {
+      title = line.substring(6).trim();
+    } else if (lowerLine.startsWith('content:')) {
+      content = line.substring(8).trim();
+    } else if (lowerLine.startsWith('tags:')) {
+      tags = line.substring(5).split(',').map(t => t.trim()).filter(t => t);
+    } else if (lowerLine.startsWith('color:')) {
+      const colorInput = line.substring(6).trim().toLowerCase();
+      const colorMap = {
+        'yellow': '#FBBF24',
+        'blue': '#60A5FA',
+        'green': '#34D399',
+        'red': '#F87171',
+        'purple': '#A78BFA',
+        'orange': '#FB923C',
+        'pink': '#EC4899'
+      };
+      color = colorMap[colorInput] || color;
+    }
+  }
+
+  // If no structured format, try to extract from natural language
+  if (!title && !content) {
+    // Look for patterns like "create a note called X" or "note titled X"
+    const titleMatch = message.match(/(?:note\s+(?:called|titled|named)|title[d]?\s*[:\s])\s*["']?([^"'\n]+)["']?/i);
+    if (titleMatch) {
+      title = titleMatch[1].trim();
+    }
+
+    // Look for content patterns
+    const contentMatch = message.match(/(?:content|body|text|saying|with)[:\s]+["']?([^"'\n]+)["']?/i);
+    if (contentMatch) {
+      content = contentMatch[1].trim();
+    }
+
+    // If still no title, use first significant text
+    if (!title) {
+      const userInput = message.match(/User Input:\s*(.+)/i);
+      if (userInput) {
+        const input = userInput[1].trim();
+        // Extract potential title from "create note X" pattern
+        const simpleMatch = input.match(/create\s+(?:a\s+)?note\s+(?:called\s+|titled\s+|named\s+)?["']?(.+?)["']?(?:\s+with|\s+content|$)/i);
+        if (simpleMatch) {
+          title = simpleMatch[1].trim();
+        }
+      }
+    }
+  }
+
+  return { title, content, tags, color };
+};
+
+// Generate a simple AI response (placeholder - can be enhanced with actual LLM integration)
+const generateAIResponse = async (userMessage, conversation) => {
+  const lowercaseMsg = userMessage.toLowerCase();
+  const context = parseContextFromMessage(userMessage);
+
+  // Handle note creation
+  if (lowercaseMsg.includes('create') && lowercaseMsg.includes('note')) {
+    const noteDetails = extractNoteDetails(userMessage);
+
+    // If we have a title, try to create the note
+    if (noteDetails.title && context.workspace_id) {
+      try {
+        const noteData = {
+          workspace_id: context.workspace_id,
+          title: noteDetails.title,
+          content: noteDetails.content || `<p>${noteDetails.title}</p>`,
+          tags: noteDetails.tags,
+          color: noteDetails.color,
+          is_pinned: false,
+          created_by: context.user_email || 'AI Assistant',
+        };
+
+        const createdNote = await createEntityManager('Note').create(noteData);
+
+        return `✅ **Note created successfully!**
+
+**Title:** ${createdNote.title}
+${createdNote.content ? `**Content:** ${createdNote.content.replace(/<[^>]*>/g, '')}` : ''}
+${noteDetails.tags.length > 0 ? `**Tags:** ${noteDetails.tags.join(', ')}` : ''}
+
+Your note has been saved and you can find it in the Notes section on your Dashboard.
+
+Would you like to:
+- Create another note?
+- Pin this note to the top?
+- Add more details to this note?`;
+      } catch (error) {
+        console.error('Error creating note:', error);
+        return `❌ I encountered an error while creating the note: ${error.message}
+
+Please try again or create the note manually from the Dashboard.`;
+      }
+    }
+
+    // If no workspace context, ask for it
+    if (!context.workspace_id) {
+      return `I'd be happy to create a note for you! However, I need you to be in a workspace first.
+
+Please make sure you have a workspace selected, then try again.`;
+    }
+
+    // If no title, ask for details
+    return `I'd be happy to create a note for you! Please provide the following details:
+
+**Required:**
+- **Title:** What should the note be called?
+
+**Optional:**
+- **Content:** The body of the note
+- **Tags:** Comma-separated tags (e.g., "meeting, important, follow-up")
+- **Color:** yellow, blue, green, red, purple, orange, or pink
+
+You can format your request like this:
+\`\`\`
+Title: My Meeting Notes
+Content: Discussed Q4 planning and budget allocation
+Tags: meeting, planning
+Color: blue
+\`\`\`
+
+Or simply say: "Create a note called My Meeting Notes"`;
+  }
+
+  // Basic intent detection and responses
+  if (lowercaseMsg.includes('create') && lowercaseMsg.includes('task')) {
+    return `I understand you'd like to create a task. To help you with that, I'll need a few details:
+
+1. **Task title**: What should the task be called?
+2. **Description**: Any additional details?
+3. **Priority**: High, Medium, or Low?
+4. **Due date**: When should it be completed?
+
+Please provide these details and I'll create the task for you!`;
+  }
+
+  if (lowercaseMsg.includes('help') || lowercaseMsg.includes('what can you do')) {
+    return `I'm here to help you with ProjectFlow! Here's what I can assist with:
+
+**Notes:**
+- Create new notes with custom colors and tags
+- Quick capture of ideas and meeting notes
+
+**Tasks & Projects:**
+- View your tasks and their status
+- Help organize your work
+- Provide task management tips
+
+**Documents:**
+- Navigate document features
+- Explain document workflows
+
+**General:**
+- Answer questions about ProjectFlow features
+- Provide guidance on best practices
+- Help troubleshoot issues
+
+What would you like help with?`;
+  }
+
+  if (lowercaseMsg.includes('status') || lowercaseMsg.includes('overview')) {
+    return `I can help you get an overview of your work. You can:
+
+- Check the **Dashboard** for a quick summary
+- View **Tasks** to see your task board
+- Review **Projects** for project-level status
+- Check your **Notes** for quick reminders
+
+Would you like me to explain any of these features in more detail?`;
+  }
+
+  // Default response
+  return `Thanks for your message! I'm your ProjectFlow AI Assistant.
+
+You mentioned: "${userMessage.substring(0, 100)}${userMessage.length > 100 ? '...' : ''}"
+
+How can I assist you further? Try asking me to:
+- **Create a note** - e.g., "Create a note called Meeting Summary"
+- **Create or manage tasks**
+- **Get an overview** of your workspace
+- **Help** with ProjectFlow features`;
+};
+
 // Integration stubs
 const integrations = {
   Core: {
@@ -304,7 +635,7 @@ const integrations = {
   },
 };
 
-// Main client object with entities, integrations, and auth
+// Main client object with entities, integrations, auth, and agents
 export const db = {
   entities: new Proxy({}, {
     get: (target, entityName) => {
@@ -316,6 +647,7 @@ export const db = {
   }),
   integrations,
   auth,
+  agents,
 };
 
 export default db;

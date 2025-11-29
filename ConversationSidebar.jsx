@@ -110,6 +110,7 @@ export default function ConversationSidebar({
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(thread =>
+        thread.name?.toLowerCase().includes(query) ||
         thread.topic?.toLowerCase().includes(query) ||
         thread.description?.toLowerCase().includes(query) ||
         thread.context_summary?.toLowerCase().includes(query)
@@ -177,7 +178,7 @@ export default function ConversationSidebar({
             <h4 className={`font-medium text-sm truncate ${
               isSelected ? 'text-indigo-900 dark:text-indigo-100' : 'text-gray-900 dark:text-white'
             }`}>
-              {thread.topic}
+              {thread.name || thread.topic}
             </h4>
           </div>
           <div className="flex items-center gap-2">

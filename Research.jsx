@@ -50,14 +50,16 @@ export default function ResearchPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("research");
 
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
   const { toast } = useToast();
   const navigate = useNavigate(); // Initialize useNavigate hook
 
   // Moved loadData function definition out of useEffect for reusability
   const loadData = async () => {
-    if (!currentWorkspaceId) {
-      setLoading(false);
+    if (!currentWorkspaceId || workspaceLoading) {
+      if (!currentWorkspaceId) {
+        setLoading(false);
+      }
       return;
     }
     try {
@@ -95,10 +97,10 @@ export default function ResearchPage() {
   };
 
   useEffect(() => {
-    if (currentWorkspaceId) { // Only load data if a workspace is selected
+    if (currentWorkspaceId && !workspaceLoading) { // Only load data if a workspace is selected and not loading
       loadData();
     }
-  }, [currentWorkspaceId]); // Dependency array includes currentWorkspaceId
+  }, [currentWorkspaceId, workspaceLoading]); // Dependency array includes currentWorkspaceId and workspaceLoading
 
   const getAssignmentDocuments = (assignmentId) => {
     if (!assignmentId) return [];

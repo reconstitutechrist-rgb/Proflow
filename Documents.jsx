@@ -51,7 +51,7 @@ export default function DocumentsPage() {
   const MAX_RETRIES = 3;
   const retryTimeoutRef = useRef(null); // Ref to store the timeout ID for rate limit retries
 
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
   const navigate = useNavigate();
 
   const loadDocuments = useCallback(
@@ -130,7 +130,7 @@ export default function DocumentsPage() {
   );
 
   useEffect(() => {
-    if (currentWorkspaceId) {
+    if (currentWorkspaceId && !workspaceLoading) {
       loadDocuments(0); // Start with 0 retries
     }
 
@@ -141,7 +141,7 @@ export default function DocumentsPage() {
         clearTimeout(retryTimeoutRef.current);
       }
     };
-  }, [currentWorkspaceId, loadDocuments]); // Only depend on workspace change, loadDocuments is stable due to useCallback with currentWorkspaceId
+  }, [currentWorkspaceId, workspaceLoading, loadDocuments]); // Depend on workspace change and loading state
 
   const handleUploadComplete = () => {
     setIsUploadOpen(false);

@@ -42,13 +42,13 @@ export default function ProjectsPage() {
   const [projectToDelete, setProjectToDelete] = useState(null);
 
   const navigate = useNavigate();
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
 
   useEffect(() => {
-    if (currentWorkspaceId) {
+    if (currentWorkspaceId && !workspaceLoading) {
       loadData();
     }
-  }, [currentWorkspaceId]);
+  }, [currentWorkspaceId, workspaceLoading]);
 
   const loadData = async () => {
     try {

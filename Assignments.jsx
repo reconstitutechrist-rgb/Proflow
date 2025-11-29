@@ -54,13 +54,13 @@ export default function AssignmentsPage() {
   
   const [loading, setLoading] = useState(true);
 
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
 
   useEffect(() => {
-    if (currentWorkspaceId) {
+    if (currentWorkspaceId && !workspaceLoading) {
       loadData();
     }
-  }, [currentWorkspaceId]);
+  }, [currentWorkspaceId, workspaceLoading]);
 
   useEffect(() => {
     if (assignmentId && assignments.length > 0) {

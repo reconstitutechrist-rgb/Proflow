@@ -1,42 +1,44 @@
 import React, { useState, useEffect } from "react";
-import { Document } from "@/api/entities";
-import { Project } from "@/api/entities";
-import { Message } from "@/api/entities";
-import { Task } from "@/api/entities";
+import { db } from "@/api/db";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-  Search, 
-  FileText, 
-  FolderOpen, 
-  MessageSquare, 
+import {
+  Search,
+  FileText,
+  FolderOpen,
+  MessageSquare,
   CheckCircle,
   Calendar,
   User
 } from "lucide-react";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 export default function EnhancedSearch({ isOpen, onClose, onResultSelect }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  const { currentWorkspaceId } = useWorkspace();
+
   useEffect(() => {
-    if (searchQuery.trim().length > 2) {
+    if (searchQuery.trim().length > 2 && currentWorkspaceId) {
       performSearch(searchQuery);
     } else {
       setSearchResults([]);
     }
-  }, [searchQuery]);
+  }, [searchQuery, currentWorkspaceId]);
 
   const performSearch = async (query) => {
+    if (!currentWorkspaceId) return;
+
     setIsLoading(true);
     try {
       const [projects, documents, messages, tasks] = await Promise.all([
-        Project.list(),
-        Document.list(),
-        Message.list("-created_date", 50),
-        Task.list("-created_date", 50)
+        db.entities.Project.filter({ workspace_id: currentWorkspaceId }),
+        db.entities.Document.filter({ workspace_id: currentWorkspaceId }),
+        db.entities.Message.filter({ workspace_id: currentWorkspaceId }, "-created_date", 50),
+        db.entities.Task.filter({ workspace_id: currentWorkspaceId }, "-created_date", 50)
       ]);
 
       const results = [];

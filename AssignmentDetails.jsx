@@ -4,6 +4,7 @@ import { Task } from "@/api/entities";
 import { Document } from "@/api/entities";
 import { Message } from "@/api/entities";
 import { User } from "@/api/entities";
+import { db } from "@/api/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,9 +63,11 @@ export default function AssignmentDetails({
 
         const [tasksData, docsData, messagesData, usersData] = await Promise.all([
           Task.filter({ assignment_id: assignment.id }, "-updated_date"),
-          Document.list(),
+          assignment.workspace_id
+            ? db.entities.Document.filter({ workspace_id: assignment.workspace_id })
+            : [],
           Message.filter({ assignment_id: assignment.id }, "-created_date"),
-          User.list()
+          User.list() // Users are filtered client-side by team membership
         ]);
 
         setTasks(tasksData);

@@ -14,11 +14,19 @@ const WorkspaceContext = createContext();
 const getCurrentUser = () => {
   const stored = localStorage.getItem("proflow_current_user");
   if (stored) {
-    return JSON.parse(stored);
+    try {
+      const parsed = JSON.parse(stored);
+      // Validate the stored user has required fields
+      if (parsed && parsed.email && parsed.id) {
+        return parsed;
+      }
+    } catch (e) {
+      console.warn("Invalid user data in localStorage, resetting...");
+    }
   }
-  // Create a default user
+  // Create a default user with a unique ID
   const defaultUser = {
-    id: "default-user",
+    id: crypto.randomUUID ? crypto.randomUUID() : `user-${Date.now()}`,
     email: "user@proflow.local",
     full_name: "Proflow User",
     active_workspace_id: null,
@@ -32,6 +40,20 @@ const updateCurrentUser = (updates) => {
   const updated = { ...user, ...updates };
   localStorage.setItem("proflow_current_user", JSON.stringify(updated));
   return updated;
+};
+
+// Helper to check if user has access to a workspace
+const userHasWorkspaceAccess = (workspace, userEmail) => {
+  if (!workspace || !userEmail) return false;
+  // Owner always has access
+  if (workspace.owner_email === userEmail) return true;
+  // Check members array
+  if (workspace.members && Array.isArray(workspace.members)) {
+    return workspace.members.some(
+      (member) => member.toLowerCase() === userEmail.toLowerCase()
+    );
+  }
+  return false;
 };
 
 export function WorkspaceProvider({ children }) {
@@ -50,39 +72,46 @@ export function WorkspaceProvider({ children }) {
       const user = getCurrentUser();
       setCurrentUser(user);
 
-      // Load all workspaces
-      const workspaces = await db.entities.Workspace.list();
+      // Load all workspaces from database
+      const allWorkspaces = await db.entities.Workspace.list();
 
-      setAvailableWorkspaces(workspaces);
+      // Filter workspaces user has access to (owner or member)
+      const accessibleWorkspaces = allWorkspaces.filter((workspace) =>
+        userHasWorkspaceAccess(workspace, user.email)
+      );
+
+      setAvailableWorkspaces(accessibleWorkspaces);
 
       // Determine active workspace
       let activeWorkspace = null;
 
-      // Priority 1: Check local storage
+      // Priority 1: Check local storage (but verify access)
       const localStorageWorkspaceId = localStorage.getItem(
         "active_workspace_id"
       );
       if (localStorageWorkspaceId) {
-        activeWorkspace = workspaces.find(
+        activeWorkspace = accessibleWorkspaces.find(
           (w) => w.id === localStorageWorkspaceId
         );
       }
 
-      // Priority 2: Check user preference
+      // Priority 2: Check user preference (but verify access)
       if (!activeWorkspace && user.active_workspace_id) {
-        activeWorkspace = workspaces.find(
+        activeWorkspace = accessibleWorkspaces.find(
           (w) => w.id === user.active_workspace_id
         );
       }
 
       // Priority 3: Use default personal workspace
       if (!activeWorkspace) {
-        activeWorkspace = workspaces.find((w) => w.is_default === true);
+        activeWorkspace = accessibleWorkspaces.find(
+          (w) => w.is_default === true && w.owner_email === user.email
+        );
       }
 
-      // Priority 4: Use first available workspace
-      if (!activeWorkspace && workspaces.length > 0) {
-        activeWorkspace = workspaces[0];
+      // Priority 4: Use first accessible workspace
+      if (!activeWorkspace && accessibleWorkspaces.length > 0) {
+        activeWorkspace = accessibleWorkspaces[0];
       }
 
       // Priority 5: Create a default personal workspace if none exist
@@ -99,6 +128,18 @@ export function WorkspaceProvider({ children }) {
             icon: "👤",
           },
         });
+
+        // Add creator to workspace_members table
+        try {
+          await db.entities.WorkspaceMember.create({
+            workspace_id: newWorkspace.id,
+            user_id: user.id,
+            role: 'owner',
+          });
+        } catch (memberError) {
+          console.warn('Could not add workspace member record:', memberError);
+        }
+
         activeWorkspace = newWorkspace;
         setAvailableWorkspaces([newWorkspace]);
       }
@@ -130,24 +171,111 @@ export function WorkspaceProvider({ children }) {
         return;
       }
 
-      setCurrentWorkspace(workspace);
+      // Don't switch if already on this workspace
+      if (currentWorkspace?.id === workspaceId) {
+        return;
+      }
 
-      // Update local storage
-      localStorage.setItem("active_workspace_id", workspaceId);
+      try {
+        // Update local storage first
+        localStorage.setItem("active_workspace_id", workspaceId);
 
-      // Update user preference
-      updateCurrentUser({ active_workspace_id: workspaceId });
+        // Update user preference
+        updateCurrentUser({ active_workspace_id: workspaceId });
 
-      // Notify user of workspace switch - data will refresh via context change
-      toast.success(`Switched to ${workspace.name}`);
+        // Update current workspace state
+        setCurrentWorkspace(workspace);
+
+        // Notify user of workspace switch
+        toast.success(`Switched to ${workspace.name}`);
+      } catch (err) {
+        console.error("Error switching workspace:", err);
+        toast.error("Failed to switch workspace");
+      }
     },
-    [availableWorkspaces]
+    [availableWorkspaces, currentWorkspace]
   );
 
   // Refresh workspaces list
   const refreshWorkspaces = useCallback(async () => {
     await loadWorkspaces();
   }, [loadWorkspaces]);
+
+  // Add a member to current workspace
+  const addMember = useCallback(
+    async (email) => {
+      if (!currentWorkspace) {
+        throw new Error("No workspace selected");
+      }
+
+      const normalizedEmail = email.trim().toLowerCase();
+      const currentMembers = currentWorkspace.members || [];
+
+      if (currentMembers.some((m) => m.toLowerCase() === normalizedEmail)) {
+        throw new Error("User is already a member");
+      }
+
+      const updatedMembers = [...currentMembers, normalizedEmail];
+
+      await db.entities.Workspace.update(currentWorkspace.id, {
+        members: updatedMembers,
+      });
+
+      // Update local state
+      setCurrentWorkspace({
+        ...currentWorkspace,
+        members: updatedMembers,
+      });
+
+      // Refresh to sync all workspaces
+      await loadWorkspaces();
+    },
+    [currentWorkspace, loadWorkspaces]
+  );
+
+  // Remove a member from current workspace
+  const removeMember = useCallback(
+    async (email) => {
+      if (!currentWorkspace) {
+        throw new Error("No workspace selected");
+      }
+
+      const normalizedEmail = email.trim().toLowerCase();
+
+      // Cannot remove owner
+      if (normalizedEmail === currentWorkspace.owner_email?.toLowerCase()) {
+        throw new Error("Cannot remove workspace owner");
+      }
+
+      const currentMembers = currentWorkspace.members || [];
+      const updatedMembers = currentMembers.filter(
+        (m) => m.toLowerCase() !== normalizedEmail
+      );
+
+      await db.entities.Workspace.update(currentWorkspace.id, {
+        members: updatedMembers,
+      });
+
+      // Update local state
+      setCurrentWorkspace({
+        ...currentWorkspace,
+        members: updatedMembers,
+      });
+
+      // Refresh to sync all workspaces
+      await loadWorkspaces();
+    },
+    [currentWorkspace, loadWorkspaces]
+  );
+
+  // Check if current user is owner of current workspace
+  const isWorkspaceOwner = useCallback(() => {
+    if (!currentWorkspace || !currentUser) return false;
+    return (
+      currentWorkspace.owner_email?.toLowerCase() ===
+      currentUser.email?.toLowerCase()
+    );
+  }, [currentWorkspace, currentUser]);
 
   useEffect(() => {
     loadWorkspaces();
@@ -163,6 +291,9 @@ export function WorkspaceProvider({ children }) {
     switchWorkspace,
     refreshWorkspaces,
     retryLoad: loadWorkspaces,
+    addMember,
+    removeMember,
+    isWorkspaceOwner,
   };
 
   return (

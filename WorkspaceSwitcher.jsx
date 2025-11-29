@@ -56,15 +56,15 @@ export default function WorkspaceSwitcher() {
 
   const handleWorkspaceSwitch = async (workspaceId) => {
     if (workspaceId === currentWorkspace?.id) return;
-    setSwitching(true);
-    
-    const workspace = availableWorkspaces.find(w => w.id === workspaceId);
-    if (workspace) {
-      toast.info(`Switching to ${workspace.name}...`);
+
+    try {
+      setSwitching(true);
+      await switchWorkspace(workspaceId);
+    } catch (err) {
+      console.error("Error switching workspace:", err);
+    } finally {
+      setSwitching(false);
     }
-    
-    await switchWorkspace(workspaceId);
-    // Note: Page will reload, so setSwitching(false) won't be reached
   };
 
   if (loading || !currentWorkspace) {

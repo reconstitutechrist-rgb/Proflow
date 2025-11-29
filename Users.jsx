@@ -41,18 +41,23 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState("workspace"); // "workspace" or "all"
 
-  const { currentWorkspace, currentWorkspaceId } = useWorkspace();
+  const { currentWorkspace, currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (!workspaceLoading) {
+      loadData();
+    }
+  }, [workspaceLoading]);
 
   const loadData = async () => {
     try {
       setLoading(true);
+      // Filter assignments by workspace - users are global but we only show workspace members
       const [usersData, assignmentsData, userData] = await Promise.all([
-        User.list(), 
-        Assignment.list(), 
+        User.list(),
+        currentWorkspaceId
+          ? db.entities.Assignment.filter({ workspace_id: currentWorkspaceId })
+          : [],
         db.auth.me()
       ]);
       setUsers(usersData);
@@ -66,14 +71,19 @@ export default function UsersPage() {
   };
 
   // Normalize user role - handle null, undefined, or unexpected values
-  const normalizeUserRole = (role) => {
+  // Also considers workspace ownership - workspace owner is always admin for their workspace
+  const normalizeUserRole = (role, userEmail) => {
+    // If user is the workspace owner, they are admin for this workspace
+    if (viewMode === "workspace" && currentWorkspace?.owner_email === userEmail) {
+      return 'admin';
+    }
     if (!role) return 'team_member';
     const validRoles = ['admin', 'project_manager', 'team_member', 'client'];
     return validRoles.includes(role) ? role : 'team_member';
   };
 
-  const getRoleColor = (role) => {
-    const normalizedRole = normalizeUserRole(role);
+  const getRoleColor = (role, userEmail) => {
+    const normalizedRole = normalizeUserRole(role, userEmail);
     switch (normalizedRole) {
       case 'admin': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
       case 'project_manager': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
@@ -83,8 +93,8 @@ export default function UsersPage() {
     }
   };
 
-  const getRoleLabel = (role) => {
-    const normalizedRole = normalizeUserRole(role);
+  const getRoleLabel = (role, userEmail) => {
+    const normalizedRole = normalizeUserRole(role, userEmail);
     return normalizedRole.replace('_', ' ');
   };
 
@@ -105,15 +115,15 @@ export default function UsersPage() {
   const displayUsers = viewMode === "workspace" ? workspaceMembers : users;
 
   const filteredUsers = displayUsers.filter(user => {
-    const matchesSearch = 
+    const matchesSearch =
       user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.department?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.job_title?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const userRole = normalizeUserRole(user.user_role);
+
+    const userRole = normalizeUserRole(user.user_role, user.email);
     const matchesRole = selectedRole === "all" || userRole === selectedRole;
-    
+
     return matchesSearch && matchesRole;
   });
 
@@ -122,10 +132,10 @@ export default function UsersPage() {
 
   // Count users by role for both views
   const countUsersByRole = (userList) => ({
-    admin: userList.filter(u => normalizeUserRole(u.user_role) === 'admin').length,
-    pm: userList.filter(u => normalizeUserRole(u.user_role) === 'project_manager').length,
-    team: userList.filter(u => normalizeUserRole(u.user_role) === 'team_member').length,
-    client: userList.filter(u => normalizeUserRole(u.user_role) === 'client').length
+    admin: userList.filter(u => normalizeUserRole(u.user_role, u.email) === 'admin').length,
+    pm: userList.filter(u => normalizeUserRole(u.user_role, u.email) === 'project_manager').length,
+    team: userList.filter(u => normalizeUserRole(u.user_role, u.email) === 'team_member').length,
+    client: userList.filter(u => normalizeUserRole(u.user_role, u.email) === 'client').length
   });
 
   const workspaceCounts = countUsersByRole(workspaceMembers);
@@ -160,12 +170,12 @@ export default function UsersPage() {
           )}
         </div>
 
-        {/* Admin Setup Alert */}
-        {adminCount === 0 && (
+        {/* Admin Setup Alert - only show if no admin AND no workspace owner in the member list */}
+        {adminCount === 0 && viewMode === "workspace" && !currentWorkspace?.owner_email && (
           <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900">
             <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             <AlertDescription className="text-amber-800 dark:text-amber-200">
-              <strong>No administrator assigned yet.</strong> To set an admin, go to the Supabase Dashboard → Table Editor → users, find your user record, and set the <code className="px-1 py-0.5 bg-amber-100 dark:bg-amber-900/50 rounded text-xs">user_role</code> field to <code className="px-1 py-0.5 bg-amber-100 dark:bg-amber-900/50 rounded text-xs">admin</code>.
+              <strong>No administrator assigned yet.</strong> The workspace owner is automatically assigned as admin. If you need to set a different admin, go to the Supabase Dashboard → Table Editor → users, and set the <code className="px-1 py-0.5 bg-amber-100 dark:bg-amber-900/50 rounded text-xs">user_role</code> field to <code className="px-1 py-0.5 bg-amber-100 dark:bg-amber-900/50 rounded text-xs">admin</code>.
             </AlertDescription>
           </Alert>
         )}
@@ -244,9 +254,10 @@ export default function UsersPage() {
         ) : filteredUsers.length > 0 ? (
           filteredUsers.map((user) => {
             const userAssignments = getUserAssignments(user.email);
-            const normalizedRole = normalizeUserRole(user.user_role);
+            const normalizedRole = normalizeUserRole(user.user_role, user.email);
             const isWorkspaceMember = currentWorkspace?.members?.includes(user.email);
-            
+            const isWorkspaceOwner = currentWorkspace?.owner_email === user.email;
+
             return (
               <Card key={user.id} className="border-0 shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
@@ -260,6 +271,9 @@ export default function UsersPage() {
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="font-semibold text-gray-900 dark:text-white truncate">
                           {user.full_name || 'No Name'}
+                          {isWorkspaceOwner && viewMode === "workspace" && (
+                            <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">(Owner)</span>
+                          )}
                         </h3>
                         {viewMode === "all" && isWorkspaceMember && (
                           <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800 shrink-0">
@@ -269,8 +283,8 @@ export default function UsersPage() {
                         )}
                       </div>
                       <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user.job_title || 'No title'}</p>
-                      <Badge className={`${getRoleColor(user.user_role)} mt-2`} variant="secondary">
-                        {getRoleLabel(user.user_role)}
+                      <Badge className={`${getRoleColor(user.user_role, user.email)} mt-2`} variant="secondary">
+                        {getRoleLabel(user.user_role, user.email)}
                       </Badge>
                     </div>
                   </div>

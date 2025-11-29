@@ -1,36 +1,25 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Assignment } from "@/api/entities";
-import { Message } from "@/api/entities";
-import { Document } from "@/api/entities";
-import { ConversationThread } from "@/api/entities";
-import { User } from "@/api/entities";
 import { db } from "@/api/db";
+import { supabase } from "@/api/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   MessageSquare,
   Send,
   Users,
   Plus,
   Hash,
-  Paperclip,
-  Smile,
   MoreVertical,
   Pin,
   X,
   Search,
-  Bookmark,
   Archive,
   Settings,
-  Mic,
-  Image as ImageIcon,
   File,
-  ChevronDown,
   Eye,
   EyeOff,
   Reply,
@@ -61,7 +50,6 @@ import RichTextEditor from "@/RichTextEditor";
 import ThreadSearch from "@/ThreadSearch";
 import ChatSummaryButton from "@/ChatSummaryButton";
 import { toast } from "sonner";
-import { UploadFile } from "@/api/integrations";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 // Define VirtualizedMessageList component (simplified, not truly virtualized without a library)
@@ -116,7 +104,6 @@ export default function ChatPage() {
   const [currentThread, setCurrentThread] = useState(null); // Renamed from selectedThread
   const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]); // Renamed from teamMembers
-  const [documents, setDocuments] = useState([]); // New state for documents
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [isThreadFormOpen, setIsThreadFormOpen] = useState(false);
@@ -127,11 +114,11 @@ export default function ChatPage() {
   const [replyToMessage, setReplyToMessage] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
   const [showPinnedMessages, setShowPinnedMessages] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
 
   const [isDraggingFile, setIsDraggingFile] = useState(false); // New state for drag-drop visual feedback
   const [replyToMessageData, setReplyToMessageData] = useState({}); // Store reply-to message data map
+  const [typingUsers, setTypingUsers] = useState([]); // Real-time typing users from Supabase
 
   const messagesEndRef = useRef(null);
   const messageListRef = useRef(null);
@@ -139,8 +126,9 @@ export default function ChatPage() {
   const typingTimeoutRef = useRef(null);
   const dragCounter = useRef(0); // New ref for drag-drop
   const pollingIntervalRef = useRef(null); // New ref for polling interval
+  const typingChannelRef = useRef(null); // Supabase real-time channel for typing
 
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
 
   // Derive the full assignment object from its ID
   const currentAssignment = useMemo(() => {
@@ -150,31 +138,30 @@ export default function ChatPage() {
 
   // Load initial data
   const loadData = useCallback(async () => {
-    if (!currentWorkspaceId) {
-      setAssignments([]);
-      setUsers([]);
-      setDocuments([]);
-      setThreads([]);
-      setCurrentUser(null);
-      setSelectedAssignmentId("general");
-      setCurrentThread(null);
-      setLoading(false);
+    if (!currentWorkspaceId || workspaceLoading) {
+      if (!currentWorkspaceId) {
+        setAssignments([]);
+        setUsers([]);
+        setThreads([]);
+        setCurrentUser(null);
+        setSelectedAssignmentId("general");
+        setCurrentThread(null);
+        setLoading(false);
+      }
       return;
     }
 
     try {
       setLoading(true);
-      const [threadsData, assignmentsData, documentsData, usersData, user] = await Promise.all([
+      const [threadsData, assignmentsData, usersData, user] = await Promise.all([
         db.entities.ConversationThread.filter({ workspace_id: currentWorkspaceId }, "-last_activity"),
         db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        db.entities.Document.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
         db.entities.User.list(),
         db.auth.me()
       ]);
 
       setAssignments(assignmentsData);
       setUsers(usersData);
-      setDocuments(documentsData);
       setThreads(threadsData);
       setCurrentUser(user);
 
@@ -208,7 +195,7 @@ export default function ChatPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentWorkspaceId, selectedAssignmentId, currentThread]); // Re-run if workspace, selected assignment, or current thread changes
+  }, [currentWorkspaceId, workspaceLoading, selectedAssignmentId, currentThread]); // Re-run if workspace, loading state, selected assignment, or current thread changes
 
   // Load messages for current thread
   const loadMessages = useCallback(async () => {
@@ -601,48 +588,100 @@ export default function ChatPage() {
     }
   };
 
-  const handleTyping = () => {
-    if (!currentThread || !currentUser) return;
+  // Track if we've already marked user as typing to avoid repeated broadcasts
+  const isTypingRef = useRef(false);
+
+  // Setup Supabase real-time channel for typing indicators
+  useEffect(() => {
+    if (!currentThread?.id || !currentUser) {
+      setTypingUsers([]);
+      return;
+    }
+
+    const channelName = `typing:${currentThread.id}`;
+
+    // Create a Supabase Realtime channel for this thread
+    const channel = supabase.channel(channelName, {
+      config: {
+        presence: {
+          key: currentUser.email,
+        },
+      },
+    });
+
+    // Handle presence sync (get all currently typing users)
+    channel.on('presence', { event: 'sync' }, () => {
+      const state = channel.presenceState();
+      const users = Object.values(state).flat().filter(
+        (user) => user.email !== currentUser.email && user.isTyping
+      );
+      setTypingUsers(users);
+    });
+
+    // Handle presence join/leave
+    channel.on('presence', { event: 'join' }, ({ newPresences }) => {
+      setTypingUsers(prev => {
+        const newUsers = newPresences.filter(
+          p => p.email !== currentUser.email && p.isTyping
+        );
+        return [...prev.filter(u => !newUsers.find(n => n.email === u.email)), ...newUsers];
+      });
+    });
+
+    channel.on('presence', { event: 'leave' }, ({ leftPresences }) => {
+      setTypingUsers(prev =>
+        prev.filter(u => !leftPresences.find(l => l.email === u.email))
+      );
+    });
+
+    // Subscribe to the channel
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        typingChannelRef.current = channel;
+      }
+    });
+
+    // Cleanup on unmount or thread change
+    return () => {
+      if (typingChannelRef.current) {
+        typingChannelRef.current.unsubscribe();
+        typingChannelRef.current = null;
+      }
+      setTypingUsers([]);
+    };
+  }, [currentThread?.id, currentUser?.email]);
+
+  const handleTyping = useCallback(() => {
+    if (!currentThread || !currentUser || !typingChannelRef.current) return;
 
     // Clear existing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
-    // Update typing status
-    updateTypingStatus(true);
-
-    // Set new timeout to clear typing status
-    typingTimeoutRef.current = setTimeout(() => {
-      updateTypingStatus(false);
-    }, 3000);
-  };
-
-  const updateTypingStatus = async (isTyping) => {
-    if (!currentThread || !currentUser) return;
-
-    try {
-      const typingUsers = currentThread.typing_users || [];
-      const updatedTypingUsers = isTyping
-        ? [
-            ...typingUsers.filter(u => u.user_email !== currentUser.email),
-            {
-              user_email: currentUser.email,
-              user_name: currentUser.full_name,
-              last_typing_at: new Date().toISOString()
-            }
-          ]
-        : typingUsers.filter(u => u.user_email !== currentUser.email);
-
-      await db.entities.ConversationThread.update(currentThread.id, {
-        typing_users: updatedTypingUsers
+    // Only broadcast if not already marked as typing
+    if (!isTypingRef.current) {
+      isTypingRef.current = true;
+      // Broadcast typing status via Supabase Presence
+      typingChannelRef.current.track({
+        email: currentUser.email,
+        name: currentUser.full_name,
+        isTyping: true,
       });
-
-      loadData(); // Reload threads to update typing indicators in sidebar or header
-    } catch (error) {
-      console.error("Error updating typing status:", error);
     }
-  };
+
+    // Set timeout to clear typing status after 3 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      isTypingRef.current = false;
+      if (typingChannelRef.current) {
+        typingChannelRef.current.track({
+          email: currentUser.email,
+          name: currentUser.full_name,
+          isTyping: false,
+        });
+      }
+    }, 3000);
+  }, [currentThread?.id, currentUser?.email, currentUser?.full_name]);
 
   const extractMentions = (text) => {
     const mentionRegex = /@(\w+)/g;
@@ -661,17 +700,6 @@ export default function ChatPage() {
     return mentions;
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (editingMessage) {
-        handleEditMessage(editingMessage);
-      } else {
-        handleSendMessage();
-      }
-    }
-  };
-
   const handleAssignmentSelect = (assignmentOrGeneral) => {
     if (assignmentOrGeneral === "general") {
       setSelectedAssignmentId("general");
@@ -688,31 +716,48 @@ export default function ChatPage() {
   };
 
   const handleNewThread = async (topic, description) => {
-    if (!currentUser || !currentWorkspaceId) return; // Removed !currentAssignment check
+    if (!currentUser) {
+      toast.error("Unable to create thread: User not logged in");
+      return;
+    }
+    if (!currentWorkspaceId) {
+      toast.error("Unable to create thread: No workspace selected");
+      return;
+    }
 
     try {
+      // Build thread data with all required fields
       const threadData = {
         workspace_id: currentWorkspaceId,
-        topic,
-        description,
-        assignment_id: selectedAssignmentId === "general" ? null : selectedAssignmentId, // Can be null
-        creator_email: currentUser.email,
+        name: topic,
+        description: description || null,
+        assignment_id: selectedAssignmentId === "general" ? null : selectedAssignmentId,
+        status: 'active',
+        last_activity: new Date().toISOString(),
+        message_count: 0,
+        is_pinned: false,
         participants: [currentUser.email],
-        status: "active",
-        message_count: 0, // Added based on outline
-        last_activity: new Date().toISOString() // Added based on outline
+        created_by: currentUser.email,
       };
 
+      console.log("Creating thread with data:", threadData);
       const newThread = await db.entities.ConversationThread.create(threadData);
-      loadData(); // Reload threads to update sidebar
+      console.log("Thread created successfully:", newThread);
+
+      if (!newThread) {
+        throw new Error("Thread creation returned no data");
+      }
+
+      await loadData(); // Reload threads to update sidebar
       setCurrentThread(newThread); // Set the newly created thread as current
       setIsThreadFormOpen(false);
       setNewThreadTopic("");
       setNewThreadDescription("");
-      toast.success("Thread created");
+      toast.success("Thread created successfully!");
     } catch (error) {
       console.error("Error creating thread:", error);
-      toast.error("Failed to create thread");
+      const errorMessage = error?.message || error?.details || "Unknown error occurred";
+      toast.error(`Failed to create thread: ${errorMessage}`);
     }
   };
 
@@ -838,7 +883,7 @@ export default function ChatPage() {
                     <div className="flex-1">
                       <CardTitle className="text-xl flex items-center gap-2">
                         <Hash className="w-5 h-5 text-indigo-500" />
-                        {currentThread.topic}
+                        {currentThread.name || currentThread.topic}
                         {!currentThread.assignment_id && (
                           <Badge variant="outline" className="text-sm font-normal bg-green-100/50 dark:bg-green-900/20 text-green-700 dark:text-green-300">
                             General Workspace Chat
@@ -1052,8 +1097,8 @@ export default function ChatPage() {
                   )}
                   <div ref={messagesEndRef} />
 
-                  {/* Typing Indicator */}
-                  {currentThread.typing_users?.filter(u => u.user_email !== currentUser.email).length > 0 && (
+                  {/* Typing Indicator - Real-time via Supabase Presence */}
+                  {typingUsers.length > 0 && (
                     <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mt-2">
                       <div className="flex gap-1">
                         <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -1061,7 +1106,12 @@ export default function ChatPage() {
                         <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                       </div>
                       <span>
-                        {currentThread.typing_users.filter(u => u.user_email !== currentUser.email)[0]?.user_name} is typing...
+                        {typingUsers.length === 1
+                          ? `${typingUsers[0].name} is typing...`
+                          : typingUsers.length === 2
+                            ? `${typingUsers[0].name} and ${typingUsers[1].name} are typing...`
+                            : `${typingUsers[0].name} and ${typingUsers.length - 1} others are typing...`
+                        }
                       </span>
                     </div>
                   )}
@@ -1122,7 +1172,7 @@ export default function ChatPage() {
                         }}
                         onSend={editingMessage ? () => handleEditMessage(editingMessage) : handleSendMessage}
                         onFileAttach={() => fileInputRef.current?.click()}
-                        placeholder={`Message ${currentThread.topic}... (or drag & drop files)`}
+                        placeholder={`Message ${currentThread.name || currentThread.topic}... (or drag & drop files)`}
                         teamMembers={users}
                         disabled={!currentThread}
                       />
@@ -1234,7 +1284,8 @@ export default function ChatPage() {
               </Button>
               <Button
                 type="submit"
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg shadow-md"
+                disabled={!newThreadTopic.trim() || !currentUser || !currentWorkspaceId}
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Create Thread
               </Button>

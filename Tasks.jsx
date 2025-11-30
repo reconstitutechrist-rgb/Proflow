@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { User } from "@/api/entities";
 import { db } from "@/api/db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -71,6 +70,7 @@ export default function TasksPage() {
 
   const urlParams = new URLSearchParams(location.search);
   const sortBy = urlParams.get('sortBy');
+  const assignmentParam = urlParams.get('assignment');
 
   const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
 
@@ -79,6 +79,15 @@ export default function TasksPage() {
       loadData();
     }
   }, [currentWorkspaceId, workspaceLoading]);
+
+  // Set assignment filter from URL parameter
+  useEffect(() => {
+    if (assignmentParam) {
+      setSelectedAssignment(assignmentParam);
+      // Also open the task form for quick creation
+      setIsTaskFormOpen(true);
+    }
+  }, [assignmentParam]);
 
   const filteredTasks = useMemo(() => {
     let currentTasks = [...tasks];
@@ -135,7 +144,7 @@ export default function TasksPage() {
       const [tasksData, assignmentsData, usersData, user] = await Promise.all([
         db.entities.Task.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
         db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        User.list(),
+        db.entities.User.list(),
         db.auth.me()
       ]);
 
@@ -301,7 +310,7 @@ export default function TasksPage() {
 
   const getAssignmentName = (assignmentId) => {
     const assignment = assignments.find(a => a.id === assignmentId);
-    return assignment?.name || "Unknown Assignment";
+    return assignment?.title || "Unknown Assignment";
   };
 
   const getUserName = (userEmail) => {
@@ -370,7 +379,7 @@ export default function TasksPage() {
               <SelectItem value="all">All Assignments</SelectItem>
               {assignments.map(assignment => (
                 <SelectItem key={assignment.id} value={assignment.id}>
-                  {assignment.name}
+                  {assignment.title}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -464,8 +473,7 @@ export default function TasksPage() {
             {isTaskFormOpen && (
               <TaskForm
                 task={editingTask}
-                assignments={assignments}
-                users={users}
+                assignmentId={selectedAssignment !== 'all' ? selectedAssignment : null}
                 currentUser={currentUser}
                 onSubmit={handleSubmit}
                 onCancel={() => {

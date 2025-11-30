@@ -62,10 +62,10 @@ export default function QualityControlDashboard() {
     try {
       setLoading(true);
       const [docsData, assignmentsData] = await Promise.all([
-        Document.list("-created_date"),
-        Assignment.list("-updated_date")
+        Document.list(),
+        Assignment.list()
       ]);
-      
+
       setDocuments(docsData);
       setAssignments(assignmentsData);
       calculateQualityStats(docsData, assignmentsData);

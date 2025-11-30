@@ -1,19 +1,13 @@
-
 import React, { useEffect } from "react";
-import { Task } from "@/api/entities";
-import { InvokeLLM } from "@/api/integrations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon, Plus, User, FolderOpen, Loader2 } from "lucide-react";
+import { User, FolderOpen, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // Added useWorkspace
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { db } from "@/api/db";
-import { toast } from "sonner"; // Assuming react-hot-toast for toast notifications
+import { toast } from "sonner";
 
 export default function TaskForm({ task, assignmentId, currentUser, onSubmit, onCancel }) { // Changed assignment to assignmentId, onSave to onSubmit. Removed 'assignments' and 'users' props.
     const [users, setUsers] = React.useState([]); // State to hold fetched users
@@ -26,7 +20,7 @@ export default function TaskForm({ task, assignmentId, currentUser, onSubmit, on
         assigned_to: currentUser?.email || null,
         status: "todo",
         priority: "medium",
-        due_date: "",
+        due_date: null,
         ai_keywords: []
     });
 
@@ -44,71 +38,28 @@ export default function TaskForm({ task, assignmentId, currentUser, onSubmit, on
 
     const loadUsers = async () => {
         try {
-            // Fetch users, filtered by the current workspace
-            const usersData = await db.entities.User.list({
-                filter: { workspace_id: currentWorkspaceId }
-            });
+            const usersData = await db.entities.User.list();
             setUsers(usersData);
         } catch (error) {
             console.error("Error loading users:", error);
-            toast.error("Failed to load users for the workspace.");
+            toast.error("Failed to load users.");
         }
     };
 
     const loadAssignments = async () => {
         try {
-            // Fetch assignments, filtered by the current workspace
-            const assignmentsData = await db.entities.Assignment.list({
-                filter: { workspace_id: currentWorkspaceId }
-            });
+            const assignmentsData = await db.entities.Assignment.filter({ workspace_id: currentWorkspaceId });
             setAssignmentsList(assignmentsData);
         } catch (error) {
             console.error("Error loading assignments:", error);
-            toast.error("Failed to load assignments for the workspace.");
+            toast.error("Failed to load assignments.");
         }
     };
 
     const generateAIKeywords = async (title, description) => {
-        if (!title.trim() && !description.trim()) return [];
-
-        try {
-            setIsGeneratingKeywords(true);
-            
-            const prompt = `Analyze this task and generate 6-10 relevant keywords and phrases that would help team members find this task through semantic search. Focus on actions, skills, deliverables, and related concepts.
-
-Task Title: ${title}
-Description: ${description}
-
-Generate keywords as a JSON array of strings. Include:
-- Action words and verbs related to the work
-- Skills or expertise required
-- Tools or technologies involved
-- Deliverables or outcomes
-- Related processes or workflows
-
-Return only the JSON array, no other text.`;
-
-            const response = await InvokeLLM({
-                prompt: prompt,
-                response_json_schema: {
-                    type: "object",
-                    properties: {
-                        keywords: {
-                            type: "array",
-                            items: { type: "string" }
-                        }
-                    }
-                }
-            });
-
-            return response.keywords || [];
-        } catch (error) {
-            console.error("Error generating AI keywords:", error);
-            toast.error("Failed to generate AI keywords.");
-            return [];
-        } finally {
-            setIsGeneratingKeywords(false);
-        }
+        // AI keyword generation disabled - return empty array
+        // Can be re-enabled when LLM integration is configured
+        return [];
     };
 
     const handleSubmit = async (e) => { // Renamed from handleSave
@@ -189,7 +140,7 @@ Return only the JSON array, no other text.`;
                                     <SelectItem key={a.id} value={a.id}>
                                         <div className="flex items-center gap-2">
                                             <FolderOpen className="w-4 h-4" />
-                                            {a.name}
+                                            {a.title}
                                         </div>
                                     </SelectItem>
                                 ))}
@@ -253,21 +204,6 @@ Return only the JSON array, no other text.`;
                         </SelectContent>
                     </Select>
 
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline">
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {taskData.due_date ? format(new Date(taskData.due_date), 'PPP') : 'Set due date'}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                            <Calendar
-                                mode="single"
-                                selected={taskData.due_date ? new Date(taskData.due_date) : undefined}
-                                onSelect={(date) => setTaskData({...taskData, due_date: date})}
-                            />
-                        </PopoverContent>
-                    </Popover>
                 </div>
 
                 {/* AI Keywords Preview (if editing existing task) */}

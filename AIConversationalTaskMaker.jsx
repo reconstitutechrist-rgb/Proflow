@@ -141,10 +141,11 @@ export default function AIConversationalTaskMaker({
   const loadExistingTasks = async () => {
     try {
       // Filter existing tasks by the target assignmentId and currentWorkspaceId
-      const tasks = await Task.list("-created_date", 100, {
-        workspace_id: currentWorkspaceId,
-        assignment_id: assignmentId
-      });
+      const filters = { workspace_id: currentWorkspaceId };
+      if (assignmentId) {
+        filters.assignment_id = assignmentId;
+      }
+      const tasks = await Task.list(filters);
       setExistingTasks(tasks);
     } catch (error) {
       console.error("Error loading existing tasks:", error);

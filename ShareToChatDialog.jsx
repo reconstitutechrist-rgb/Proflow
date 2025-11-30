@@ -175,7 +175,7 @@ Keep it conversational and informative.`;
 
   const loadAssignments = async () => {
     try {
-      const assignmentList = await Assignment.list("-updated_date");
+      const assignmentList = await Assignment.list();
       setAssignments(assignmentList);
       if (assignmentList.length > 0) {
         setSelectedAssignment(assignmentList[0].id);

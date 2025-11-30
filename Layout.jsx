@@ -121,17 +121,19 @@ function LayoutContent({ children, currentPageName }) {
       setNotifications([]);
       return;
     }
-    
+
     try {
-      const [tasks, assignments] = await Promise.all([
+      // Get tasks assigned to user and recent assignments from user's workspace
+      const [tasks, recentAssignments] = await Promise.all([
         Task.filter({ assigned_to: user.email }, "-updated_date", 10),
-        Assignment.filter({ 
-          $or: [
-            { assignment_manager: user.email },
-            { team_members: { $in: [user.email] } }
-          ]
-        }, "-updated_date", 5)
+        Assignment.filter({}, "-updated_date", 10) // Get recent assignments
       ]);
+
+      // Filter assignments to only those the user has tasks in
+      const userTaskAssignmentIds = new Set(tasks.map(t => t.assignment_id).filter(Boolean));
+      const assignments = recentAssignments
+        .filter(a => userTaskAssignmentIds.has(a.id))
+        .slice(0, 5);
 
       const essentialNotifs = [];
       const now = new Date();

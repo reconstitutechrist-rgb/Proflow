@@ -34,7 +34,7 @@ export default function PackageViewer() {
   const loadPackages = async () => {
     try {
       setLoading(true);
-      const packagesData = await DocumentPackage.list("-created_date");
+      const packagesData = await DocumentPackage.list();
       setPackages(packagesData);
     } catch (error) {
       console.error("Error loading packages:", error);

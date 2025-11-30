@@ -16,8 +16,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Plus,
@@ -141,10 +139,10 @@ export default function AssignmentsPage() {
   const filteredAssignments = assignments.filter(assignment => {
     const matchesProject = selectedProject === "all" || assignment.project_id === selectedProject;
     const matchesStatus = statusFilter === "all" || assignment.status === statusFilter;
-    const matchesSearch = !searchQuery || 
-      assignment.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = !searchQuery ||
+      assignment.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       assignment.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     return matchesProject && matchesStatus && matchesSearch;
   });
 
@@ -288,7 +286,7 @@ export default function AssignmentsPage() {
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between mb-4">
                         <h3 className="text-lg font-medium text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors line-clamp-2">
-                          {assignment.name}
+                          {assignment.title}
                         </h3>
                         <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors flex-shrink-0 ml-2" />
                       </div>
@@ -319,16 +317,9 @@ export default function AssignmentsPage() {
       {/* Form Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingAssignment ? 'Edit Assignment' : 'New Assignment'}
-            </DialogTitle>
-          </DialogHeader>
           <AssignmentForm
             assignment={editingAssignment}
             projects={projects}
-            users={users}
-            currentUser={currentUser}
             onSubmit={handleSubmit}
             onCancel={() => {
               setIsFormOpen(false);

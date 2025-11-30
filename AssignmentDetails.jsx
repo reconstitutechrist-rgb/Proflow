@@ -1,9 +1,5 @@
-
 import React, { useState, useEffect, useMemo } from "react";
-import { Task } from "@/api/entities";
-import { Document } from "@/api/entities";
-import { Message } from "@/api/entities";
-import { User } from "@/api/entities";
+import { useNavigate } from "react-router-dom";
 import { db } from "@/api/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,12 +43,18 @@ export default function AssignmentDetails({
   onEdit,
   currentUser
 }) {
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [messages, setMessages] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+
+  const handleAddTask = () => {
+    // Navigate to Tasks page with assignment pre-selected
+    navigate(`/Tasks?assignment=${assignment.id}`);
+  };
 
   useEffect(() => {
     if (!assignment) return;
@@ -62,12 +64,12 @@ export default function AssignmentDetails({
         setLoading(true);
 
         const [tasksData, docsData, messagesData, usersData] = await Promise.all([
-          Task.filter({ assignment_id: assignment.id }, "-updated_date"),
+          db.entities.Task.filter({ assignment_id: assignment.id }, "-updated_date"),
           assignment.workspace_id
             ? db.entities.Document.filter({ workspace_id: assignment.workspace_id })
             : [],
-          Message.filter({ assignment_id: assignment.id }, "-created_date"),
-          User.list() // Users are filtered client-side by team membership
+          db.entities.Message.filter({ assignment_id: assignment.id }, "-created_date"),
+          db.entities.User.list() // Users are filtered client-side by team membership
         ]);
 
         setTasks(tasksData);
@@ -406,7 +408,7 @@ export default function AssignmentDetails({
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>Assignment Tasks</span>
-                    <Button size="sm">
+                    <Button size="sm" onClick={handleAddTask}>
                       <Plus className="w-4 h-4 mr-2" />
                       Add Task
                     </Button>
@@ -455,7 +457,7 @@ export default function AssignmentDetails({
                       <Target className="w-12 h-12 mx-auto text-gray-300 mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks yet</h3>
                       <p className="text-gray-500 mb-4">Create your first task to get started</p>
-                      <Button>
+                      <Button onClick={handleAddTask}>
                         <Plus className="w-4 h-4 mr-2" />
                         Create Task
                       </Button>

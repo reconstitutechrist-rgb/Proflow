@@ -1,31 +1,25 @@
-
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Shield, 
-  FileText, 
-  AlertCircle, 
-  AlertTriangle, // Added AlertTriangle import
+import {
+  Shield,
+  FileText,
+  AlertTriangle,
   BookOpen,
-  Briefcase,
   Scale,
-  MapPin,
   Clock,
   MessageSquare,
   Zap,
   Bot
 } from "lucide-react";
-
-// A simple mock for createPageUrl, assuming it generates paths from page names.
-// In a real application, this would be imported from a utility file or context,
-// or passed as a prop. For this implementation, we define a basic version
-// to ensure the code is fully functioning and compiles.
-const createPageUrl = (pageName) => `/${pageName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+import { createPageUrl } from "@/lib/utils";
 
 
 export default function ResearchSuggestions({ assignment, onResearchStart }) {
+  const navigate = useNavigate();
+
   // Dynamic suggestions based on actual assignment context
   const generateContextualSuggestions = () => {
     const projectType = assignment?.project_type || 'general';
@@ -122,7 +116,7 @@ export default function ResearchSuggestions({ assignment, onResearchStart }) {
       recommendedActions: JSON.stringify([suggestion.question])
     }).toString();
 
-    window.location.href = `${createPageUrl("DocumentStudio")}?${query}`;
+    navigate(`${createPageUrl("DocumentStudio")}?${query}`);
   };
 
   return (
@@ -137,8 +131,8 @@ export default function ResearchSuggestions({ assignment, onResearchStart }) {
         <CardContent>
           <div className="text-center p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
             <Bot className="w-12 h-12 mx-auto text-blue-600 mb-3" />
-            <h3 className="font-semibold text-blue-900 mb-2">AI-Powered Research</h3>
-            <p className="text-sm text-blue-700 mb-4">
+            <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">AI-Powered Research</h3>
+            <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">
               Click any question below for instant AI research, or ask your own questions in the chat.
             </p>
             <Badge className="bg-blue-600 text-white">
@@ -160,9 +154,9 @@ export default function ResearchSuggestions({ assignment, onResearchStart }) {
         </CardHeader>
         <CardContent className="space-y-4">
           {suggestions.immediate.map((category, categoryIndex) => (
-            <div key={categoryIndex} className={`border rounded-lg p-4 ${category.color}`}>
+            <div key={categoryIndex} className={`border rounded-lg p-4 ${category.color} dark:bg-opacity-20`}>
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                <h4 className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
                   <category.icon className="w-4 h-4" />
                   {category.category}
                 </h4>
@@ -173,12 +167,12 @@ export default function ResearchSuggestions({ assignment, onResearchStart }) {
                   <Button
                     key={questionIndex}
                     variant="outline"
-                    onClick={() => onResearchStart(question)} // Changed from onQuestionSelect
-                    className="w-full justify-start text-left h-auto p-3 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300"
+                    onClick={() => onResearchStart(question)}
+                    className="w-full justify-start text-left h-auto p-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
                   >
                     <div className="flex items-center gap-2">
-                      <MessageSquare className="w-3 h-3 flex-shrink-0 text-blue-500" />
-                      <span className="text-wrap text-sm">{question}</span>
+                      <MessageSquare className="w-3 h-3 shrink-0 text-blue-500" />
+                      <span className="text-wrap text-sm text-gray-700 dark:text-gray-300">{question}</span>
                     </div>
                   </Button>
                 ))}
@@ -191,7 +185,7 @@ export default function ResearchSuggestions({ assignment, onResearchStart }) {
       {/* Planning Questions */}
       <Card className="border-l-4 border-l-blue-500 shadow-md">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-700">
+          <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
             <Clock className="w-5 h-5" />
             Planning & Preparation
             <Badge className="bg-blue-500 text-white">Important</Badge>
@@ -199,9 +193,9 @@ export default function ResearchSuggestions({ assignment, onResearchStart }) {
         </CardHeader>
         <CardContent className="space-y-4">
           {suggestions.planning.map((category, categoryIndex) => (
-            <div key={categoryIndex} className={`border rounded-lg p-4 ${category.color}`}>
+            <div key={categoryIndex} className={`border rounded-lg p-4 ${category.color} dark:bg-opacity-20`}>
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                <h4 className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
                   <category.icon className="w-4 h-4" />
                   {category.category}
                 </h4>
@@ -212,12 +206,12 @@ export default function ResearchSuggestions({ assignment, onResearchStart }) {
                   <Button
                     key={questionIndex}
                     variant="outline"
-                    onClick={() => onResearchStart(question)} // Changed from onQuestionSelect
-                    className="w-full justify-start text-left h-auto p-3 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300"
+                    onClick={() => onResearchStart(question)}
+                    className="w-full justify-start text-left h-auto p-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
                   >
                     <div className="flex items-center gap-2">
-                      <MessageSquare className="w-3 h-3 flex-shrink-0 text-blue-500" />
-                      <span className="text-wrap text-sm">{question}</span>
+                      <MessageSquare className="w-3 h-3 shrink-0 text-blue-500" />
+                      <span className="text-wrap text-sm text-gray-700 dark:text-gray-300">{question}</span>
                     </div>
                   </Button>
                 ))}
@@ -230,7 +224,7 @@ export default function ResearchSuggestions({ assignment, onResearchStart }) {
       {/* Optimization Questions */}
       <Card className="border-l-4 border-l-green-500 shadow-md">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-700">
+          <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
             <BookOpen className="w-5 h-5" />
             Growth & Optimization
             <Badge className="bg-green-500 text-white">Enhancement</Badge>
@@ -238,9 +232,9 @@ export default function ResearchSuggestions({ assignment, onResearchStart }) {
         </CardHeader>
         <CardContent className="space-y-4">
           {suggestions.optimization.map((category, categoryIndex) => (
-            <div key={categoryIndex} className={`border rounded-lg p-4 ${category.color}`}>
+            <div key={categoryIndex} className={`border rounded-lg p-4 ${category.color} dark:bg-opacity-20`}>
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                <h4 className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
                   <category.icon className="w-4 h-4" />
                   {category.category}
                 </h4>
@@ -251,12 +245,12 @@ export default function ResearchSuggestions({ assignment, onResearchStart }) {
                   <Button
                     key={questionIndex}
                     variant="outline"
-                    onClick={() => onResearchStart(question)} // Changed from onQuestionSelect
-                    className="w-full justify-start text-left h-auto p-3 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300"
+                    onClick={() => onResearchStart(question)}
+                    className="w-full justify-start text-left h-auto p-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
                   >
                     <div className="flex items-center gap-2">
-                      <MessageSquare className="w-3 h-3 flex-shrink-0 text-blue-500" />
-                      <span className="text-wrap text-sm">{question}</span>
+                      <MessageSquare className="w-3 h-3 shrink-0 text-blue-500" />
+                      <span className="text-wrap text-sm text-gray-700 dark:text-gray-300">{question}</span>
                     </div>
                   </Button>
                 ))}

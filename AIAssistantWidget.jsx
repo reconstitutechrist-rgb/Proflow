@@ -365,36 +365,29 @@ What can I help you with today?`,
     try {
       const context = getEnhancedContext();
 
-      const [tasks, assignments, projects, notes, user] = await Promise.all([
-        workspaceId
-          ? db.entities.Task.filter({ workspace_id: workspaceId }, "-updated_date", 50).catch((err) => {
-              console.warn("Failed to fetch tasks:", err);
-              return [];
-            })
-          : [],
-        workspaceId
-          ? db.entities.Assignment.filter({ workspace_id: workspaceId }).catch((err) => {
-              console.warn("Failed to fetch assignments:", err);
-              return [];
-            })
-          : [],
-        workspaceId
-          ? db.entities.Project.filter({ workspace_id: workspaceId }).catch((err) => {
-              console.warn("Failed to fetch projects:", err);
-              return [];
-            })
-          : [],
-        workspaceId
-          ? db.entities.Note.filter({ workspace_id: workspaceId }, "-updated_date", 20).catch((err) => {
-              console.warn("Failed to fetch notes:", err);
-              return [];
-            })
-          : [],
-        db.auth.me().catch((err) => {
-          console.warn("Failed to fetch current user:", err);
-          return null;
-        }),
+      // Use Promise.allSettled to ensure all promises complete even if some fail
+      const results = await Promise.allSettled([
+        workspaceId ? db.entities.Task.filter({ workspace_id: workspaceId }, "-updated_date", 50) : Promise.resolve([]),
+        workspaceId ? db.entities.Assignment.filter({ workspace_id: workspaceId }) : Promise.resolve([]),
+        workspaceId ? db.entities.Project.filter({ workspace_id: workspaceId }) : Promise.resolve([]),
+        workspaceId ? db.entities.Note.filter({ workspace_id: workspaceId }, "-updated_date", 20) : Promise.resolve([]),
+        db.auth.me(),
       ]);
+
+      // Extract values, using fallbacks for rejected promises
+      const tasks = results[0].status === 'fulfilled' ? results[0].value : [];
+      const assignments = results[1].status === 'fulfilled' ? results[1].value : [];
+      const projects = results[2].status === 'fulfilled' ? results[2].value : [];
+      const notes = results[3].status === 'fulfilled' ? results[3].value : [];
+      const user = results[4].status === 'fulfilled' ? results[4].value : null;
+
+      // Log any failures for debugging
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          const names = ['tasks', 'assignments', 'projects', 'notes', 'user'];
+          console.warn(`Failed to fetch ${names[index]}:`, result.reason);
+        }
+      });
 
       // Find current project if viewing one
       const currentProject = context.current_entity_type === "project" && context.current_entity_id

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Task } from "@/api/entities";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import {
   Dialog,
   DialogContent,
@@ -22,13 +23,14 @@ import { CheckSquare, Loader2, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
-export default function QuickTaskCreationDialog({ 
-  isOpen, 
-  onClose, 
-  taskData, 
+export default function QuickTaskCreationDialog({
+  isOpen,
+  onClose,
+  taskData,
   assignments,
-  currentUser 
+  currentUser
 }) {
+  const { currentWorkspaceId } = useWorkspace();
   const [formData, setFormData] = useState({
     title: taskData?.title || '',
     description: taskData?.description || '',
@@ -74,6 +76,7 @@ export default function QuickTaskCreationDialog({
 
     try {
       await Task.create({
+        workspace_id: currentWorkspaceId,
         title: formData.title,
         description: formData.description,
         assignment_id: formData.assignment_id,

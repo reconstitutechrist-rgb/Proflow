@@ -1,8 +1,10 @@
 import React, { useEffect, useCallback, useRef } from "react";
 import { Assignment, Task, Document } from "@/api/entities";
 import { db } from "@/api/db";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 
 export default function SmartContextDetector({ onSuggestion }) {
+  const { currentWorkspaceId } = useWorkspace();
   const lastSuggestionRef = useRef(null);
   const suggestionTimeoutRef = useRef(null);
 
@@ -54,9 +56,11 @@ export default function SmartContextDetector({ onSuggestion }) {
       else if (currentPage.includes('Tasks')) {
         try {
           const user = await db.auth.me();
-          const tasks = await Task.filter({ 
+          // Filter by workspace_id to ensure we only get tasks from current workspace
+          const tasks = await Task.filter({
+            workspace_id: currentWorkspaceId,
             assigned_to: user.email,
-            status: { $nin: ['completed'] }
+            status: 'todo' // Use simple string instead of $nin operator
           }, '-due_date', 10);
 
           const now = new Date();
@@ -95,7 +99,11 @@ export default function SmartContextDetector({ onSuggestion }) {
         const assignmentId = urlParams.get('assignment');
         try {
           const assignment = await Assignment.read(assignmentId);
-          const tasks = await Task.filter({ assignment_id: assignmentId }, '-created_date', 5);
+          // Filter by workspace_id to ensure we only get tasks from current workspace
+          const tasks = await Task.filter({
+            workspace_id: currentWorkspaceId,
+            assignment_id: assignmentId
+          }, '-created_date', 5);
           
           if (assignment && tasks.length === 0) {
             suggestion = {
@@ -122,7 +130,9 @@ export default function SmartContextDetector({ onSuggestion }) {
       else if (currentPage.includes('Dashboard') || currentPage === '/') {
         try {
           const user = await db.auth.me();
-          const tasks = await Task.filter({ 
+          // Filter by workspace_id to ensure we only get tasks from current workspace
+          const tasks = await Task.filter({
+            workspace_id: currentWorkspaceId,
             assigned_to: user.email,
             status: 'todo'
           }, '-priority', 5);
@@ -157,7 +167,7 @@ export default function SmartContextDetector({ onSuggestion }) {
     } catch (error) {
       console.error("Error in context detection:", error);
     }
-  }, [onSuggestion]);
+  }, [onSuggestion, currentWorkspaceId]);
 
   useEffect(() => {
     // Detect context after a short delay when page loads

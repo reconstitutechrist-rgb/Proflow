@@ -51,6 +51,9 @@ export default function ProjectForm({ project, onCancel, onSubmit }) {
       await onSubmit(formData);
     } catch (error) {
       console.error("Error submitting form:", error);
+      toast.error("Failed to save project", {
+        description: error.message || "Please try again"
+      });
     } finally {
       setIsSaving(false);
     }

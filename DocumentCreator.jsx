@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { db } from "@/api/db";
 import { Document } from "@/api/entities";
+import DOMPurify from "dompurify";
 import { Assignment } from "@/api/entities";
 import { Task } from "@/api/entities";
 import { Button } from "@/components/ui/button";
@@ -451,14 +452,19 @@ export default function DocumentCreatorPage() {
     if (quillRef.current) {
       const editor = quillRef.current.getEditor();
       const range = editor.getSelection();
+      // Sanitize content before inserting to prevent XSS
+      const sanitizedContent = DOMPurify.sanitize(newContent, {
+        ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre', 'a', 'span', 'div', 'img'],
+        ALLOWED_ATTR: ['href', 'target', 'class', 'id', 'src', 'alt', 'width', 'height']
+      });
 
       if (range) {
-        editor.clipboard.dangerouslyPasteHTML(range.index, newContent);
-        editor.setSelection(range.index + newContent.length);
+        editor.clipboard.dangerouslyPasteHTML(range.index, sanitizedContent);
+        editor.setSelection(range.index + sanitizedContent.length);
       } else {
         const length = editor.getLength();
-        editor.clipboard.dangerouslyPasteHTML(length, newContent);
-        editor.setSelection(length + newContent.length);
+        editor.clipboard.dangerouslyPasteHTML(length, sanitizedContent);
+        editor.setSelection(length + sanitizedContent.length);
       }
 
       toast.success("Content inserted");
@@ -731,7 +737,10 @@ export default function DocumentCreatorPage() {
                 <CardContent>
                   <div
                     className="prose dark:prose-invert max-w-none"
-                    dangerouslySetInnerHTML={{ __html: content }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content, {
+                      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre', 'a', 'span', 'div', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
+                      ALLOWED_ATTR: ['href', 'target', 'class', 'id', 'src', 'alt', 'width', 'height']
+                    }) }}
                   />
                 </CardContent>
               </Card>

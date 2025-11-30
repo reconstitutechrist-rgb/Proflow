@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { Task } from "@/api/entities";
 import { User } from "@/api/entities";
+import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -77,13 +78,14 @@ const parseDueDate = (deadline) => {
   return date.toISOString().split('T')[0];
 };
 
-export default function ActionItemsToTasksConverter({ 
-  actionItems, 
-  assignmentId, 
+export default function ActionItemsToTasksConverter({
+  actionItems,
+  assignmentId,
   currentUser,
   teamMembers = [],
-  onTasksCreated 
+  onTasksCreated
 }) {
+  const { currentWorkspaceId } = useWorkspace();
   const [isOpen, setIsOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -153,6 +155,7 @@ export default function ActionItemsToTasksConverter({
         const originalItem = actionItems[idx];
 
         const taskData = {
+          workspace_id: currentWorkspaceId,
           title: form.title,
           description: `${form.description}\n\n---\nExtracted from chat conversation\nOriginal action item: "${originalItem.task}"`,
           assignment_id: assignmentId,

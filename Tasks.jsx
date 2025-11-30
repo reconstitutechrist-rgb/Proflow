@@ -47,6 +47,7 @@ export default function TasksPage() {
 
   const [tasks, setTasks] = useState([]);
   const [assignments, setAssignments] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -141,15 +142,17 @@ export default function TasksPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [tasksData, assignmentsData, usersData, user] = await Promise.all([
+      const [tasksData, assignmentsData, projectsData, usersData, user] = await Promise.all([
         db.entities.Task.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
         db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
+        db.entities.Project.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
         db.entities.User.list(),
         db.auth.me()
       ]);
 
       setTasks(tasksData);
       setAssignments(assignmentsData);
+      setProjects(projectsData);
       setUsers(usersData);
       setCurrentUser(user);
     } catch (error) {
@@ -547,6 +550,7 @@ export default function TasksPage() {
           <div className="overflow-auto">
             <AITaskAssistantPanel
               assignments={assignments}
+              projects={projects}
               users={users}
               currentUser={currentUser}
               onTasksCreated={loadData}

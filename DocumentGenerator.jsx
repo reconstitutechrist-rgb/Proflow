@@ -1,9 +1,10 @@
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Document } from "@/api/entities";
 import { Task } from "@/api/entities";
 import { User } from "@/api/entities";
 import { db } from "@/api/db";
+import DOMPurify from "dompurify";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -208,7 +209,7 @@ const detectCommand = (input, hasExistingContent) => {
   return { type: 'general', confidence: 0.5 };
 };
 
-export default function DocumentGenerator({ assignment, currentUser, onDocumentGenerated }) {
+export default function DocumentGenerator({ assignment, projects = [], currentUser, onDocumentGenerated }) {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [customPrompt, setCustomPrompt] = useState("");
   const [generatedContent, setGeneratedContent] = useState("");
@@ -234,8 +235,18 @@ export default function DocumentGenerator({ assignment, currentUser, onDocumentG
 
   const [pendingUpdate, setPendingUpdate] = useState(null);
   const [showDiffView, setShowDiffView] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
 
-  const { currentWorkspaceId } = useWorkspace(); // Added from outline
+  const { currentWorkspaceId } = useWorkspace();
+
+  // Helper to sanitize HTML content from AI
+  const sanitizeHtml = useCallback((html) => {
+    if (!html) return '';
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre', 'a', 'span', 'div'],
+      ALLOWED_ATTR: ['href', 'target', 'class', 'id']
+    });
+  }, []);
 
   useEffect(() => {
     const loadTeamMembers = async () => {
@@ -298,7 +309,7 @@ Let's create something great!`,
     
     setIsGeneratingTasks(true);
     try {
-      const response = await db.integrations.Core.anthropicResearch({ // Updated from anthropicResearch
+      const response = await db.functions.invoke('anthropicResearch', {
         question: `Analyze this document and suggest 3-5 actionable tasks that should be created based on its content.
 
 Document Title: ${title}
@@ -360,37 +371,19 @@ Return the tasks as a JSON array with this structure:
   const notifyTeam = useCallback(async (documentTitle, documentUrl) => {
     if (!shouldNotifyTeam || !teamMembers || teamMembers.length === 0) return;
 
-    try {
-      const notificationPromises = teamMembers.map(async (member) => {
-        return db.integrations.Core.SendEmail({ // Updated from SendEmail
-          to: member.email,
-          subject: `New Document: ${documentTitle}`,
-          body: `Hi ${member.full_name},
+    // Note: Email notifications are not currently configured.
+    // This is a placeholder for future email integration.
+    // When ready, integrate with your preferred email service (SendGrid, AWS SES, etc.)
+    console.log('Team notification requested for:', {
+      documentTitle,
+      documentUrl,
+      teamMembers: teamMembers.map(m => m.email)
+    });
 
-A new document has been generated for the assignment "${assignment.name}".
-
-Document: ${documentTitle}
-Assignment: ${assignment.name}
-
-You can view and download the document from the Documents page.
-
-Best regards,
-${currentUser?.full_name || 'Your Team'}`
-        });
-      });
-
-      await Promise.all(notificationPromises);
-      
-      toast.success("Team notified successfully", {
-        description: `${teamMembers.length} team member${teamMembers.length !== 1 ? 's' : ''} notified via email.`
-      });
-    } catch (error) {
-      console.error("Error notifying team:", error);
-      toast.warning("Failed to notify some team members", {
-        description: "The document was saved but some email notifications failed."
-      });
-    }
-  }, [shouldNotifyTeam, teamMembers, assignment, currentUser]);
+    toast.info("Team notification", {
+      description: `Document "${documentTitle}" created. Email notifications are not configured yet.`
+    });
+  }, [shouldNotifyTeam, teamMembers]);
 
   const handleConversationMessage = useCallback(async () => {
     if (!conversationInput.trim()) return;
@@ -497,7 +490,7 @@ Respond helpfully to the user's request. If they're asking for:
 If they want you to modify the existing content, provide the updated version. If they're asking questions, provide helpful explanations. Always be collaborative and constructive.`;
       }
 
-      const response = await db.integrations.Core.anthropicResearch({ // Updated from anthropicResearch
+      const response = await db.functions.invoke('anthropicResearch', {
         question: specialPrompt,
         assignment: assignment,
         documents: []
@@ -732,14 +725,15 @@ You can now ask me to refine it using conversational commands.`,
       const uploadResult = await db.integrations.Core.UploadFile({ file }); // Updated from UploadFile
 
       const documentData = {
-        workspace_id: currentWorkspaceId, // Added workspace_id as per outline
+        workspace_id: currentWorkspaceId,
+        project_id: selectedProjectId || assignment?.project_id || null,
         title: documentTitle,
-        description: `AI-generated document for ${assignment.name}`,
+        description: `AI-generated document for ${assignment?.name || 'Unknown Assignment'}`,
         file_url: uploadResult.file_url,
         file_name: `${documentTitle.replace(/[^a-z0-9]/gi, '_')}.html`,
         file_size: blob.size,
         file_type: 'text/html',
-        assigned_to_assignments: [assignment.id],
+        assigned_to_assignments: assignment?.id ? [assignment.id] : [],
         document_type: selectedTemplate?.documentType || "other",
         ai_analysis: {
           summary: "AI-generated document",
@@ -763,10 +757,11 @@ You can now ask me to refine it using conversational commands.`,
           }
 
           return Task.create({
-            workspace_id: currentWorkspaceId, // Added workspace_id for tasks
+            workspace_id: currentWorkspaceId,
+            project_id: selectedProjectId || assignment?.project_id || null,
             title: taskSuggestion.title,
             description: `${taskSuggestion.description}\n\nGenerated from document: ${documentTitle}\nReasoning: ${taskSuggestion.reasoning}`,
-            assignment_id: assignment.id,
+            assignment_id: assignment?.id || null,
             assigned_to: assignedTo,
             assigned_by: currentUser?.email,
             priority: taskSuggestion.priority || 'medium',
@@ -962,6 +957,40 @@ You can now ask me to refine it using conversational commands.`,
                   className="w-full"
                 />
               </div>
+
+              {projects.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                    Link to a project (optional)
+                  </label>
+                  <Select
+                    value={selectedProjectId || "none"}
+                    onValueChange={(val) => setSelectedProjectId(val === "none" ? null : val)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-500">No project</span>
+                        </div>
+                      </SelectItem>
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          <div className="flex items-center gap-2">
+                            <Target className="w-4 h-4 text-indigo-600" />
+                            <span>{project.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Documents and tasks will be associated with this project.
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
@@ -1280,12 +1309,12 @@ You can now ask me to refine it using conversational commands.`,
                               </TabsList>
                               <TabsContent value="current" className="mt-3">
                                 <div className="bg-white dark:bg-gray-900 border rounded-lg p-4 max-h-96 overflow-y-auto">
-                                  <div className="prose dark:prose-invert max-w-none text-sm" dangerouslySetInnerHTML={{ __html: pendingUpdate.previousContent }} />
+                                  <div className="prose dark:prose-invert max-w-none text-sm" dangerouslySetInnerHTML={{ __html: sanitizeHtml(pendingUpdate.previousContent) }} />
                                 </div>
                               </TabsContent>
                               <TabsContent value="new" className="mt-3">
                                 <div className="bg-white dark:bg-gray-900 border border-blue-200 dark:border-blue-800 rounded-lg p-4 max-h-96 overflow-y-auto">
-                                  <div className="prose dark:prose-invert max-w-none text-sm" dangerouslySetInnerHTML={{ __html: pendingUpdate.newContent }} />
+                                  <div className="prose dark:prose-invert max-w-none text-sm" dangerouslySetInnerHTML={{ __html: sanitizeHtml(pendingUpdate.newContent) }} />
                                 </div>
                               </TabsContent>
                             </Tabs>
@@ -1338,7 +1367,7 @@ You can now ask me to refine it using conversational commands.`,
                               ? 'prose-blue dark:prose-invert'
                               : 'dark:prose-invert'
                           }`}
-                          dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, '<br/>') }}
+                          dangerouslySetInnerHTML={{ __html: sanitizeHtml(msg.content.replace(/\n/g, '<br/>')) }}
                         />
                         <div className="text-xs mt-2 opacity-70">
                           {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

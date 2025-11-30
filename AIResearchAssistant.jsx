@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Document } from "@/api/entities";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,40 +31,63 @@ import {
   ListCheck,
   Coffee,
   Sparkles,
-  Globe
+  Globe,
+  Target,
+  FolderOpen
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 import { db } from '@/api/db';
 
-export default function AIResearchAssistant({ assignment, documents, currentUser, onResearchComplete, allAssignments }) {
+export default function AIResearchAssistant({
+  assignment,
+  project,
+  documents,
+  currentUser,
+  onResearchComplete,
+  allAssignments,
+  allProjects,
+  pendingQuestion,
+  onPendingQuestionUsed
+}) {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState(assignment?.id || null);
+  const [selectedProjectId, setSelectedProjectId] = useState(project?.id || null);
+  const [contextType, setContextType] = useState(
+    project?.id ? "project" : assignment?.id ? "assignment" : "none"
+  );
   const [webSearchEnabled, setWebSearchEnabled] = useState(true);
-  const [researchContext, setResearchContext] = useState({
-    assignment: assignment,
-    available_documents: documents,
-    user: currentUser
-  });
 
   const { currentWorkspaceId } = useWorkspace();
 
+  // Handle pending question from suggestions
   useEffect(() => {
-    setResearchContext({
-      assignment: assignment,
-      available_documents: documents,
-      user: currentUser
-    });
-    
-    // Update selected assignment when prop changes
-    if (assignment?.id) {
-      setSelectedAssignmentId(assignment.id);
+    if (pendingQuestion) {
+      setInput(pendingQuestion);
+      onPendingQuestionUsed?.();
     }
-  }, [assignment, documents, currentUser]);
+  }, [pendingQuestion, onPendingQuestionUsed]);
+
+  useEffect(() => {
+    // Update selected context when props change
+    if (project?.id) {
+      setSelectedProjectId(project.id);
+      setSelectedAssignmentId(null);
+      setContextType("project");
+    } else if (assignment?.id) {
+      setSelectedAssignmentId(assignment.id);
+      setSelectedProjectId(null);
+      setContextType("assignment");
+    } else {
+      setSelectedAssignmentId(null);
+      setSelectedProjectId(null);
+      setContextType("none");
+    }
+  }, [assignment, project, documents, currentUser]);
 
   const handleSendMessage = async () => {
     if (!input.trim()) return;
@@ -82,15 +104,19 @@ export default function AIResearchAssistant({ assignment, documents, currentUser
     setIsLoading(true);
 
     try {
-      // Find the selected assignment from allAssignments
-      const linkedAssignment = selectedAssignmentId 
+      // Find the selected assignment or project from allAssignments/allProjects
+      const linkedAssignment = selectedAssignmentId
         ? allAssignments?.find(a => a.id === selectedAssignmentId)
+        : null;
+      const linkedProject = selectedProjectId
+        ? allProjects?.find(p => p.id === selectedProjectId)
         : null;
 
       // Call our custom Anthropic backend function with web search parameter
       const { data: response } = await db.functions.invoke('anthropicResearch', {
         question: input,
         assignment: linkedAssignment || null,
+        project: linkedProject || null,
         documents: linkedAssignment ? documents : [],
         useWebSearch: webSearchEnabled
       });
@@ -133,9 +159,12 @@ export default function AIResearchAssistant({ assignment, documents, currentUser
             suggested_documents: response.data.suggested_documents || []
           };
 
-          // Only add assignment_id if one is selected
+          // Add assignment_id or project_id if one is selected
           if (selectedAssignmentId) {
             researchData.assignment_id = selectedAssignmentId;
+          }
+          if (selectedProjectId) {
+            researchData.project_id = selectedProjectId;
           }
 
           await db.entities.AIResearchChat.create(researchData);
@@ -152,7 +181,7 @@ export default function AIResearchAssistant({ assignment, documents, currentUser
       const errorMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: "Sorry about that! I ran into a technical hiccup. Could you try asking your question again? I'm here to help! ☕",
+        content: "Sorry about that! I ran into a technical hiccup. Could you try asking your question again?",
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -195,8 +224,16 @@ export default function AIResearchAssistant({ assignment, documents, currentUser
     }
   };
 
-  // Friendly starter suggestions
-  const starterQuestions = selectedAssignmentId 
+  // Friendly starter suggestions based on context
+  const starterQuestions = selectedProjectId
+    ? [
+        "What are the key objectives for this project?",
+        "What milestones should we track?",
+        "What resources do we need for this project?",
+        "What are the potential risks to consider?",
+        "How should we measure project success?"
+      ]
+    : selectedAssignmentId
     ? [
         "What permits or licenses might I need for this assignment?",
         "Are there any compliance requirements I should know about?",
@@ -212,7 +249,10 @@ export default function AIResearchAssistant({ assignment, documents, currentUser
         "What documentation do I need for [your business type]?"
       ];
 
-  const displayAssignmentName = selectedAssignmentId
+  // Get display name for current context
+  const displayContextName = selectedProjectId
+    ? (allProjects?.find(p => p.id === selectedProjectId)?.name || project?.name || "Selected Project")
+    : selectedAssignmentId
     ? (allAssignments?.find(a => a.id === selectedAssignmentId)?.name || assignment?.name || "Selected Assignment")
     : null;
 
@@ -224,9 +264,14 @@ export default function AIResearchAssistant({ assignment, documents, currentUser
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           Research Assistant
-          {selectedAssignmentId ? (
+          {selectedProjectId ? (
+            <Badge variant="outline" className="ml-auto bg-indigo-50 text-indigo-700 border-indigo-200">
+              <Target className="w-3 h-3 mr-1" />
+              Project Context
+            </Badge>
+          ) : selectedAssignmentId ? (
             <Badge variant="outline" className="ml-auto bg-purple-50 text-purple-700 border-purple-200">
-              <Coffee className="w-3 h-3 mr-1" />
+              <FolderOpen className="w-3 h-3 mr-1" />
               Assignment Context
             </Badge>
           ) : (
@@ -242,8 +287,10 @@ export default function AIResearchAssistant({ assignment, documents, currentUser
         </CardTitle>
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-600">
-            {selectedAssignmentId 
-              ? `Researching for: ${displayAssignmentName}. I've got ${documents.length} documents to work with. Powered by your Anthropic API.`
+            {selectedProjectId
+              ? `Researching for project: ${displayContextName}. Powered by your Anthropic API.`
+              : selectedAssignmentId
+              ? `Researching for: ${displayContextName}. I've got ${documents.length} documents to work with. Powered by your Anthropic API.`
               : "Ask me anything! Powered by Anthropic's Claude Sonnet 4 via your API key."
             }
           </p>
@@ -276,7 +323,9 @@ export default function AIResearchAssistant({ assignment, documents, currentUser
                   Hey there! 👋 What can I help you research?
                 </h3>
                 <p className="text-gray-500 mb-6">
-                  {selectedAssignmentId
+                  {selectedProjectId
+                    ? "I'm here to help you with project planning, strategy, milestones, risks, and anything else you need for your project."
+                    : selectedAssignmentId
                     ? "I'm here to help you figure out compliance requirements, industry standards, legal considerations, and anything else you need to know about your assignment."
                     : "I can help you research any topic - industry trends, compliance requirements, best practices, and more. Ask away!"
                   }
@@ -431,26 +480,79 @@ export default function AIResearchAssistant({ assignment, documents, currentUser
           )}
         </div>
 
-        <div className="mt-4 pt-4 border-t border-gray-200 flex-shrink-0">
+        <div className="mt-4 pt-4 border-t border-gray-200 shrink-0">
           <div className="flex items-center gap-3 mb-2">
-            <Select value={selectedAssignmentId || "none"} onValueChange={(value) => setSelectedAssignmentId(value === "none" ? null : value)}>
-              <SelectTrigger className="w-64">
-                <SelectValue placeholder="Link to assignment (optional)" />
+            <Select
+              value={
+                contextType === "project" && selectedProjectId
+                  ? `project:${selectedProjectId}`
+                  : contextType === "assignment" && selectedAssignmentId
+                    ? `assignment:${selectedAssignmentId}`
+                    : "none"
+              }
+              onValueChange={(value) => {
+                if (value === "none") {
+                  setSelectedAssignmentId(null);
+                  setSelectedProjectId(null);
+                  setContextType("none");
+                } else if (value.startsWith("project:")) {
+                  setSelectedProjectId(value.replace("project:", ""));
+                  setSelectedAssignmentId(null);
+                  setContextType("project");
+                } else if (value.startsWith("assignment:")) {
+                  setSelectedAssignmentId(value.replace("assignment:", ""));
+                  setSelectedProjectId(null);
+                  setContextType("assignment");
+                }
+              }}
+            >
+              <SelectTrigger className="w-72">
+                <SelectValue>
+                  {contextType === "project" && selectedProjectId ? (
+                    <div className="flex items-center gap-2">
+                      <Target className="w-4 h-4 text-indigo-600" />
+                      <span>{allProjects?.find(p => p.id === selectedProjectId)?.name || "Project"}</span>
+                    </div>
+                  ) : contextType === "assignment" && selectedAssignmentId ? (
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="w-4 h-4 text-purple-600" />
+                      <span>{allAssignments?.find(a => a.id === selectedAssignmentId)?.name || "Assignment"}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-blue-600" />
+                      <span>General Research (No Context)</span>
+                    </div>
+                  )}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">
                   <div className="flex items-center gap-2">
                     <Globe className="w-4 h-4 text-blue-600" />
-                    General Research (No Assignment)
+                    General Research (No Context)
                   </div>
                 </SelectItem>
+                {allProjects && allProjects.length > 0 && (
+                  <>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">Link to Project:</div>
+                    {allProjects.map((proj) => (
+                      <SelectItem key={`project:${proj.id}`} value={`project:${proj.id}`}>
+                        <div className="flex items-center gap-2">
+                          <Target className="w-4 h-4 text-indigo-600" />
+                          {proj.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
                 {allAssignments && allAssignments.length > 0 && (
                   <>
                     <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">Link to Assignment:</div>
                     {allAssignments.map((assign) => (
-                      <SelectItem key={assign.id} value={assign.id}>
+                      <SelectItem key={`assignment:${assign.id}`} value={`assignment:${assign.id}`}>
                         <div className="flex items-center gap-2">
-                          <FileSearch className="w-4 h-4 text-purple-600" />
+                          <FolderOpen className="w-4 h-4 text-purple-600" />
                           {assign.name}
                         </div>
                       </SelectItem>
@@ -460,15 +562,19 @@ export default function AIResearchAssistant({ assignment, documents, currentUser
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <Input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={selectedAssignmentId 
-                ? "Ask about compliance, requirements, best practices..." 
-                : "Ask me anything - industry trends, requirements, best practices..."}
+              placeholder={
+                contextType === "project"
+                  ? "Ask about project goals, strategy, requirements..."
+                  : contextType === "assignment"
+                    ? "Ask about compliance, requirements, best practices..."
+                    : "Ask me anything - industry trends, requirements, best practices..."
+              }
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   handleSendMessage();
@@ -489,9 +595,11 @@ export default function AIResearchAssistant({ assignment, documents, currentUser
             </Button>
           </div>
           <p className="text-xs text-gray-500 mt-2 text-center">
-            💡 {selectedAssignmentId 
-              ? `Asking with assignment context • ${webSearchEnabled ? 'Live web search enabled' : 'Using AI knowledge only'}` 
-              : `General research mode • ${webSearchEnabled ? 'Live web search enabled' : 'Using AI knowledge only'}`}
+            {contextType === "project"
+              ? `Asking with project context - ${webSearchEnabled ? 'Live web search enabled' : 'Using AI knowledge only'}`
+              : contextType === "assignment"
+                ? `Asking with assignment context - ${webSearchEnabled ? 'Live web search enabled' : 'Using AI knowledge only'}`
+                : `General research mode - ${webSearchEnabled ? 'Live web search enabled' : 'Using AI knowledge only'}`}
           </p>
         </div>
       </CardContent>

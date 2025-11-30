@@ -635,7 +635,92 @@ const integrations = {
   },
 };
 
-// Main client object with entities, integrations, auth, and agents
+// Functions registry for invoking custom functions
+const functionsRegistry = {
+  anthropicResearch: async (params) => {
+    const { question, assignment, documents, useWebSearch } = params;
+
+    console.log('anthropicResearch invoked with:', { question, assignment: assignment?.name, useWebSearch });
+
+    // Stub implementation - returns structured research response
+    // Replace with actual Anthropic API integration
+    return {
+      data: {
+        success: true,
+        data: {
+          response: `Thank you for your question: "${question}"\n\nThis is a placeholder response. To enable AI-powered research, please configure your Anthropic API integration.\n\nIn the meantime, here are some general suggestions based on your query.`,
+          research_type: 'general',
+          confidence_score: 75,
+          recommended_actions: [
+            {
+              action: 'Configure API Integration',
+              description: 'Set up your Anthropic API key to enable AI-powered research',
+              priority: 'high'
+            }
+          ],
+          suggested_documents: [],
+          web_sources_used: useWebSearch || false
+        },
+        model_used: 'claude-sonnet-4-20250514'
+      }
+    };
+  },
+
+  ragHelper: async (params) => {
+    const { query, documents, context } = params;
+    console.log('ragHelper invoked with:', { query, documentsCount: documents?.length });
+
+    return {
+      data: {
+        success: true,
+        response: 'RAG helper placeholder response',
+        sources: []
+      }
+    };
+  },
+
+  exportSessionToPdf: async (params) => {
+    const { session, messages, title } = params;
+    console.log('exportSessionToPdf invoked with:', { session, messagesCount: messages?.length, title });
+
+    return {
+      data: {
+        success: true,
+        message: 'PDF export not configured',
+        pdfUrl: null
+      }
+    };
+  }
+};
+
+// Functions invoker - provides a unified way to call registered functions
+const functions = {
+  invoke: async (functionName, params) => {
+    if (functionsRegistry[functionName]) {
+      try {
+        return await functionsRegistry[functionName](params);
+      } catch (error) {
+        console.error(`Error invoking function ${functionName}:`, error);
+        return {
+          data: {
+            success: false,
+            error: error.message
+          }
+        };
+      }
+    }
+
+    console.error(`Function ${functionName} not found in registry`);
+    return {
+      data: {
+        success: false,
+        error: `Function ${functionName} not found`
+      }
+    };
+  }
+};
+
+// Main client object with entities, integrations, auth, agents, and functions
 export const db = {
   entities: new Proxy({}, {
     get: (target, entityName) => {
@@ -648,6 +733,7 @@ export const db = {
   integrations,
   auth,
   agents,
+  functions,
 };
 
 export default db;

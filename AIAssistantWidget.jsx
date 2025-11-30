@@ -116,7 +116,10 @@ export default function AIAssistantWidget({ currentPageName, workspaceId }) {
       timestamp: new Date().toISOString(),
     };
 
-    if (urlParams.has("assignment")) {
+    if (urlParams.has("project")) {
+      context.current_entity_type = "project";
+      context.current_entity_id = urlParams.get("project");
+    } else if (urlParams.has("assignment")) {
       context.current_entity_type = "assignment";
       context.current_entity_id = urlParams.get("assignment");
     } else if (urlParams.has("doc") || urlParams.has("document")) {
@@ -393,6 +396,11 @@ What can I help you with today?`,
         }),
       ]);
 
+      // Find current project if viewing one
+      const currentProject = context.current_entity_type === "project" && context.current_entity_id
+        ? projects.find(p => p.id === context.current_entity_id)
+        : null;
+
       const contextInfo = `
 Current System Context:
 - Page: ${context.current_page}
@@ -403,6 +411,7 @@ ${
     ? `- Viewing: ${context.current_entity_type} (ID: ${context.current_entity_id})`
     : ""
 }
+${currentProject ? `- Current Project: ${currentProject.name} (Status: ${currentProject.status || "N/A"})` : ""}
 - User Email: ${user?.email || "Unknown"}
 - User ID: ${user?.id || "Unknown"}
 - User Role: ${user?.user_role || "Unknown"}
@@ -431,7 +440,7 @@ ${tasks
     (t) =>
       `- [${t.status}] ${t.title} (ID: ${t.id}, Assigned: ${
         t.assigned_to_email || t.assigned_to || "Unassigned"
-      })`
+      }, Project ID: ${t.project_id || "None"})`
   )
   .join("\n")}
 
@@ -449,6 +458,7 @@ User Input: ${textToSend}
 Based on the user's input and the provided system context, respond to the user.
 If the user wants to create a note, you can create it directly with the workspace_id provided above.
 If the user's input implies an action (like creating a task or note), use the available tools to perform that action.
+${currentProject ? `The user is currently viewing the project "${currentProject.name}" - prioritize actions related to this project when relevant.` : ""}
 Always confirm with the user before performing destructive actions like deletion.
 Be specific and clear about what you are doing.
 `;

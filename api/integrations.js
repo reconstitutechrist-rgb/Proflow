@@ -18,7 +18,15 @@ export const InvokeLLM = async (params) => {
 };
 
 // File Upload Integration - stores files in localStorage as base64
-export const UploadFile = async (file) => {
+// Accepts either a File object directly or an object with { file: File }
+export const UploadFile = async (fileOrParams) => {
+  // Handle both direct File objects and { file: File } parameter format
+  const file = fileOrParams instanceof File ? fileOrParams : fileOrParams?.file;
+
+  if (!file) {
+    throw new Error('No file provided to UploadFile');
+  }
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 

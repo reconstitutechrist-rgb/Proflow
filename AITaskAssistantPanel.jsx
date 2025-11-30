@@ -38,7 +38,8 @@ import {
   RefreshCw,
   Save,
   Minimize2,
-  Maximize2
+  Maximize2,
+  Target
 } from "lucide-react";
 import { InvokeLLM } from "@/api/integrations";
 import { Task } from "@/api/entities";
@@ -75,6 +76,7 @@ const SIMILARITY_THRESHOLD = 0.7;
 
 export default function AITaskAssistantPanel({
   assignments = [],
+  projects = [],
   users = [],
   currentUser,
   onTasksCreated,
@@ -126,7 +128,7 @@ export default function AITaskAssistantPanel({
 
   const loadExistingTasks = async () => {
     try {
-      const tasks = await Task.list("-created_date", 100);
+      const tasks = await Task.list(currentWorkspaceId ? { workspace_id: currentWorkspaceId } : {});
       setExistingTasks(tasks);
     } catch (error) {
       console.error("Error loading existing tasks:", error);
@@ -251,6 +253,12 @@ I'll help you create tasks from natural language. Just describe what you need to
     if (!assignmentId) return null;
     const assignment = assignments.find(a => a.id === assignmentId);
     return assignment ? assignmentId : null;
+  };
+
+  const validateProjectId = (projectId) => {
+    if (!projectId) return null;
+    const project = projects.find(p => p.id === projectId);
+    return project ? projectId : null;
   };
 
   const validateUserEmail = (email) => {
@@ -511,6 +519,12 @@ I'll help you create tasks from natural language. Just describe what you need to
       }
     }
 
+    // Validate project_id if provided (optional - tasks can exist without projects)
+    const validatedProject = task.project_id ? validateProjectId(task.project_id) : null;
+    if (task.project_id && !validatedProject) {
+      errors.push(`Invalid project: ${task.project_id}`);
+    }
+
     const validatedUser = validateUserEmail(task.assigned_to);
     if (!validatedUser) {
       if (users.length === 0) {
@@ -548,6 +562,7 @@ I'll help you create tasks from natural language. Just describe what you need to
       validatedTask: {
         ...task,
         assignment_id: validatedAssignment || (assignments[0]?.id || ""),
+        project_id: validatedProject || null,
         assigned_to: validatedUser || (currentUser?.email || ""),
         due_date: task.due_date ? parseDateString(task.due_date) : null
       }
@@ -595,8 +610,12 @@ I'll help you create tasks from natural language. Just describe what you need to
     abortControllerRef.current = new AbortController();
 
     try {
+      const projectsList = projects.slice(0, 10).map(p =>
+        `- ${p.name} (ID: ${p.id}, Status: ${p.status || 'unknown'})`
+      ).join('\n');
+
       const assignmentsList = assignments.slice(0, 10).map(a =>
-        `- ${a.name} (ID: ${a.id}, Status: ${a.status || 'unknown'})`
+        `- ${a.name} (ID: ${a.id}, Status: ${a.status || 'unknown'}, Project ID: ${a.project_id || 'None'})`
       ).join('\n');
 
       const usersList = users.slice(0, 20).map(u =>
@@ -605,7 +624,10 @@ I'll help you create tasks from natural language. Just describe what you need to
 
       const systemPrompt = `You are an intelligent task creation assistant for ProjectFlow. Parse natural language and create structured task objects.
 
-**Available Assignments (Workspace: ${currentWorkspaceId}):**
+**Available Projects (Workspace: ${currentWorkspaceId}):**
+${projectsList || 'No projects available'}
+
+**Available Assignments:**
 ${assignmentsList}
 
 **Available Team Members:**
@@ -616,7 +638,11 @@ ${usersList}
 
 **Task Request:** "${text}"
 
-Extract all task information and return JSON with analysis, tasks array, suggestions, and warnings. Keep your response concise and actionable.`;
+Extract all task information and return JSON with analysis, tasks array, suggestions, and warnings.
+- If the user mentions a project, include the project_id in the task.
+- Tasks require an assignment_id, but project_id is optional.
+- If linking to a project, prefer assignments that belong to that project.
+Keep your response concise and actionable.`;
 
       const response = await InvokeLLM({
         prompt: systemPrompt,
@@ -632,6 +658,7 @@ Extract all task information and return JSON with analysis, tasks array, suggest
                   title: { type: "string" },
                   description: { type: "string" },
                   assignment_id: { type: "string" },
+                  project_id: { type: "string" },
                   assigned_to: { type: "string" },
                   status: { type: "string" },
                   priority: { type: "string" },
@@ -642,7 +669,7 @@ Extract all task information and return JSON with analysis, tasks array, suggest
                   recurrence_pattern: { type: "object" },
                   checklist_items: { type: "array" },
                   reasoning: { type: "string" },
-                  skill_requirements: { // Added skill_requirements to schema
+                  skill_requirements: {
                     type: "array",
                     items: { type: "string" }
                   }
@@ -815,10 +842,11 @@ Extract all task information and return JSON with analysis, tasks array, suggest
 
         try {
           const taskToCreate = {
-            workspace_id: currentWorkspaceId, // Added workspace_id
+            workspace_id: currentWorkspaceId,
             title: taskData.title,
             description: taskData.description || "",
             assignment_id: taskData.assignment_id,
+            project_id: taskData.project_id || null,
             assigned_to: taskData.assigned_to,
             assigned_by: currentUser?.email || "",
             status: taskData.status || "todo",
@@ -828,10 +856,10 @@ Extract all task information and return JSON with analysis, tasks array, suggest
             auto_generated: true,
             generation_source: {
               source_type: "ai_conversation",
-              confidence: 95, // Kept 95 as in original code
+              confidence: 95,
               reasoning: taskData.reasoning || "Created via AI Task Assistant"
             },
-            skill_requirements: taskData.skill_requirements || [] // Added skill_requirements
+            skill_requirements: taskData.skill_requirements || []
           };
 
           if (taskData.checklist_items && taskData.checklist_items.length > 0) {
@@ -858,10 +886,11 @@ Extract all task information and return JSON with analysis, tasks array, suggest
             if (subtasksValidation.isValid) {
               const subtaskPromises = taskData.subtasks.map(subtask =>
                 Task.create({
-                  workspace_id: currentWorkspaceId, // Added workspace_id for subtasks
+                  workspace_id: currentWorkspaceId,
                   title: subtask.title,
                   description: subtask.description || "",
                   assignment_id: taskToCreate.assignment_id,
+                  project_id: taskToCreate.project_id,
                   assigned_to: taskToCreate.assigned_to,
                   assigned_by: currentUser?.email || "",
                   status: "todo",
@@ -1174,13 +1203,35 @@ Extract all task information and return JSON with analysis, tasks array, suggest
                             )
                           }
                         >
-                          <SelectTrigger className="h-8 text-xs w-1/2">
+                          <SelectTrigger className="h-8 text-xs w-1/3">
                             <SelectValue placeholder="Assignment" />
                           </SelectTrigger>
                           <SelectContent>
                             {assignments.map((assignment) => (
                               <SelectItem key={assignment.id} value={assignment.id}>
                                 {assignment.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Select
+                          value={task.project_id || "none"}
+                          onValueChange={(val) =>
+                            setProposedTasks((prev) =>
+                              prev.map((t, i) =>
+                                i === index ? { ...t, project_id: val === "none" ? null : val } : t
+                              )
+                            )
+                          }
+                        >
+                          <SelectTrigger className="h-8 text-xs w-1/3">
+                            <SelectValue placeholder="Project (optional)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No Project</SelectItem>
+                            {projects.map((project) => (
+                              <SelectItem key={project.id} value={project.id}>
+                                {project.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -1195,7 +1246,7 @@ Extract all task information and return JSON with analysis, tasks array, suggest
                             )
                           }
                         >
-                          <SelectTrigger className="h-8 text-xs w-1/2">
+                          <SelectTrigger className="h-8 text-xs w-1/3">
                             <SelectValue placeholder="Assignee" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1211,7 +1262,13 @@ Extract all task information and return JSON with analysis, tasks array, suggest
                   ) : (
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm text-gray-800 truncate">{task.title}</p>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                      <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 flex-wrap">
+                        {task.project_id && (
+                          <Badge variant="secondary" className="px-1 py-0.5 bg-indigo-100 text-indigo-700">
+                            <Target className="w-2.5 h-2.5 mr-1" />
+                            {projects.find(p => p.id === task.project_id)?.name || task.project_id}
+                          </Badge>
+                        )}
                         {task.assignment_id && (
                           <Badge variant="secondary" className="px-1 py-0.5">
                             <Plus className="w-2.5 h-2.5 mr-1" />

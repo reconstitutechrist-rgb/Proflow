@@ -17,17 +17,95 @@ export const anthropicResearch = async (params) => {
 };
 
 // RAG (Retrieval Augmented Generation) helper - stub implementation
+// Supports multiple endpoints: generateEmbeddings, findSimilarChunks
 export const ragHelper = async (params) => {
-  const { query, documents, context } = params;
+  const { endpoint, query, documents, context, documentId, content, fileName, chunkingStrategy, chunks, topK, cachedEmbeddings } = params;
 
-  console.log('ragHelper called with:', { query, documents: documents?.length });
+  console.log('ragHelper called with:', { endpoint, query, documentsCount: documents?.length, fileName });
 
-  // Stub implementation
+  // Handle different RAG endpoints
+  if (endpoint === 'generateEmbeddings') {
+    // Check if cached embeddings were provided
+    if (cachedEmbeddings) {
+      return {
+        data: {
+          chunks: cachedEmbeddings.chunks || [],
+          embeddings: cachedEmbeddings.embeddings || [],
+          embeddingModel: cachedEmbeddings.model || 'simulated',
+          chunkingStrategy: cachedEmbeddings.chunking_strategy || 'simple',
+          structureAnalysis: cachedEmbeddings.structure_analysis || null,
+          tokenCount: cachedEmbeddings.token_count || 0,
+          estimatedCost: 0, // No cost for cached
+          fromCache: true
+        }
+      };
+    }
+
+    // Generate simulated embeddings for the document
+    const textContent = content || '';
+    const chunkSize = 500;
+    const generatedChunks = [];
+
+    // Simple chunking by splitting text
+    for (let i = 0; i < textContent.length; i += chunkSize) {
+      generatedChunks.push({
+        text: textContent.substring(i, i + chunkSize),
+        chunkType: 'text',
+        index: generatedChunks.length
+      });
+    }
+
+    // Simulate embeddings (would be real vectors in production)
+    const simulatedEmbeddings = generatedChunks.map(() =>
+      Array(384).fill(0).map(() => Math.random() - 0.5)
+    );
+
+    const tokenCount = Math.ceil(textContent.length / 4); // Rough token estimate
+    const estimatedCost = tokenCount * 0.0001 / 1000; // Simulated cost
+
+    return {
+      data: {
+        chunks: generatedChunks,
+        embeddings: simulatedEmbeddings,
+        embeddingModel: 'simulated', // Would be 'text-embedding-ada-002' with real OpenAI
+        chunkingStrategy: chunkingStrategy || 'simple',
+        structureAnalysis: null,
+        tokenCount: tokenCount,
+        estimatedCost: estimatedCost,
+        fromCache: false
+      }
+    };
+  }
+
+  if (endpoint === 'findSimilarChunks') {
+    // Simulate finding similar chunks based on query
+    const inputChunks = chunks || [];
+    const k = topK || 5;
+
+    // In production, this would use cosine similarity with real embeddings
+    // For now, return random chunks as "relevant"
+    const shuffled = [...inputChunks].sort(() => Math.random() - 0.5);
+    const selectedChunks = shuffled.slice(0, Math.min(k, inputChunks.length)).map((chunk, idx) => ({
+      ...chunk,
+      score: 0.9 - (idx * 0.1), // Simulated relevance scores
+    }));
+
+    return {
+      data: {
+        chunks: selectedChunks,
+        usingRealEmbeddings: false // Would be true with real OpenAI embeddings
+      }
+    };
+  }
+
+  // Default fallback for unknown endpoints
   return {
-    success: true,
-    message: 'RAG helper not configured. Please set up your preferred RAG implementation.',
-    response: 'RAG response placeholder',
-    sources: [],
+    data: {
+      success: true,
+      message: 'RAG helper not configured. Please set up your preferred RAG implementation.',
+      response: 'RAG response placeholder',
+      sources: [],
+    }
   };
 };
 

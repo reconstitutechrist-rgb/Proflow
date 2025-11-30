@@ -17,7 +17,8 @@ import {
   X,
   ChevronDown,
   MoreVertical,
-  Globe, // NEW: Added Globe icon
+  Globe,
+  Target,
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -40,17 +41,19 @@ import { toast } from "sonner";
 import { db } from "@/api/db";
 
 export default function ConversationSidebar({
-  currentUser, // NEW prop
-  assignments, // NEW prop
-  selectedAssignment, // NEW prop
-  selectedAssignmentId, // NEW prop: Track "general" vs assignment ID
-  onAssignmentSelect, // NEW prop
-  threads, // NEW prop: All threads for the workspace
+  currentUser,
+  assignments,
+  projects,
+  selectedAssignment,
+  selectedProject,
+  selectedContextId, // "general", "project:id", or "assignment:id"
+  onContextSelect,
+  threads,
   selectedThread,
-  onThreadSelect, // Renamed from onSelectThread
-  onNewThread, // Renamed from onCreateThread
-  onPinThread, // NEW prop
-  onArchiveThread, // NEW prop
+  onThreadSelect,
+  onNewThread,
+  onPinThread,
+  onArchiveThread,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTags, setFilterTags] = useState([]);
@@ -87,16 +90,20 @@ export default function ConversationSidebar({
     return Array.from(tagSet);
   }, [threads]);
 
-  // NEW: Filter threads based on selected context (general or assignment-specific)
+  // Filter threads based on selected context (general, project, or assignment)
   const filteredContextThreads = useMemo(() => {
-    if (selectedAssignmentId === "general") {
-      // Show only general workspace threads (no assignment_id)
-      return threads.filter(t => !t.assignment_id);
-    } else {
-      // Show threads for selected assignment
-      return threads.filter(t => t.assignment_id === selectedAssignmentId);
+    if (selectedContextId === "general") {
+      // Show only general workspace threads (no assignment_id and no project_id)
+      return threads.filter(t => !t.assignment_id && !t.project_id);
+    } else if (selectedContextId?.startsWith("project:")) {
+      const projectId = selectedContextId.replace("project:", "");
+      return threads.filter(t => t.project_id === projectId);
+    } else if (selectedContextId?.startsWith("assignment:")) {
+      const assignmentId = selectedContextId.replace("assignment:", "");
+      return threads.filter(t => t.assignment_id === assignmentId);
     }
-  }, [threads, selectedAssignmentId]);
+    return threads.filter(t => !t.assignment_id && !t.project_id);
+  }, [threads, selectedContextId]);
 
 
   // Apply additional filters (search, tags, archive)
@@ -140,7 +147,7 @@ export default function ConversationSidebar({
     if (!thread.participants || !teamMembers.length) return [];
     return thread.participants
       .slice(0, 3)
-      .map(email => teamMembers.find(m => m.email === email))
+      .map(participantEmail => teamMembers.find(m => m.email === participantEmail))
       .filter(Boolean);
   };
 
@@ -269,21 +276,43 @@ export default function ConversationSidebar({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Assignment/Context Selector */}
+      {/* Context Selector - Projects and Assignments */}
       <div className="p-4 border-b">
-        <Select 
-          value={selectedAssignmentId || "general"} 
+        <Select
+          value={selectedContextId || "general"}
           onValueChange={(value) => {
             if (value === "general") {
-              onAssignmentSelect("general");
-            } else {
-              const assignment = assignments.find(a => a.id === value);
-              if (assignment) onAssignmentSelect(assignment); // Pass full assignment object
+              onContextSelect("general");
+            } else if (value.startsWith("project:")) {
+              const projectId = value.replace("project:", "");
+              const project = projects?.find(p => p.id === projectId);
+              if (project) onContextSelect({ ...project, type: "project" });
+            } else if (value.startsWith("assignment:")) {
+              const assignmentId = value.replace("assignment:", "");
+              const assignment = assignments?.find(a => a.id === assignmentId);
+              if (assignment) onContextSelect({ ...assignment, type: "assignment" });
             }
           }}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select context" />
+            <SelectValue>
+              {selectedProject ? (
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4 text-indigo-600" />
+                  <span>{selectedProject.name}</span>
+                </div>
+              ) : selectedAssignment ? (
+                <div className="flex items-center gap-2">
+                  <FolderOpen className="w-4 h-4 text-purple-600" />
+                  <span>{selectedAssignment.name}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-green-600" />
+                  <span className="font-medium">General Workspace Chat</span>
+                </div>
+              )}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="general">
@@ -292,15 +321,30 @@ export default function ConversationSidebar({
                 <span className="font-medium">General Workspace Chat</span>
               </div>
             </SelectItem>
-            {assignments.length > 0 && (
+            {projects && projects.length > 0 && (
               <>
-                <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase">
+                <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase border-t mt-1 pt-2">
+                  Projects
+                </div>
+                {projects.map((project) => (
+                  <SelectItem key={`project:${project.id}`} value={`project:${project.id}`}>
+                    <div className="flex items-center gap-2">
+                      <Target className="w-4 h-4 text-indigo-600" />
+                      <span>{project.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </>
+            )}
+            {assignments && assignments.length > 0 && (
+              <>
+                <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase border-t mt-1 pt-2">
                   Assignments
                 </div>
                 {assignments.map((assignment) => (
-                  <SelectItem key={assignment.id} value={assignment.id}>
+                  <SelectItem key={`assignment:${assignment.id}`} value={`assignment:${assignment.id}`}>
                     <div className="flex items-center gap-2">
-                      <FolderOpen className="w-4 h-4 text-indigo-600" />
+                      <FolderOpen className="w-4 h-4 text-purple-600" />
                       <span>{assignment.name}</span>
                     </div>
                   </SelectItem>
@@ -439,9 +483,11 @@ export default function ConversationSidebar({
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     {searchQuery || filterTags.length > 0
                       ? "No threads match your filters"
-                      : selectedAssignmentId === "general"
+                      : selectedContextId === "general"
                         ? "No general threads yet"
-                        : "No threads for this assignment yet"}
+                        : selectedContextId?.startsWith("project:")
+                          ? "No threads for this project yet"
+                          : "No threads for this assignment yet"}
                   </p>
                   <Button
                     onClick={onNewThread} // Changed to onNewThread

@@ -4,6 +4,7 @@ import { Assignment } from "@/api/entities";
 import { Document } from "@/api/entities";
 import { AIResearchChat } from "@/api/entities";
 import { User } from "@/api/entities";
+import { Project } from "@/api/entities";
 import { db } from "@/api/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,16 +44,22 @@ import { createPageUrl } from "@/lib/utils"; // Assumed utility for URL creation
 
 export default function ResearchPage() {
   const [assignments, setAssignments] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [researchHistory, setResearchHistory] = useState([]);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [contextType, setContextType] = useState("none"); // "none", "project", or "assignment"
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("research");
 
   const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
   const { toast } = useToast();
-  const navigate = useNavigate(); // Initialize useNavigate hook
+  const navigate = useNavigate();
+
+  // State to pass research question from suggestions to the assistant
+  const [pendingResearchQuestion, setPendingResearchQuestion] = useState(null);
 
   // Moved loadData function definition out of useEffect for reusability
   const loadData = async () => {
@@ -65,24 +72,28 @@ export default function ResearchPage() {
     try {
       setLoading(true);
       // Modified to filter by workspace_id and use db.entities
-      const [assignmentsData, documentsData, researchData, user] = await Promise.all([
+      const [assignmentsData, projectsData, documentsData, researchData, user] = await Promise.all([
         db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        db.entities.Document.filter({ workspace_id: currentWorkspaceId }, "-updated_date"), // Keeping documents fetch with workspace filter to preserve functionality
+        db.entities.Project.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
+        db.entities.Document.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
         db.entities.AIResearchChat.filter({ workspace_id: currentWorkspaceId }, "-created_date", 50),
         db.auth.me()
       ]);
 
       setAssignments(assignmentsData);
-      setDocuments(documentsData); // Keeping documents state update
+      setProjects(projectsData);
+      setDocuments(documentsData);
       setResearchHistory(researchData);
       setCurrentUser(user);
 
-      // Auto-select the first assignment if available and no assignment is currently selected
-      // Ensure the selected assignment is part of the current workspace's assignments
-      if (assignmentsData.length > 0 && (!selectedAssignment || !assignmentsData.find(a => a.id === selectedAssignment.id))) {
-        setSelectedAssignment(assignmentsData[0]); // Select the entire assignment object
-      } else if (assignmentsData.length === 0) {
-        setSelectedAssignment(null); // Clear selected if no assignments are available
+      // Clear selections if they no longer exist in the workspace
+      if (selectedAssignment && !assignmentsData.find(a => a.id === selectedAssignment.id)) {
+        setSelectedAssignment(null);
+        setContextType("none");
+      }
+      if (selectedProject && !projectsData.find(p => p.id === selectedProject.id)) {
+        setSelectedProject(null);
+        setContextType("none");
       }
     } catch (error) {
       console.error("Error loading data:", error);
@@ -128,17 +139,51 @@ export default function ResearchPage() {
       });
   };
 
-  const handleAssignmentChange = (value) => {
+  const handleContextChange = (value) => {
     if (value === "none") {
       setSelectedAssignment(null);
-    } else {
-      const assignment = assignments.find(a => a.id === value);
+      setSelectedProject(null);
+      setContextType("none");
+    } else if (value.startsWith("project:")) {
+      const projectId = value.replace("project:", "");
+      const project = projects.find(p => p.id === projectId);
+      setSelectedProject(project);
+      setSelectedAssignment(null);
+      setContextType("project");
+    } else if (value.startsWith("assignment:")) {
+      const assignmentId = value.replace("assignment:", "");
+      const assignment = assignments.find(a => a.id === assignmentId);
       setSelectedAssignment(assignment);
+      setSelectedProject(null);
+      setContextType("assignment");
     }
   };
 
-  const clearAssignment = () => {
+  const clearContext = () => {
     setSelectedAssignment(null);
+    setSelectedProject(null);
+    setContextType("none");
+  };
+
+  // Get the current context value for the Select
+  const getContextValue = () => {
+    if (contextType === "project" && selectedProject) {
+      return `project:${selectedProject.id}`;
+    } else if (contextType === "assignment" && selectedAssignment) {
+      return `assignment:${selectedAssignment.id}`;
+    }
+    return "none";
+  };
+
+  // Handler for when a research suggestion is clicked
+  const handleResearchStart = (question) => {
+    setPendingResearchQuestion(question);
+    setActiveTab("research");
+  };
+
+  // Clear pending question after it's been used
+  const handlePendingQuestionUsed = () => {
+    setPendingResearchQuestion(null);
   };
 
   const handleCreateDocumentFromResearch = (research) => {
@@ -196,7 +241,7 @@ export default function ResearchPage() {
             </div>
           </div>
 
-          {/* FIXED: Assignment Selector with proper UI and handlers */}
+          {/* Context Selector - Projects and Assignments */}
           <Card className="border-0 shadow-md">
             <CardContent className="p-6">
               <div className="space-y-4">
@@ -204,11 +249,11 @@ export default function ResearchPage() {
                   <Label className="text-base font-semibold text-gray-900 dark:text-white">
                     Research Context (Optional)
                   </Label>
-                  {selectedAssignment && (
+                  {(selectedAssignment || selectedProject) && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={clearAssignment}
+                      onClick={clearContext}
                       className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                     >
                       <X className="w-4 h-4 mr-1" />
@@ -218,26 +263,60 @@ export default function ResearchPage() {
                 </div>
 
                 <Select
-                  value={selectedAssignment?.id || "none"}
-                  onValueChange={handleAssignmentChange}
+                  value={getContextValue()}
+                  onValueChange={handleContextChange}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="General Research (No Assignment)" />
+                    <SelectValue>
+                      {selectedProject ? (
+                        <div className="flex items-center gap-2">
+                          <Target className="w-4 h-4 text-indigo-600" />
+                          <span>{selectedProject.name}</span>
+                          <Badge variant="outline" className="ml-1 text-xs">Project</Badge>
+                        </div>
+                      ) : selectedAssignment ? (
+                        <div className="flex items-center gap-2">
+                          <FolderOpen className="w-4 h-4 text-purple-600" />
+                          <span>{selectedAssignment.name}</span>
+                          <Badge variant="outline" className="ml-1 text-xs">Assignment</Badge>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <Globe className="w-4 h-4 text-blue-600" />
+                          <span>General Research (No Context)</span>
+                        </div>
+                      )}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">
                       <div className="flex items-center gap-2">
                         <Globe className="w-4 h-4 text-blue-600" />
-                        <span>General Research (No Assignment)</span>
+                        <span>General Research (No Context)</span>
                       </div>
                     </SelectItem>
+                    {projects.length > 0 && (
+                      <>
+                        <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 border-t mt-1 pt-2">
+                          Link to Project:
+                        </div>
+                        {projects.map(project => (
+                          <SelectItem key={`project:${project.id}`} value={`project:${project.id}`}>
+                            <div className="flex items-center gap-2">
+                              <Target className="w-4 h-4 text-indigo-600" />
+                              <span>{project.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
                     {assignments.length > 0 && (
                       <>
                         <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 border-t mt-1 pt-2">
                           Link to Assignment:
                         </div>
                         {assignments.map(assignment => (
-                          <SelectItem key={assignment.id} value={assignment.id}>
+                          <SelectItem key={`assignment:${assignment.id}`} value={`assignment:${assignment.id}`}>
                             <div className="flex items-center gap-2">
                               <FolderOpen className="w-4 h-4 text-purple-600" />
                               <span>{assignment.name}</span>
@@ -249,12 +328,25 @@ export default function ResearchPage() {
                   </SelectContent>
                 </Select>
 
+                {/* Selected Project Badge */}
+                {selectedProject && (
+                  <div className="flex items-center gap-2 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                    <Target className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+                      Researching for Project: {selectedProject.name}
+                    </span>
+                    <Badge variant="outline" className="ml-auto bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700">
+                      Project Research
+                    </Badge>
+                  </div>
+                )}
+
                 {/* Selected Assignment Badge */}
                 {selectedAssignment && (
                   <div className="flex items-center gap-2 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
                     <FolderOpen className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     <span className="text-sm font-medium text-purple-900 dark:text-purple-100">
-                      Researching for: {selectedAssignment.name}
+                      Researching for Assignment: {selectedAssignment.name}
                     </span>
                     <Badge variant="outline" className="ml-auto bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700">
                       {getAssignmentDocuments(selectedAssignment.id).length} documents
@@ -263,7 +355,7 @@ export default function ResearchPage() {
                 )}
 
                 {/* General Research Mode Indicator */}
-                {!selectedAssignment && (
+                {!selectedAssignment && !selectedProject && (
                   <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                     <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
@@ -301,10 +393,15 @@ export default function ResearchPage() {
                   <ErrorBoundary>
                     <AIResearchAssistant
                       assignment={selectedAssignment}
+                      project={selectedProject}
                       documents={selectedAssignment ? getAssignmentDocuments(selectedAssignment.id) : []}
                       currentUser={currentUser}
                       onResearchComplete={handleResearchComplete}
-                      workspaceId={currentWorkspaceId} // Pass workspaceId to AIResearchAssistant
+                      workspaceId={currentWorkspaceId}
+                      allAssignments={assignments}
+                      allProjects={projects}
+                      pendingQuestion={pendingResearchQuestion}
+                      onPendingQuestionUsed={handlePendingQuestionUsed}
                     />
                   </ErrorBoundary>
                 </div>
@@ -458,7 +555,7 @@ export default function ResearchPage() {
               {selectedAssignment ? (
                 <ResearchSuggestions
                   assignment={selectedAssignment}
-                  documents={getAssignmentDocuments(selectedAssignment.id)}
+                  onResearchStart={handleResearchStart}
                 />
               ) : (
                 <Card className="border-0 shadow-md">

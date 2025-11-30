@@ -24,7 +24,8 @@ import {
   EyeOff,
   Reply,
   Edit,
-  FolderOpen
+  FolderOpen,
+  Target
 } from "lucide-react";
 import {
   Dialog,
@@ -98,27 +99,28 @@ const VirtualizedMessageList = React.memo(({
 
 export default function ChatPage() {
   const [assignments, setAssignments] = useState([]);
-  const [selectedAssignmentId, setSelectedAssignmentId] = useState("general"); // Changed: Default to "general"
+  const [projects, setProjects] = useState([]);
+  const [selectedContextId, setSelectedContextId] = useState("general"); // "general", "project:id", or "assignment:id"
   const [messages, setMessages] = useState([]);
   const [threads, setThreads] = useState([]);
-  const [currentThread, setCurrentThread] = useState(null); // Renamed from selectedThread
+  const [currentThread, setCurrentThread] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
-  const [users, setUsers] = useState([]); // Renamed from teamMembers
+  const [users, setUsers] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [isThreadFormOpen, setIsThreadFormOpen] = useState(false);
   const [newThreadTopic, setNewThreadTopic] = useState("");
   const [newThreadDescription, setNewThreadDescription] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [viewMode, setViewMode] = useState('comfortable'); // 'compact' or 'comfortable'
+  const [viewMode, setViewMode] = useState('comfortable');
   const [replyToMessage, setReplyToMessage] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
   const [showPinnedMessages, setShowPinnedMessages] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
 
-  const [isDraggingFile, setIsDraggingFile] = useState(false); // New state for drag-drop visual feedback
-  const [replyToMessageData, setReplyToMessageData] = useState({}); // Store reply-to message data map
-  const [typingUsers, setTypingUsers] = useState([]); // Real-time typing users from Supabase
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [replyToMessageData, setReplyToMessageData] = useState({});
+  const [typingUsers, setTypingUsers] = useState([]);
 
   const messagesEndRef = useRef(null);
   const messageListRef = useRef(null);
@@ -130,21 +132,40 @@ export default function ChatPage() {
 
   const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
 
-  // Derive the full assignment object from its ID
+  // Derive the current context (project or assignment)
+  const currentProject = useMemo(() => {
+    if (selectedContextId.startsWith("project:")) {
+      const projectId = selectedContextId.replace("project:", "");
+      return projects.find(p => p.id === projectId);
+    }
+    return null;
+  }, [selectedContextId, projects]);
+
   const currentAssignment = useMemo(() => {
-    if (selectedAssignmentId === "general") return null;
-    return assignments.find(a => a.id === selectedAssignmentId);
-  }, [selectedAssignmentId, assignments]);
+    if (selectedContextId.startsWith("assignment:")) {
+      const assignmentId = selectedContextId.replace("assignment:", "");
+      return assignments.find(a => a.id === assignmentId);
+    }
+    return null;
+  }, [selectedContextId, assignments]);
+
+  const contextType = useMemo(() => {
+    if (selectedContextId === "general") return "general";
+    if (selectedContextId.startsWith("project:")) return "project";
+    if (selectedContextId.startsWith("assignment:")) return "assignment";
+    return "general";
+  }, [selectedContextId]);
 
   // Load initial data
   const loadData = useCallback(async () => {
     if (!currentWorkspaceId || workspaceLoading) {
       if (!currentWorkspaceId) {
         setAssignments([]);
+        setProjects([]);
         setUsers([]);
         setThreads([]);
         setCurrentUser(null);
-        setSelectedAssignmentId("general");
+        setSelectedContextId("general");
         setCurrentThread(null);
         setLoading(false);
       }
@@ -153,38 +174,52 @@ export default function ChatPage() {
 
     try {
       setLoading(true);
-      const [threadsData, assignmentsData, usersData, user] = await Promise.all([
+      const [threadsData, assignmentsData, projectsData, usersData, user] = await Promise.all([
         db.entities.ConversationThread.filter({ workspace_id: currentWorkspaceId }, "-last_activity"),
         db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
+        db.entities.Project.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
         db.entities.User.list(),
         db.auth.me()
       ]);
 
       setAssignments(assignmentsData);
+      setProjects(projectsData);
       setUsers(usersData);
       setThreads(threadsData);
       setCurrentUser(user);
 
-      // Handle active thread/assignment selection after data load
-      let newSelectedAssignmentId = selectedAssignmentId || "general";
+      // Handle active context selection after data load
+      let newSelectedContextId = selectedContextId || "general";
       let newCurrentThread = null;
 
       // Keep current selection if valid
-      if (newSelectedAssignmentId !== "general" && !assignmentsData.some(a => a.id === newSelectedAssignmentId)) {
-        newSelectedAssignmentId = "general";
+      if (newSelectedContextId.startsWith("project:")) {
+        const projectId = newSelectedContextId.replace("project:", "");
+        if (!projectsData.some(p => p.id === projectId)) {
+          newSelectedContextId = "general";
+        }
+      } else if (newSelectedContextId.startsWith("assignment:")) {
+        const assignmentId = newSelectedContextId.replace("assignment:", "");
+        if (!assignmentsData.some(a => a.id === assignmentId)) {
+          newSelectedContextId = "general";
+        }
       }
-      
-      setSelectedAssignmentId(newSelectedAssignmentId);
+
+      setSelectedContextId(newSelectedContextId);
 
       // Try to keep current thread if still valid
       if (currentThread && threadsData.some(t => t.id === currentThread.id)) {
         newCurrentThread = currentThread;
       } else {
         // Select first thread for current context
-        if (newSelectedAssignmentId === "general") {
-          newCurrentThread = threadsData.find(t => !t.assignment_id) || null;
-        } else {
-          newCurrentThread = threadsData.find(t => t.assignment_id === newSelectedAssignmentId) || null;
+        if (newSelectedContextId === "general") {
+          newCurrentThread = threadsData.find(t => !t.assignment_id && !t.project_id) || null;
+        } else if (newSelectedContextId.startsWith("project:")) {
+          const projectId = newSelectedContextId.replace("project:", "");
+          newCurrentThread = threadsData.find(t => t.project_id === projectId) || null;
+        } else if (newSelectedContextId.startsWith("assignment:")) {
+          const assignmentId = newSelectedContextId.replace("assignment:", "");
+          newCurrentThread = threadsData.find(t => t.assignment_id === assignmentId) || null;
         }
       }
       setCurrentThread(newCurrentThread);
@@ -195,7 +230,7 @@ export default function ChatPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentWorkspaceId, workspaceLoading, selectedAssignmentId, currentThread]); // Re-run if workspace, loading state, selected assignment, or current thread changes
+  }, [currentWorkspaceId, workspaceLoading, selectedContextId, currentThread]);
 
   // Load messages for current thread
   const loadMessages = useCallback(async () => {
@@ -700,13 +735,17 @@ export default function ChatPage() {
     return mentions;
   };
 
-  const handleAssignmentSelect = (assignmentOrGeneral) => {
-    if (assignmentOrGeneral === "general") {
-      setSelectedAssignmentId("general");
-    } else {
-      setSelectedAssignmentId(assignmentOrGeneral.id);
+  const handleContextSelect = (contextValue) => {
+    // contextValue can be "general", a project object, or an assignment object
+    if (contextValue === "general") {
+      setSelectedContextId("general");
+    } else if (contextValue.type === "project") {
+      setSelectedContextId(`project:${contextValue.id}`);
+    } else if (contextValue.type === "assignment" || contextValue.name) {
+      // Assignment objects don't have a 'type' field, so we check for 'name'
+      setSelectedContextId(`assignment:${contextValue.id}`);
     }
-    setCurrentThread(null); // Clear selected thread when assignment changes
+    setCurrentThread(null); // Clear selected thread when context changes
   };
 
   const handleThreadSelect = (thread) => {
@@ -731,7 +770,8 @@ export default function ChatPage() {
         workspace_id: currentWorkspaceId,
         name: topic,
         description: description || null,
-        assignment_id: selectedAssignmentId === "general" ? null : selectedAssignmentId,
+        assignment_id: contextType === "assignment" ? selectedContextId.replace("assignment:", "") : null,
+        project_id: contextType === "project" ? selectedContextId.replace("project:", "") : null,
         status: 'active',
         last_activity: new Date().toISOString(),
         message_count: 0,
@@ -859,9 +899,11 @@ export default function ChatPage() {
             <ConversationSidebar
               currentUser={currentUser}
               assignments={assignments}
+              projects={projects}
               selectedAssignment={currentAssignment}
-              selectedAssignmentId={selectedAssignmentId} // Pass selectedAssignmentId
-              onAssignmentSelect={handleAssignmentSelect}
+              selectedProject={currentProject}
+              selectedContextId={selectedContextId}
+              onContextSelect={handleContextSelect}
               threads={threads}
               selectedThread={currentThread}
               onThreadSelect={handleThreadSelect}
@@ -884,14 +926,21 @@ export default function ChatPage() {
                       <CardTitle className="text-xl flex items-center gap-2">
                         <Hash className="w-5 h-5 text-indigo-500" />
                         {currentThread.name || currentThread.topic}
-                        {!currentThread.assignment_id && (
+                        {!currentThread.assignment_id && !currentThread.project_id && (
                           <Badge variant="outline" className="text-sm font-normal bg-green-100/50 dark:bg-green-900/20 text-green-700 dark:text-green-300">
                             General Workspace Chat
                           </Badge>
                         )}
-                        {currentThread.assignment_id && ( // Only show status badge for assignment-specific threads
+                        {currentThread.project_id && (
                           <Badge variant="outline" className="text-sm font-normal bg-indigo-100/50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300">
-                            {currentThread.status}
+                            <Target className="w-3 h-3 mr-1" />
+                            Project
+                          </Badge>
+                        )}
+                        {currentThread.assignment_id && (
+                          <Badge variant="outline" className="text-sm font-normal bg-purple-100/50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300">
+                            <FolderOpen className="w-3 h-3 mr-1" />
+                            Assignment
                           </Badge>
                         )}
                         {currentThread.priority && currentThread.priority !== 'medium' && (
@@ -977,8 +1026,8 @@ export default function ChatPage() {
                   <div className="flex items-center gap-2 mt-3">
                     <Users className="w-4 h-4 text-gray-500" />
                     <div className="flex -space-x-2">
-                      {currentThread.participants?.slice(0, 5).map((email, idx) => {
-                        const member = users.find(m => m.email === email);
+                      {currentThread.participants?.slice(0, 5).map((participantEmail, idx) => {
+                        const member = users.find(m => m.email === participantEmail);
                         return (
                           <Avatar key={idx} className="w-6 h-6 border-2 border-white dark:border-gray-800">
                             <AvatarFallback className="text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white">
@@ -1221,7 +1270,7 @@ export default function ChatPage() {
       </div>
 
       {/* No Assignment Selected Message (only if no assignments exist AND we're not in general chat) */}
-      {selectedAssignmentId !== "general" && !currentAssignment && assignments.length === 0 && (
+      {selectedContextId !== "general" && !currentAssignment && !currentProject && assignments.length === 0 && projects.length === 0 && (
         <div className="text-center py-12">
           <FolderOpen className="w-16 h-16 mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -1239,9 +1288,11 @@ export default function ChatPage() {
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white">Start New Thread</DialogTitle>
             <DialogDescription className="text-gray-600 dark:text-gray-400">
-              {selectedAssignmentId === "general"
+              {selectedContextId === "general"
                 ? "Create a new general workspace conversation thread."
-                : "Create a new conversation thread for the selected assignment."}
+                : currentProject
+                  ? "Create a new conversation thread for the selected project."
+                  : "Create a new conversation thread for the selected assignment."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleNewThreadSubmit}>

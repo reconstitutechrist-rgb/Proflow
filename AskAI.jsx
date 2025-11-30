@@ -71,7 +71,9 @@ import {
   MoreVertical,
   CheckCircle,
   XCircle,
-  Layers
+  Layers,
+  Target,
+  Globe
 } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -108,7 +110,10 @@ const MAX_CONCURRENT_UPLOADS = 3; // For parallelizing file processing
 export default function AskAIPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [assignments, setAssignments] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [contextType, setContextType] = useState("none"); // "none", "project", or "assignment"
   const [uploadedDocuments, setUploadedDocuments] = useState([]);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -215,6 +220,8 @@ export default function AskAIPage() {
           fromCache: d.fromCache || false
         })),
         assignmentId: selectedAssignment?.id,
+        projectId: selectedProject?.id,
+        contextType: contextType,
         totalEmbeddingCost: totalEmbeddingCost,
         timestamp: new Date().toISOString()
       };
@@ -222,9 +229,9 @@ export default function AskAIPage() {
     } catch (error) {
       console.error("Error saving draft:", error);
     }
-  }, [messages, uploadedDocuments, selectedAssignment, totalEmbeddingCost]);
+  }, [messages, uploadedDocuments, selectedAssignment, selectedProject, contextType, totalEmbeddingCost]);
 
-  // 3. loadDraftFromStorage (depends on clearDraftFromStorage, assignments)
+  // 3. loadDraftFromStorage (depends on clearDraftFromStorage, assignments, projects)
   const loadDraftFromStorage = useCallback(() => {
     try {
       const draftStr = localStorage.getItem(DRAFT_STORAGE_KEY);
@@ -254,9 +261,17 @@ export default function AskAIPage() {
               contentHash: d.contentHash || null,
               fromCache: d.fromCache || false
             })));
+            // Restore context type and selection
+            if (draft.contextType) {
+              setContextType(draft.contextType);
+            }
             if (draft.assignmentId && assignments.length > 0) {
               const assignment = assignments.find(a => a.id === draft.assignmentId);
               if (assignment) setSelectedAssignment(assignment);
+            }
+            if (draft.projectId && projects.length > 0) {
+              const project = projects.find(p => p.id === draft.projectId);
+              if (project) setSelectedProject(project);
             }
             setTotalEmbeddingCost(draft.totalEmbeddingCost || 0);
             toast.info("Restored unsaved work from draft", {
@@ -267,6 +282,8 @@ export default function AskAIPage() {
                   setMessages([]);
                   setUploadedDocuments([]);
                   setSelectedAssignment(null);
+                  setSelectedProject(null);
+                  setContextType("none");
                   setTotalEmbeddingCost(0);
                 }
               }
@@ -279,7 +296,7 @@ export default function AskAIPage() {
     } catch (error) {
       console.error("Error loading draft:", error);
     }
-  }, [assignments, clearDraftFromStorage, setMessages, setUploadedDocuments, setSelectedAssignment, setTotalEmbeddingCost]); // Added setters to dependencies
+  }, [assignments, projects, clearDraftFromStorage]);
 
   // 4. loadInitialData (depends on loadDraftFromStorage)
   const loadInitialData = useCallback(async (currentRetry = 0) => {
@@ -304,19 +321,28 @@ export default function AskAIPage() {
       const delay = baseDelay * Math.pow(2, currentRetry);
       await new Promise(resolve => setTimeout(resolve, delay));
 
-      const assignmentsData = await db.entities.Assignment.filter(
-        { workspace_id: currentWorkspaceId }, 
-        "-updated_date", 
-        20
-      );
+      // Fetch assignments and projects in parallel
+      const [assignmentsData, projectsData] = await Promise.all([
+        db.entities.Assignment.filter(
+          { workspace_id: currentWorkspaceId },
+          "-updated_date",
+          20
+        ),
+        db.entities.Project.filter(
+          { workspace_id: currentWorkspaceId },
+          "-updated_date",
+          20
+        )
+      ]);
       setAssignments(assignmentsData);
+      setProjects(projectsData);
 
       // Another delay
       await new Promise(resolve => setTimeout(resolve, delay));
 
-      const sessionsData = await db.entities.AIChatSession.filter(
-        { workspace_id: currentWorkspaceId }, 
-        "-last_activity", 
+      const sessionsData = await db.entities.ChatSession.filter(
+        { workspace_id: currentWorkspaceId },
+        "-last_activity",
         50
       );
       setSessions(sessionsData);
@@ -593,10 +619,29 @@ export default function AskAIPage() {
       setSessionName(session.name);
       setSessionDescription(session.description || "");
       
+      // Restore context type and selections
+      if (session.context_type) {
+        setContextType(session.context_type);
+      } else if (session.project_id) {
+        setContextType("project");
+      } else if (session.assignment_id) {
+        setContextType("assignment");
+      } else {
+        setContextType("none");
+      }
+
+      if (session.project_id) {
+        const project = projects.find(p => p.id === session.project_id);
+        if (project) setSelectedProject(project);
+        else setSelectedProject(null);
+      } else {
+        setSelectedProject(null);
+      }
+
       if (session.assignment_id) {
         const assignment = assignments.find(a => a.id === session.assignment_id);
         if (assignment) setSelectedAssignment(assignment);
-        // else keep current selected assignment if none found (e.g. assignment deleted)
+        else setSelectedAssignment(null);
       } else {
         setSelectedAssignment(null);
       }
@@ -616,7 +661,7 @@ export default function AskAIPage() {
       setIsLoadNewSessionDialogOpen(false);
       setPendingSessionToLoad(null);
     }
-  }, [assignments, clearDraftFromStorage, setMessages, setUploadedDocuments, setCurrentSession, setSessionName, setSessionDescription, setSelectedAssignment, setTotalEmbeddingCost, setSessionModified, setIsSessionsSheetOpen]);
+  }, [assignments, projects, clearDraftFromStorage]);
 
   // NOW all useEffects can safely use these functions
   
@@ -782,7 +827,7 @@ export default function AskAIPage() {
 
   const handleDeleteSession = async (sessionId) => {
     try {
-      await db.entities.AIChatSession.delete(sessionId);
+      await db.entities.ChatSession.delete(sessionId);
       setSessions(prev => prev.filter(s => s.id !== sessionId));
       
       if (currentSession?.id === sessionId) {
@@ -807,6 +852,8 @@ export default function AskAIPage() {
     setMessages([]);
     setUploadedDocuments([]);
     setSelectedAssignment(null);
+    setSelectedProject(null);
+    setContextType("none");
     setCurrentSession(null);
     setSessionModified(false);
     setIsLoadNewSessionDialogOpen(false); // Close dialog if it was open
@@ -1060,7 +1107,14 @@ export default function AskAIPage() {
 
       // Create system prompt with context
       let systemPrompt = "You are a helpful AI assistant analyzing documents and answering questions.";
-      
+
+      if (selectedProject) {
+        systemPrompt += `\n\nCurrent Project: ${selectedProject.name}`;
+        if (selectedProject.description) {
+          systemPrompt += `\nDescription: ${selectedProject.description}`;
+        }
+      }
+
       if (selectedAssignment) {
         systemPrompt += `\n\nCurrent Assignment: ${selectedAssignment.name}`;
         if (selectedAssignment.description) {
@@ -1136,6 +1190,8 @@ export default function AskAIPage() {
         name: sessionName,
         description: sessionDescription,
         assignment_id: selectedAssignment?.id || null,
+        project_id: selectedProject?.id || null,
+        context_type: contextType,
         created_by: currentUser?.email,
         messages: messages.map(m => ({
           ...m,
@@ -1168,12 +1224,12 @@ export default function AskAIPage() {
       };
 
       if (currentSession) {
-        await db.entities.AIChatSession.update(currentSession.id, sessionData);
+        await db.entities.ChatSession.update(currentSession.id, sessionData);
         setCurrentSession({ ...currentSession, ...sessionData });
         setSessionModified(false);
         toast.success("Session updated successfully");
       } else {
-        const newSession = await db.entities.AIChatSession.create({
+        const newSession = await db.entities.ChatSession.create({
           ...sessionData,
           workspace_id: currentWorkspaceId, // Add workspace_id when creating new session
         });
@@ -1210,6 +1266,7 @@ export default function AskAIPage() {
         const exportData = {
           sessionTitle: sessionTitle,
           exportDate: exportDate,
+          project: selectedProject,
           assignment: selectedAssignment,
           documents: uploadedDocuments.map(d => ({
             name: d.name,
@@ -1247,7 +1304,15 @@ export default function AskAIPage() {
       } else if (format === "markdown") {
         let markdown = `# ${sessionTitle}\n\n`;
         markdown += `**Export Date:** ${exportDate}\n\n`;
-        
+
+        if (selectedProject) {
+          markdown += `**Project:** ${selectedProject.name}\n`;
+          if (selectedProject.description) {
+            markdown += `Description: ${selectedProject.description}\n`;
+          }
+          markdown += `\n`;
+        }
+
         if (selectedAssignment) {
           markdown += `**Assignment:** ${selectedAssignment.name}\n`;
           if (selectedAssignment.description) {
@@ -1828,22 +1893,86 @@ export default function AskAIPage() {
           <CardContent className="flex-1 overflow-y-auto p-4">
             <div className="mb-4">
               <Select
-                value={selectedAssignment?.id || ""}
+                value={
+                  contextType === "project" && selectedProject
+                    ? `project:${selectedProject.id}`
+                    : contextType === "assignment" && selectedAssignment
+                    ? `assignment:${selectedAssignment.id}`
+                    : "none"
+                }
                 onValueChange={(value) => {
-                  const assignment = assignments.find(a => a.id === value);
-                  setSelectedAssignment(assignment);
+                  if (value === "none") {
+                    setContextType("none");
+                    setSelectedAssignment(null);
+                    setSelectedProject(null);
+                  } else if (value.startsWith("project:")) {
+                    const projectId = value.replace("project:", "");
+                    const project = projects.find(p => p.id === projectId);
+                    setContextType("project");
+                    setSelectedProject(project || null);
+                    setSelectedAssignment(null);
+                  } else if (value.startsWith("assignment:")) {
+                    const assignmentId = value.replace("assignment:", "");
+                    const assignment = assignments.find(a => a.id === assignmentId);
+                    setContextType("assignment");
+                    setSelectedAssignment(assignment || null);
+                    setSelectedProject(null);
+                  }
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select assignment (optional)" />
+                  <SelectValue>
+                    {contextType === "project" && selectedProject ? (
+                      <span className="flex items-center gap-2">
+                        <Target className="w-4 h-4 text-purple-600" />
+                        {selectedProject.name}
+                      </span>
+                    ) : contextType === "assignment" && selectedAssignment ? (
+                      <span className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        {selectedAssignment.name}
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-gray-400" />
+                        General (no context)
+                      </span>
+                    )}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="null">No assignment</SelectItem> {/* Changed to string "null" for Select */}
-                  {assignments.map((assignment) => (
-                    <SelectItem key={assignment.id} value={assignment.id}>
-                      {assignment.name}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="none">
+                    <span className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-gray-400" />
+                      General (no context)
+                    </span>
+                  </SelectItem>
+                  {projects.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">Projects</div>
+                      {projects.map((project) => (
+                        <SelectItem key={`project:${project.id}`} value={`project:${project.id}`}>
+                          <span className="flex items-center gap-2">
+                            <Target className="w-4 h-4 text-purple-600" />
+                            {project.name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+                  {assignments.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">Assignments</div>
+                      {assignments.map((assignment) => (
+                        <SelectItem key={`assignment:${assignment.id}`} value={`assignment:${assignment.id}`}>
+                          <span className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-blue-600" />
+                            {assignment.name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -2336,6 +2465,12 @@ export default function AskAIPage() {
                 <CheckCircle2 className="w-4 h-4 text-green-600" />
                 Context exclusion markers
               </div>
+              {selectedProject && (
+                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  Project context
+                </div>
+              )}
               {selectedAssignment && (
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                   <CheckCircle2 className="w-4 h-4 text-green-600" />

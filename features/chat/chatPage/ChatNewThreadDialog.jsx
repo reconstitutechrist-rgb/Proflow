@@ -82,6 +82,15 @@ export function ChatNewThreadDialog({
               type="submit"
               disabled={!newThreadTopic.trim() || !currentUser || !currentWorkspaceId}
               className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label={
+                !newThreadTopic.trim()
+                  ? "Enter a topic to create thread"
+                  : !currentUser
+                    ? "Log in to create thread"
+                    : !currentWorkspaceId
+                      ? "Select a workspace to create thread"
+                      : "Create thread"
+              }
             >
               Create Thread
             </Button>

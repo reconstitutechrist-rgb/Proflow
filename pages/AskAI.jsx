@@ -100,6 +100,7 @@ export default function AskAIPage() {
     // Handlers
     handleLoadSession,
     handleDeleteSession,
+    handleDeleteMessage,
     handleNewConversation,
     handleFileUpload,
     handleRemoveDocument,
@@ -285,6 +286,7 @@ export default function AskAIPage() {
           useRAG={useRAG}
           messagesEndRef={messagesEndRef}
           toggleMessageInContext={toggleMessageInContext}
+          handleDeleteMessage={handleDeleteMessage}
           handleSendMessage={handleSendMessage}
           handleSuggestedQuestion={handleSuggestedQuestion}
           setShowOnboardingTutorial={setShowOnboardingTutorial}

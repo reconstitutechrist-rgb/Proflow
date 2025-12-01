@@ -63,6 +63,7 @@ export function useAskAI() {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const processedCountRef = useRef(0);
+  const embeddingCostRef = useRef(0);
   const autoSaveDataRef = useRef({ messages: [], uploadedDocuments: [], selectedAssignment: null, selectedProject: null, contextType: "none", totalEmbeddingCost: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -547,7 +548,7 @@ export function useAskAI() {
         clearTimeout(retryTimeoutRef.current);
       }
     };
-  }, [currentWorkspaceId]);
+  }, [currentWorkspaceId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const checkPendingDocument = async () => {
@@ -607,58 +608,54 @@ export function useAskAI() {
     return () => {};
   }, [hasContentForAutoSave, currentSession, saveDraftToStorage]); // Only re-run when content presence or session changes
 
+  // Efficient session modification tracking using shallow comparison
+  // instead of expensive JSON.stringify on every render
   useEffect(() => {
-    if (currentSession) {
-      const currentSessionDocuments = (currentSession.documents || []).map(d => ({
-        id: d.id, name: d.name, file_url: d.file_url, content: d.content, size: d.size, type: d.type,
-        includedInContext: d.includedInContext !== false,
-        chunks: d.chunks || [], embeddings: d.embeddings || [], embeddingModel: d.embeddingModel || null,
-        chunkingStrategy: d.chunkingStrategy || null,
-        structureAnalysis: d.structureAnalysis || null,
-        tokenCount: d.tokenCount || 0,
-        estimatedCost: d.estimatedCost || 0,
-        contentHash: d.contentHash || null,
-        fromCache: d.fromCache || false
-      }));
-      const currentDocuments = uploadedDocuments.map(d => ({
-        id: d.id, name: d.name, file_url: d.file_url, content: d.content, size: d.size, type: d.type,
-        includedInContext: d.includedInContext !== false,
-        chunks: d.chunks || [],
-        embeddings: d.embeddings || [],
-        embeddingModel: d.embeddingModel || null,
-        chunkingStrategy: d.chunkingStrategy || null,
-        structureAnalysis: d.structureAnalysis || null,
-        tokenCount: d.tokenCount || 0,
-        estimatedCost: d.estimatedCost || 0,
-        contentHash: d.contentHash || null,
-        fromCache: d.fromCache || false
-      }));
-
-      const currentSessionMessages = (currentSession.messages || []).map(m => ({
-        id: m.id, type: m.type, content: m.content, timestamp: m.timestamp,
-        excludedFromContext: m.excludedFromContext || false,
-        ragMetadata: m.ragMetadata || undefined,
-        source_documents: m.source_documents || undefined,
-        confidence_score: m.confidence_score || undefined,
-        ragUsed: m.ragUsed || undefined
-      }));
-      const currentMessages = messages.map(m => ({
-        id: m.id, type: m.type, content: m.content, timestamp: m.timestamp,
-        excludedFromContext: m.excludedFromContext || false,
-        ragMetadata: m.ragMetadata || undefined,
-        source_documents: m.source_documents || undefined,
-        confidence_score: m.confidence_score || undefined,
-        ragUsed: m.ragUsed || undefined
-      }));
-
-      const hasMessageChanges = JSON.stringify(currentMessages) !== JSON.stringify(currentSessionMessages);
-      const hasDocumentChanges = JSON.stringify(currentDocuments) !== JSON.stringify(currentSessionDocuments);
-      const hasAssignmentChange = selectedAssignment?.id !== currentSession.assignment_id;
-
-      setSessionModified(hasMessageChanges || hasDocumentChanges || hasAssignmentChange);
-    } else {
+    if (!currentSession) {
       setSessionModified(false);
+      return;
     }
+
+    // Quick checks first (most likely to detect changes)
+    const sessionMessages = currentSession.messages || [];
+    const sessionDocuments = currentSession.documents || [];
+
+    // Check counts first (fast)
+    if (messages.length !== sessionMessages.length ||
+        uploadedDocuments.length !== sessionDocuments.length) {
+      setSessionModified(true);
+      return;
+    }
+
+    // Check assignment change
+    if (selectedAssignment?.id !== currentSession.assignment_id) {
+      setSessionModified(true);
+      return;
+    }
+
+    // Check message IDs and content (more expensive, but only if counts match)
+    const hasMessageChanges = messages.some((m, i) => {
+      const sessionMsg = sessionMessages[i];
+      return !sessionMsg ||
+             m.id !== sessionMsg.id ||
+             m.content !== sessionMsg.content ||
+             m.excludedFromContext !== (sessionMsg.excludedFromContext || false);
+    });
+
+    if (hasMessageChanges) {
+      setSessionModified(true);
+      return;
+    }
+
+    // Check document IDs and inclusion state
+    const hasDocumentChanges = uploadedDocuments.some((d, i) => {
+      const sessionDoc = sessionDocuments[i];
+      return !sessionDoc ||
+             d.id !== sessionDoc.id ||
+             (d.includedInContext !== false) !== (sessionDoc.includedInContext !== false);
+    });
+
+    setSessionModified(hasDocumentChanges);
   }, [messages, uploadedDocuments, selectedAssignment, currentSession]);
 
   // Handlers
@@ -741,9 +738,9 @@ export function useAskAI() {
 
     const successfulUploads = [];
     const failedFiles = [];
-    // Use ref for atomic counter to avoid race conditions
+    // Use refs for atomic counters to avoid race conditions with concurrent workers
     processedCountRef.current = 0;
-    let newEmbeddingsTotalCost = 0;
+    embeddingCostRef.current = 0;
 
     const queue = [...files];
     const processingPromises = [];
@@ -756,7 +753,8 @@ export function useAskAI() {
             const { newDoc, newEmbeddingsCost } = await processAndEmbedDocument(file);
             if (newDoc) {
               successfulUploads.push(newDoc);
-              newEmbeddingsTotalCost += newEmbeddingsCost;
+              // Use ref for atomic increment to avoid race conditions
+              embeddingCostRef.current += newEmbeddingsCost;
             }
           } catch (error) {
             failedFiles.push(file.name);
@@ -775,7 +773,9 @@ export function useAskAI() {
 
     try {
       await Promise.all(processingPromises);
-      setTotalEmbeddingCost(prev => prev + newEmbeddingsTotalCost);
+      // Read final cost from ref after all workers complete
+      const finalEmbeddingCost = embeddingCostRef.current;
+      setTotalEmbeddingCost(prev => prev + finalEmbeddingCost);
 
       if (successfulUploads.length > 0) {
         setUploadedDocuments(prev => [...prev, ...successfulUploads]);
@@ -790,8 +790,8 @@ export function useAskAI() {
         const cachedCount = successfulUploads.filter(doc => doc.fromCache).length;
         const newGeneratedCount = successfulUploads.length - cachedCount;
 
-        if (newGeneratedCount > 0 && newEmbeddingsTotalCost > 0) {
-          toast.success(`${newGeneratedCount} file(s) processed (est. cost: $${newEmbeddingsTotalCost.toFixed(4)}). ${cachedCount} cached.`, { duration: 5000 });
+        if (newGeneratedCount > 0 && finalEmbeddingCost > 0) {
+          toast.success(`${newGeneratedCount} file(s) processed (est. cost: $${finalEmbeddingCost.toFixed(4)}). ${cachedCount} cached.`, { duration: 5000 });
         } else if (cachedCount > 0) {
           toast.success(`${cachedCount} file(s) processed using cached embeddings.`, { duration: 4000 });
         } else {
@@ -835,6 +835,12 @@ export function useAskAI() {
           : m
       )
     );
+  };
+
+  const handleDeleteMessage = (messageId) => {
+    setMessages(prev => prev.filter(m => m.id !== messageId));
+    setSessionModified(true);
+    toast.success("Message deleted");
   };
 
   const handleSendMessage = async () => {
@@ -1330,6 +1336,7 @@ export function useAskAI() {
     // Handlers
     handleLoadSession,
     handleDeleteSession,
+    handleDeleteMessage,
     handleNewConversation,
     handleFileUpload,
     handleRemoveDocument,

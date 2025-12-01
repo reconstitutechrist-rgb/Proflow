@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 import { Bot, User, CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -54,6 +55,7 @@ export default function MessageBubble({ message }) {
             ) : (
               <div className="prose prose-sm dark:prose-invert max-w-none">
                 <ReactMarkdown
+                  rehypePlugins={[rehypeSanitize]}
                   components={{
                     p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
                     ul: ({ children }) => <ul className="list-disc ml-4 mb-2">{children}</ul>,

@@ -13,6 +13,7 @@ import {
   AlertTriangle
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
 
 export default function DocumentationPage() {
   const [activeDoc, setActiveDoc] = useState("testing");
@@ -714,6 +715,7 @@ Migration is successful when:
               <CardContent className="p-8">
                 <div className="prose prose-slate dark:prose-invert max-w-none">
                   <ReactMarkdown
+                    rehypePlugins={[rehypeSanitize]}
                     components={{
                       h1: ({ children }) => (
                         <h1 className="text-3xl font-bold mt-6 mb-4 text-gray-900 dark:text-white border-b pb-2">

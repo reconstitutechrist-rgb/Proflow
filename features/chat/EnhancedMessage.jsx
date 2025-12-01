@@ -23,6 +23,7 @@ import {
 import { format } from "date-fns";
 import MessageReactions from "@/features/chat/MessageReactions";
 import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
 
 export default function EnhancedMessage({
   message,
@@ -117,6 +118,7 @@ export default function EnhancedMessage({
             {message.message_type === 'text' ? (
               <div className="prose prose-sm max-w-none dark:prose-invert">
                 <ReactMarkdown
+                  rehypePlugins={[rehypeSanitize]}
                   components={{
                     code: ({ inline, className, children, ...props }) => {
                       const match = /language-(\w+)/.exec(className || '');

@@ -38,6 +38,7 @@ export function useChat() {
   const isTypingRef = useRef(false);
   const initialLoadDoneRef = useRef(false);
   const currentUserRef = useRef(null);
+  const selectedContextIdRef = useRef("general");
 
   const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
 
@@ -112,37 +113,32 @@ export function useChat() {
       setCurrentUser(user);
       currentUserRef.current = user;
 
-      // Use functional updates to avoid depending on current state
-      setSelectedContextId(prevContextId => {
-        let newSelectedContextId = prevContextId || "general";
+      // Calculate new context ID based on validity
+      let newSelectedContextId = selectedContextIdRef.current || "general";
 
-        if (newSelectedContextId.startsWith("project:")) {
-          const projectId = newSelectedContextId.replace("project:", "");
-          if (!projectsData.some(p => p.id === projectId)) {
-            newSelectedContextId = "general";
-          }
-        } else if (newSelectedContextId.startsWith("assignment:")) {
-          const assignmentId = newSelectedContextId.replace("assignment:", "");
-          if (!assignmentsData.some(a => a.id === assignmentId)) {
-            newSelectedContextId = "general";
-          }
+      if (newSelectedContextId.startsWith("project:")) {
+        const projectId = newSelectedContextId.replace("project:", "");
+        if (!projectsData.some(p => p.id === projectId)) {
+          newSelectedContextId = "general";
         }
+      } else if (newSelectedContextId.startsWith("assignment:")) {
+        const assignmentId = newSelectedContextId.replace("assignment:", "");
+        if (!assignmentsData.some(a => a.id === assignmentId)) {
+          newSelectedContextId = "general";
+        }
+      }
 
-        return newSelectedContextId;
-      });
+      // Update both state and ref
+      selectedContextIdRef.current = newSelectedContextId;
+      setSelectedContextId(newSelectedContextId);
 
+      // Calculate thread selection using the ref (guaranteed current value)
       setCurrentThread(prevThread => {
-        // Get current selectedContextId for thread selection
-        let contextId = "general";
-        setSelectedContextId(current => {
-          contextId = current;
-          return current;
-        });
-
         if (prevThread && threadsData.some(t => t.id === prevThread.id)) {
           return prevThread;
         }
 
+        const contextId = selectedContextIdRef.current;
         if (contextId === "general") {
           return threadsData.find(t => !t.assignment_id && !t.project_id) || null;
         } else if (contextId.startsWith("project:")) {
@@ -645,13 +641,19 @@ export function useChat() {
   }, [currentThread?.id]);
 
   const handleContextSelect = (contextValue) => {
+    let newContextId;
     if (contextValue === "general") {
-      setSelectedContextId("general");
+      newContextId = "general";
     } else if (contextValue.type === "project") {
-      setSelectedContextId(`project:${contextValue.id}`);
+      newContextId = `project:${contextValue.id}`;
     } else if (contextValue.type === "assignment" || contextValue.name) {
-      setSelectedContextId(`assignment:${contextValue.id}`);
+      newContextId = `assignment:${contextValue.id}`;
+    } else {
+      newContextId = "general";
     }
+    // Keep ref in sync with state
+    selectedContextIdRef.current = newContextId;
+    setSelectedContextId(newContextId);
     setCurrentThread(null);
   };
 

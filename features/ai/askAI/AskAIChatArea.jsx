@@ -15,6 +15,7 @@ import {
   Layers,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
 import MessageActions from "@/components/MessageActions";
 import SuggestedQuestions from "@/components/SuggestedQuestions";
 import { MEMORY_LIMITS } from "@/hooks/useAskAI";
@@ -33,6 +34,7 @@ export function AskAIChatArea({
   useRAG,
   messagesEndRef,
   toggleMessageInContext,
+  handleDeleteMessage,
   handleSendMessage,
   handleSuggestedQuestion,
   setShowOnboardingTutorial,
@@ -59,9 +61,11 @@ export function AskAIChatArea({
     }
   };
 
-  const handleMessageDelete = (messageIndex) => {
-    // This would need to be passed from parent or handled via context
-    console.log('Delete message at index:', messageIndex);
+  const onMessageDelete = (messageIndex) => {
+    const message = messages[messageIndex];
+    if (message && handleDeleteMessage) {
+      handleDeleteMessage(message.id);
+    }
   };
 
   return (
@@ -150,6 +154,7 @@ export function AskAIChatArea({
                             className="h-6 w-6"
                             onClick={() => toggleMessageInContext(message.id)}
                             title={message.excludedFromContext ? "Include in context" : "Exclude from context"}
+                            aria-label={message.excludedFromContext ? "Include message in context" : "Exclude message from context"}
                           >
                             {message.excludedFromContext ? (
                               <EyeOff className="w-3.5 h-3.5 text-gray-400" />
@@ -162,7 +167,7 @@ export function AskAIChatArea({
                             onEdit={() => handleMessageEdit(index)}
                             onCopy={() => handleMessageCopy(message)}
                             onRegenerate={() => handleMessageRegenerate(index)}
-                            onDelete={() => handleMessageDelete(index)}
+                            onDelete={() => onMessageDelete(index)}
                           />
                         </div>
                       )}
@@ -172,7 +177,7 @@ export function AskAIChatArea({
                       message.type === 'user' ? 'text-gray-900 dark:text-gray-100' : ''
                     }`}>
                       {(message.type === 'assistant' || message.type === 'error') ? (
-                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                        <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{message.content}</ReactMarkdown>
                       ) : (
                         <p className="whitespace-pre-wrap">{message.content}</p>
                       )}

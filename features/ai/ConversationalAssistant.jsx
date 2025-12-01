@@ -10,6 +10,7 @@ import { Loader2, Send, Bot, User, Sparkles, FileText, Lightbulb, Wand2, CheckCi
 import { db } from "@/api/db";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
 
 export default function ConversationalAssistant({
   content,
@@ -203,6 +204,7 @@ Provide your response:`;
                 >
                   {message.role === 'assistant' ? (
                     <ReactMarkdown
+                      rehypePlugins={[rehypeSanitize]}
                       className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
                       components={{
                         code: ({ inline, children, ...props }) => {

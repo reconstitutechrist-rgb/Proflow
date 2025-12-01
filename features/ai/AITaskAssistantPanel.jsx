@@ -68,6 +68,7 @@ import {
   setDay
 } from "date-fns";
 import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 import { useWorkspace } from "@/features/workspace/WorkspaceContext";
 
 const MAX_CONVERSATION_MESSAGES = 50;
@@ -1047,6 +1048,7 @@ Keep your response concise and actionable.`;
               {message.role === 'assistant' ? (
                 <div className="prose prose-sm max-w-none">
                   <ReactMarkdown
+                    rehypePlugins={[rehypeSanitize]}
                     components={{
                       h1: ({ children }) => <h1 className="text-lg font-bold mb-2 text-gray-900 dark:text-white">{children}</h1>,
                       h2: ({ children }) => <h2 className="text-base font-semibold mb-2 text-gray-800 dark:text-gray-100">{children}</h2>,

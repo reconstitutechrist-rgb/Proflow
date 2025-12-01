@@ -37,6 +37,7 @@ import { useWorkspace } from "@/features/workspace/WorkspaceContext";
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState([]);
   const [assignments, setAssignments] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [viewMode, setViewMode] = useState("grid");
@@ -46,6 +47,7 @@ export default function DocumentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [selectedAssignment, setSelectedAssignment] = useState("all");
+  const [selectedProject, setSelectedProject] = useState("all");
 
   const [retryAttempt, setRetryAttempt] = useState(0); // This state isn't directly used for retry logic anymore, but kept for potential display/debugging.
   const MAX_RETRIES = 3;
@@ -79,6 +81,13 @@ export default function DocumentsPage() {
           workspace_id: currentWorkspaceId,
         });
         setAssignments(assignmentsData);
+
+        await new Promise((resolve) => setTimeout(resolve, delay));
+
+        const projectsData = await db.entities.Project.filter({
+          workspace_id: currentWorkspaceId,
+        });
+        setProjects(projectsData);
 
         await new Promise((resolve) => setTimeout(resolve, delay));
 
@@ -166,6 +175,12 @@ export default function DocumentsPage() {
     return names.join(", ");
   };
 
+  const getProjectName = (projectId) => {
+    if (!projectId) return "No Project";
+    const project = projects.find((p) => p.id === projectId);
+    return project ? project.name : "Unknown Project";
+  };
+
   const filteredDocuments = documents
     .filter((doc) => {
       if (doc.document_type === "folder_placeholder") return false;
@@ -184,10 +199,15 @@ export default function DocumentsPage() {
         (doc.assigned_to_assignments &&
           doc.assigned_to_assignments.includes(selectedAssignment));
 
+      const matchesProject =
+        selectedProject === "all" ||
+        (selectedProject === "no-project" && !doc.assigned_to_project) ||
+        doc.assigned_to_project === selectedProject;
+
       const matchesType =
         typeFilter === "all" || doc.document_type === typeFilter;
 
-      return matchesSearch && matchesAssignment && matchesType;
+      return matchesSearch && matchesAssignment && matchesProject && matchesType;
     })
     .sort((a, b) => {
       const dateA = new Date(a.created_date);
@@ -245,6 +265,24 @@ export default function DocumentsPage() {
           </div>
 
           <Select
+            value={selectedProject}
+            onValueChange={setSelectedProject}
+          >
+            <SelectTrigger className="w-full sm:w-[160px] border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+              <SelectValue placeholder="All Projects" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Projects</SelectItem>
+              <SelectItem value="no-project">No Project</SelectItem>
+              {projects.map((project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
             value={selectedAssignment}
             onValueChange={setSelectedAssignment}
           >
@@ -255,7 +293,7 @@ export default function DocumentsPage() {
               <SelectItem value="all">All Assignments</SelectItem>
               <SelectItem value="unassigned">Unassigned</SelectItem>
               {assignments.map((assignment) => (
-                <SelectItem key={assignment.id} value={assignment.name}>
+                <SelectItem key={assignment.id} value={assignment.id}>
                   {assignment.name}
                 </SelectItem>
               ))}
@@ -295,14 +333,16 @@ export default function DocumentsPage() {
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
               {searchQuery ||
               typeFilter !== "all" ||
-              selectedAssignment !== "all"
+              selectedAssignment !== "all" ||
+              selectedProject !== "all"
                 ? "Try adjusting your filters"
                 : "Get started by uploading your first document"}
             </p>
             {!(
               searchQuery ||
               typeFilter !== "all" ||
-              selectedAssignment !== "all"
+              selectedAssignment !== "all" ||
+              selectedProject !== "all"
             ) && (
               <Button
                 onClick={() => setIsUploadOpen(true)}
@@ -444,7 +484,15 @@ export default function DocumentsPage() {
                     </div>
                     <div>
                       <p className="font-medium text-gray-600 dark:text-gray-400">
-                        Assigned To:
+                        Project:
+                      </p>
+                      <p className="text-gray-900 dark:text-white">
+                        {getProjectName(selectedDocument.assigned_to_project)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-600 dark:text-gray-400">
+                        Assignment:
                       </p>
                       <p className="text-gray-900 dark:text-white">
                         {getAssignmentNames(
@@ -503,6 +551,7 @@ export default function DocumentsPage() {
           </DialogHeader>
           <DocumentUploader
             assignments={assignments}
+            projects={projects}
             currentUser={currentUser}
             selectedFolderPath="/"
             onUploadComplete={handleUploadComplete}

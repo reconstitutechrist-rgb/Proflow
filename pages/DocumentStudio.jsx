@@ -94,6 +94,8 @@ export default function DocumentStudioPage() {
   const [tagInput, setTagInput] = useState("");
 
   const [assignments, setAssignments] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
@@ -221,8 +223,9 @@ export default function DocumentStudioPage() {
     try {
       setLoading(true);
 
-      const [assignmentsData, tasksData, usersData, allDocuments, user] = await Promise.all([
+      const [assignmentsData, projectsData, tasksData, usersData, allDocuments, user] = await Promise.all([
         Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
+        db.entities.Project.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
         Task.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
         db.entities.User.list(),
         Document.filter({ workspace_id: currentWorkspaceId }, "-updated_date", 100),
@@ -230,6 +233,7 @@ export default function DocumentStudioPage() {
       ]);
 
       setAssignments(assignmentsData || []);
+      setProjects(projectsData || []);
       setTasks(tasksData || []);
       setUsers(usersData || []);
       setDocuments(allDocuments || []);
@@ -253,6 +257,7 @@ export default function DocumentStudioPage() {
           setDescription(doc.description || "");
           setContent(doc.content || "");
           setSelectedAssignments(doc.assigned_to_assignments || []);
+          setSelectedProject(doc.assigned_to_project || null);
           setSelectedTask(doc.selected_task_id || "");
           setTags(doc.tags || []);
           setLastSaved(doc.updated_date);
@@ -427,6 +432,7 @@ export default function DocumentStudioPage() {
         content,
         document_type: "other",
         assigned_to_assignments: selectedAssignments,
+        assigned_to_project: selectedProject || null,
         selected_task_id: selectedTask || null,
         tags: tags || [],
         folder_path: "/created",
@@ -793,14 +799,31 @@ export default function DocumentStudioPage() {
         {/* Metadata Row */}
         <div className="flex flex-wrap gap-3 mt-4">
           <Select
+            value={selectedProject || "none"}
+            onValueChange={(value) => setSelectedProject(value === "none" ? null : value)}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Link to Project" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No Project</SelectItem>
+              {projects.map(project => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
             value={selectedAssignments[0] || "none"}
             onValueChange={(value) => {
               setSelectedAssignments(value === "none" ? [] : [value]);
               setSelectedTask("");
             }}
           >
-            <SelectTrigger className="w-64">
-              <SelectValue placeholder="Link to Assignment (optional)" />
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="Link to Assignment" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">No Assignment</SelectItem>

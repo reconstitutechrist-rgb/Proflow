@@ -40,12 +40,14 @@ const UPLOAD_TIMEOUT = 300000; // 5 minutes for large files
 
 export default function DocumentUploader({
   assignments = [],
+  projects = [],
   currentUser,
   selectedFolderPath = "/",
   onUploadComplete,
   existingDocuments = [],
   // NEW PROPS from outline
   assignmentId,
+  projectId,
   taskId,
   folder = "/", // New prop, will override selectedFolderPath for new uploads if provided
 }) {
@@ -80,9 +82,13 @@ export default function DocumentUploader({
           description: existingDoc ? existingDoc.description : "",
           document_type: existingDoc ? existingDoc.document_type : "other",
           // Use assignmentId prop as default for new files if existingDoc doesn't have it
-          assigned_to_assignments: existingDoc 
-            ? existingDoc.assigned_to_assignments 
+          assigned_to_assignments: existingDoc
+            ? existingDoc.assigned_to_assignments
             : (assignmentId ? [assignmentId] : []),
+          // Use projectId prop as default for new files if existingDoc doesn't have it
+          assigned_to_project: existingDoc
+            ? existingDoc.assigned_to_project
+            : (projectId || null),
           status: "pending",
           progress: 0,
           error: null,
@@ -101,9 +107,9 @@ export default function DocumentUploader({
           conversionError: null // Error message for conversion
         };
       });
-      
+
       setFiles(prev => [...prev, ...newFiles]);
-      
+
       if (validFiles.length > 0) {
         const updateCount = newFiles.filter(f => f.existingDocId).length;
         const convertibleCount = newFiles.filter(f => f.isConvertible).length; // NEW: count convertible
@@ -129,9 +135,13 @@ export default function DocumentUploader({
         description: existingDoc ? existingDoc.description : "",
         document_type: existingDoc ? existingDoc.document_type : "other",
         // Use assignmentId prop as default for new files if existingDoc doesn't have it
-        assigned_to_assignments: existingDoc 
-          ? existingDoc.assigned_to_assignments 
+        assigned_to_assignments: existingDoc
+          ? existingDoc.assigned_to_assignments
           : (assignmentId ? [assignmentId] : []),
+        // Use projectId prop as default for new files if existingDoc doesn't have it
+        assigned_to_project: existingDoc
+          ? existingDoc.assigned_to_project
+          : (projectId || null),
         status: "pending",
         progress: 0,
         error: null,
@@ -150,9 +160,9 @@ export default function DocumentUploader({
         conversionError: null // Error message for conversion
       };
     });
-    
+
     setFiles(prev => [...prev, ...newFiles]);
-    
+
     const updateCount = newFiles.filter(f => f.existingDocId).length;
     const largeFiles = selectedFiles.filter(f => f.size > LARGE_FILE_THRESHOLD);
     const convertibleCount = newFiles.filter(f => f.isConvertible).length; // NEW: count convertible
@@ -442,6 +452,7 @@ export default function DocumentUploader({
               file_type: fileData.file.type, // Use the (possibly converted) file type
               document_type: fileData.document_type,
               assigned_to_assignments: fileData.assigned_to_assignments,
+              assigned_to_project: fileData.assigned_to_project || null,
               folder_path: folder || selectedFolderPath, // Use new 'folder' prop if provided, else existing
               version: newVersion,
               version_history: updatedVersionHistory,
@@ -462,6 +473,7 @@ export default function DocumentUploader({
             file_type: fileData.file.type, // Use the (possibly converted) file type
             document_type: fileData.document_type,
             assigned_to_assignments: fileData.assigned_to_assignments,
+            assigned_to_project: fileData.assigned_to_project || null,
             folder_path: folder || selectedFolderPath, // Use new 'folder' prop if provided, else existing
             version: "1.0", // Initial version
             version_history: [], // No history yet
@@ -873,28 +885,51 @@ export default function DocumentUploader({
                           </div>
 
                           <div>
-                            <Label>Link to Assignment(s)</Label>
+                            <Label>Link to Project</Label>
                             <Select
-                              value={fileData.assigned_to_assignments[0] || "none"}
+                              value={fileData.assigned_to_project || "none"}
                               onValueChange={(value) => {
-                                const assignments = value === "none" ? [] : [value];
-                                updateFileField(fileData.id, "assigned_to_assignments", assignments);
+                                updateFileField(fileData.id, "assigned_to_project", value === "none" ? null : value);
                               }}
                               disabled={uploading || fileData.converting}
                             >
                               <SelectTrigger className="mt-1">
-                                <SelectValue placeholder="Select assignment" />
+                                <SelectValue placeholder="Select project" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="none">No Assignment</SelectItem>
-                                {assignments.map(assignment => (
-                                  <SelectItem key={assignment.id} value={assignment.id}>
-                                    {assignment.name}
+                                <SelectItem value="none">No Project</SelectItem>
+                                {projects.map(project => (
+                                  <SelectItem key={project.id} value={project.id}>
+                                    {project.name}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
                           </div>
+                        </div>
+
+                        <div>
+                          <Label>Link to Assignment</Label>
+                          <Select
+                            value={fileData.assigned_to_assignments[0] || "none"}
+                            onValueChange={(value) => {
+                              const assignmentsList = value === "none" ? [] : [value];
+                              updateFileField(fileData.id, "assigned_to_assignments", assignmentsList);
+                            }}
+                            disabled={uploading || fileData.converting}
+                          >
+                            <SelectTrigger className="mt-1">
+                              <SelectValue placeholder="Select assignment" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">No Assignment</SelectItem>
+                              {assignments.map(assignment => (
+                                <SelectItem key={assignment.id} value={assignment.id}>
+                                  {assignment.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     )}

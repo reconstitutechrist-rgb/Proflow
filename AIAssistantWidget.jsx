@@ -210,22 +210,25 @@ export default function AIAssistantWidget({ currentPageName, workspaceId }) {
       const welcomeMessage = {
         id: "welcome",
         role: "assistant",
-        content: `👋 Hi! I'm your ProjectFlow AI Assistant. I'm here to help you navigate the app, answer questions, and **execute tasks for you**.
+        content: `👋 Hi! I'm your ProjectFlow AI Assistant. I can **create, update, and manage** your work items directly.
 
-**I can help you with:**
-- Understanding features and how to use them
-- **Creating notes** - Just say "Create a note called [title]" or provide details
-- **Managing projects, assignments, and tasks**
-- Finding specific items across the app
-- Suggesting workflows and best practices
-- Troubleshooting issues
+**What I can do for you:**
 
-**Quick Actions:**
-- "Create a note called Meeting Summary"
-- "Help me understand the Dashboard"
-- "What can you do?"
+📁 **Create Projects** - "Create a project called Marketing Campaign"
+📋 **Create Assignments** - "Create an assignment called Homepage Design"
+✅ **Create Tasks** - "Create a task called Review docs assigned to @John"
+📝 **Create Notes** - "Create a note called Meeting Summary"
 
-What can I help you with today?`,
+🔄 **Update Items** - "Update task [id] status to done"
+🗑️ **Delete Items** - "Delete task [id]" (I'll confirm first)
+👥 **Assign Team Members** - Tag anyone on your team to tasks
+
+**Quick Examples:**
+- "Create a high priority task for Sarah to review the proposal"
+- "What's my current status?"
+- "Help" to see all commands
+
+What would you like me to do?`,
         timestamp: new Date().toISOString(),
       };
 
@@ -372,6 +375,7 @@ What can I help you with today?`,
         workspaceId ? db.entities.Project.filter({ workspace_id: workspaceId }) : Promise.resolve([]),
         workspaceId ? db.entities.Note.filter({ workspace_id: workspaceId }, "-updated_date", 20) : Promise.resolve([]),
         db.auth.me(),
+        workspaceId ? db.entities.User.filter({ workspace_id: workspaceId }) : Promise.resolve([]),
       ]);
 
       // Extract values, using fallbacks for rejected promises
@@ -380,11 +384,12 @@ What can I help you with today?`,
       const projects = results[2].status === 'fulfilled' ? results[2].value : [];
       const notes = results[3].status === 'fulfilled' ? results[3].value : [];
       const user = results[4].status === 'fulfilled' ? results[4].value : null;
+      const teamMembers = results[5].status === 'fulfilled' ? results[5].value : [];
 
       // Log any failures for debugging
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
-          const names = ['tasks', 'assignments', 'projects', 'notes', 'user'];
+          const names = ['tasks', 'assignments', 'projects', 'notes', 'user', 'teamMembers'];
           console.warn(`Failed to fetch ${names[index]}:`, result.reason);
         }
       });
@@ -408,6 +413,11 @@ ${currentProject ? `- Current Project: ${currentProject.name} (Status: ${current
 - User Email: ${user?.email || "Unknown"}
 - User ID: ${user?.id || "Unknown"}
 - User Role: ${user?.user_role || "Unknown"}
+
+Team Members (${teamMembers.length > 0 ? teamMembers.length : "none"}) - Use these for task assignment:
+${teamMembers
+  .map((m) => `- ${m.full_name || m.email} (${m.email})`)
+  .join("\n") || "No team members found"}
 
 Recent Projects (${projects.length > 0 ? projects.length : "none"}):
 ${projects
@@ -448,12 +458,15 @@ ${notes
 
 User Input: ${textToSend}
 
-Based on the user's input and the provided system context, respond to the user.
-If the user wants to create a note, you can create it directly with the workspace_id provided above.
-If the user's input implies an action (like creating a task or note), use the available tools to perform that action.
-${currentProject ? `The user is currently viewing the project "${currentProject.name}" - prioritize actions related to this project when relevant.` : ""}
-Always confirm with the user before performing destructive actions like deletion.
-Be specific and clear about what you are doing.
+IMPORTANT INSTRUCTIONS:
+1. You can CREATE projects, assignments, tasks, and notes using the workspace_id above.
+2. You can UPDATE any entity by its ID.
+3. You can DELETE entities (ask for confirmation first).
+4. When assigning tasks, match the user's input to a team member from the list above.
+5. If the user mentions a name like "John" or "@sarah", find the matching team member email.
+${currentProject ? `6. The user is viewing project "${currentProject.name}" - prioritize actions for this project.` : ""}
+
+Respond helpfully and execute the requested action if possible.
 `;
 
       await db.agents.addMessage(agentConversation, {
@@ -765,7 +778,7 @@ Be specific and clear about what you are doing.
       {isOpen && (
         <Card
           className={classNames(
-            "fixed bottom-6 right-6 shadow-2xl border-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl z-50 flex flex-col",
+            "fixed bottom-6 right-6 shadow-2xl border-0 bg-white dark:bg-gray-900 z-50 flex flex-col",
             "w-[calc(100vw-3rem)] sm:w-96",
             "max-w-[500px]",
             isMinimized ? "h-16" : "h-[600px] max-h-[80vh]"
@@ -782,7 +795,7 @@ Be specific and clear about what you are doing.
               </div>
               <h3 className="font-semibold text-sm truncate">ProjectFlow AI</h3>
               <p className="text-xs opacity-90 truncate">
-                Can manage tasks & assignments
+                Create & manage everything
               </p>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
@@ -1037,7 +1050,7 @@ Be specific and clear about what you are doing.
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Create a note, manage tasks, or ask for help..."
+                    placeholder="Create projects, tasks, assignments, or ask anything..."
                     className="flex-1 bg-white dark:bg-gray-800"
                     disabled={isLoading}
                     aria-label="Message input"

@@ -473,16 +473,453 @@ const extractNoteDetails = (message) => {
   return { title, content, tags, color };
 };
 
-// Generate a simple AI response (placeholder - can be enhanced with actual LLM integration)
+// Extract project details from user message
+const extractProjectDetails = (message) => {
+  const userInput = message.match(/User Input:\s*(.+)/is)?.[1] || message;
+  let name = '';
+  let description = '';
+  let goals = '';
+  let status = 'planning';
+  let priority = 'medium';
+  let color = '#3B82F6';
+
+  // Look for structured input
+  const lines = message.split('\n');
+  for (const line of lines) {
+    const lowerLine = line.toLowerCase().trim();
+    if (lowerLine.startsWith('name:') || lowerLine.startsWith('project name:')) {
+      name = line.split(':').slice(1).join(':').trim();
+    } else if (lowerLine.startsWith('description:')) {
+      description = line.split(':').slice(1).join(':').trim();
+    } else if (lowerLine.startsWith('goals:') || lowerLine.startsWith('goal:')) {
+      goals = line.split(':').slice(1).join(':').trim();
+    } else if (lowerLine.startsWith('status:')) {
+      const statusInput = line.split(':')[1]?.trim().toLowerCase();
+      if (['planning', 'active', 'on_hold', 'completed', 'cancelled'].includes(statusInput)) {
+        status = statusInput;
+      }
+    } else if (lowerLine.startsWith('priority:')) {
+      const priorityInput = line.split(':')[1]?.trim().toLowerCase();
+      if (['low', 'medium', 'high', 'urgent'].includes(priorityInput)) {
+        priority = priorityInput;
+      }
+    }
+  }
+
+  // Natural language extraction
+  if (!name) {
+    const nameMatch = userInput.match(/(?:project\s+(?:called|titled|named)|create\s+(?:a\s+)?project\s+)["']?([^"'\n,]+)["']?/i);
+    if (nameMatch) {
+      name = nameMatch[1].trim();
+    }
+  }
+
+  return { name, description, goals, status, priority, color };
+};
+
+// Extract assignment details from user message
+const extractAssignmentDetails = (message) => {
+  const userInput = message.match(/User Input:\s*(.+)/is)?.[1] || message;
+  let name = '';
+  let description = '';
+  let status = 'not_started';
+  let priority = 'medium';
+  let project_id = null;
+  let due_date = null;
+
+  // Look for structured input
+  const lines = message.split('\n');
+  for (const line of lines) {
+    const lowerLine = line.toLowerCase().trim();
+    if (lowerLine.startsWith('name:') || lowerLine.startsWith('assignment name:')) {
+      name = line.split(':').slice(1).join(':').trim();
+    } else if (lowerLine.startsWith('description:')) {
+      description = line.split(':').slice(1).join(':').trim();
+    } else if (lowerLine.startsWith('status:')) {
+      const statusInput = line.split(':')[1]?.trim().toLowerCase().replace(' ', '_');
+      if (['not_started', 'in_progress', 'under_review', 'completed', 'on_hold'].includes(statusInput)) {
+        status = statusInput;
+      }
+    } else if (lowerLine.startsWith('priority:')) {
+      const priorityInput = line.split(':')[1]?.trim().toLowerCase();
+      if (['low', 'medium', 'high', 'urgent'].includes(priorityInput)) {
+        priority = priorityInput;
+      }
+    } else if (lowerLine.startsWith('project:') || lowerLine.startsWith('project_id:')) {
+      project_id = line.split(':').slice(1).join(':').trim();
+    } else if (lowerLine.startsWith('due:') || lowerLine.startsWith('due date:')) {
+      due_date = line.split(':').slice(1).join(':').trim();
+    }
+  }
+
+  // Natural language extraction
+  if (!name) {
+    const nameMatch = userInput.match(/(?:assignment\s+(?:called|titled|named)|create\s+(?:an?\s+)?assignment\s+)["']?([^"'\n,]+)["']?/i);
+    if (nameMatch) {
+      name = nameMatch[1].trim();
+    }
+  }
+
+  // Extract project reference from context
+  const projectMatch = message.match(/Project ID:\s*([a-f0-9-]+)/i) ||
+                       message.match(/for\s+project\s+["']?([^"'\n]+)["']?/i);
+  if (projectMatch && !project_id) {
+    project_id = projectMatch[1].trim();
+  }
+
+  return { name, description, status, priority, project_id, due_date };
+};
+
+// Extract task details from user message
+const extractTaskDetails = (message) => {
+  const userInput = message.match(/User Input:\s*(.+)/is)?.[1] || message;
+  let title = '';
+  let description = '';
+  let status = 'todo';
+  let priority = 'medium';
+  let assigned_to = null;
+  let project_id = null;
+  let assignment_id = null;
+  let due_date = null;
+
+  // Look for structured input
+  const lines = message.split('\n');
+  for (const line of lines) {
+    const lowerLine = line.toLowerCase().trim();
+    if (lowerLine.startsWith('title:') || lowerLine.startsWith('task:') || lowerLine.startsWith('task name:')) {
+      title = line.split(':').slice(1).join(':').trim();
+    } else if (lowerLine.startsWith('description:')) {
+      description = line.split(':').slice(1).join(':').trim();
+    } else if (lowerLine.startsWith('status:')) {
+      const statusInput = line.split(':')[1]?.trim().toLowerCase().replace(' ', '_');
+      if (['todo', 'in_progress', 'review', 'done', 'blocked'].includes(statusInput)) {
+        status = statusInput;
+      }
+    } else if (lowerLine.startsWith('priority:')) {
+      const priorityInput = line.split(':')[1]?.trim().toLowerCase();
+      if (['low', 'medium', 'high', 'urgent'].includes(priorityInput)) {
+        priority = priorityInput;
+      }
+    } else if (lowerLine.startsWith('assign to:') || lowerLine.startsWith('assigned to:') || lowerLine.startsWith('assign:')) {
+      assigned_to = line.split(':').slice(1).join(':').trim();
+    } else if (lowerLine.startsWith('project:') || lowerLine.startsWith('project_id:')) {
+      project_id = line.split(':').slice(1).join(':').trim();
+    } else if (lowerLine.startsWith('assignment:') || lowerLine.startsWith('assignment_id:')) {
+      assignment_id = line.split(':').slice(1).join(':').trim();
+    } else if (lowerLine.startsWith('due:') || lowerLine.startsWith('due date:')) {
+      due_date = line.split(':').slice(1).join(':').trim();
+    }
+  }
+
+  // Natural language extraction for title
+  if (!title) {
+    const titleMatch = userInput.match(/(?:task\s+(?:called|titled|named)|create\s+(?:a\s+)?task\s+)["']?([^"'\n,]+)["']?/i);
+    if (titleMatch) {
+      title = titleMatch[1].trim();
+    }
+  }
+
+  // Extract assignment from natural language
+  if (!assigned_to) {
+    const assignMatch = userInput.match(/(?:assign(?:ed)?\s+to|for)\s+@?([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|[A-Za-z]+(?:\s+[A-Za-z]+)?)/i);
+    if (assignMatch) {
+      assigned_to = assignMatch[1].trim();
+    }
+  }
+
+  // Extract project/assignment references from context
+  const projectIdMatch = message.match(/Current Project:.*?\(ID:\s*([a-f0-9-]+)/i);
+  if (projectIdMatch && !project_id) {
+    project_id = projectIdMatch[1];
+  }
+
+  return { title, description, status, priority, assigned_to, project_id, assignment_id, due_date };
+};
+
+// Parse team members from context
+const parseTeamMembers = (message) => {
+  const teamSection = message.match(/Team Members.*?:\s*\n([\s\S]*?)(?:\n\n|User Input:)/i);
+  if (!teamSection) return [];
+
+  const members = [];
+  const lines = teamSection[1].split('\n');
+  for (const line of lines) {
+    const match = line.match(/-\s*(.+?)\s*\(([^)]+)\)/);
+    if (match) {
+      members.push({ name: match[1].trim(), email: match[2].trim() });
+    }
+  }
+  return members;
+};
+
+// Find user by name or email from team members
+const findTeamMember = (identifier, teamMembers) => {
+  if (!identifier || !teamMembers.length) return null;
+
+  const lowerIdentifier = identifier.toLowerCase();
+
+  // First try exact email match
+  let member = teamMembers.find(m => m.email.toLowerCase() === lowerIdentifier);
+  if (member) return member.email;
+
+  // Try name match
+  member = teamMembers.find(m => m.name.toLowerCase() === lowerIdentifier);
+  if (member) return member.email;
+
+  // Try partial name match
+  member = teamMembers.find(m =>
+    m.name.toLowerCase().includes(lowerIdentifier) ||
+    lowerIdentifier.includes(m.name.toLowerCase().split(' ')[0])
+  );
+  if (member) return member.email;
+
+  return identifier; // Return original if no match
+};
+
+// Generate AI response with full CRUD capabilities
 const generateAIResponse = async (userMessage, conversation) => {
   const lowercaseMsg = userMessage.toLowerCase();
   const context = parseContextFromMessage(userMessage);
+  const teamMembers = parseTeamMembers(userMessage);
+
+  // Check for workspace context
+  if (!context.workspace_id && (
+    lowercaseMsg.includes('create') ||
+    lowercaseMsg.includes('update') ||
+    lowercaseMsg.includes('delete')
+  )) {
+    return `I'd be happy to help, but I need you to be in a workspace first.
+
+Please make sure you have a workspace selected, then try again.`;
+  }
+
+  // ==================== PROJECT OPERATIONS ====================
+
+  // Handle project creation
+  if (lowercaseMsg.includes('create') && lowercaseMsg.includes('project')) {
+    const projectDetails = extractProjectDetails(userMessage);
+
+    if (projectDetails.name && context.workspace_id) {
+      try {
+        const projectData = {
+          workspace_id: context.workspace_id,
+          name: projectDetails.name,
+          description: projectDetails.description || '',
+          goals: projectDetails.goals || '',
+          status: projectDetails.status,
+          priority: projectDetails.priority,
+          color: projectDetails.color,
+          created_by: context.user_email || 'AI Assistant',
+        };
+
+        const createdProject = await createEntityManager('Project').create(projectData);
+
+        return `✅ **Project created successfully!**
+
+**Name:** ${createdProject.name}
+${createdProject.description ? `**Description:** ${createdProject.description}` : ''}
+${createdProject.goals ? `**Goals:** ${createdProject.goals}` : ''}
+**Status:** ${createdProject.status}
+**Priority:** ${createdProject.priority}
+
+Your project has been created! You can now:
+- Create assignments for this project
+- Add tasks to track work
+- View it in the Projects page
+
+Would you like me to create an assignment for this project?`;
+      } catch (error) {
+        console.error('Error creating project:', error);
+        return `❌ I encountered an error while creating the project: ${error.message}
+
+Please try again or create the project manually from the Projects page.`;
+      }
+    }
+
+    return `I'd be happy to create a project for you! Please provide the details:
+
+**Required:**
+- **Name:** What should the project be called?
+
+**Optional:**
+- **Description:** Brief project description
+- **Goals:** What are the project goals?
+- **Status:** planning, active, on_hold, completed, cancelled (default: planning)
+- **Priority:** low, medium, high, urgent (default: medium)
+
+Example:
+\`\`\`
+Name: Website Redesign
+Description: Complete overhaul of company website
+Goals: Improve user experience and conversion rates
+Status: planning
+Priority: high
+\`\`\`
+
+Or simply say: "Create a project called Website Redesign"`;
+  }
+
+  // ==================== ASSIGNMENT OPERATIONS ====================
+
+  // Handle assignment creation
+  if (lowercaseMsg.includes('create') && lowercaseMsg.includes('assignment')) {
+    const assignmentDetails = extractAssignmentDetails(userMessage);
+
+    if (assignmentDetails.name && context.workspace_id) {
+      try {
+        const assignmentData = {
+          workspace_id: context.workspace_id,
+          name: assignmentDetails.name,
+          description: assignmentDetails.description || '',
+          status: assignmentDetails.status,
+          priority: assignmentDetails.priority,
+          project_id: assignmentDetails.project_id || null,
+          due_date: assignmentDetails.due_date || null,
+          created_by: context.user_email || 'AI Assistant',
+        };
+
+        const createdAssignment = await createEntityManager('Assignment').create(assignmentData);
+
+        return `✅ **Assignment created successfully!**
+
+**Name:** ${createdAssignment.name}
+${createdAssignment.description ? `**Description:** ${createdAssignment.description}` : ''}
+**Status:** ${createdAssignment.status}
+**Priority:** ${createdAssignment.priority}
+${createdAssignment.project_id ? `**Project ID:** ${createdAssignment.project_id}` : ''}
+${createdAssignment.due_date ? `**Due Date:** ${createdAssignment.due_date}` : ''}
+
+Your assignment has been created! You can now:
+- Add tasks to this assignment
+- Track progress on the Assignments page
+
+Would you like me to create tasks for this assignment?`;
+      } catch (error) {
+        console.error('Error creating assignment:', error);
+        return `❌ I encountered an error while creating the assignment: ${error.message}
+
+Please try again or create the assignment manually from the Assignments page.`;
+      }
+    }
+
+    return `I'd be happy to create an assignment for you! Please provide the details:
+
+**Required:**
+- **Name:** What should the assignment be called?
+
+**Optional:**
+- **Description:** Brief description
+- **Status:** not_started, in_progress, under_review, completed, on_hold (default: not_started)
+- **Priority:** low, medium, high, urgent (default: medium)
+- **Project:** Which project is this for?
+- **Due Date:** When is it due?
+
+Example:
+\`\`\`
+Name: Homepage Design
+Description: Design the new homepage layout
+Status: not_started
+Priority: high
+Due Date: 2024-02-15
+\`\`\`
+
+Or simply say: "Create an assignment called Homepage Design"`;
+  }
+
+  // ==================== TASK OPERATIONS ====================
+
+  // Handle task creation
+  if (lowercaseMsg.includes('create') && lowercaseMsg.includes('task')) {
+    const taskDetails = extractTaskDetails(userMessage);
+
+    if (taskDetails.title && context.workspace_id) {
+      try {
+        // Resolve team member if specified
+        let assignedTo = taskDetails.assigned_to;
+        if (assignedTo && teamMembers.length > 0) {
+          assignedTo = findTeamMember(assignedTo, teamMembers);
+        }
+
+        const taskData = {
+          workspace_id: context.workspace_id,
+          title: taskDetails.title,
+          description: taskDetails.description || '',
+          status: taskDetails.status,
+          priority: taskDetails.priority,
+          assigned_to: assignedTo || null,
+          project_id: taskDetails.project_id || null,
+          assignment_id: taskDetails.assignment_id || null,
+          due_date: taskDetails.due_date || null,
+          created_by: context.user_email || 'AI Assistant',
+        };
+
+        const createdTask = await createEntityManager('Task').create(taskData);
+
+        let assignedToDisplay = createdTask.assigned_to || 'Unassigned';
+        if (createdTask.assigned_to && teamMembers.length > 0) {
+          const member = teamMembers.find(m => m.email === createdTask.assigned_to);
+          if (member) assignedToDisplay = `${member.name} (${member.email})`;
+        }
+
+        return `✅ **Task created successfully!**
+
+**Title:** ${createdTask.title}
+${createdTask.description ? `**Description:** ${createdTask.description}` : ''}
+**Status:** ${createdTask.status}
+**Priority:** ${createdTask.priority}
+**Assigned To:** ${assignedToDisplay}
+${createdTask.due_date ? `**Due Date:** ${createdTask.due_date}` : ''}
+
+Your task has been created and added to the task board.
+
+Would you like to:
+- Create another task?
+- Assign this to someone else?
+- Change the priority?`;
+      } catch (error) {
+        console.error('Error creating task:', error);
+        return `❌ I encountered an error while creating the task: ${error.message}
+
+Please try again or create the task manually from the Tasks page.`;
+      }
+    }
+
+    // Show available team members if we have them
+    let teamMembersList = '';
+    if (teamMembers.length > 0) {
+      teamMembersList = `\n\n**Available Team Members:**\n${teamMembers.map(m => `- ${m.name} (${m.email})`).join('\n')}`;
+    }
+
+    return `I'd be happy to create a task for you! Please provide the details:
+
+**Required:**
+- **Title:** What should the task be called?
+
+**Optional:**
+- **Description:** Task details
+- **Status:** todo, in_progress, review, done, blocked (default: todo)
+- **Priority:** low, medium, high, urgent (default: medium)
+- **Assign To:** Team member name or email
+- **Due Date:** When should it be completed?
+
+Example:
+\`\`\`
+Title: Review homepage mockups
+Description: Review and provide feedback on the new homepage designs
+Priority: high
+Assign To: john@example.com
+Due Date: 2024-02-10
+\`\`\`
+
+Or simply say: "Create a task called Review mockups assigned to John"${teamMembersList}`;
+  }
+
+  // ==================== NOTE OPERATIONS ====================
 
   // Handle note creation
   if (lowercaseMsg.includes('create') && lowercaseMsg.includes('note')) {
     const noteDetails = extractNoteDetails(userMessage);
 
-    // If we have a title, try to create the note
     if (noteDetails.title && context.workspace_id) {
       try {
         const noteData = {
@@ -505,10 +942,7 @@ ${noteDetails.tags.length > 0 ? `**Tags:** ${noteDetails.tags.join(', ')}` : ''}
 
 Your note has been saved and you can find it in the Notes section on your Dashboard.
 
-Would you like to:
-- Create another note?
-- Pin this note to the top?
-- Add more details to this note?`;
+Would you like to create another note?`;
       } catch (error) {
         console.error('Error creating note:', error);
         return `❌ I encountered an error while creating the note: ${error.message}
@@ -517,92 +951,214 @@ Please try again or create the note manually from the Dashboard.`;
       }
     }
 
-    // If no workspace context, ask for it
-    if (!context.workspace_id) {
-      return `I'd be happy to create a note for you! However, I need you to be in a workspace first.
-
-Please make sure you have a workspace selected, then try again.`;
-    }
-
-    // If no title, ask for details
-    return `I'd be happy to create a note for you! Please provide the following details:
+    return `I'd be happy to create a note for you! Please provide the details:
 
 **Required:**
 - **Title:** What should the note be called?
 
 **Optional:**
 - **Content:** The body of the note
-- **Tags:** Comma-separated tags (e.g., "meeting, important, follow-up")
-- **Color:** yellow, blue, green, red, purple, orange, or pink
+- **Tags:** Comma-separated tags (e.g., "meeting, important")
+- **Color:** yellow, blue, green, red, purple, orange, pink
 
-You can format your request like this:
+Example:
 \`\`\`
-Title: My Meeting Notes
-Content: Discussed Q4 planning and budget allocation
+Title: Meeting Notes
+Content: Discussed Q4 planning
 Tags: meeting, planning
 Color: blue
 \`\`\`
 
-Or simply say: "Create a note called My Meeting Notes"`;
+Or simply say: "Create a note called Meeting Notes"`;
   }
 
-  // Basic intent detection and responses
-  if (lowercaseMsg.includes('create') && lowercaseMsg.includes('task')) {
-    return `I understand you'd like to create a task. To help you with that, I'll need a few details:
+  // ==================== UPDATE OPERATIONS ====================
 
-1. **Task title**: What should the task be called?
-2. **Description**: Any additional details?
-3. **Priority**: High, Medium, or Low?
-4. **Due date**: When should it be completed?
+  // Handle updates
+  if (lowercaseMsg.includes('update') || lowercaseMsg.includes('change') || lowercaseMsg.includes('modify')) {
+    // Extract entity type and ID
+    const entityMatch = lowercaseMsg.match(/(project|assignment|task|note)\s+(?:id\s*)?([a-f0-9-]+)/i);
 
-Please provide these details and I'll create the task for you!`;
+    if (entityMatch) {
+      const entityType = entityMatch[1].toLowerCase();
+      const entityId = entityMatch[2];
+
+      // Extract what to update
+      const updateFields = {};
+      const lines = userMessage.split('\n');
+
+      for (const line of lines) {
+        const lowerLine = line.toLowerCase().trim();
+        if (lowerLine.startsWith('status:')) {
+          updateFields.status = line.split(':').slice(1).join(':').trim();
+        } else if (lowerLine.startsWith('priority:')) {
+          updateFields.priority = line.split(':').slice(1).join(':').trim();
+        } else if (lowerLine.startsWith('title:') || lowerLine.startsWith('name:')) {
+          updateFields[entityType === 'task' ? 'title' : 'name'] = line.split(':').slice(1).join(':').trim();
+        } else if (lowerLine.startsWith('description:')) {
+          updateFields.description = line.split(':').slice(1).join(':').trim();
+        } else if (lowerLine.startsWith('assign to:') || lowerLine.startsWith('assigned to:')) {
+          let assignee = line.split(':').slice(1).join(':').trim();
+          if (teamMembers.length > 0) {
+            assignee = findTeamMember(assignee, teamMembers);
+          }
+          updateFields.assigned_to = assignee;
+        }
+      }
+
+      if (Object.keys(updateFields).length > 0) {
+        try {
+          const entityManager = createEntityManager(entityType.charAt(0).toUpperCase() + entityType.slice(1));
+          const updated = await entityManager.update(entityId, updateFields);
+
+          return `✅ **${entityType.charAt(0).toUpperCase() + entityType.slice(1)} updated successfully!**
+
+Updated fields:
+${Object.entries(updateFields).map(([key, value]) => `- **${key}:** ${value}`).join('\n')}
+
+The changes have been saved.`;
+        } catch (error) {
+          console.error(`Error updating ${entityType}:`, error);
+          return `❌ I couldn't update the ${entityType}: ${error.message}
+
+Please check the ID and try again.`;
+        }
+      }
+    }
+
+    return `To update an item, please specify:
+
+1. **What to update:** project, assignment, task, or note
+2. **The ID:** The item's unique identifier
+3. **What to change:** The fields you want to update
+
+Example:
+\`\`\`
+Update task abc-123
+Status: done
+Priority: low
+\`\`\`
+
+Or: "Update task abc-123 status to done"`;
   }
+
+  // ==================== DELETE OPERATIONS ====================
+
+  // Handle deletions (with confirmation)
+  if (lowercaseMsg.includes('delete') || lowercaseMsg.includes('remove')) {
+    const entityMatch = lowercaseMsg.match(/(project|assignment|task|note)\s+(?:id\s*)?([a-f0-9-]+)/i);
+
+    if (entityMatch) {
+      const entityType = entityMatch[1].toLowerCase();
+      const entityId = entityMatch[2];
+
+      // Check for confirmation
+      if (lowercaseMsg.includes('confirm') || lowercaseMsg.includes('yes')) {
+        try {
+          const entityManager = createEntityManager(entityType.charAt(0).toUpperCase() + entityType.slice(1));
+          await entityManager.delete(entityId);
+
+          return `✅ **${entityType.charAt(0).toUpperCase() + entityType.slice(1)} deleted successfully!**
+
+The item has been permanently removed.`;
+        } catch (error) {
+          console.error(`Error deleting ${entityType}:`, error);
+          return `❌ I couldn't delete the ${entityType}: ${error.message}
+
+Please check the ID and try again.`;
+        }
+      }
+
+      return `⚠️ **Are you sure you want to delete this ${entityType}?**
+
+**ID:** ${entityId}
+
+This action cannot be undone. To confirm, please say:
+"Delete ${entityType} ${entityId} confirm"`;
+    }
+
+    return `To delete an item, please specify:
+
+1. **What to delete:** project, assignment, task, or note
+2. **The ID:** The item's unique identifier
+
+Example: "Delete task abc-123"
+
+I'll ask for confirmation before deleting anything.`;
+  }
+
+  // ==================== HELP & INFO ====================
 
   if (lowercaseMsg.includes('help') || lowercaseMsg.includes('what can you do')) {
-    return `I'm here to help you with ProjectFlow! Here's what I can assist with:
+    let teamInfo = '';
+    if (teamMembers.length > 0) {
+      teamInfo = `\n\n**Your Team Members:**\n${teamMembers.slice(0, 5).map(m => `- ${m.name}`).join('\n')}${teamMembers.length > 5 ? `\n... and ${teamMembers.length - 5} more` : ''}`;
+    }
 
-**Notes:**
-- Create new notes with custom colors and tags
-- Quick capture of ideas and meeting notes
+    return `I'm your ProjectFlow AI Assistant! Here's everything I can do for you:
 
-**Tasks & Projects:**
-- View your tasks and their status
-- Help organize your work
-- Provide task management tips
+**Create Items:**
+- 📁 **Projects** - "Create a project called [name]"
+- 📋 **Assignments** - "Create an assignment called [name]"
+- ✅ **Tasks** - "Create a task called [name] assigned to [person]"
+- 📝 **Notes** - "Create a note called [name]"
 
-**Documents:**
-- Navigate document features
-- Explain document workflows
+**Update Items:**
+- "Update task [id] status to done"
+- "Change assignment [id] priority to high"
 
-**General:**
-- Answer questions about ProjectFlow features
-- Provide guidance on best practices
-- Help troubleshoot issues
+**Delete Items:**
+- "Delete task [id]" (I'll ask for confirmation)
 
-What would you like help with?`;
+**Assign Team Members:**
+- "Create a task for @john" or "Assign task [id] to Sarah"
+
+**Get Information:**
+- "Show my tasks" or "What's my status?"
+- "Help" for this menu${teamInfo}
+
+What would you like me to do?`;
   }
 
-  if (lowercaseMsg.includes('status') || lowercaseMsg.includes('overview')) {
-    return `I can help you get an overview of your work. You can:
+  if (lowercaseMsg.includes('status') || lowercaseMsg.includes('overview') || lowercaseMsg.includes('my tasks')) {
+    // Extract counts from context
+    const taskCount = (userMessage.match(/Recent Tasks \((\d+)/)?.[1]) || '0';
+    const projectCount = (userMessage.match(/Recent Projects \((\d+)/)?.[1]) || '0';
+    const assignmentCount = (userMessage.match(/Recent Assignments \((\d+)/)?.[1]) || '0';
 
-- Check the **Dashboard** for a quick summary
-- View **Tasks** to see your task board
-- Review **Projects** for project-level status
-- Check your **Notes** for quick reminders
+    return `Here's your workspace overview:
 
-Would you like me to explain any of these features in more detail?`;
+📁 **Projects:** ${projectCount}
+📋 **Assignments:** ${assignmentCount}
+✅ **Tasks:** ${taskCount}
+
+**Quick Actions:**
+- "Create a new project"
+- "Create a task"
+- "Show my tasks"
+
+Would you like me to create something or provide more details?`;
   }
 
-  // Default response
+  // ==================== DEFAULT RESPONSE ====================
+
+  const userInputMatch = userMessage.match(/User Input:\s*(.+)/is);
+  const actualUserInput = userInputMatch ? userInputMatch[1].trim() : userMessage;
+
   return `Thanks for your message! I'm your ProjectFlow AI Assistant.
 
-You mentioned: "${userMessage.substring(0, 100)}${userMessage.length > 100 ? '...' : ''}"
+I can help you with:
+- **Create:** projects, assignments, tasks, notes
+- **Update:** change status, priority, assignments
+- **Delete:** remove items (with confirmation)
+- **Assign:** tag team members to tasks
 
-How can I assist you further? Try asking me to:
-- **Create a note** - e.g., "Create a note called Meeting Summary"
-- **Create or manage tasks**
-- **Get an overview** of your workspace
-- **Help** with ProjectFlow features`;
+**Try saying:**
+- "Create a project called Marketing Campaign"
+- "Create a task called Review docs assigned to John"
+- "Help" for all commands
+
+How can I assist you?`;
 };
 
 // Integration stubs

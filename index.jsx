@@ -1,37 +1,37 @@
 import React, { Suspense, useEffect } from "react";
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router';
-import Layout from "./Layout.jsx";
+import Layout from "@/components/common/Layout";
 import { AuthProvider, useAuth } from "@/components/auth/AuthProvider";
-import AuthPage from "./AuthPage.jsx";
+import AuthPage from "@/pages/AuthPage";
 
 // Eagerly load core pages for instant navigation
-import Dashboard from "./Dashboard";
-import Projects from "./Projects";
-import Assignments from "./Assignments";
-import Tasks from "./Tasks";
-import Documents from "./Documents";
+import Dashboard from "@/pages/Dashboard";
+import Projects from "@/pages/Projects";
+import Assignments from "@/pages/Assignments";
+import Tasks from "@/pages/Tasks";
+import Documents from "@/pages/Documents";
 
 // Lazy load less frequently used pages
-const Users = React.lazy(() => import("./Users"));
-const Chat = React.lazy(() => import("./Chat"));
-const Research = React.lazy(() => import("./Research"));
-const Generate = React.lazy(() => import("./Generate"));
-const AskAI = React.lazy(() => import("./AskAI"));
-const Preferences = React.lazy(() => import("./Preferences"));
-const DocumentCreator = React.lazy(() => import("./DocumentCreator"));
-const Workspaces = React.lazy(() => import("./Workspaces"));
-const Documentation = React.lazy(() => import("./Documentation"));
-const DocumentStudio = React.lazy(() => import("./DocumentStudio"));
-const DocumentWorkshop = React.lazy(() => import("./DocumentWorkshop"));
+const Users = React.lazy(() => import("@/pages/Users"));
+const Chat = React.lazy(() => import("@/pages/Chat"));
+const Research = React.lazy(() => import("@/pages/Research"));
+const Generate = React.lazy(() => import("@/pages/Generate"));
+const AskAI = React.lazy(() => import("@/pages/AskAI"));
+const Preferences = React.lazy(() => import("@/pages/Preferences"));
+const DocumentCreator = React.lazy(() => import("@/pages/DocumentCreator"));
+const Workspaces = React.lazy(() => import("@/pages/Workspaces"));
+const Documentation = React.lazy(() => import("@/pages/Documentation"));
+const DocumentStudio = React.lazy(() => import("@/pages/DocumentStudio"));
+const DocumentWorkshop = React.lazy(() => import("@/pages/DocumentWorkshop"));
 
 // Preload other pages after initial render for faster subsequent navigation
 const preloadPages = () => {
-  import("./Users");
-  import("./Chat");
-  import("./Research");
-  import("./Generate");
-  import("./AskAI");
-  import("./DocumentStudio");
+  import("@/pages/Users");
+  import("@/pages/Chat");
+  import("@/pages/Research");
+  import("@/pages/Generate");
+  import("@/pages/AskAI");
+  import("@/pages/DocumentStudio");
 };
 
 const PAGES = {

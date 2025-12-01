@@ -1,0 +1,160 @@
+// Entity types used across the application
+export const ENTITY_TYPES = {
+  TASK: 'task',
+  DOCUMENT: 'document',
+  ASSIGNMENT: 'assignment',
+  PROJECT: 'project',
+  WORKSPACE: 'workspace',
+  USER: 'user',
+  MESSAGE: 'message',
+  COMMENT: 'comment',
+};
+
+// Task status values
+export const TASK_STATUS = {
+  TODO: 'todo',
+  IN_PROGRESS: 'in_progress',
+  REVIEW: 'review',
+  DONE: 'done',
+  BLOCKED: 'blocked',
+};
+
+// Task priority levels
+export const TASK_PRIORITY = {
+  LOW: 'low',
+  MEDIUM: 'medium',
+  HIGH: 'high',
+  URGENT: 'urgent',
+};
+
+// Document types
+export const DOCUMENT_TYPES = {
+  GENERAL: 'general',
+  BRIEF: 'brief',
+  RESEARCH: 'research',
+  REPORT: 'report',
+  NOTES: 'notes',
+  TEMPLATE: 'template',
+};
+
+// Assignment status values
+export const ASSIGNMENT_STATUS = {
+  NOT_STARTED: 'not_started',
+  IN_PROGRESS: 'in_progress',
+  UNDER_REVIEW: 'under_review',
+  COMPLETED: 'completed',
+  ON_HOLD: 'on_hold',
+};
+
+// Project health status
+export const PROJECT_HEALTH = {
+  HEALTHY: 'healthy',
+  AT_RISK: 'at_risk',
+  CRITICAL: 'critical',
+};
+
+// User roles
+export const USER_ROLES = {
+  OWNER: 'owner',
+  ADMIN: 'admin',
+  MEMBER: 'member',
+  VIEWER: 'viewer',
+};
+
+// Workspace member roles
+export const WORKSPACE_ROLES = {
+  OWNER: 'owner',
+  MEMBER: 'member',
+};
+
+// Message types for chat
+export const MESSAGE_TYPES = {
+  TEXT: 'text',
+  SYSTEM: 'system',
+  FILE: 'file',
+  TASK_UPDATE: 'task_update',
+};
+
+// AI model options
+export const AI_MODELS = {
+  GPT4: 'gpt-4',
+  GPT35: 'gpt-3.5-turbo',
+  CLAUDE: 'claude-3-opus',
+};
+
+// File size limits (in bytes)
+export const FILE_LIMITS = {
+  MAX_FILE_SIZE: 10 * 1024 * 1024, // 10 MB
+  MAX_IMAGE_SIZE: 5 * 1024 * 1024, // 5 MB
+  MAX_DOCUMENT_SIZE: 25 * 1024 * 1024, // 25 MB
+};
+
+// Pagination defaults
+export const PAGINATION = {
+  DEFAULT_PAGE_SIZE: 20,
+  MAX_PAGE_SIZE: 100,
+};
+
+// Date formats
+export const DATE_FORMATS = {
+  DISPLAY: 'MMM d, yyyy',
+  DISPLAY_WITH_TIME: 'MMM d, yyyy h:mm a',
+  ISO: 'yyyy-MM-dd',
+  TIME_ONLY: 'h:mm a',
+};
+
+// Auto-save interval (in milliseconds)
+export const AUTOSAVE_INTERVAL = 30000; // 30 seconds
+
+// Debounce delays (in milliseconds)
+export const DEBOUNCE_DELAYS = {
+  SEARCH: 300,
+  INPUT: 150,
+  RESIZE: 100,
+};
+
+// Toast notification durations (in milliseconds)
+export const TOAST_DURATION = {
+  SHORT: 2000,
+  MEDIUM: 4000,
+  LONG: 6000,
+};
+
+// Memory limits for AskAI
+export const MEMORY_LIMITS = {
+  MAX_DOCUMENTS: 50,
+  MAX_MESSAGES: 200,
+  MAX_FILE_SIZE: 10 * 1024 * 1024, // 10 MB
+  WARNING_DOCUMENTS: 30,
+  WARNING_MESSAGES: 150,
+};
+
+// Route paths
+export const ROUTES = {
+  DASHBOARD: '/Dashboard',
+  TASKS: '/Tasks',
+  DOCUMENTS: '/Documents',
+  ASSIGNMENTS: '/Assignments',
+  PROJECTS: '/Projects',
+  CHAT: '/Chat',
+  RESEARCH: '/Research',
+  GENERATE: '/Generate',
+  ASK_AI: '/AskAI',
+  USERS: '/Users',
+  WORKSPACES: '/Workspaces',
+  PREFERENCES: '/Preferences',
+  DOCUMENTATION: '/Documentation',
+  DOCUMENT_CREATOR: '/DocumentCreator',
+  DOCUMENT_STUDIO: '/DocumentStudio',
+  DOCUMENT_WORKSHOP: '/DocumentWorkshop',
+};
+
+// Keyboard shortcuts
+export const KEYBOARD_SHORTCUTS = {
+  SAVE: 'ctrl+s',
+  SEARCH: 'ctrl+k',
+  NEW_TASK: 'ctrl+n',
+  NEW_DOCUMENT: 'ctrl+shift+n',
+  TOGGLE_SIDEBAR: 'ctrl+b',
+  ESCAPE: 'escape',
+};

@@ -39,7 +39,7 @@ import AIResearchAssistant from "@/AIResearchAssistant";
 import ResearchSuggestions from "@/ResearchSuggestions";
 import { ErrorBoundary } from "@/ErrorBoundary";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
-import { useNavigate } from "react-router-dom"; // Assumed import for navigation
+import { useNavigate } from "react-router"; // Assumed import for navigation
 import { createPageUrl } from "@/lib/utils"; // Assumed utility for URL creation
 
 export default function ResearchPage() {

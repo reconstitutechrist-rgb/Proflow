@@ -21,7 +21,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { createPageUrl } from "@/lib/utils";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext";
 

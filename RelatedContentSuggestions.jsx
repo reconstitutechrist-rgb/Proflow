@@ -20,7 +20,7 @@ import {
   ArrowRight,
   Lightbulb
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { createPageUrl } from "@/lib/utils";
 import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // New import
 

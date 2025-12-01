@@ -11,7 +11,7 @@ import {
   User
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 export default function RecentActivity({ recentActivity = [], createPageUrl }) {
   // Safely handle empty or undefined recentActivity

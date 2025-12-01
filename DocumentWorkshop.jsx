@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router";
 import { db } from "@/api/db";
 import { Document } from "@/api/entities";
 import { Assignment } from "@/api/entities";

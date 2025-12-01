@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router';
 import Layout from "./Layout.jsx";
 import { AuthProvider, useAuth } from "@/components/auth/AuthProvider";
 import AuthPage from "./AuthPage.jsx";

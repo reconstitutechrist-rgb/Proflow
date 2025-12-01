@@ -20,7 +20,7 @@ import {
   Settings,
   Loader2
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { createPageUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 

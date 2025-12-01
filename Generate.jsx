@@ -14,7 +14,7 @@ import {
   FileType,
   Wrench,
 } from "lucide-react";
-import { useSearchParams } from "react-router-dom"; // Added useSearchParams import
+import { useSearchParams } from "react-router"; // Added useSearchParams import
 
 import ConversationalDocumentStudio from "@/ConversationalDocumentStudio";
 import { ErrorBoundary } from "@/ErrorBoundary";

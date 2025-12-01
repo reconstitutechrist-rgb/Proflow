@@ -20,7 +20,7 @@ import {
   MessageSquare,
   Activity,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { createPageUrl } from "@/lib/utils";
 import StatsOverview from "@/StatsOverview";
 import RecentActivity from "@/RecentActivity";

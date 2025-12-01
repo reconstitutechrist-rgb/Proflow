@@ -1,26 +1,38 @@
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect } from "react";
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router';
 import Layout from "./Layout.jsx";
 import { AuthProvider, useAuth } from "@/components/auth/AuthProvider";
 import AuthPage from "./AuthPage.jsx";
 
-// Lazy load all page components for code splitting
-const Dashboard = React.lazy(() => import("./Dashboard"));
-const Documents = React.lazy(() => import("./Documents"));
+// Eagerly load core pages for instant navigation
+import Dashboard from "./Dashboard";
+import Projects from "./Projects";
+import Assignments from "./Assignments";
+import Tasks from "./Tasks";
+import Documents from "./Documents";
+
+// Lazy load less frequently used pages
 const Users = React.lazy(() => import("./Users"));
 const Chat = React.lazy(() => import("./Chat"));
-const Tasks = React.lazy(() => import("./Tasks"));
 const Research = React.lazy(() => import("./Research"));
 const Generate = React.lazy(() => import("./Generate"));
-const Assignments = React.lazy(() => import("./Assignments"));
 const AskAI = React.lazy(() => import("./AskAI"));
 const Preferences = React.lazy(() => import("./Preferences"));
 const DocumentCreator = React.lazy(() => import("./DocumentCreator"));
-const Projects = React.lazy(() => import("./Projects"));
 const Workspaces = React.lazy(() => import("./Workspaces"));
 const Documentation = React.lazy(() => import("./Documentation"));
 const DocumentStudio = React.lazy(() => import("./DocumentStudio"));
 const DocumentWorkshop = React.lazy(() => import("./DocumentWorkshop"));
+
+// Preload other pages after initial render for faster subsequent navigation
+const preloadPages = () => {
+  import("./Users");
+  import("./Chat");
+  import("./Research");
+  import("./Generate");
+  import("./AskAI");
+  import("./DocumentStudio");
+};
 
 const PAGES = {
     Dashboard,
@@ -83,6 +95,15 @@ function ProtectedContent() {
     const location = useLocation();
     const currentPage = _getCurrentPage(location.pathname);
     const { isAuthenticated, loading, initialized } = useAuth();
+
+    // Preload lazy pages after initial render
+    useEffect(() => {
+        if (isAuthenticated) {
+            // Delay preloading to not block initial render
+            const timer = setTimeout(preloadPages, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [isAuthenticated]);
 
     // Show loading while checking auth
     if (!initialized || loading) {

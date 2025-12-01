@@ -3,7 +3,7 @@ import { db } from "@/api/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, Loader2, Target } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -267,6 +267,12 @@ export default function ProjectsPage() {
       {/* Project Form Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogTitle className="sr-only">
+            {editingProject ? "Edit Project" : "Create Project"}
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            {editingProject ? "Edit the project details" : "Create a new project"}
+          </DialogDescription>
           <ProjectForm
             project={editingProject}
             users={users}
@@ -286,6 +292,12 @@ export default function ProjectsPage() {
         onOpenChange={(open) => !open && setSelectedProject(null)}
       >
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogTitle className="sr-only">
+            Project Details: {selectedProject?.name}
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            View and manage project details
+          </DialogDescription>
           {selectedProject && (
             <ProjectDetails
               project={selectedProject}

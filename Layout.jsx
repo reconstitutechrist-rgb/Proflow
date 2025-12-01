@@ -573,7 +573,7 @@ function LayoutContent({ children, currentPageName }) {
 
   const SidebarContent = ({ isMobile = false }) => (
     <div className="flex flex-col h-full">
-      <div className={`p-6 border-b border-gray-100/50 dark:border-gray-800/50 backdrop-blur-sm`}>
+      <div className="p-6 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-3">
           <div className="relative w-10 h-10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 animate-gradient-shift"></div>
@@ -607,8 +607,8 @@ function LayoutContent({ children, currentPageName }) {
                       to={item.url}
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group relative ${
                         isActive
-                          ? 'bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 dark:from-blue-500/20 dark:via-indigo-500/20 dark:to-purple-500/20 text-blue-700 dark:text-blue-300 shadow-sm font-semibold'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 hover:text-gray-900 dark:hover:text-white'
+                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm font-semibold'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
                       }`}
                       aria-current={isActive ? 'page' : undefined}
                       aria-label={`${item.title} - ${item.description}`}
@@ -637,8 +637,8 @@ function LayoutContent({ children, currentPageName }) {
       </nav>
 
       {user && (
-        <div className={`p-4 border-t border-gray-100/50 dark:border-gray-800/50 backdrop-blur-sm`}>
-          <div className={`flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-900/50 hover:from-gray-100 hover:to-gray-100 dark:hover:from-gray-800 dark:hover:to-gray-800 transition-all backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50`}>
+        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all border border-gray-200 dark:border-gray-700">
             <div className="relative w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-gray-400 to-gray-600"></div>
               <UserIcon className="w-4 h-4 text-white relative z-10" />
@@ -668,12 +668,12 @@ function LayoutContent({ children, currentPageName }) {
   );
 
   return (
-    <div className={`flex flex-col h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-gradient-to-br from-gray-50 via-white to-gray-100'}`}>
+    <div className={`flex flex-col h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-white'}`}>
       {/* Add Performance Monitor */}
       <WorkspacePerformanceMonitor />
 
       {/* Top Bar */}
-      <header className="flex-shrink-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm">
+      <header className="flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Mobile Menu & Logo */}
@@ -755,7 +755,7 @@ function LayoutContent({ children, currentPageName }) {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-96 backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 border-gray-200 dark:border-gray-800 shadow-2xl rounded-xl">
+                <DropdownMenuContent align="end" className="w-96 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-2xl rounded-xl">
                   <div className="px-4 py-3 border-b flex items-center justify-between">
                     <div>
                       <p className="font-semibold text-gray-900 dark:text-white">Essential Notifications</p>
@@ -855,7 +855,7 @@ function LayoutContent({ children, currentPageName }) {
                     <ChevronDown className="w-4 h-4 text-gray-400 hidden md:block" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 border-gray-200 dark:border-gray-800 shadow-2xl rounded-xl">
+                <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-2xl rounded-xl">
                   <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-800">
                     <p className="text-sm font-medium dark:text-white">{user?.full_name}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
@@ -910,7 +910,7 @@ function LayoutContent({ children, currentPageName }) {
                       <ChevronDown className="ml-1 w-3 h-3 opacity-50" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-64 backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 border-gray-200 dark:border-gray-800 shadow-xl rounded-xl">
+                  <DropdownMenuContent align="start" className="w-64 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-xl rounded-xl">
                     {group.items.map((item) => {
                       const isActive = location.pathname === item.url;
                       return (
@@ -948,7 +948,7 @@ function LayoutContent({ children, currentPageName }) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-8 bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+      <main className="flex-1 overflow-y-auto p-8 bg-gray-50 dark:bg-gray-900 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
@@ -982,36 +982,6 @@ export default function Layout({ children, currentPageName }) {
         </WorkspaceErrorBoundary>
       </WorkspaceProvider>
 
-      <style jsx global>{`
-        @keyframes gradient-shift {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        
-        .animate-gradient-shift {
-          background-size: 200% 200%;
-          animation: gradient-shift 3s ease infinite;
-        }
-        
-        .scrollbar-thin::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
-        }
-        
-        .scrollbar-thin::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        
-        .scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
-          background: #d1d5db;
-          border-radius: 3px;
-        }
-        
-        .dark .scrollbar-thumb-gray-700::-webkit-scrollbar-thumb {
-          background: #374151;
-          border-radius: 3px;
-        }
-      `}</style>
     </ErrorBoundary>
   );
 }

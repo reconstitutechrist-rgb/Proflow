@@ -25,7 +25,7 @@ export default function ProjectGrid({ projects, onProjectClick }) {
       {projects.map((project) => (
         <Card
           key={project.id}
-          className="group cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl overflow-hidden hover:-translate-y-1"
+          className="group cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden hover:-translate-y-1"
           onClick={() => onProjectClick && onProjectClick(project)}
         >
           <div

@@ -7,26 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, CheckCircle, AlertTriangle, Lightbulb, FileText, Sparkles, RefreshCw } from "lucide-react";
 import { InvokeLLM } from "@/api/integrations";
 import { toast } from "sonner";
-
-// Simple HTML sanitizer - removes script tags and dangerous attributes
-const sanitizeHTML = (html) => {
-  if (!html) return "";
-  
-  // Remove script tags and their content
-  let cleaned = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-  
-  // Remove event handlers
-  cleaned = cleaned.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
-  cleaned = cleaned.replace(/\s*on\w+\s*=\s*[^\s>]*/gi, '');
-  
-  // Remove javascript: protocol
-  cleaned = cleaned.replace(/javascript:/gi, '');
-  
-  // Remove data: protocol for security
-  cleaned = cleaned.replace(/data:text\/html/gi, '');
-  
-  return cleaned;
-};
+import DOMPurify from "dompurify";
 
 // Estimate token count (rough approximation)
 const estimateTokens = (text) => {
@@ -311,9 +292,9 @@ Provide your review in a structured format with clear sections and actionable re
               </Badge>
             </div>
 
-            <div 
+            <div
               className="prose dark:prose-invert max-w-none text-sm border rounded-lg p-4 bg-gray-50 dark:bg-gray-900 max-h-[500px] overflow-y-auto"
-              dangerouslySetInnerHTML={{ __html: sanitizeHTML(review.content) }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(review.content || '') }}
             />
 
             <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">

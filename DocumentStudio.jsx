@@ -5,6 +5,7 @@ import { db } from "@/api/db";
 import { Document } from "@/api/entities";
 import { Assignment } from "@/api/entities";
 import { Task } from "@/api/entities";
+import DOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -868,7 +869,7 @@ export default function DocumentStudioPage() {
                   )}
                   <div
                     className="prose dark:prose-invert max-w-none"
-                    dangerouslySetInnerHTML={{ __html: content }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content || '') }}
                   />
                 </CardContent>
               </Card>

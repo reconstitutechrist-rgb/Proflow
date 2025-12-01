@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
   server: {
     allowedHosts: "all",
@@ -22,4 +22,8 @@ export default defineConfig({
       },
     },
   },
-});
+  esbuild: {
+    // Strip console.log and debugger statements in production
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
+  },
+}));

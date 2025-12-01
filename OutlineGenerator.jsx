@@ -7,26 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Sparkles, RefreshCw, Check, AlertCircle } from "lucide-react";
 import { InvokeLLM } from "@/api/integrations";
 import { toast } from "sonner";
-
-// Simple HTML sanitizer - removes script tags and dangerous attributes
-const sanitizeHTML = (html) => {
-  if (!html) return "";
-  
-  // Remove script tags and their content
-  let cleaned = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-  
-  // Remove event handlers
-  cleaned = cleaned.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
-  cleaned = cleaned.replace(/\s*on\w+\s*=\s*[^\s>]*/gi, '');
-  
-  // Remove javascript: protocol
-  cleaned = cleaned.replace(/javascript:/gi, '');
-  
-  // Remove data: protocol for security
-  cleaned = cleaned.replace(/data:text\/html/gi, '');
-  
-  return cleaned;
-};
+import DOMPurify from "dompurify";
 
 export default function OutlineGenerator({
   title,
@@ -128,7 +109,7 @@ Use <p> tags for descriptions and <ul><li> for bullet points where appropriate.`
         add_context_from_internet: false
       });
 
-      const sanitizedOutline = sanitizeHTML(response);
+      const sanitizedOutline = DOMPurify.sanitize(response || '');
       setGeneratedOutline(sanitizedOutline);
       toast.success("Outline generated successfully");
 

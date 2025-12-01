@@ -4,6 +4,7 @@ import { Assignment } from "@/api/entities";
 import { Task } from "@/api/entities";
 import { Document } from "@/api/entities";
 import { db } from "@/api/db";
+import DOMPurify from "dompurify";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -378,9 +379,9 @@ Return only a JSON array of search term strings.`;
                 <Pin className="w-4 h-4 text-amber-500 flex-shrink-0" />
               )}
             </div>
-            <div 
+            <div
               className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3 mb-3"
-              dangerouslySetInnerHTML={{ __html: note.content }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(note.content || '') }}
             />
             
             {note.tags && note.tags.length > 0 && (

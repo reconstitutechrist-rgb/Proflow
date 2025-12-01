@@ -279,7 +279,7 @@ export function WorkspaceProvider({ children }) {
 
   useEffect(() => {
     loadWorkspaces();
-  }, []);
+  }, [loadWorkspaces]);
 
   const value = {
     currentWorkspace,

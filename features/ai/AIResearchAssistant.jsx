@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { createPageUrl } from "@/lib/utils";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useWorkspace } from "@/features/workspace/WorkspaceContext";
 import { db } from '@/api/db';
 
 export default function AIResearchAssistant({

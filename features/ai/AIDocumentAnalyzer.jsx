@@ -19,7 +19,7 @@ import {
   Loader2,
   Lightbulb,
 } from "lucide-react";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext";
+import { useWorkspace } from "@/features/workspace/WorkspaceContext";
 import toast from "sonner";
 import { db } from "@/api/db";
 

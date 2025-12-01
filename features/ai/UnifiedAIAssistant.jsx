@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,14 +16,12 @@ import {
   Brain,
   Send,
   Loader2,
-  X,
   Sparkles,
   FileText,
   CheckSquare,
   FolderOpen,
   MessageSquare,
   Target,
-  ChevronDown,
   Pin,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -98,8 +95,10 @@ export default function UnifiedAIAssistant() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Load context based on current page
+  // Load context based on current page with abort controller to prevent race conditions
   useEffect(() => {
+    let isCancelled = false;
+
     const loadContext = async () => {
       if (!currentWorkspaceId) return;
 
@@ -112,67 +111,120 @@ export default function UnifiedAIAssistant() {
         // Load additional context based on page
         if (pageContext.type === 'tasks') {
           const tasks = await db.entities.Task.filter({ workspace_id: currentWorkspaceId }, "-updated_date", 10);
-          context.recentTasks = tasks.slice(0, 5);
-          context.taskCount = tasks.length;
+          if (isCancelled) return;
+          context.recentTasks = tasks?.slice(0, 5) || [];
+          context.taskCount = tasks?.length || 0;
         } else if (pageContext.type === 'projects') {
           const projects = await db.entities.Project.filter({ workspace_id: currentWorkspaceId }, "-updated_date", 10);
-          context.recentProjects = projects.slice(0, 5);
-          context.projectCount = projects.length;
+          if (isCancelled) return;
+          context.recentProjects = projects?.slice(0, 5) || [];
+          context.projectCount = projects?.length || 0;
         } else if (pageContext.type === 'assignments') {
           const assignments = await db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date", 10);
-          context.recentAssignments = assignments.slice(0, 5);
-          context.assignmentCount = assignments.length;
+          if (isCancelled) return;
+          context.recentAssignments = assignments?.slice(0, 5) || [];
+          context.assignmentCount = assignments?.length || 0;
         }
 
-        setCurrentContext(context);
+        if (!isCancelled) {
+          setCurrentContext(context);
+        }
       } catch (error) {
         console.error('Error loading context:', error);
       }
     };
 
     loadContext();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [currentWorkspaceId, currentWorkspace, pageContext.type, location.pathname]);
+
+  // Helper to safely extract string from API response
+  const extractResponseText = useCallback((result) => {
+    if (typeof result === 'string') return result;
+    if (result === null || result === undefined) return null;
+
+    // Handle {success, message, response} structure
+    if (typeof result === 'object') {
+      if (typeof result.response === 'string') return result.response;
+      if (typeof result.message === 'string') return result.message;
+      // If response/message is still an object, try to stringify it safely
+      if (result.response && typeof result.response === 'object') {
+        try {
+          return JSON.stringify(result.response, null, 2);
+        } catch {
+          return null;
+        }
+      }
+    }
+    return null;
+  }, []);
+
+  // Generate unique message ID
+  const generateMessageId = useCallback(() => {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }, []);
 
   const handleSendMessage = async (messageText = inputValue) => {
     if (!messageText.trim() || isProcessing) return;
 
     const userMessage = {
-      id: Date.now(),
+      id: generateMessageId(),
       role: 'user',
       content: messageText,
       timestamp: new Date().toISOString(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    const currentMessages = [...messages, userMessage];
+    setMessages(currentMessages);
     setInputValue('');
     setIsProcessing(true);
 
     try {
-      // Build context prompt
+      // Build context prompt with conversation history
       let contextPrompt = `You are an AI assistant for the Proflow project management application.
-      The user is currently on the ${pageContext.label} page in the "${currentContext?.workspaceName || 'workspace'}" workspace.`;
+The user is currently on the ${pageContext.label} page in the "${currentContext?.workspaceName || 'workspace'}" workspace.`;
 
-      if (currentContext?.recentTasks) {
+      // Add relevant context only if arrays have items
+      if (currentContext?.recentTasks?.length > 0) {
         contextPrompt += `\n\nRecent tasks: ${currentContext.recentTasks.map(t => t.title).join(', ')}`;
       }
-      if (currentContext?.recentProjects) {
+      if (currentContext?.recentProjects?.length > 0) {
         contextPrompt += `\n\nRecent projects: ${currentContext.recentProjects.map(p => p.name).join(', ')}`;
       }
-      if (currentContext?.recentAssignments) {
+      if (currentContext?.recentAssignments?.length > 0) {
         contextPrompt += `\n\nRecent assignments: ${currentContext.recentAssignments.map(a => a.name).join(', ')}`;
       }
 
+      // Include recent conversation history (last 6 messages for context)
+      const recentHistory = currentMessages.slice(-6);
+      if (recentHistory.length > 1) {
+        contextPrompt += `\n\n--- Conversation History ---`;
+        recentHistory.forEach(msg => {
+          const role = msg.role === 'user' ? 'User' : 'Assistant';
+          contextPrompt += `\n${role}: ${msg.content}`;
+        });
+        contextPrompt += `\n--- End History ---\n\nPlease respond to the user's latest message.`;
+      } else {
+        contextPrompt += `\n\nUser question: ${messageText}`;
+      }
+
       // Call AI API
-      const response = await db.integrations.Core.InvokeLLM({
-        prompt: `${contextPrompt}\n\nUser question: ${messageText}`,
+      const result = await db.integrations.Core.InvokeLLM({
+        prompt: contextPrompt,
         response_json_schema: null,
         add_context_from_internet: false
       });
 
+      // Safely extract the response text
+      const responseText = extractResponseText(result) || "I couldn't generate a response. Please try again.";
+
       const aiMessage = {
-        id: Date.now() + 1,
+        id: generateMessageId(),
         role: 'assistant',
-        content: response || "I couldn't generate a response. Please try again.",
+        content: responseText,
         timestamp: new Date().toISOString(),
       };
 
@@ -182,7 +234,7 @@ export default function UnifiedAIAssistant() {
       toast.error('Failed to get AI response');
 
       const errorMessage = {
-        id: Date.now() + 1,
+        id: generateMessageId(),
         role: 'assistant',
         content: "I'm sorry, I encountered an error. Please try again.",
         timestamp: new Date().toISOString(),

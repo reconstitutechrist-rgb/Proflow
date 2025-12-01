@@ -36,7 +36,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useWorkspace } from "@/components/workspace/WorkspaceContext"; // CRITICAL: New import
+import { useWorkspace } from "@/features/workspace/WorkspaceContext";
 import { db } from "@/api/db";
 
 export default function AISummaryButton({

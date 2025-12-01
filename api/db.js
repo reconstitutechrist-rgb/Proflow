@@ -214,15 +214,22 @@ const auth = {
     const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error || !user) {
+      // SECURITY: Do not return fake user in production
+      // Components should handle null user appropriately
+      if (import.meta.env.DEV) {
+        console.warn('Auth Warning: No authenticated user. Using development fallback.');
+        return {
+          id: '00000000-0000-0000-0000-000000000000',
+          email: 'dev@proflow.local',
+          full_name: 'Development User',
+          active_workspace_id: null,
+          created_date: new Date().toISOString(),
+          _isDevelopmentFallback: true, // Flag to identify fake user
+        };
+      }
+      // In production, return null to indicate no authenticated user
       console.error('Error getting user:', error);
-      // Return a default user for development with a valid UUID
-      return {
-        id: '00000000-0000-0000-0000-000000000000',
-        email: 'user@proflow.local',
-        full_name: 'Proflow User',
-        active_workspace_id: null,
-        created_date: new Date().toISOString(),
-      };
+      return null;
     }
 
     return {

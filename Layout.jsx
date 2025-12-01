@@ -1,7 +1,7 @@
 
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import { User } from "@/api/entities";
 import { Task } from "@/api/entities";
@@ -97,6 +97,7 @@ const GlobalSearch = React.lazy(() =>
 
 function LayoutContent({ children, currentPageName }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user: authUser, signOut } = useAuth();
   const { currentWorkspaceId } = useWorkspace();
   const [user, setUser] = useState(null);
@@ -254,67 +255,67 @@ function LayoutContent({ children, currentPageName }) {
           case 'd':
             event.preventDefault();
             if (location.pathname !== createPageUrl("Dashboard")) {
-              window.location.href = createPageUrl("Dashboard");
+              navigate(createPageUrl("Dashboard"));
             }
             break;
           case 'p': // Added shortcut for Projects
             event.preventDefault();
             if (location.pathname !== createPageUrl("Projects")) {
-              window.location.href = createPageUrl("Projects");
+              navigate(createPageUrl("Projects"));
             }
             break;
           case 'a':
             event.preventDefault();
             if (location.pathname !== createPageUrl("Assignments")) {
-              window.location.href = createPageUrl("Assignments");
+              navigate(createPageUrl("Assignments"));
             }
             break;
           case 't':
             event.preventDefault();
             if (location.pathname !== createPageUrl("Tasks")) {
-              window.location.href = createPageUrl("Tasks");
+              navigate(createPageUrl("Tasks"));
             }
             break;
           case 'o':
             event.preventDefault();
             if (location.pathname !== createPageUrl("Documents")) {
-              window.location.href = createPageUrl("Documents");
+              navigate(createPageUrl("Documents"));
             }
             break;
           case 'w':
             event.preventDefault();
             if (location.pathname !== createPageUrl("DocumentStudio")) {
-              window.location.href = createPageUrl("DocumentStudio");
+              navigate(createPageUrl("DocumentStudio"));
             }
             break;
           case 'q':
             event.preventDefault();
             if (location.pathname !== createPageUrl("AskAI")) {
-              window.location.href = createPageUrl("AskAI");
+              navigate(createPageUrl("AskAI"));
             }
             break;
           case 'c':
             event.preventDefault();
             if (location.pathname !== createPageUrl("Chat")) {
-              window.location.href = createPageUrl("Chat");
+              navigate(createPageUrl("Chat"));
             }
             break;
           case 'r':
             event.preventDefault();
             if (location.pathname !== createPageUrl("Research")) {
-              window.location.href = createPageUrl("Research");
+              navigate(createPageUrl("Research"));
             }
             break;
           case 'g':
             event.preventDefault();
             if (location.pathname !== createPageUrl("Generate")) {
-              window.location.href = createPageUrl("Generate");
+              navigate(createPageUrl("Generate"));
             }
             break;
           case 'u':
             event.preventDefault();
             if (location.pathname !== createPageUrl("Users")) {
-              window.location.href = createPageUrl("Users");
+              navigate(createPageUrl("Users"));
             }
             break;
         }
@@ -390,24 +391,24 @@ function LayoutContent({ children, currentPageName }) {
     setIsGlobalSearchOpen(false);
     switch (result.type) {
       case 'project': // Handle project search results
-        window.location.href = createPageUrl("Projects") + `?project=${result.id}`;
+        navigate(createPageUrl("Projects") + `?project=${result.id}`);
         break;
       case 'assignment':
-        window.location.href = createPageUrl("Assignments") + `?assignment=${result.id}`;
+        navigate(createPageUrl("Assignments") + `?assignment=${result.id}`);
         break;
       case 'document':
-        window.location.href = createPageUrl("Documents") + `?doc=${result.id}`;
+        navigate(createPageUrl("Documents") + `?doc=${result.id}`);
         break;
       case 'message':
-        window.location.href = createPageUrl("Chat") + `?message=${result.id}`;
+        navigate(createPageUrl("Chat") + `?message=${result.id}`);
         break;
       case 'task':
-        window.location.href = createPageUrl("Tasks") + `?task=${result.id}`;
+        navigate(createPageUrl("Tasks") + `?task=${result.id}`);
         break;
       default:
         break;
     }
-  }, []);
+  }, [navigate]);
 
   const toggleTheme = useCallback(() => {
     setIsDarkMode(prev => {
@@ -428,9 +429,9 @@ function LayoutContent({ children, currentPageName }) {
   const handleNotificationClick = useCallback((notification) => {
     markNotificationAsRead(notification.id);
     if (notification.actionUrl) {
-      window.location.href = notification.actionUrl;
+      navigate(notification.actionUrl);
     }
-  }, [markNotificationAsRead]);
+  }, [markNotificationAsRead, navigate]);
 
   const unreadNotifications = notifications.length;
 

@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router";
 import { db } from "@/api/db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Plus,
   Loader2,
@@ -13,7 +14,14 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Search
+  Search,
+  LayoutGrid,
+  List,
+  Calendar,
+  Clock,
+  User,
+  Filter,
+  SlidersHorizontal
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import {
@@ -66,8 +74,23 @@ export default function TasksPage() {
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // View mode state
+  const [viewMode, setViewMode] = useState('kanban'); // 'kanban', 'list', 'calendar'
+
+  // Quick filter presets
+  const [activePreset, setActivePreset] = useState('all');
+
   // AI Assistant state
   const [isAIAssistantCollapsed, setIsAIAssistantCollapsed] = useState(false);
+
+  // Filter presets
+  const filterPresets = [
+    { id: 'all', label: 'All Tasks', icon: CheckSquare },
+    { id: 'my-tasks', label: 'My Tasks', icon: User },
+    { id: 'overdue', label: 'Overdue', icon: AlertCircle },
+    { id: 'due-today', label: 'Due Today', icon: Clock },
+    { id: 'this-week', label: 'This Week', icon: Calendar },
+  ];
 
   const urlParams = new URLSearchParams(location.search);
   const sortBy = urlParams.get('sortBy');
@@ -92,6 +115,34 @@ export default function TasksPage() {
 
   const filteredTasks = useMemo(() => {
     let currentTasks = [...tasks];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(today);
+    endOfWeek.setDate(today.getDate() + 7);
+
+    // Apply preset filters
+    if (activePreset === 'my-tasks' && currentUser?.email) {
+      currentTasks = currentTasks.filter(task => task.assigned_to === currentUser.email);
+    } else if (activePreset === 'overdue') {
+      currentTasks = currentTasks.filter(task => {
+        if (!task.due_date || task.status === 'completed') return false;
+        const dueDate = new Date(task.due_date);
+        return dueDate < today;
+      });
+    } else if (activePreset === 'due-today') {
+      currentTasks = currentTasks.filter(task => {
+        if (!task.due_date) return false;
+        const dueDate = new Date(task.due_date);
+        dueDate.setHours(0, 0, 0, 0);
+        return dueDate.getTime() === today.getTime();
+      });
+    } else if (activePreset === 'this-week') {
+      currentTasks = currentTasks.filter(task => {
+        if (!task.due_date) return false;
+        const dueDate = new Date(task.due_date);
+        return dueDate >= today && dueDate <= endOfWeek;
+      });
+    }
 
     if (selectedAssignment && selectedAssignment !== 'all') {
       currentTasks = currentTasks.filter(task => task.assignment_id === selectedAssignment);
@@ -137,7 +188,7 @@ export default function TasksPage() {
     }
 
     return currentTasks;
-  }, [tasks, selectedAssignment, priorityFilter, searchQuery, sortBy]);
+  }, [tasks, selectedAssignment, priorityFilter, searchQuery, sortBy, activePreset, currentUser]);
 
   const loadData = async () => {
     try {
@@ -324,31 +375,65 @@ export default function TasksPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Clean Header */}
-      <div className="flex-shrink-0 mb-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="flex-shrink-0 mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-3xl font-light text-gray-900 dark:text-white tracking-tight">
               Tasks
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {filteredTasks.length} {filteredTasks.length === 1 ? 'task' : 'tasks'}
+              {activePreset !== 'all' && (
+                <span className="ml-2 text-purple-600 dark:text-purple-400">
+                  ({filterPresets.find(p => p.id === activePreset)?.label})
+                </span>
+              )}
             </p>
           </div>
           <div className="flex gap-3">
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+              <Button
+                variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('kanban')}
+                className={viewMode === 'kanban' ? 'bg-white dark:bg-gray-700 shadow-sm' : ''}
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className={viewMode === 'list' ? 'bg-white dark:bg-gray-700 shadow-sm' : ''}
+              >
+                <List className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'calendar' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('calendar')}
+                className={viewMode === 'calendar' ? 'bg-white dark:bg-gray-700 shadow-sm' : ''}
+              >
+                <Calendar className="w-4 h-4" />
+              </Button>
+            </div>
+
             <Button
               onClick={() => setIsAIAssistantCollapsed(!isAIAssistantCollapsed)}
               variant="outline"
+              size="sm"
               className="border-gray-200 dark:border-gray-800"
             >
               {isAIAssistantCollapsed ? (
                 <>
                   <ChevronLeft className="w-4 h-4 mr-2" />
-                  Show AI
+                  AI
                 </>
               ) : (
                 <>
                   <ChevronRight className="w-4 h-4 mr-2" />
-                  Hide AI
+                  AI
                 </>
               )}
             </Button>
@@ -362,7 +447,41 @@ export default function TasksPage() {
           </div>
         </div>
 
-        {/* Minimal Filters */}
+        {/* Filter Presets */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          {filterPresets.map((preset) => {
+            const Icon = preset.icon;
+            const isActive = activePreset === preset.id;
+            return (
+              <Button
+                key={preset.id}
+                variant={isActive ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setActivePreset(preset.id)}
+                className={isActive
+                  ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                  : 'border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }
+              >
+                <Icon className="w-3.5 h-3.5 mr-1.5" />
+                {preset.label}
+                {preset.id === 'overdue' && tasks.filter(t => {
+                  if (!t.due_date || t.status === 'completed') return false;
+                  return new Date(t.due_date) < new Date();
+                }).length > 0 && (
+                  <Badge variant="destructive" className="ml-1.5 px-1.5 py-0 text-xs">
+                    {tasks.filter(t => {
+                      if (!t.due_date || t.status === 'completed') return false;
+                      return new Date(t.due_date) < new Date();
+                    }).length}
+                  </Badge>
+                )}
+              </Button>
+            );
+          })}
+        </div>
+
+        {/* Search and Additional Filters */}
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 min-w-[200px] max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -382,7 +501,7 @@ export default function TasksPage() {
               <SelectItem value="all">All Assignments</SelectItem>
               {assignments.map(assignment => (
                 <SelectItem key={assignment.id} value={assignment.id}>
-                  {assignment.title}
+                  {assignment.name || assignment.title}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -400,13 +519,30 @@ export default function TasksPage() {
               <SelectItem value="urgent">Urgent</SelectItem>
             </SelectContent>
           </Select>
+
+          {(selectedAssignment !== 'all' || priorityFilter !== 'all' || searchQuery || activePreset !== 'all') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedAssignment('all');
+                setPriorityFilter('all');
+                setSearchQuery('');
+                setActivePreset('all');
+              }}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-4 h-4 mr-1" />
+              Clear filters
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 overflow-hidden">
-        {/* Task Board */}
-        <div className="overflow-auto">
+      <div className={`flex-1 ${viewMode === 'kanban' ? 'grid grid-cols-1 lg:grid-cols-2' : 'flex'} gap-8 overflow-hidden`}>
+        {/* Task Views */}
+        <div className={`overflow-auto ${viewMode !== 'kanban' ? 'flex-1' : ''}`}>
           {/* Bulk Actions */}
           {selectedTasks.length > 0 && (
             <Card className="shadow-lg border-2 border-green-500 bg-green-50 dark:bg-green-900/20 backdrop-blur-xl rounded-2xl mb-6">
@@ -516,7 +652,7 @@ export default function TasksPage() {
                 </Button>
               )}
             </div>
-          ) : (
+          ) : viewMode === 'kanban' ? (
             <TaskBoard
               tasks={filteredTasks}
               assignments={assignments}
@@ -542,6 +678,163 @@ export default function TasksPage() {
                 </div>
               )}
             />
+          ) : viewMode === 'list' ? (
+            /* List View */
+            <Card className="border-0 shadow-md">
+              <CardContent className="p-0">
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-gray-800 border-b">
+                    <tr>
+                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">Task</th>
+                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">Status</th>
+                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">Priority</th>
+                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">Assignee</th>
+                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">Due Date</th>
+                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredTasks.map((task) => (
+                      <tr
+                        key={task.id}
+                        className="border-b hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                        onClick={() => handleEdit(task)}
+                      >
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <Checkbox
+                              checked={selectedTasks.includes(task.id)}
+                              onCheckedChange={(checked) => {
+                                event?.stopPropagation();
+                                handleSelectTask(task.id, checked);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white">{task.title}</p>
+                              {task.description && (
+                                <p className="text-sm text-gray-500 line-clamp-1">{task.description}</p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <Badge variant="outline" className={
+                            task.status === 'completed' ? 'bg-green-100 text-green-700 border-green-300' :
+                            task.status === 'in_progress' ? 'bg-blue-100 text-blue-700 border-blue-300' :
+                            task.status === 'blocked' ? 'bg-red-100 text-red-700 border-red-300' :
+                            'bg-gray-100 text-gray-700 border-gray-300'
+                          }>
+                            {task.status?.replace('_', ' ')}
+                          </Badge>
+                        </td>
+                        <td className="p-4">
+                          <Badge className={
+                            task.priority === 'urgent' ? 'bg-red-500' :
+                            task.priority === 'high' ? 'bg-orange-500' :
+                            task.priority === 'medium' ? 'bg-yellow-500' :
+                            'bg-gray-400'
+                          }>
+                            {task.priority}
+                          </Badge>
+                        </td>
+                        <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
+                          {task.assigned_to ? getUserName(task.assigned_to) : '-'}
+                        </td>
+                        <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
+                          {task.due_date ? new Date(task.due_date).toLocaleDateString() : '-'}
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteTask(task)}
+                            >
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+          ) : (
+            /* Calendar View */
+            <Card className="border-0 shadow-md">
+              <CardContent className="p-6">
+                <div className="grid grid-cols-7 gap-4">
+                  {/* Calendar Header */}
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                    <div key={day} className="text-center font-medium text-gray-600 dark:text-gray-400 py-2">
+                      {day}
+                    </div>
+                  ))}
+                  {/* Calendar Days */}
+                  {(() => {
+                    const today = new Date();
+                    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                    const startDay = startOfMonth.getDay();
+                    const daysInMonth = endOfMonth.getDate();
+                    const days = [];
+
+                    // Add empty cells for days before the start of the month
+                    for (let i = 0; i < startDay; i++) {
+                      days.push(<div key={`empty-${i}`} className="h-24"></div>);
+                    }
+
+                    // Add days of the month
+                    for (let day = 1; day <= daysInMonth; day++) {
+                      const date = new Date(today.getFullYear(), today.getMonth(), day);
+                      const dateStr = date.toISOString().split('T')[0];
+                      const tasksOnDay = filteredTasks.filter(task =>
+                        task.due_date && task.due_date.split('T')[0] === dateStr
+                      );
+                      const isToday = day === today.getDate();
+
+                      days.push(
+                        <div
+                          key={day}
+                          className={`h-24 border rounded-lg p-2 ${
+                            isToday ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-300' : 'border-gray-200 dark:border-gray-700'
+                          }`}
+                        >
+                          <div className={`text-sm font-medium mb-1 ${isToday ? 'text-purple-600' : 'text-gray-600'}`}>
+                            {day}
+                          </div>
+                          <div className="space-y-1 overflow-auto max-h-16">
+                            {tasksOnDay.slice(0, 2).map(task => (
+                              <div
+                                key={task.id}
+                                onClick={() => handleEdit(task)}
+                                className={`text-xs p-1 rounded cursor-pointer truncate ${
+                                  task.priority === 'urgent' ? 'bg-red-100 text-red-700' :
+                                  task.priority === 'high' ? 'bg-orange-100 text-orange-700' :
+                                  task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-gray-100 text-gray-700'
+                                }`}
+                              >
+                                {task.title}
+                              </div>
+                            ))}
+                            {tasksOnDay.length > 2 && (
+                              <div className="text-xs text-gray-500">
+                                +{tasksOnDay.length - 2} more
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return days;
+                  })()}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
 

@@ -10,23 +10,23 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
-import { 
-  ChevronDown, 
-  CheckCircle2, 
-  Briefcase, 
-  Users, 
+import {
+  ChevronDown,
+  CheckCircle2,
+  Briefcase,
+  Users,
   Building2,
   Plus,
   Settings,
   Loader2
 } from 'lucide-react';
-import { Link } from 'react-router';
-import { createPageUrl } from '@/lib/utils';
 import { toast } from 'sonner';
+import WorkspaceModal from './WorkspaceModal';
 
 export default function WorkspaceSwitcher() {
   const { currentWorkspace, availableWorkspaces, switchWorkspace, loading } = useWorkspace();
   const [switching, setSwitching] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const getWorkspaceIcon = (type) => {
     switch (type) {
@@ -146,26 +146,25 @@ export default function WorkspaceSwitcher() {
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem asChild>
-          <Link
-            to={createPageUrl('Workspaces')}
-            className="flex items-center gap-2 p-3 cursor-pointer text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="text-sm font-medium">Create New Workspace</span>
-          </Link>
+        <DropdownMenuItem
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 p-3 cursor-pointer text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+        >
+          <Plus className="w-4 h-4" />
+          <span className="text-sm font-medium">Create New Workspace</span>
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild>
-          <Link
-            to={createPageUrl('Workspaces')}
-            className="flex items-center gap-2 p-3 cursor-pointer"
-          >
-            <Settings className="w-4 h-4" />
-            <span className="text-sm">Manage Workspaces</span>
-          </Link>
+        <DropdownMenuItem
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 p-3 cursor-pointer"
+        >
+          <Settings className="w-4 h-4" />
+          <span className="text-sm">Manage Workspaces</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
+
+      {/* Workspace Management Modal */}
+      <WorkspaceModal open={isModalOpen} onOpenChange={setIsModalOpen} />
     </DropdownMenu>
   );
 }

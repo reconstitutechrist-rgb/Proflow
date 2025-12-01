@@ -9,7 +9,7 @@ import Dashboard from "@/pages/Dashboard";
 import Projects from "@/pages/Projects";
 import Assignments from "@/pages/Assignments";
 import Tasks from "@/pages/Tasks";
-import Documents from "@/pages/Documents";
+import DocumentsHub from "@/pages/DocumentsHub";
 
 // Lazy load less frequently used pages
 const Users = React.lazy(() => import("@/pages/Users"));
@@ -17,26 +17,22 @@ const Chat = React.lazy(() => import("@/pages/Chat"));
 const Research = React.lazy(() => import("@/pages/Research"));
 const Generate = React.lazy(() => import("@/pages/Generate"));
 const AskAI = React.lazy(() => import("@/pages/AskAI"));
+const AIHub = React.lazy(() => import("@/pages/AIHub"));
 const Preferences = React.lazy(() => import("@/pages/Preferences"));
-const DocumentCreator = React.lazy(() => import("@/pages/DocumentCreator"));
 const Workspaces = React.lazy(() => import("@/pages/Workspaces"));
 const Documentation = React.lazy(() => import("@/pages/Documentation"));
-const DocumentStudio = React.lazy(() => import("@/pages/DocumentStudio"));
-const DocumentWorkshop = React.lazy(() => import("@/pages/DocumentWorkshop"));
 
 // Preload other pages after initial render for faster subsequent navigation
 const preloadPages = () => {
   import("@/pages/Users");
   import("@/pages/Chat");
-  import("@/pages/Research");
-  import("@/pages/Generate");
-  import("@/pages/AskAI");
-  import("@/pages/DocumentStudio");
+  import("@/pages/AIHub");
 };
 
 const PAGES = {
     Dashboard,
-    Documents,
+    Documents: DocumentsHub,
+    DocumentsHub,
     Users,
     Chat,
     Tasks,
@@ -44,13 +40,15 @@ const PAGES = {
     Generate,
     Assignments,
     AskAI,
+    AIHub,
     Preferences,
-    DocumentCreator,
     Projects,
     Workspaces,
     Documentation,
-    DocumentStudio,
-    DocumentWorkshop,
+    // Redirect old document routes to DocumentsHub
+    DocumentCreator: DocumentsHub,
+    DocumentStudio: DocumentsHub,
+    DocumentWorkshop: DocumentsHub,
 };
 
 function _getCurrentPage(url) {
@@ -122,7 +120,8 @@ function ProtectedContent() {
                 <Routes>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/Dashboard" element={<Dashboard />} />
-                    <Route path="/Documents" element={<Documents />} />
+                    <Route path="/Documents" element={<DocumentsHub />} />
+                    <Route path="/DocumentsHub" element={<DocumentsHub />} />
                     <Route path="/Users" element={<Users />} />
                     <Route path="/Chat" element={<Chat />} />
                     <Route path="/Tasks" element={<Tasks />} />
@@ -130,13 +129,15 @@ function ProtectedContent() {
                     <Route path="/Generate" element={<Generate />} />
                     <Route path="/Assignments" element={<Assignments />} />
                     <Route path="/AskAI" element={<AskAI />} />
+                    <Route path="/AIHub" element={<AIHub />} />
                     <Route path="/Preferences" element={<Preferences />} />
-                    <Route path="/DocumentCreator" element={<DocumentCreator />} />
                     <Route path="/Projects" element={<Projects />} />
                     <Route path="/Workspaces" element={<Workspaces />} />
                     <Route path="/Documentation" element={<Documentation />} />
-                    <Route path="/DocumentStudio" element={<DocumentStudio />} />
-                    <Route path="/DocumentWorkshop" element={<DocumentWorkshop />} />
+                    {/* Redirect old document routes to unified DocumentsHub */}
+                    <Route path="/DocumentCreator" element={<DocumentsHub />} />
+                    <Route path="/DocumentStudio" element={<DocumentsHub />} />
+                    <Route path="/DocumentWorkshop" element={<DocumentsHub />} />
                 </Routes>
             </Suspense>
         </Layout>

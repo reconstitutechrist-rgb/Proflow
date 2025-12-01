@@ -74,13 +74,15 @@ import {
 import { TutorialProvider } from "@/features/tutorial/TutorialProvider";
 import TutorialOverlay from "@/features/tutorial/TutorialOverlay";
 import TutorialButton from "@/features/tutorial/TutorialButton";
-import AIAssistantWidget from "@/features/ai/AIAssistantWidget";
+import UnifiedAIAssistant from "@/features/ai/UnifiedAIAssistant";
 import WorkspaceSwitcher from '@/features/workspace/WorkspaceSwitcher';
 import { WorkspaceProvider, useWorkspace } from '@/features/workspace/WorkspaceContext'; // Fixed import path
 import WorkspaceErrorBoundary from '@/features/workspace/WorkspaceErrorBoundary'; // Added WorkspaceErrorBoundary import
 import WorkspacePerformanceMonitor from '@/features/workspace/WorkspacePerformanceMonitor'; // Added WorkspacePerformanceMonitor import
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'; // Import shared ErrorBoundary
 import { useAuth } from '@/components/auth/AuthProvider'; // Import auth hook
+import MobileBottomNav from '@/components/common/MobileBottomNav'; // Mobile navigation
+import WhatsNewModal from '@/features/onboarding/WhatsNewModal'; // Feature discovery
 
 const GlobalSearch = React.lazy(() =>
   import("@/components/search/GlobalSearch").catch(() => ({
@@ -284,14 +286,13 @@ function LayoutContent({ children, currentPageName }) {
             break;
           case 'w':
             event.preventDefault();
-            if (location.pathname !== createPageUrl("DocumentStudio")) {
-              navigate(createPageUrl("DocumentStudio"));
-            }
+            // Navigate to Documents with Studio tab
+            navigate(createPageUrl("Documents") + "?tab=studio");
             break;
           case 'q':
             event.preventDefault();
-            if (location.pathname !== createPageUrl("AskAI")) {
-              navigate(createPageUrl("AskAI"));
+            if (location.pathname !== createPageUrl("AIHub")) {
+              navigate(createPageUrl("AIHub"));
             }
             break;
           case 'c':
@@ -457,20 +458,20 @@ function LayoutContent({ children, currentPageName }) {
 
   const navigationGroups = [
     {
-      title: "Overview",
+      title: "Home",
       items: [
         {
           title: "Dashboard",
           url: createPageUrl("Dashboard"),
           icon: LayoutDashboard,
-          description: "Assignment overview and analytics",
+          description: "Overview and analytics",
           shortcut: "D",
           badge: null
         }
       ]
     },
     {
-      title: "Assignment Management",
+      title: "Work",
       items: [
         {
           title: "Projects",
@@ -489,22 +490,6 @@ function LayoutContent({ children, currentPageName }) {
           badge: null
         },
         {
-          title: "Documents",
-          url: createPageUrl("Documents"),
-          icon: FileEdit,
-          description: "Document management",
-          shortcut: "O",
-          badge: null
-        },
-        {
-          title: "Document Studio",
-          url: createPageUrl("DocumentStudio"),
-          icon: FileText,
-          description: "Create and edit documents with AI",
-          shortcut: "W",
-          badge: null
-        },
-        {
           title: "Tasks",
           url: createPageUrl("Tasks"),
           icon: FileEdit,
@@ -515,28 +500,33 @@ function LayoutContent({ children, currentPageName }) {
       ]
     },
     {
-      title: "AI Tools",
+      title: "Documents",
       items: [
         {
-          title: "Ask AI",
-          url: createPageUrl("AskAI"),
-          icon: Brain,
-          description: "Upload documents and ask AI questions",
-          shortcut: "Q",
-          badge: null
-        },
-        {
-          title: "Research",
-          url: createPageUrl("Research"),
-          icon: FileSearch,
-          description: "AI-powered research assistance",
-          shortcut: "R",
+          title: "Documents",
+          url: createPageUrl("Documents"),
+          icon: FileText,
+          description: "Library, Studio & Templates",
+          shortcut: "O",
           badge: null
         }
       ]
     },
     {
-      title: "Collaboration",
+      title: "AI",
+      items: [
+        {
+          title: "AI Hub",
+          url: createPageUrl("AIHub"),
+          icon: Brain,
+          description: "Chat, Research & Generate",
+          shortcut: "Q",
+          badge: "New"
+        }
+      ]
+    },
+    {
+      title: "Team",
       items: [
         {
           title: "Chat",
@@ -547,24 +537,11 @@ function LayoutContent({ children, currentPageName }) {
           badge: null
         },
         {
-          title: "Team",
+          title: "Members",
           url: createPageUrl("Users"),
           icon: Users,
           description: "Team management",
           shortcut: "U",
-          badge: null
-        }
-      ]
-    },
-    {
-      title: "Settings",
-      items: [
-        {
-          title: "Workspaces",
-          url: createPageUrl("Workspaces"),
-          icon: Settings,
-          description: "Manage your workspaces",
-          shortcut: null,
           badge: null
         }
       ]
@@ -948,7 +925,7 @@ function LayoutContent({ children, currentPageName }) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-8 bg-gray-50 dark:bg-gray-900 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+      <main className="flex-1 overflow-y-auto p-8 pb-24 md:pb-8 bg-gray-50 dark:bg-gray-900 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
@@ -962,8 +939,14 @@ function LayoutContent({ children, currentPageName }) {
         />
       </React.Suspense>
 
-      {/* AI Assistant Widget */}
-      <AIAssistantWidget currentPageName={currentPageName} workspaceId={currentWorkspaceId} />
+      {/* Unified AI Assistant */}
+      <UnifiedAIAssistant />
+
+      {/* What's New Modal for feature discovery */}
+      <WhatsNewModal />
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
 
       {/* Tutorial Overlay */}
       <TutorialOverlay />

@@ -19,6 +19,11 @@ import {
   Calendar,
   MessageSquare,
   Activity,
+  Sparkles,
+  AlertTriangle,
+  Target,
+  ArrowRight,
+  Zap,
 } from "lucide-react";
 import { Link } from "react-router";
 import { createPageUrl } from "@/lib/utils";
@@ -42,6 +47,14 @@ export default function DashboardPage() {
     recentMessages: 0,
   });
   const [upcomingTasks, setUpcomingTasks] = useState([]);
+  const [overdueTasks, setOverdueTasks] = useState([]);
+  const [todaysFocus, setTodaysFocus] = useState([]);
+  const [needsAttention, setNeedsAttention] = useState({
+    overdue: 0,
+    dueToday: 0,
+    highPriority: 0,
+    blocked: 0
+  });
   const [error, setError] = useState(null);
 
   const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
@@ -97,6 +110,77 @@ export default function DashboardPage() {
         (t) => t.assigned_to === currentUser.email
       );
       const completedTasks = userTasks.filter((t) => t.status === "completed");
+
+      // Calculate today's date without time
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      // Calculate needs attention metrics
+      const overdueTasksList = userTasks.filter((t) => {
+        if (t.status === "completed" || !t.due_date) return false;
+        const dueDate = new Date(t.due_date);
+        return dueDate < today;
+      });
+
+      const dueTodayTasks = userTasks.filter((t) => {
+        if (t.status === "completed" || !t.due_date) return false;
+        const dueDate = new Date(t.due_date);
+        dueDate.setHours(0, 0, 0, 0);
+        return dueDate.getTime() === today.getTime();
+      });
+
+      const highPriorityTasks = userTasks.filter(
+        (t) => t.status !== "completed" && (t.priority === "urgent" || t.priority === "high")
+      );
+
+      const blockedTasks = userTasks.filter((t) => t.status === "blocked");
+
+      // Calculate Today's Focus - AI-suggested top 3 priorities
+      const focusTasks = userTasks
+        .filter((t) => t.status !== "completed")
+        .sort((a, b) => {
+          // Priority order
+          const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
+          const priorityA = priorityOrder[a.priority] || 0;
+          const priorityB = priorityOrder[b.priority] || 0;
+
+          // First sort by overdue status
+          const aOverdue = a.due_date && new Date(a.due_date) < today;
+          const bOverdue = b.due_date && new Date(b.due_date) < today;
+          if (aOverdue && !bOverdue) return -1;
+          if (!aOverdue && bOverdue) return 1;
+
+          // Then by due today
+          const aDueToday = a.due_date && new Date(a.due_date).setHours(0,0,0,0) === today.getTime();
+          const bDueToday = b.due_date && new Date(b.due_date).setHours(0,0,0,0) === today.getTime();
+          if (aDueToday && !bDueToday) return -1;
+          if (!aDueToday && bDueToday) return 1;
+
+          // Then by priority
+          if (priorityA !== priorityB) return priorityB - priorityA;
+
+          // Then by due date
+          if (a.due_date && b.due_date) {
+            return new Date(a.due_date) - new Date(b.due_date);
+          }
+          if (a.due_date) return -1;
+          if (b.due_date) return 1;
+
+          return 0;
+        })
+        .slice(0, 3);
+
+      setOverdueTasks(overdueTasksList);
+      setTodaysFocus(focusTasks);
+      setNeedsAttention({
+        overdue: overdueTasksList.length,
+        dueToday: dueTodayTasks.length,
+        highPriority: highPriorityTasks.length,
+        blocked: blockedTasks.length
+      });
+
       const pendingTasks = userTasks
         .filter((t) => t.status !== "completed" && t.due_date)
         .sort((a, b) => new Date(a.due_date) - new Date(b.due_date))
@@ -157,17 +241,144 @@ export default function DashboardPage() {
     );
   }
 
+  // Check if there are items that need attention
+  const hasNeedsAttention = needsAttention.overdue > 0 || needsAttention.dueToday > 0 || needsAttention.blocked > 0;
+
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Welcome back, {user?.full_name || "User"}! 👋
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Here's what's happening with your assignments today.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Welcome back, {user?.full_name || "User"}!
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Here's what's happening with your assignments today.
+          </p>
+        </div>
+        <div className="text-right text-sm text-gray-500">
+          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+        </div>
       </div>
+
+      {/* Needs Attention Section */}
+      {hasNeedsAttention && (
+        <Card className="border-2 border-amber-200 dark:border-amber-800 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+              <AlertTriangle className="w-5 h-5" />
+              Needs Attention
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {needsAttention.overdue > 0 && (
+                <Link to={`${createPageUrl("Tasks")}?preset=overdue`}>
+                  <div className="flex items-center gap-3 p-3 bg-red-100 dark:bg-red-900/30 rounded-lg cursor-pointer hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
+                    <div className="p-2 bg-red-500 rounded-lg">
+                      <AlertCircle className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-red-700 dark:text-red-300">{needsAttention.overdue}</p>
+                      <p className="text-xs text-red-600 dark:text-red-400">Overdue</p>
+                    </div>
+                  </div>
+                </Link>
+              )}
+              {needsAttention.dueToday > 0 && (
+                <Link to={`${createPageUrl("Tasks")}?preset=due-today`}>
+                  <div className="flex items-center gap-3 p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg cursor-pointer hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors">
+                    <div className="p-2 bg-orange-500 rounded-lg">
+                      <Clock className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{needsAttention.dueToday}</p>
+                      <p className="text-xs text-orange-600 dark:text-orange-400">Due Today</p>
+                    </div>
+                  </div>
+                </Link>
+              )}
+              {needsAttention.highPriority > 0 && (
+                <Link to={`${createPageUrl("Tasks")}?priority=high`}>
+                  <div className="flex items-center gap-3 p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg cursor-pointer hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors">
+                    <div className="p-2 bg-purple-500 rounded-lg">
+                      <Zap className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{needsAttention.highPriority}</p>
+                      <p className="text-xs text-purple-600 dark:text-purple-400">High Priority</p>
+                    </div>
+                  </div>
+                </Link>
+              )}
+              {needsAttention.blocked > 0 && (
+                <div className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                  <div className="p-2 bg-gray-500 rounded-lg">
+                    <AlertTriangle className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-700 dark:text-gray-300">{needsAttention.blocked}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Blocked</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Today's Focus */}
+      {todaysFocus.length > 0 && (
+        <Card className="border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                <Sparkles className="w-5 h-5" />
+                Today's Focus
+              </CardTitle>
+              <Badge variant="secondary" className="bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300">
+                AI Suggested
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {todaysFocus.map((task, index) => (
+                <Link key={task.id} to={createPageUrl("Tasks")}>
+                  <div className="flex items-start gap-3 p-4 bg-white dark:bg-gray-800 rounded-lg border border-purple-100 dark:border-purple-800 hover:shadow-md transition-shadow cursor-pointer">
+                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+                      index === 0 ? 'bg-gradient-to-r from-purple-500 to-indigo-500' :
+                      index === 1 ? 'bg-gradient-to-r from-blue-500 to-cyan-500' :
+                      'bg-gradient-to-r from-green-500 to-emerald-500'
+                    }`}>
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 dark:text-white truncate">{task.title}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className={`text-xs ${
+                          task.priority === 'urgent' ? 'border-red-300 text-red-600' :
+                          task.priority === 'high' ? 'border-orange-300 text-orange-600' :
+                          'border-gray-300 text-gray-600'
+                        }`}>
+                          {task.priority}
+                        </Badge>
+                        {task.due_date && (
+                          <span className="text-xs text-gray-500 flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(task.due_date).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-gray-400" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

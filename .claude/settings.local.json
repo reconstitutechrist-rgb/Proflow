@@ -23,7 +23,9 @@
       "Bash(grep:*)",
       "Bash(git commit:*)",
       "Bash(git reset:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(for dir in features/*/)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

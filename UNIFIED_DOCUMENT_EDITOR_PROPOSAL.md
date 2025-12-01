@@ -1,5 +1,13 @@
 # Unified Document Editor - Design Proposal
 
+> **STATUS: IMPLEMENTED** (December 2025)
+>
+> This proposal has been implemented as **DocumentsHub** (`pages/DocumentsHub.jsx`).
+> The unified page is accessible at `/Documents` with three tabs: Library, Studio, and Templates.
+> See `CHANGELOG.md` for full implementation details.
+
+---
+
 ## Executive Summary
 
 Combine **DocumentGenerator** and **DocumentStudio** into a single, powerful **"Document Workshop"** that provides both AI-powered generation and advanced editing in one seamless interface.

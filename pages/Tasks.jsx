@@ -95,8 +95,20 @@ export default function TasksPage() {
   const urlParams = new URLSearchParams(location.search);
   const sortBy = urlParams.get('sortBy');
   const assignmentParam = urlParams.get('assignment');
+  const presetParam = urlParams.get('preset');
+  const viewParam = urlParams.get('view');
 
   const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
+
+  // Initialize filters from URL params
+  useEffect(() => {
+    if (presetParam && ['all', 'my-tasks', 'overdue', 'due-today', 'this-week'].includes(presetParam)) {
+      setActivePreset(presetParam);
+    }
+    if (viewParam && ['kanban', 'list', 'calendar'].includes(viewParam)) {
+      setViewMode(viewParam);
+    }
+  }, [presetParam, viewParam]);
 
   useEffect(() => {
     if (currentWorkspaceId && !workspaceLoading) {
@@ -704,10 +716,7 @@ export default function TasksPage() {
                           <div className="flex items-center gap-3">
                             <Checkbox
                               checked={selectedTasks.includes(task.id)}
-                              onCheckedChange={(checked) => {
-                                event?.stopPropagation();
-                                handleSelectTask(task.id, checked);
-                              }}
+                              onCheckedChange={(checked) => handleSelectTask(task.id, checked)}
                               onClick={(e) => e.stopPropagation()}
                             />
                             <div>

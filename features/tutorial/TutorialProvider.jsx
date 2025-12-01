@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { tutorialConfig } from './tutorialSteps';
 
 const TutorialContext = createContext();
 
@@ -28,8 +29,26 @@ export const TutorialProvider = ({ children }) => {
     }
   }, []);
 
-  const startTutorial = (tutorialConfig) => {
+  // Listen for start-tutorial custom event from WhatsNewModal
+  useEffect(() => {
+    const handleStartTutorial = () => {
+      startTutorialWithConfig();
+    };
+
+    window.addEventListener('start-tutorial', handleStartTutorial);
+    return () => window.removeEventListener('start-tutorial', handleStartTutorial);
+  }, []);
+
+  const startTutorialWithConfig = useCallback(() => {
     setTutorialData(tutorialConfig);
+    setCurrentModule(0);
+    setCurrentStep(0);
+    setIsActive(true);
+    document.body.style.overflow = 'hidden';
+  }, []);
+
+  const startTutorial = (config) => {
+    setTutorialData(config || tutorialConfig);
     setCurrentModule(0);
     setCurrentStep(0);
     setIsActive(true);

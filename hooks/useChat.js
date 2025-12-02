@@ -1,8 +1,31 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from "react";
 import { db } from "@/api/db";
 import { supabase } from "@/api/supabaseClient";
 import { useWorkspace } from "@/features/workspace/WorkspaceContext";
 import { toast } from "sonner";
+
+// File upload validation constants
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_FILE_TYPES = [
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+  'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'text/plain', 'text/csv', 'text/markdown',
+  'application/zip', 'application/x-rar-compressed',
+  'audio/mpeg', 'audio/wav', 'video/mp4', 'video/webm'
+];
+
+// Validate file before upload
+const validateFile = (file) => {
+  if (file.size > MAX_FILE_SIZE) {
+    return { valid: false, error: `File size exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit` };
+  }
+  if (!ALLOWED_FILE_TYPES.includes(file.type) && file.type !== '') {
+    return { valid: false, error: `File type "${file.type}" is not allowed` };
+  }
+  return { valid: true };
+};
 
 export function useChat() {
   const [assignments, setAssignments] = useState([]);
@@ -28,6 +51,10 @@ export function useChat() {
   const [replyToMessageData, setReplyToMessageData] = useState({});
   const [typingUsers, setTypingUsers] = useState([]);
 
+  // New states for fixing issues
+  const [isSending, setIsSending] = useState(false); // Prevent duplicate sends
+  const [operationLoading, setOperationLoading] = useState({}); // Track individual operations
+
   const messagesEndRef = useRef(null);
   const messageListRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -39,6 +66,8 @@ export function useChat() {
   const initialLoadDoneRef = useRef(false);
   const currentUserRef = useRef(null);
   const selectedContextIdRef = useRef("general");
+  const messageChannelRef = useRef(null); // For real-time message subscriptions
+  const subscriptionActiveRef = useRef(false); // Track subscription state for cleanup
 
   const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
 
@@ -218,26 +247,90 @@ export function useChat() {
     loadData();
   }, [currentWorkspaceId, workspaceLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Real-time message subscription + fallback polling
   useEffect(() => {
+    // Clear previous subscriptions and polling
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
     }
-
-    if (currentThread?.id) {
-      loadMessages();
-      pollingIntervalRef.current = setInterval(() => {
-        loadMessages();
-      }, 5000);
+    if (messageChannelRef.current) {
+      messageChannelRef.current.unsubscribe();
+      messageChannelRef.current = null;
     }
+    subscriptionActiveRef.current = false;
+
+    if (!currentThread?.id || !currentWorkspaceId) {
+      return;
+    }
+
+    // Initial load
+    loadMessages();
+
+    // Set up real-time subscription for messages
+    const channelName = `messages:${currentThread.id}`;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `thread_id=eq.${currentThread.id}`
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            // Check if this message isn't already in state (avoid duplicates from optimistic updates)
+            setMessages(prev => {
+              const exists = prev.some(m => m.id === payload.new.id);
+              if (exists) return prev;
+              return [...prev, payload.new];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            setMessages(prev => prev.map(m =>
+              m.id === payload.new.id ? payload.new : m
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setMessages(prev => prev.filter(m => m.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          subscriptionActiveRef.current = true;
+          messageChannelRef.current = channel;
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          // Fallback to polling if real-time fails
+          console.warn('Real-time subscription failed, falling back to polling');
+          subscriptionActiveRef.current = false;
+          if (!pollingIntervalRef.current) {
+            pollingIntervalRef.current = setInterval(() => {
+              loadMessages();
+            }, 5000);
+          }
+        }
+      });
+
+    // Set up fallback polling as backup (less frequent when realtime is active)
+    pollingIntervalRef.current = setInterval(() => {
+      if (!subscriptionActiveRef.current) {
+        loadMessages();
+      }
+    }, 15000); // Less frequent fallback polling
 
     return () => {
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
       }
+      if (messageChannelRef.current) {
+        messageChannelRef.current.unsubscribe();
+        messageChannelRef.current = null;
+      }
+      subscriptionActiveRef.current = false;
     };
-  }, [currentThread?.id, loadMessages]);
+  }, [currentThread?.id, currentWorkspaceId, loadMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -249,16 +342,19 @@ export function useChat() {
     }
   }, [currentThread?.id, currentUser?.email]);
 
-  // Typing indicator setup
+  // Typing indicator setup with proper cleanup
   useEffect(() => {
     if (!currentThread?.id || !currentUser) {
       setTypingUsers([]);
       return;
     }
 
+    let isMounted = true;
+    let channel = null;
+
     const channelName = `typing:${currentThread.id}`;
 
-    const channel = supabase.channel(channelName, {
+    channel = supabase.channel(channelName, {
       config: {
         presence: {
           key: currentUser.email,
@@ -267,6 +363,7 @@ export function useChat() {
     });
 
     channel.on('presence', { event: 'sync' }, () => {
+      if (!isMounted) return;
       const state = channel.presenceState();
       const users = Object.values(state).flat().filter(
         (user) => user.email !== currentUser.email && user.isTyping
@@ -275,6 +372,7 @@ export function useChat() {
     });
 
     channel.on('presence', { event: 'join' }, ({ newPresences }) => {
+      if (!isMounted) return;
       setTypingUsers(prev => {
         const newUsers = newPresences.filter(
           p => p.email !== currentUser.email && p.isTyping
@@ -284,22 +382,35 @@ export function useChat() {
     });
 
     channel.on('presence', { event: 'leave' }, ({ leftPresences }) => {
+      if (!isMounted) return;
       setTypingUsers(prev =>
         prev.filter(u => !leftPresences.find(l => l.email === u.email))
       );
     });
 
     channel.subscribe(async (status) => {
+      if (!isMounted) {
+        // Component unmounted before subscription completed
+        channel.unsubscribe();
+        return;
+      }
       if (status === 'SUBSCRIBED') {
         typingChannelRef.current = channel;
       }
     });
 
     return () => {
-      if (typingChannelRef.current) {
-        typingChannelRef.current.unsubscribe();
-        typingChannelRef.current = null;
+      isMounted = false;
+      // Clear typing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
       }
+      // Unsubscribe from channel
+      if (channel) {
+        channel.unsubscribe();
+      }
+      typingChannelRef.current = null;
       setTypingUsers([]);
     };
   }, [currentThread?.id, currentUser?.email]);
@@ -313,41 +424,74 @@ export function useChat() {
     if (!currentThread || !currentUser) return;
 
     try {
+      // Update thread unread count
       const updatedUnreadCounts = (currentThread.unread_counts || []).map(uc =>
         uc.user_email === currentUser.email ? { ...uc, unread_count: 0 } : uc
       );
 
-      await db.entities.ConversationThread.update(currentThread.id, {
-        unread_counts: updatedUnreadCounts
+      // Batch all updates into a single Promise.all to avoid race conditions
+      const threadMessages = messages.filter(m => m.thread_id === currentThread.id);
+      const unreadMessages = threadMessages.filter(msg => {
+        const readBy = msg.read_by || [];
+        return !readBy.some(r => r.user_email === currentUser.email);
       });
 
-      const threadMessages = messages.filter(m => m.thread_id === currentThread.id);
-      for (const msg of threadMessages) {
-        const readBy = msg.read_by || [];
-        if (!readBy.some(r => r.user_email === currentUser.email)) {
-          await db.entities.Message.update(msg.id, {
-            read_by: [...readBy, { user_email: currentUser.email, read_at: new Date().toISOString() }]
-          });
-        }
-      }
+      const readAt = new Date().toISOString();
+      const readByUpdate = { user_email: currentUser.email, read_at: readAt };
 
-      loadData(true);
+      // Execute all updates in parallel for better performance
+      await Promise.all([
+        db.entities.ConversationThread.update(currentThread.id, {
+          unread_counts: updatedUnreadCounts
+        }),
+        ...unreadMessages.map(msg =>
+          db.entities.Message.update(msg.id, {
+            read_by: [...(msg.read_by || []), readByUpdate]
+          })
+        )
+      ]);
+
+      // Only refresh if there were updates
+      if (unreadMessages.length > 0) {
+        loadData(true);
+      }
     } catch (error) {
       console.error("Error marking thread as read:", error);
     }
   };
 
   const extractMentions = (text) => {
-    const mentionRegex = /@(\w+)/g;
+    // Match @word or @"full name" or @[full name] patterns
+    const mentionRegex = /@(?:"([^"]+)"|'([^']+)'|\[([^\]]+)\]|(\w+))/g;
     const mentions = [];
+    const addedEmails = new Set();
 
     let match;
     while ((match = mentionRegex.exec(text)) !== null) {
-      const mentionedUser = users.find(m =>
-        m.full_name?.toLowerCase().includes(match[1].toLowerCase())
+      // Get the captured name from any of the groups
+      const mentionName = match[1] || match[2] || match[3] || match[4];
+      if (!mentionName) continue;
+
+      const mentionLower = mentionName.toLowerCase();
+
+      // Try to find exact match first
+      let mentionedUser = users.find(m =>
+        m.full_name?.toLowerCase() === mentionLower
       );
-      if (mentionedUser) {
+
+      // If no exact match, try partial match (first name or last name)
+      if (!mentionedUser) {
+        mentionedUser = users.find(m => {
+          const fullName = m.full_name?.toLowerCase() || '';
+          const nameParts = fullName.split(' ');
+          return nameParts.some(part => part === mentionLower) ||
+                 fullName.includes(mentionLower);
+        });
+      }
+
+      if (mentionedUser && !addedEmails.has(mentionedUser.email)) {
         mentions.push(mentionedUser.email);
+        addedEmails.add(mentionedUser.email);
       }
     }
 
@@ -356,40 +500,66 @@ export function useChat() {
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !currentUser || !currentThread || !currentWorkspaceId) return;
+    if (isSending) return; // Prevent duplicate sends
+
+    const messageContent = newMessage;
+    const replyTo = replyToMessage;
+
+    // Optimistically clear input immediately for better UX
+    setNewMessage("");
+    setReplyToMessage(null);
+    setIsSending(true);
 
     try {
       const messageData = {
         workspace_id: currentWorkspaceId,
-        content: newMessage,
+        content: messageContent,
         assignment_id: currentAssignment?.id || null,
         author_email: currentUser.email,
         author_name: currentUser.full_name,
         message_type: "text",
         thread_id: currentThread.id,
-        reply_to: replyToMessage?.id || null,
-        mentioned_users: extractMentions(newMessage)
+        reply_to: replyTo?.id || null,
+        mentioned_users: extractMentions(messageContent)
       };
 
-      await db.entities.Message.create(messageData);
-      setNewMessage("");
-      setReplyToMessage(null);
+      const createdMessage = await db.entities.Message.create(messageData);
 
+      if (!createdMessage) {
+        throw new Error("Message creation returned no data");
+      }
+
+      // Optimistically add message to local state instead of full reload
+      setMessages(prev => [...prev, createdMessage]);
+
+      // Update thread metadata (use current count from server to avoid race)
       await db.entities.ConversationThread.update(currentThread.id, {
         last_activity: new Date().toISOString(),
         message_count: (currentThread.message_count || 0) + 1
       });
 
-      loadMessages();
-      loadData(true);
-      toast.success("Message sent");
+      // Only reload threads, not everything
+      const threadsData = await db.entities.ConversationThread.filter(
+        { workspace_id: currentWorkspaceId }, "-last_activity"
+      );
+      setThreads(threadsData);
+
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error("Failed to send message");
+      // Rollback: restore the message to the input
+      setNewMessage(messageContent);
+      if (replyTo) setReplyToMessage(replyTo);
+    } finally {
+      setIsSending(false);
     }
   };
 
   const handleEditMessage = async (message) => {
     if (!newMessage.trim() || !message) return;
+    if (!currentUser) return;
+
+    setOperationLoading(prev => ({ ...prev, [`edit-${message.id}`]: true }));
 
     try {
       const editHistory = message.edit_history || [];
@@ -406,109 +576,195 @@ export function useChat() {
         edit_history: editHistory
       });
 
+      // Optimistically update local state
+      setMessages(prev => prev.map(m =>
+        m.id === message.id
+          ? { ...m, content: newMessage, is_edited: true, last_edited_at: new Date().toISOString() }
+          : m
+      ));
+
       setNewMessage("");
       setEditingMessage(null);
-      loadMessages();
       toast.success("Message updated");
     } catch (error) {
       console.error("Error editing message:", error);
       toast.error("Failed to edit message");
+    } finally {
+      setOperationLoading(prev => ({ ...prev, [`edit-${message.id}`]: false }));
     }
   };
 
   const handleDeleteMessage = async (messageId) => {
+    setOperationLoading(prev => ({ ...prev, [`delete-${messageId}`]: true }));
+
+    // Store for potential rollback
+    const deletedMessage = messages.find(m => m.id === messageId);
+
+    // Optimistic update
+    setMessages(prev => prev.filter(m => m.id !== messageId));
+
     try {
       await db.entities.Message.delete(messageId);
-      loadMessages();
       toast.success("Message deleted");
     } catch (error) {
       console.error("Error deleting message:", error);
       toast.error("Failed to delete message");
+      // Rollback
+      if (deletedMessage) {
+        setMessages(prev => [...prev, deletedMessage].sort(
+          (a, b) => new Date(a.created_date) - new Date(b.created_date)
+        ));
+      }
+    } finally {
+      setOperationLoading(prev => ({ ...prev, [`delete-${messageId}`]: false }));
     }
   };
 
   const handlePinMessage = async (messageId) => {
-    try {
-      const message = messages.find(m => m.id === messageId);
-      if (!message) return;
+    if (!currentUser) return;
 
+    const message = messages.find(m => m.id === messageId);
+    if (!message) return;
+
+    setOperationLoading(prev => ({ ...prev, [`pin-${messageId}`]: true }));
+
+    const newPinState = !message.is_pinned;
+
+    // Optimistic update
+    setMessages(prev => prev.map(m =>
+      m.id === messageId
+        ? { ...m, is_pinned: newPinState, pinned_by: currentUser.email, pinned_at: new Date().toISOString() }
+        : m
+    ));
+
+    try {
       await db.entities.Message.update(messageId, {
-        is_pinned: !message.is_pinned,
+        is_pinned: newPinState,
         pinned_by: currentUser.email,
         pinned_at: new Date().toISOString()
       });
 
-      loadMessages();
       toast.success(message.is_pinned ? "Message unpinned" : "Message pinned");
     } catch (error) {
       console.error("Error pinning message:", error);
       toast.error("Failed to pin message");
+      // Rollback
+      setMessages(prev => prev.map(m =>
+        m.id === messageId ? message : m
+      ));
+    } finally {
+      setOperationLoading(prev => ({ ...prev, [`pin-${messageId}`]: false }));
     }
   };
 
   const handleBookmarkMessage = async (messageId) => {
+    if (!currentUser) return;
+
+    const message = messages.find(m => m.id === messageId);
+    if (!message) return;
+
+    setOperationLoading(prev => ({ ...prev, [`bookmark-${messageId}`]: true }));
+
+    const bookmarkedBy = message.is_bookmarked_by || [];
+    const isBookmarked = bookmarkedBy.includes(currentUser.email);
+    const newBookmarkedBy = isBookmarked
+      ? bookmarkedBy.filter(email => email !== currentUser.email)
+      : [...bookmarkedBy, currentUser.email];
+
+    // Optimistic update
+    setMessages(prev => prev.map(m =>
+      m.id === messageId ? { ...m, is_bookmarked_by: newBookmarkedBy } : m
+    ));
+
     try {
-      const message = messages.find(m => m.id === messageId);
-      if (!message) return;
-
-      const bookmarkedBy = message.is_bookmarked_by || [];
-      const isBookmarked = bookmarkedBy.includes(currentUser.email);
-
       await db.entities.Message.update(messageId, {
-        is_bookmarked_by: isBookmarked
-          ? bookmarkedBy.filter(email => email !== currentUser.email)
-          : [...bookmarkedBy, currentUser.email]
+        is_bookmarked_by: newBookmarkedBy
       });
 
-      loadMessages();
       toast.success(isBookmarked ? "Bookmark removed" : "Message bookmarked");
     } catch (error) {
       console.error("Error bookmarking message:", error);
       toast.error("Failed to bookmark message");
+      // Rollback
+      setMessages(prev => prev.map(m =>
+        m.id === messageId ? message : m
+      ));
+    } finally {
+      setOperationLoading(prev => ({ ...prev, [`bookmark-${messageId}`]: false }));
     }
   };
 
   const handleAddReaction = async (messageId, emoji) => {
+    if (!currentUser) return;
+
+    const message = messages.find(m => m.id === messageId);
+    if (!message) return;
+
+    const newReaction = {
+      emoji,
+      user_email: currentUser.email,
+      user_name: currentUser.full_name,
+      timestamp: new Date().toISOString()
+    };
+    const newReactions = [...(message.reactions || []), newReaction];
+
+    // Optimistic update
+    setMessages(prev => prev.map(m =>
+      m.id === messageId ? { ...m, reactions: newReactions } : m
+    ));
+
     try {
-      const message = messages.find(m => m.id === messageId);
-      if (!message) return;
-
-      const reactions = message.reactions || [];
-      reactions.push({
-        emoji,
-        user_email: currentUser.email,
-        user_name: currentUser.full_name,
-        timestamp: new Date().toISOString()
-      });
-
-      await db.entities.Message.update(messageId, { reactions });
-      loadMessages();
+      await db.entities.Message.update(messageId, { reactions: newReactions });
     } catch (error) {
       console.error("Error adding reaction:", error);
       toast.error("Failed to add reaction");
+      // Rollback
+      setMessages(prev => prev.map(m =>
+        m.id === messageId ? message : m
+      ));
     }
   };
 
   const handleRemoveReaction = async (messageId, emoji) => {
+    if (!currentUser) return;
+
+    const message = messages.find(m => m.id === messageId);
+    if (!message) return;
+
+    const newReactions = (message.reactions || []).filter(
+      r => !(r.emoji === emoji && r.user_email === currentUser.email)
+    );
+
+    // Optimistic update
+    setMessages(prev => prev.map(m =>
+      m.id === messageId ? { ...m, reactions: newReactions } : m
+    ));
+
     try {
-      const message = messages.find(m => m.id === messageId);
-      if (!message) return;
-
-      const reactions = (message.reactions || []).filter(
-        r => !(r.emoji === emoji && r.user_email === currentUser.email)
-      );
-
-      await db.entities.Message.update(messageId, { reactions });
-      loadMessages();
+      await db.entities.Message.update(messageId, { reactions: newReactions });
     } catch (error) {
       console.error("Error removing reaction:", error);
       toast.error("Failed to remove reaction");
+      // Rollback
+      setMessages(prev => prev.map(m =>
+        m.id === messageId ? message : m
+      ));
     }
   };
 
   const handleFileUpload = async (event) => {
     const file = event.target.files?.[0];
-    if (!file || !currentThread || !currentWorkspaceId) return;
+    if (!file || !currentThread || !currentWorkspaceId || !currentUser) return;
+
+    // Validate file
+    const validation = validateFile(file);
+    if (!validation.valid) {
+      toast.error(validation.error);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
 
     setUploadingFile(true);
     try {
@@ -526,8 +782,13 @@ export function useChat() {
         file_name: file.name
       };
 
-      await db.entities.Message.create(messageData);
-      loadMessages();
+      const createdMessage = await db.entities.Message.create(messageData);
+
+      // Optimistic update
+      if (createdMessage) {
+        setMessages(prev => [...prev, createdMessage]);
+      }
+
       toast.success("File uploaded");
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -543,6 +804,13 @@ export function useChat() {
   const handleFileUploadFromDrop = async (file) => {
     if (!currentThread || !currentUser || !currentWorkspaceId) return;
 
+    // Validate file
+    const validation = validateFile(file);
+    if (!validation.valid) {
+      toast.error(validation.error);
+      return;
+    }
+
     setUploadingFile(true);
     try {
       const { file_url } = await db.integrations.Core.UploadFile({ file });
@@ -559,8 +827,13 @@ export function useChat() {
         file_name: file.name
       };
 
-      await db.entities.Message.create(messageData);
-      loadMessages();
+      const createdMessage = await db.entities.Message.create(messageData);
+
+      // Optimistic update
+      if (createdMessage) {
+        setMessages(prev => [...prev, createdMessage]);
+      }
+
       toast.success("File uploaded");
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -766,6 +1039,8 @@ export function useChat() {
     isDraggingFile,
     replyToMessageData,
     typingUsers,
+    isSending, // New: prevent duplicate sends
+    operationLoading, // New: track individual operation loading states
 
     // Derived
     currentProject,

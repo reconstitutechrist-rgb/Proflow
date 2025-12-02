@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Component } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,8 +21,53 @@ import {
   Reply,
   Edit,
   FolderOpen,
-  Target
+  Target,
+  AlertCircle,
+  Loader2
 } from "lucide-react";
+
+// Error Boundary for message list
+class MessageListErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("MessageList error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            Something went wrong
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            Unable to display messages. Please try refreshing.
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              this.props.onRetry?.();
+            }}
+          >
+            Try Again
+          </Button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,7 +84,7 @@ import ThreadSearch from "@/features/chat/ThreadSearch";
 import { useChat } from "@/hooks/useChat";
 import { ChatHeader, ChatNewThreadDialog } from "@/features/chat/chatPage";
 
-// VirtualizedMessageList component
+// VirtualizedMessageList component with actual virtualization
 const VirtualizedMessageList = React.memo(({
   messages,
   currentUser,
@@ -53,30 +98,124 @@ const VirtualizedMessageList = React.memo(({
   onAddReaction,
   onRemoveReaction,
 }) => {
+  const containerRef = React.useRef(null);
+  const [visibleRange, setVisibleRange] = React.useState({ start: 0, end: 50 });
+
+  // Estimated heights for virtualization
+  const ITEM_HEIGHT = viewMode === 'compact' ? 60 : 100;
+  const BUFFER_SIZE = 10;
+  const TOTAL_HEIGHT = messages.length * ITEM_HEIGHT;
+
+  // Handle scroll to update visible range
+  const handleScroll = React.useCallback(() => {
+    if (!containerRef.current) return;
+
+    const { scrollTop, clientHeight } = containerRef.current;
+    const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - BUFFER_SIZE);
+    const endIndex = Math.min(
+      messages.length,
+      Math.ceil((scrollTop + clientHeight) / ITEM_HEIGHT) + BUFFER_SIZE
+    );
+
+    setVisibleRange({ start: startIndex, end: endIndex });
+  }, [messages.length, ITEM_HEIGHT]);
+
+  // Set up scroll listener
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Initial calculation
+    handleScroll();
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
+
+  // Recalculate when messages change
+  React.useEffect(() => {
+    handleScroll();
+  }, [messages.length, handleScroll]);
+
+  // For small lists, render all messages without virtualization
+  if (messages.length <= 50) {
+    return (
+      <div className="space-y-1">
+        {messages.map((message, index) => {
+          const previousMessage = index > 0 ? messages[index - 1] : null;
+          const repliedToMessage = message.reply_to ? replyToMessageData[message.reply_to] : null;
+          return (
+            <div key={message.id} id={`message-${message.id}`}>
+              <EnhancedMessage
+                message={message}
+                previousMessage={previousMessage}
+                currentUser={currentUser}
+                repliedToMessage={repliedToMessage}
+                viewMode={viewMode}
+                onReply={onReply}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onPin={onPin}
+                onBookmark={onBookmark}
+                onAddReaction={onAddReaction}
+                onRemoveReaction={onRemoveReaction}
+              />
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Virtualized rendering for large lists
+  const visibleMessages = messages.slice(visibleRange.start, visibleRange.end);
+  const topSpacer = visibleRange.start * ITEM_HEIGHT;
+  const bottomSpacer = Math.max(0, (messages.length - visibleRange.end) * ITEM_HEIGHT);
+
   return (
-    <div className="space-y-1">
-      {messages.map((message, index) => {
-        const previousMessage = index > 0 ? messages[index - 1] : null;
-        const repliedToMessage = message.reply_to ? replyToMessageData[message.reply_to] : null;
-        return (
-          <div key={message.id} id={`message-${message.id}`}>
-            <EnhancedMessage
-              message={message}
-              previousMessage={previousMessage}
-              currentUser={currentUser}
-              repliedToMessage={repliedToMessage}
-              viewMode={viewMode}
-              onReply={onReply}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onPin={onPin}
-              onBookmark={onBookmark}
-              onAddReaction={onAddReaction}
-              onRemoveReaction={onRemoveReaction}
-            />
-          </div>
-        );
-      })}
+    <div
+      ref={containerRef}
+      className="h-full overflow-y-auto"
+      style={{ position: 'relative' }}
+    >
+      <div style={{ height: TOTAL_HEIGHT, position: 'relative' }}>
+        {/* Top spacer */}
+        <div style={{ height: topSpacer }} aria-hidden="true" />
+
+        {/* Visible messages */}
+        <div className="space-y-1">
+          {visibleMessages.map((message, index) => {
+            const actualIndex = visibleRange.start + index;
+            const previousMessage = actualIndex > 0 ? messages[actualIndex - 1] : null;
+            const repliedToMessage = message.reply_to ? replyToMessageData[message.reply_to] : null;
+            return (
+              <div
+                key={message.id}
+                id={`message-${message.id}`}
+                style={{ minHeight: ITEM_HEIGHT }}
+              >
+                <EnhancedMessage
+                  message={message}
+                  previousMessage={previousMessage}
+                  currentUser={currentUser}
+                  repliedToMessage={repliedToMessage}
+                  viewMode={viewMode}
+                  onReply={onReply}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onPin={onPin}
+                  onBookmark={onBookmark}
+                  onAddReaction={onAddReaction}
+                  onRemoveReaction={onRemoveReaction}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Bottom spacer */}
+        <div style={{ height: bottomSpacer }} aria-hidden="true" />
+      </div>
     </div>
   );
 });
@@ -107,6 +246,8 @@ export default function ChatPage() {
     isDraggingFile,
     replyToMessageData,
     typingUsers,
+    isSending,
+    operationLoading,
 
     // Derived
     currentProject,
@@ -132,6 +273,7 @@ export default function ChatPage() {
     setShowPinnedMessages,
 
     // Handlers
+    loadMessages,
     handleSendMessage,
     handleEditMessage,
     handleDeleteMessage,
@@ -246,6 +388,8 @@ export default function ChatPage() {
                         size="icon"
                         onClick={() => setIsSearchOpen(!isSearchOpen)}
                         title="Search messages"
+                        aria-label="Search messages"
+                        aria-pressed={isSearchOpen}
                       >
                         <Search className="w-4 h-4" />
                       </Button>
@@ -256,6 +400,8 @@ export default function ChatPage() {
                           size="icon"
                           onClick={() => setShowPinnedMessages(!showPinnedMessages)}
                           title="View pinned messages"
+                          aria-label={`${showPinnedMessages ? 'Hide' : 'Show'} pinned messages (${pinnedMessages.length})`}
+                          aria-pressed={showPinnedMessages}
                         >
                           <Pin className={`w-4 h-4 ${showPinnedMessages ? 'text-yellow-600' : ''}`} />
                         </Button>
@@ -266,6 +412,7 @@ export default function ChatPage() {
                         size="icon"
                         onClick={() => setViewMode(viewMode === 'compact' ? 'comfortable' : 'compact')}
                         title="Toggle view density"
+                        aria-label={`Switch to ${viewMode === 'compact' ? 'comfortable' : 'compact'} view`}
                       >
                         {viewMode === 'compact' ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </Button>
@@ -398,36 +545,38 @@ export default function ChatPage() {
                     </div>
                   )}
 
-                  {currentThreadMessages.length === 0 ? (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center">
-                        <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                          Start the conversation
-                        </h3>
-                        <p className="text-gray-600 dark:text-gray-400">
-                          Be the first to send a message in this thread
-                        </p>
+                  <MessageListErrorBoundary onRetry={loadMessages}>
+                    {currentThreadMessages.length === 0 ? (
+                      <div className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                          <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            Start the conversation
+                          </h3>
+                          <p className="text-gray-600 dark:text-gray-400">
+                            Be the first to send a message in this thread
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <VirtualizedMessageList
-                      messages={regularMessages}
-                      currentUser={currentUser}
-                      replyToMessageData={replyToMessageData}
-                      viewMode={viewMode}
-                      onReply={(msg) => setReplyToMessage(msg)}
-                      onEdit={(msg) => {
-                        setEditingMessage(msg);
-                        setNewMessage(msg.content);
-                      }}
-                      onDelete={handleDeleteMessage}
-                      onPin={handlePinMessage}
-                      onBookmark={handleBookmarkMessage}
-                      onAddReaction={handleAddReaction}
-                      onRemoveReaction={handleRemoveReaction}
-                    />
-                  )}
+                    ) : (
+                      <VirtualizedMessageList
+                        messages={regularMessages}
+                        currentUser={currentUser}
+                        replyToMessageData={replyToMessageData}
+                        viewMode={viewMode}
+                        onReply={(msg) => setReplyToMessage(msg)}
+                        onEdit={(msg) => {
+                          setEditingMessage(msg);
+                          setNewMessage(msg.content);
+                        }}
+                        onDelete={handleDeleteMessage}
+                        onPin={handlePinMessage}
+                        onBookmark={handleBookmarkMessage}
+                        onAddReaction={handleAddReaction}
+                        onRemoveReaction={handleRemoveReaction}
+                      />
+                    )}
+                  </MessageListErrorBoundary>
                   <div ref={messagesEndRef} />
 
                   {/* Typing Indicator */}
@@ -518,10 +667,15 @@ export default function ChatPage() {
                     </div>
                     <Button
                       onClick={editingMessage ? () => handleEditMessage(editingMessage) : handleSendMessage}
-                      disabled={!newMessage.trim() || !currentThread || uploadingFile}
+                      disabled={!newMessage.trim() || !currentThread || uploadingFile || isSending}
                       className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-md h-12 px-6"
+                      aria-label={editingMessage ? "Update message" : "Send message"}
                     >
-                      <Send className="w-4 h-4" />
+                      {isSending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4" />
+                      )}
                     </Button>
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,12 +18,19 @@ import {
   MoreVertical,
   File,
   Paperclip,
-  Clock
+  Clock,
+  MoreHorizontal
 } from "lucide-react";
 import { format } from "date-fns";
 import MessageReactions from "@/features/chat/MessageReactions";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
+
+// Detect touch device
+const isTouchDevice = () => {
+  if (typeof window === 'undefined') return false;
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+};
 
 export default function EnhancedMessage({
   message,
@@ -39,6 +46,11 @@ export default function EnhancedMessage({
   viewMode = "comfortable"
 }) {
   const [showActions, setShowActions] = useState(false);
+  const [isTouch, setIsTouch] = useState(false);
+
+  useEffect(() => {
+    setIsTouch(isTouchDevice());
+  }, []);
 
   // Check if this message should be grouped with the previous one
   const shouldGroup = previousMessage &&
@@ -191,66 +203,117 @@ export default function EnhancedMessage({
               </div>
             )}
 
-            {/* Quick Actions - Show on Hover */}
-            {showActions && (
-              <div className="absolute -top-3 right-0 flex items-center gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2"
-                  onClick={() => onReply(message)}
-                  title="Reply"
-                >
-                  <Reply className="w-3 h-3" />
-                </Button>
-                {isOwnMessage && (
+            {/* Quick Actions - Show on Hover (desktop) or Always via Menu (mobile) */}
+            {isTouch ? (
+              // Mobile: Always show a menu button
+              <div className="absolute -top-3 right-0">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm"
+                      aria-label="Message actions"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onReply?.(message)}>
+                      <Reply className="w-4 h-4 mr-2" />
+                      Reply
+                    </DropdownMenuItem>
+                    {isOwnMessage && (
+                      <DropdownMenuItem onClick={() => onEdit?.(message)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={() => onBookmark?.(message.id)}>
+                      <Bookmark className={`w-4 h-4 mr-2 ${isBookmarked ? 'fill-current text-blue-600' : ''}`} />
+                      {isBookmarked ? 'Remove Bookmark' : 'Bookmark'}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onPin?.(message.id)}>
+                      <Pin className={`w-4 h-4 mr-2 ${message.is_pinned ? 'text-yellow-600' : ''}`} />
+                      {message.is_pinned ? 'Unpin' : 'Pin'}
+                    </DropdownMenuItem>
+                    {isOwnMessage && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => onDelete?.(message.id)}
+                          className="text-red-600 dark:text-red-400"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              // Desktop: Show on hover
+              showActions && (
+                <div className="absolute -top-3 right-0 flex items-center gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-1">
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-7 px-2"
-                    onClick={() => onEdit(message)}
-                    title="Edit"
+                    onClick={() => onReply?.(message)}
+                    aria-label="Reply to message"
                   >
-                    <Edit className="w-3 h-3" />
+                    <Reply className="w-3 h-3" />
                   </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2"
-                  onClick={() => onBookmark(message.id)}
-                  title="Bookmark"
-                >
-                  <Bookmark className={`w-3 h-3 ${isBookmarked ? 'fill-current text-blue-600' : ''}`} />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2"
-                  onClick={() => onPin(message.id)}
-                  title="Pin"
-                >
-                  <Pin className={`w-3 h-3 ${message.is_pinned ? 'text-yellow-600' : ''}`} />
-                </Button>
-                {isOwnMessage && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-7 px-2">
-                        <MoreVertical className="w-3 h-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => onDelete(message.id)}
-                        className="text-red-600 dark:text-red-400"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete Message
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
+                  {isOwnMessage && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2"
+                      onClick={() => onEdit?.(message)}
+                      aria-label="Edit message"
+                    >
+                      <Edit className="w-3 h-3" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2"
+                    onClick={() => onBookmark?.(message.id)}
+                    aria-label={isBookmarked ? "Remove bookmark" : "Bookmark message"}
+                  >
+                    <Bookmark className={`w-3 h-3 ${isBookmarked ? 'fill-current text-blue-600' : ''}`} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2"
+                    onClick={() => onPin?.(message.id)}
+                    aria-label={message.is_pinned ? "Unpin message" : "Pin message"}
+                  >
+                    <Pin className={`w-3 h-3 ${message.is_pinned ? 'text-yellow-600' : ''}`} />
+                  </Button>
+                  {isOwnMessage && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-7 px-2" aria-label="More actions">
+                          <MoreVertical className="w-3 h-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => onDelete?.(message.id)}
+                          className="text-red-600 dark:text-red-400"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete Message
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              )
             )}
           </div>
 

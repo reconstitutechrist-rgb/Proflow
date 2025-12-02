@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
@@ -12,8 +12,61 @@ export default function ThreadSearch({ assignmentId, onThreadSelect }) {
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [recentThreads, setRecentThreads] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
 
   const { currentWorkspaceId } = useWorkspace();
+  const inputRef = useRef(null);
+  const listRef = useRef(null);
+
+  // Get current list based on search state
+  const currentList = searchQuery.trim() ? searchResults : recentThreads;
+
+  // Handle keyboard navigation
+  const handleKeyDown = useCallback((e) => {
+    if (currentList.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex(prev =>
+          prev < currentList.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex(prev =>
+          prev > 0 ? prev - 1 : currentList.length - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedIndex >= 0 && selectedIndex < currentList.length) {
+          handleThreadClick(currentList[selectedIndex]);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setSearchQuery("");
+        setSelectedIndex(-1);
+        inputRef.current?.blur();
+        break;
+      default:
+        break;
+    }
+  }, [currentList, selectedIndex]);
+
+  // Reset selection when results change
+  useEffect(() => {
+    setSelectedIndex(-1);
+  }, [searchResults, recentThreads]);
+
+  // Scroll selected item into view
+  useEffect(() => {
+    if (selectedIndex >= 0 && listRef.current) {
+      const selectedElement = listRef.current.children[selectedIndex];
+      selectedElement?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [selectedIndex]);
 
   useEffect(() => {
     if (currentWorkspaceId) {
@@ -129,28 +182,53 @@ export default function ThreadSearch({ assignmentId, onThreadSelect }) {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
+            ref={inputRef}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Search threads and messages..."
             className="pl-9"
             autoFocus
+            aria-label="Search threads"
+            aria-describedby="search-hint"
+            role="combobox"
+            aria-expanded={currentList.length > 0}
+            aria-activedescendant={selectedIndex >= 0 ? `thread-${currentList[selectedIndex]?.id}` : undefined}
           />
+          <span id="search-hint" className="sr-only">
+            Use arrow keys to navigate, Enter to select, Escape to clear
+          </span>
         </div>
       </div>
 
       {searchQuery.trim() ? (
         loading ? (
-          <div className="text-center py-4 text-sm text-gray-500">Loading...</div>
+          <div className="text-center py-4 text-sm text-gray-500" role="status" aria-live="polite">
+            Loading...
+          </div>
         ) : searchResults.length > 0 ? (
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            <div className="text-xs text-gray-500 mb-2">
+          <div
+            ref={listRef}
+            className="space-y-2 max-h-64 overflow-y-auto"
+            role="listbox"
+            aria-label="Search results"
+          >
+            <div className="text-xs text-gray-500 mb-2" aria-live="polite">
               {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
             </div>
-            {searchResults.map(thread => (
+            {searchResults.map((thread, index) => (
               <button
                 key={thread.id}
+                id={`thread-${thread.id}`}
                 onClick={() => handleThreadClick(thread)}
-                className="w-full text-left p-3 rounded-lg hover:bg-white dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-600"
+                onMouseEnter={() => setSelectedIndex(index)}
+                className={`w-full text-left p-3 rounded-lg transition-colors border ${
+                  selectedIndex === index
+                    ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-300 dark:border-indigo-600'
+                    : 'hover:bg-white dark:hover:bg-gray-700 border-gray-200 dark:border-gray-600'
+                }`}
+                role="option"
+                aria-selected={selectedIndex === index}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
@@ -167,19 +245,32 @@ export default function ThreadSearch({ assignmentId, onThreadSelect }) {
             ))}
           </div>
         ) : (
-          <div className="text-center py-4 text-sm text-gray-500">
+          <div className="text-center py-4 text-sm text-gray-500" role="status">
             No threads found.
           </div>
         )
       ) : (
         recentThreads.length > 0 ? (
-          <div className="space-y-2 max-h-64 overflow-y-auto">
+          <div
+            ref={listRef}
+            className="space-y-2 max-h-64 overflow-y-auto"
+            role="listbox"
+            aria-label="Recent threads"
+          >
             <div className="text-xs text-gray-500 mb-2">Recent Threads</div>
-            {recentThreads.map(thread => (
+            {recentThreads.map((thread, index) => (
               <button
                 key={thread.id}
+                id={`thread-${thread.id}`}
                 onClick={() => handleThreadClick(thread)}
-                className="w-full text-left p-3 rounded-lg hover:bg-white dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-600"
+                onMouseEnter={() => setSelectedIndex(index)}
+                className={`w-full text-left p-3 rounded-lg transition-colors border ${
+                  selectedIndex === index
+                    ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-300 dark:border-indigo-600'
+                    : 'hover:bg-white dark:hover:bg-gray-700 border-gray-200 dark:border-gray-600'
+                }`}
+                role="option"
+                aria-selected={selectedIndex === index}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
@@ -196,7 +287,7 @@ export default function ThreadSearch({ assignmentId, onThreadSelect }) {
             ))}
           </div>
         ) : (
-          <div className="text-center py-4 text-sm text-gray-500">
+          <div className="text-center py-4 text-sm text-gray-500" role="status">
             No recent threads found.
           </div>
         )

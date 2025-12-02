@@ -153,6 +153,7 @@ export default function DocumentsHub() {
 
   // Data
   const [assignments, setAssignments] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
@@ -192,15 +193,32 @@ export default function DocumentsHub() {
     try {
       setLoading(true);
 
-      const [assignmentsData, tasksData, usersData, allDocuments, user] = await Promise.all([
+      const [workspaceAssignments, allAssignmentsList, workspaceProjects, allProjectsList, tasksData, usersData, allDocuments, user] = await Promise.all([
         Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
+        Assignment.list("-updated_date", 100),
+        db.entities.Project.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
+        db.entities.Project.list("-updated_date", 100),
         Task.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
         db.entities.User.list(),
         Document.filter({ workspace_id: currentWorkspaceId }, "-created_date"),
         db.auth.me()
       ]);
 
-      setAssignments(assignmentsData || []);
+      // Include legacy assignments without workspace_id
+      const legacyAssignments = (allAssignmentsList || []).filter(a => !a.workspace_id);
+      const combinedAssignments = [...(workspaceAssignments || []), ...legacyAssignments];
+      const uniqueAssignments = combinedAssignments.filter((assignment, index, self) =>
+        index === self.findIndex(a => a.id === assignment.id)
+      );
+      setAssignments(uniqueAssignments);
+
+      // Include legacy projects without workspace_id
+      const legacyProjects = (allProjectsList || []).filter(p => !p.workspace_id);
+      const combinedProjects = [...(workspaceProjects || []), ...legacyProjects];
+      const uniqueProjects = combinedProjects.filter((project, index, self) =>
+        index === self.findIndex(p => p.id === project.id)
+      );
+      setProjects(uniqueProjects);
       setTasks(tasksData || []);
       setUsers(usersData || []);
       setDocuments(allDocuments || []);
@@ -854,6 +872,7 @@ export default function DocumentsHub() {
           </DialogHeader>
           <DocumentUploader
             assignments={assignments}
+            projects={projects}
             currentUser={currentUser}
             selectedFolderPath="/"
             onUploadComplete={handleUploadComplete}

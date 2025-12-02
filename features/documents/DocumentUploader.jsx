@@ -517,7 +517,7 @@ export default function DocumentUploader({
         files.find(file => file.id === f.id)?.status === "error"
       ).length;
       if (failedCount > 0) {
-        toast.warn(`${failedCount} document(s) failed to upload. You can retry them individually.`);
+        toast.warning(`${failedCount} document(s) failed to upload. You can retry them individually.`);
       }
     }
   };

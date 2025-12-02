@@ -165,6 +165,8 @@ export default function DocumentsHub() {
   const [loading, setLoading] = useState(true);
   const [isOutlineDialogOpen, setIsOutlineDialogOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewDocument, setPreviewDocument] = useState(null);
 
   // Refs
   const autosaveTimerRef = useRef(null);
@@ -392,6 +394,13 @@ export default function DocumentsHub() {
   };
 
   const handleEditDocument = (doc) => {
+    // If it's an uploaded file (has file_url but no editable content), show preview
+    if (doc.file_url && !doc.content) {
+      setPreviewDocument(doc);
+      setIsPreviewOpen(true);
+      return;
+    }
+    // Otherwise, open in studio for editing
     setSearchParams({ tab: "studio", id: doc.id });
   };
 
@@ -906,6 +915,160 @@ export default function DocumentsHub() {
             <DialogTitle>Export Document</DialogTitle>
           </DialogHeader>
           <ExportOptions title={title} content={content} documentId={documentId} onClose={() => setIsExportDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Document Preview Dialog */}
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-5xl h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              {previewDocument?.title || "Document Preview"}
+            </DialogTitle>
+            {previewDocument?.description && (
+              <DialogDescription>{previewDocument.description}</DialogDescription>
+            )}
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden rounded-lg border bg-gray-50 dark:bg-gray-900">
+            {previewDocument?.file_url && (() => {
+              const fileType = previewDocument.file_type?.toLowerCase() || '';
+              const fileName = previewDocument.file_name?.toLowerCase() || '';
+              const fileUrl = previewDocument.file_url;
+
+              // Image formats
+              const isImage = fileType.startsWith('image/') ||
+                ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico'].some(ext => fileName.endsWith(ext));
+
+              // PDF
+              const isPdf = fileType === 'application/pdf' || fileName.endsWith('.pdf');
+
+              // Office documents (use Google Docs Viewer)
+              const isOfficeDoc = [
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
+                'application/msword', // doc
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
+                'application/vnd.ms-excel', // xls
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation', // pptx
+                'application/vnd.ms-powerpoint', // ppt
+              ].includes(fileType) ||
+                ['.docx', '.doc', '.xlsx', '.xls', '.pptx', '.ppt'].some(ext => fileName.endsWith(ext));
+
+              // Text files
+              const isText = fileType.startsWith('text/') ||
+                ['.txt', '.md', '.json', '.xml', '.csv', '.log'].some(ext => fileName.endsWith(ext));
+
+              // Video
+              const isVideo = fileType.startsWith('video/') ||
+                ['.mp4', '.webm', '.ogg', '.mov'].some(ext => fileName.endsWith(ext));
+
+              // Audio
+              const isAudio = fileType.startsWith('audio/') ||
+                ['.mp3', '.wav', '.ogg', '.m4a'].some(ext => fileName.endsWith(ext));
+
+              if (isImage) {
+                return (
+                  <div className="w-full h-full flex items-center justify-center p-4 overflow-auto">
+                    <img
+                      src={fileUrl}
+                      alt={previewDocument.title}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                );
+              }
+
+              if (isPdf) {
+                return (
+                  <iframe
+                    src={fileUrl}
+                    className="w-full h-full"
+                    title={previewDocument.title}
+                  />
+                );
+              }
+
+              if (isOfficeDoc) {
+                // Use Google Docs Viewer for Office documents
+                const googleViewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+                return (
+                  <iframe
+                    src={googleViewerUrl}
+                    className="w-full h-full"
+                    title={previewDocument.title}
+                  />
+                );
+              }
+
+              if (isVideo) {
+                return (
+                  <div className="w-full h-full flex items-center justify-center p-4">
+                    <video
+                      src={fileUrl}
+                      controls
+                      className="max-w-full max-h-full"
+                    >
+                      Your browser does not support video playback.
+                    </video>
+                  </div>
+                );
+              }
+
+              if (isAudio) {
+                return (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-4 p-4">
+                    <FileText className="w-16 h-16 text-gray-400" />
+                    <p className="text-lg font-medium">{previewDocument.title}</p>
+                    <audio src={fileUrl} controls className="w-full max-w-md">
+                      Your browser does not support audio playback.
+                    </audio>
+                  </div>
+                );
+              }
+
+              if (isText) {
+                return (
+                  <iframe
+                    src={fileUrl}
+                    className="w-full h-full bg-white"
+                    title={previewDocument.title}
+                  />
+                );
+              }
+
+              // Fallback for unsupported types
+              return (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-4">
+                  <FileText className="w-16 h-16 text-gray-400" />
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Preview not available for this file type
+                  </p>
+                  <p className="text-sm text-gray-500">{fileType || 'Unknown type'}</p>
+                  <Button onClick={() => window.open(fileUrl, '_blank')}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Open in New Tab
+                  </Button>
+                </div>
+              );
+            })()}
+          </div>
+          <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t">
+            <div className="text-sm text-gray-500">
+              {previewDocument?.file_name && <span>{previewDocument.file_name}</span>}
+              {previewDocument?.file_size && (
+                <span className="ml-2">({(previewDocument.file_size / 1024 / 1024).toFixed(2)} MB)</span>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => window.open(previewDocument?.file_url, '_blank')}>
+                <Download className="w-4 h-4 mr-2" />
+                Download
+              </Button>
+              <Button variant="ghost" onClick={() => setIsPreviewOpen(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -80,14 +80,26 @@ export default function DocumentsPage() {
         const assignmentsData = await db.entities.Assignment.filter({
           workspace_id: currentWorkspaceId,
         });
-        setAssignments(assignmentsData);
+        setAssignments(assignmentsData || []);
 
         await new Promise((resolve) => setTimeout(resolve, delay));
 
-        const projectsData = await db.entities.Project.filter({
-          workspace_id: currentWorkspaceId,
-        });
-        setProjects(projectsData);
+        // Fetch projects for current workspace AND legacy projects without workspace_id
+        const [workspaceProjects, allProjects] = await Promise.all([
+          db.entities.Project.filter({ workspace_id: currentWorkspaceId }),
+          db.entities.Project.list("-updated_date", 100)
+        ]);
+
+        // Include legacy projects that don't have a workspace_id set
+        const legacyProjects = (allProjects || []).filter(p => !p.workspace_id);
+        const combinedProjects = [...(workspaceProjects || []), ...legacyProjects];
+
+        // Remove duplicates (in case any project appears in both)
+        const uniqueProjects = combinedProjects.filter((project, index, self) =>
+          index === self.findIndex(p => p.id === project.id)
+        );
+
+        setProjects(uniqueProjects);
 
         await new Promise((resolve) => setTimeout(resolve, delay));
 

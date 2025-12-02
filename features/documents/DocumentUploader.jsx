@@ -568,10 +568,10 @@ export default function DocumentUploader({
   const errorFiles = files.filter(f => f.status === "error").length;
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-full max-h-[70vh]">
       {/* Upload Summary */}
       {files.length > 0 && (
-        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl border border-blue-200 dark:border-blue-800">
+        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl border border-blue-200 dark:border-blue-800 shrink-0 mb-4">
           <div className="flex items-center gap-6">
             <div className="text-sm font-medium text-gray-900 dark:text-white">
               Total: {files.length} file(s)
@@ -621,7 +621,7 @@ export default function DocumentUploader({
       )}
 
       {/* File Input */}
-      <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-8 text-center hover:border-blue-400 dark:hover:border-blue-600 transition-colors bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-6 text-center hover:border-blue-400 dark:hover:border-blue-600 transition-colors bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 shrink-0">
         <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
           Upload Documents
@@ -646,12 +646,12 @@ export default function DocumentUploader({
 
       {/* File List with Progress */}
       {files.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="font-semibold text-gray-900 dark:text-white">
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-3 shrink-0">
             Selected Files ({files.length})
           </h3>
 
-          <div className="space-y-3 max-h-[500px] overflow-y-auto">
+          <div className="space-y-3 overflow-y-auto flex-1 pr-2">
             {files.map((fileData) => (
               <Card
                 key={fileData.id}
@@ -886,50 +886,58 @@ export default function DocumentUploader({
 
                           <div>
                             <Label>Link to Project</Label>
-                            <Select
-                              value={fileData.assigned_to_project || "none"}
-                              onValueChange={(value) => {
-                                updateFileField(fileData.id, "assigned_to_project", value === "none" ? null : value);
-                              }}
-                              disabled={uploading || fileData.converting}
-                            >
-                              <SelectTrigger className="mt-1">
-                                <SelectValue placeholder="Select project" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">No Project</SelectItem>
-                                {projects.map(project => (
-                                  <SelectItem key={project.id} value={project.id}>
-                                    {project.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            {projects.length === 0 ? (
+                              <p className="text-xs text-gray-500 mt-1 italic">No projects available in this workspace</p>
+                            ) : (
+                              <Select
+                                value={fileData.assigned_to_project || "none"}
+                                onValueChange={(value) => {
+                                  updateFileField(fileData.id, "assigned_to_project", value === "none" ? null : value);
+                                }}
+                                disabled={uploading || fileData.converting}
+                              >
+                                <SelectTrigger className="mt-1">
+                                  <SelectValue placeholder="Select project" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">No Project</SelectItem>
+                                  {projects.map(project => (
+                                    <SelectItem key={project.id} value={project.id}>
+                                      {project.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
                           </div>
                         </div>
 
                         <div>
                           <Label>Link to Assignment</Label>
-                          <Select
-                            value={fileData.assigned_to_assignments[0] || "none"}
-                            onValueChange={(value) => {
-                              const assignmentsList = value === "none" ? [] : [value];
-                              updateFileField(fileData.id, "assigned_to_assignments", assignmentsList);
-                            }}
-                            disabled={uploading || fileData.converting}
-                          >
-                            <SelectTrigger className="mt-1">
-                              <SelectValue placeholder="Select assignment" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">No Assignment</SelectItem>
-                              {assignments.map(assignment => (
-                                <SelectItem key={assignment.id} value={assignment.id}>
-                                  {assignment.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          {assignments.length === 0 ? (
+                            <p className="text-xs text-gray-500 mt-1 italic">No assignments available in this workspace</p>
+                          ) : (
+                            <Select
+                              value={fileData.assigned_to_assignments[0] || "none"}
+                              onValueChange={(value) => {
+                                const assignmentsList = value === "none" ? [] : [value];
+                                updateFileField(fileData.id, "assigned_to_assignments", assignmentsList);
+                              }}
+                              disabled={uploading || fileData.converting}
+                            >
+                              <SelectTrigger className="mt-1">
+                                <SelectValue placeholder="Select assignment" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">No Assignment</SelectItem>
+                                {assignments.map(assignment => (
+                                  <SelectItem key={assignment.id} value={assignment.id}>
+                                    {assignment.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
                         </div>
                       </div>
                     )}
@@ -941,9 +949,9 @@ export default function DocumentUploader({
         </div>
       )}
 
-      {/* Upload Button */}
-      {files.length > 0 && (pendingFiles > 0 || errorFiles > 0 || files.some(f => f.converting)) && ( // Adjusted condition to include converting state
-        <div className="flex items-center justify-between pt-4 border-t">
+      {/* Upload Button - Always visible at bottom */}
+      {files.length > 0 && (pendingFiles > 0 || errorFiles > 0 || files.some(f => f.converting)) && (
+        <div className="flex items-center justify-between pt-4 border-t mt-4 shrink-0 bg-white dark:bg-gray-900">
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {pendingFiles} file(s) pending{errorFiles > 0 && `, ${errorFiles} failed`}

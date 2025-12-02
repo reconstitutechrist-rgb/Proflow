@@ -53,12 +53,13 @@ export default function ProjectsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [projectsData, assignmentsData, usersData, user] =
+      const [workspaceProjects, allProjects, assignmentsData, usersData, user] =
         await Promise.all([
           db.entities.Project.filter(
             { workspace_id: currentWorkspaceId },
             "-updated_date"
           ),
+          db.entities.Project.list("-updated_date", 100),
           db.entities.Assignment.filter(
             { workspace_id: currentWorkspaceId },
             "-updated_date"
@@ -67,7 +68,14 @@ export default function ProjectsPage() {
           db.auth.me(),
         ]);
 
-      setProjects(projectsData);
+      // Include legacy projects that don't have a workspace_id set
+      const legacyProjects = (allProjects || []).filter(p => !p.workspace_id);
+      const combinedProjects = [...(workspaceProjects || []), ...legacyProjects];
+      const uniqueProjects = combinedProjects.filter((project, index, self) =>
+        index === self.findIndex(p => p.id === project.id)
+      );
+
+      setProjects(uniqueProjects);
       setAssignments(assignmentsData);
       setUsers(usersData);
       setCurrentUser(user);

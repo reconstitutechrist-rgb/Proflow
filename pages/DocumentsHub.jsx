@@ -25,7 +25,24 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   FileText,
   Save,
@@ -56,6 +73,9 @@ import {
   Bell,
   ArrowLeft,
   FileUp,
+  Trash2,
+  MoreVertical,
+  FolderKanban,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -125,6 +145,7 @@ export default function DocumentsHub() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [selectedAssignmentFilter, setSelectedAssignmentFilter] = useState("all");
+  const [selectedProjectFilter, setSelectedProjectFilter] = useState("all");
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
 
@@ -167,6 +188,9 @@ export default function DocumentsHub() {
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewDocument, setPreviewDocument] = useState(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Refs
   const autosaveTimerRef = useRef(null);
@@ -393,9 +417,47 @@ export default function DocumentsHub() {
     toast.success("Document(s) uploaded");
   };
 
+  const handleDeleteClick = (e, doc) => {
+    e.stopPropagation(); // Prevent card click
+    setDocumentToDelete(doc);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!documentToDelete) return;
+
+    try {
+      setIsDeleting(true);
+      await Document.delete(documentToDelete.id);
+      toast.success(`"${documentToDelete.title}" deleted successfully`);
+      setIsDeleteDialogOpen(false);
+      setDocumentToDelete(null);
+      loadData(); // Refresh the list
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      toast.error("Failed to delete document");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleEditDocument = (doc) => {
-    // If it's an uploaded file (has file_url but no editable content), show preview
-    if (doc.file_url && !doc.content) {
+    // Debug: Log document info to help diagnose preview issues
+    console.log("handleEditDocument called with:", {
+      id: doc.id,
+      title: doc.title,
+      file_url: doc.file_url,
+      file_type: doc.file_type,
+      file_name: doc.file_name,
+      content: doc.content ? `${doc.content.substring(0, 50)}...` : null,
+      folder_path: doc.folder_path
+    });
+
+    // If it's an uploaded file (has file_url and is not a studio-created document), show preview
+    // Studio docs have folder_path="/created", uploaded files have folder_path="/" or other paths
+    const isUploadedFile = doc.file_url && doc.folder_path !== "/created";
+
+    if (isUploadedFile) {
       setPreviewDocument(doc);
       setIsPreviewOpen(true);
       return;
@@ -448,9 +510,18 @@ export default function DocumentsHub() {
       const matchesAssignment = selectedAssignmentFilter === "all" ||
         (selectedAssignmentFilter === "unassigned" && (!doc.assigned_to_assignments || doc.assigned_to_assignments.length === 0)) ||
         (doc.assigned_to_assignments?.includes(selectedAssignmentFilter));
+      const matchesProject = selectedProjectFilter === "all" ||
+        (selectedProjectFilter === "unassigned" && !doc.assigned_to_project) ||
+        (doc.assigned_to_project === selectedProjectFilter);
       const matchesType = typeFilter === "all" || doc.document_type === typeFilter;
-      return matchesSearch && matchesAssignment && matchesType;
+      return matchesSearch && matchesAssignment && matchesProject && matchesType;
     });
+
+  // Helper to get project name by ID
+  const getProjectName = (projectId) => {
+    const project = projects.find(p => p.id === projectId);
+    return project?.name || null;
+  };
 
   const availableTasks = selectedAssignments.length > 0
     ? tasks.filter(task => task.assignment_id === selectedAssignments[0])
@@ -519,13 +590,25 @@ export default function DocumentsHub() {
                   className="pl-10"
                 />
               </div>
+              <Select value={selectedProjectFilter} onValueChange={setSelectedProjectFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="All Projects" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Projects</SelectItem>
+                  <SelectItem value="unassigned">No Project</SelectItem>
+                  {projects.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={selectedAssignmentFilter} onValueChange={setSelectedAssignmentFilter}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="All Assignments" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Assignments</SelectItem>
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  <SelectItem value="unassigned">No Assignment</SelectItem>
                   {assignments.map(a => (
                     <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
                   ))}
@@ -578,18 +661,101 @@ export default function DocumentsHub() {
                         exit={{ opacity: 0 }}
                       >
                         <Card
-                          className="cursor-pointer hover:shadow-lg hover:border-indigo-300 transition-all"
+                          className="cursor-pointer hover:shadow-lg hover:border-indigo-300 transition-all group relative"
                           onClick={() => handleEditDocument(doc)}
                         >
                           <CardContent className={viewMode === "grid" ? "p-4" : "p-3 flex items-center gap-4"}>
-                            <div className={`${viewMode === "grid" ? "mb-3" : ""} w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0`}>
-                              <FileText className="w-5 h-5 text-gray-500" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-medium text-gray-900 dark:text-white truncate">{doc.title}</h3>
-                              <p className="text-xs text-gray-500">{new Date(doc.created_date).toLocaleDateString()}</p>
-                            </div>
-                            {viewMode === "list" && <ChevronRight className="w-5 h-5 text-gray-400" />}
+                            {/* Grid view layout */}
+                            {viewMode === "grid" && (
+                              <>
+                                <div className="flex items-start justify-between mb-3">
+                                  <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                                    <FileText className="w-5 h-5 text-gray-500" />
+                                  </div>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >
+                                        <MoreVertical className="w-4 h-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditDocument(doc); }}>
+                                        <Eye className="w-4 h-4 mr-2" />
+                                        Open
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={(e) => handleDeleteClick(e, doc)}
+                                        className="text-red-600 focus:text-red-600"
+                                      >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-medium text-gray-900 dark:text-white truncate">{doc.title}</h3>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <p className="text-xs text-gray-500">{new Date(doc.created_date).toLocaleDateString()}</p>
+                                    {doc.assigned_to_project && getProjectName(doc.assigned_to_project) && (
+                                      <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                                        <FolderKanban className="w-3 h-3 mr-1" />
+                                        {getProjectName(doc.assigned_to_project)}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                            {/* List view layout */}
+                            {viewMode === "list" && (
+                              <>
+                                <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                                  <FileText className="w-5 h-5 text-gray-500" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-medium text-gray-900 dark:text-white truncate">{doc.title}</h3>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <p className="text-xs text-gray-500">{new Date(doc.created_date).toLocaleDateString()}</p>
+                                    {doc.assigned_to_project && getProjectName(doc.assigned_to_project) && (
+                                      <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                                        <FolderKanban className="w-3 h-3 mr-1" />
+                                        {getProjectName(doc.assigned_to_project)}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      <MoreVertical className="w-4 h-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditDocument(doc); }}>
+                                      <Eye className="w-4 h-4 mr-2" />
+                                      Open
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={(e) => handleDeleteClick(e, doc)}
+                                      className="text-red-600 focus:text-red-600"
+                                    >
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                                <ChevronRight className="w-5 h-5 text-gray-400" />
+                              </>
+                            )}
                           </CardContent>
                         </Card>
                       </motion.div>
@@ -920,30 +1086,60 @@ export default function DocumentsHub() {
 
       {/* Document Preview Dialog */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-5xl h-[85vh] flex flex-col">
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              {previewDocument?.title || "Document Preview"}
-            </DialogTitle>
-            {previewDocument?.description && (
-              <DialogDescription>{previewDocument.description}</DialogDescription>
-            )}
-          </DialogHeader>
-          <div className="flex-1 overflow-hidden rounded-lg border bg-gray-50 dark:bg-gray-900">
+        <DialogContent className="max-w-[95vw] w-[1400px] h-[95vh] flex flex-col p-0 gap-0">
+          {/* Compact Header */}
+          <div className="flex-shrink-0 flex items-center justify-between px-6 py-3 border-b bg-gray-50 dark:bg-gray-900">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="p-2 bg-indigo-100 dark:bg-indigo-900 rounded-lg">
+                <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="font-semibold text-gray-900 dark:text-white truncate">
+                  {previewDocument?.title || "Document Preview"}
+                </h2>
+                {previewDocument?.file_name && (
+                  <p className="text-xs text-gray-500 truncate">{previewDocument.file_name}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 ml-4">
+              <Button variant="outline" size="sm" onClick={() => window.open(previewDocument?.file_url, '_blank')}>
+                <Download className="w-4 h-4 mr-2" />
+                Download
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setIsPreviewOpen(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Large Preview Area */}
+          <div className="flex-1 overflow-hidden bg-gray-100 dark:bg-gray-950">
             {previewDocument?.file_url && (() => {
               const fileType = previewDocument.file_type?.toLowerCase() || '';
               const fileName = previewDocument.file_name?.toLowerCase() || '';
               const fileUrl = previewDocument.file_url;
 
-              // Image formats
+              // Also check URL for file extension (fallback if file_name not set)
+              const urlLower = fileUrl.toLowerCase();
+              const urlPath = urlLower.split('?')[0]; // Remove query params
+
+              // Debug: log file info
+              console.log("Preview document file info:", { fileType, fileName, fileUrl: fileUrl.substring(0, 100) });
+
+              // Image formats - check file_type, file_name, AND URL
+              const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico'];
               const isImage = fileType.startsWith('image/') ||
-                ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico'].some(ext => fileName.endsWith(ext));
+                imageExtensions.some(ext => fileName.endsWith(ext)) ||
+                imageExtensions.some(ext => urlPath.endsWith(ext));
 
-              // PDF
-              const isPdf = fileType === 'application/pdf' || fileName.endsWith('.pdf');
+              // PDF - check file_type, file_name, AND URL
+              const isPdf = fileType === 'application/pdf' ||
+                fileName.endsWith('.pdf') ||
+                urlPath.endsWith('.pdf');
 
-              // Office documents (use Google Docs Viewer)
+              // Office documents (use Google Docs Viewer) - check file_type, file_name, AND URL
+              const officeExtensions = ['.docx', '.doc', '.xlsx', '.xls', '.pptx', '.ppt'];
               const isOfficeDoc = [
                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
                 'application/msword', // doc
@@ -952,27 +1148,50 @@ export default function DocumentsHub() {
                 'application/vnd.openxmlformats-officedocument.presentationml.presentation', // pptx
                 'application/vnd.ms-powerpoint', // ppt
               ].includes(fileType) ||
-                ['.docx', '.doc', '.xlsx', '.xls', '.pptx', '.ppt'].some(ext => fileName.endsWith(ext));
+                officeExtensions.some(ext => fileName.endsWith(ext)) ||
+                officeExtensions.some(ext => urlPath.endsWith(ext));
 
-              // Text files
+              // Text files - check file_type, file_name, AND URL
+              const textExtensions = ['.txt', '.md', '.json', '.xml', '.csv', '.log'];
               const isText = fileType.startsWith('text/') ||
-                ['.txt', '.md', '.json', '.xml', '.csv', '.log'].some(ext => fileName.endsWith(ext));
+                textExtensions.some(ext => fileName.endsWith(ext)) ||
+                textExtensions.some(ext => urlPath.endsWith(ext));
 
-              // Video
+              // Video - check file_type, file_name, AND URL
+              const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov'];
               const isVideo = fileType.startsWith('video/') ||
-                ['.mp4', '.webm', '.ogg', '.mov'].some(ext => fileName.endsWith(ext));
+                videoExtensions.some(ext => fileName.endsWith(ext)) ||
+                videoExtensions.some(ext => urlPath.endsWith(ext));
 
-              // Audio
+              // Audio - check file_type, file_name, AND URL
+              const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a'];
               const isAudio = fileType.startsWith('audio/') ||
-                ['.mp3', '.wav', '.ogg', '.m4a'].some(ext => fileName.endsWith(ext));
+                audioExtensions.some(ext => fileName.endsWith(ext)) ||
+                audioExtensions.some(ext => urlPath.endsWith(ext));
 
               if (isImage) {
                 return (
-                  <div className="w-full h-full flex items-center justify-center p-4 overflow-auto">
+                  <div className="w-full h-full flex items-center justify-center p-6 overflow-auto bg-gray-900/5 dark:bg-black/20">
                     <img
                       src={fileUrl}
                       alt={previewDocument.title}
-                      className="max-w-full max-h-full object-contain"
+                      className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                      style={{ maxHeight: 'calc(95vh - 80px)' }}
+                      onError={(e) => {
+                        console.error("Image failed to load:", fileUrl);
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = `
+                          <div class="flex flex-col items-center gap-4 text-center p-8">
+                            <svg class="w-16 h-16 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <p class="text-lg font-medium text-red-500">Failed to load image</p>
+                            <p class="text-sm text-gray-500 max-w-md break-all">${fileUrl.substring(0, 150)}...</p>
+                            <a href="${fileUrl}" target="_blank" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Open in new tab</a>
+                          </div>
+                        `;
+                      }}
+                      onLoad={() => console.log("Image loaded successfully")}
                     />
                   </div>
                 );
@@ -982,8 +1201,9 @@ export default function DocumentsHub() {
                 return (
                   <iframe
                     src={fileUrl}
-                    className="w-full h-full"
+                    className="w-full h-full border-0"
                     title={previewDocument.title}
+                    style={{ minHeight: 'calc(95vh - 80px)' }}
                   />
                 );
               }
@@ -994,19 +1214,21 @@ export default function DocumentsHub() {
                 return (
                   <iframe
                     src={googleViewerUrl}
-                    className="w-full h-full"
+                    className="w-full h-full border-0"
                     title={previewDocument.title}
+                    style={{ minHeight: 'calc(95vh - 80px)' }}
                   />
                 );
               }
 
               if (isVideo) {
                 return (
-                  <div className="w-full h-full flex items-center justify-center p-4">
+                  <div className="w-full h-full flex items-center justify-center p-6 bg-black">
                     <video
                       src={fileUrl}
                       controls
-                      className="max-w-full max-h-full"
+                      className="max-w-full max-h-full rounded-lg"
+                      style={{ maxHeight: 'calc(95vh - 100px)' }}
                     >
                       Your browser does not support video playback.
                     </video>
@@ -1016,10 +1238,12 @@ export default function DocumentsHub() {
 
               if (isAudio) {
                 return (
-                  <div className="w-full h-full flex flex-col items-center justify-center gap-4 p-4">
-                    <FileText className="w-16 h-16 text-gray-400" />
-                    <p className="text-lg font-medium">{previewDocument.title}</p>
-                    <audio src={fileUrl} controls className="w-full max-w-md">
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-6 p-8 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
+                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-xl">
+                      <FileText className="w-16 h-16 text-white" />
+                    </div>
+                    <p className="text-xl font-semibold text-gray-900 dark:text-white">{previewDocument.title}</p>
+                    <audio src={fileUrl} controls className="w-full max-w-lg">
                       Your browser does not support audio playback.
                     </audio>
                   </div>
@@ -1030,47 +1254,67 @@ export default function DocumentsHub() {
                 return (
                   <iframe
                     src={fileUrl}
-                    className="w-full h-full bg-white"
+                    className="w-full h-full bg-white border-0"
                     title={previewDocument.title}
+                    style={{ minHeight: 'calc(95vh - 80px)' }}
                   />
                 );
               }
 
               // Fallback for unsupported types
               return (
-                <div className="w-full h-full flex flex-col items-center justify-center gap-4">
-                  <FileText className="w-16 h-16 text-gray-400" />
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Preview not available for this file type
-                  </p>
-                  <p className="text-sm text-gray-500">{fileType || 'Unknown type'}</p>
-                  <Button onClick={() => window.open(fileUrl, '_blank')}>
-                    <Download className="w-4 h-4 mr-2" />
+                <div className="w-full h-full flex flex-col items-center justify-center gap-6 p-8">
+                  <div className="w-24 h-24 rounded-2xl bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                    <FileText className="w-12 h-12 text-gray-400" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-medium text-gray-600 dark:text-gray-400">
+                      Preview not available for this file type
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">{fileType || 'Unknown type'}</p>
+                  </div>
+                  <Button size="lg" onClick={() => window.open(fileUrl, '_blank')}>
+                    <Download className="w-5 h-5 mr-2" />
                     Open in New Tab
                   </Button>
                 </div>
               );
             })()}
           </div>
-          <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t">
-            <div className="text-sm text-gray-500">
-              {previewDocument?.file_name && <span>{previewDocument.file_name}</span>}
-              {previewDocument?.file_size && (
-                <span className="ml-2">({(previewDocument.file_size / 1024 / 1024).toFixed(2)} MB)</span>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => window.open(previewDocument?.file_url, '_blank')}>
-                <Download className="w-4 h-4 mr-2" />
-                Download
-              </Button>
-              <Button variant="ghost" onClick={() => setIsPreviewOpen(false)}>
-                Close
-              </Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Document</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{documentToDelete?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

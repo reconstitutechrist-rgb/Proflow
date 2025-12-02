@@ -1173,7 +1173,14 @@ const integrations = {
         response: response_json_schema ? {} : 'LLM response placeholder',
       };
     },
-    UploadFile: async (file) => {
+    UploadFile: async (fileOrParams) => {
+      // Handle both direct File objects and { file: File } parameter format
+      const file = fileOrParams instanceof File ? fileOrParams : fileOrParams?.file;
+
+      if (!file) {
+        throw new Error('No file provided to UploadFile');
+      }
+
       const fileName = `${Date.now()}-${file.name}`;
       const { data, error } = await supabase.storage
         .from('uploads')

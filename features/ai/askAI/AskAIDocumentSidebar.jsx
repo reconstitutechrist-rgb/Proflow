@@ -21,6 +21,7 @@ import {
   Layers,
   Target,
   Globe,
+  Link2,
 } from "lucide-react";
 import DragDropZone from "@/components/DragDropZone";
 import ProgressIndicator from "@/components/ProgressIndicator";
@@ -70,6 +71,20 @@ export function AskAIDocumentSidebar({
           </div>
         )}
       </CardHeader>
+
+      {/* Auto-loaded documents indicator */}
+      {uploadedDocuments.filter(d => d.autoLoaded).length > 0 && (
+        <div className="mx-4 mt-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-200 dark:border-purple-800 rounded-lg">
+          <div className="p-3">
+            <div className="flex items-center gap-2">
+              <Link2 className="w-4 h-4 text-purple-600 flex-shrink-0" />
+              <span className="text-xs font-medium text-purple-900 dark:text-purple-100">
+                {uploadedDocuments.filter(d => d.autoLoaded).length} linked document(s) auto-loaded
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {useRAG && uploadedDocuments.length > 0 && (
         <div className="mx-4 mt-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
@@ -281,6 +296,15 @@ export function AskAIDocumentSidebar({
                           </Button>
                         </div>
                         <div className="flex flex-wrap gap-1 mt-1">
+                          {doc.autoLoaded && (
+                            <Badge
+                              variant="secondary"
+                              className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                            >
+                              <Link2 className="w-3 h-3 mr-1" />
+                              Linked
+                            </Badge>
+                          )}
                           {doc.embeddingModel && (
                             <Badge
                               variant="secondary"

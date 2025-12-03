@@ -64,6 +64,7 @@ import {
   Info,
   Zap,
   Plus,
+  Folder,
   FolderOpen,
   Search,
   List,
@@ -91,6 +92,9 @@ import AIImageGenerator from "@/features/ai/AIImageGenerator";
 import ConversationalAssistant from "@/features/ai/ConversationalAssistant";
 import { useWorkspace } from "@/features/workspace/WorkspaceContext";
 import { createPageUrl } from "@/lib/utils";
+import FolderStructure from "@/components/common/FolderStructure";
+import ProjectAssignmentStructure from "@/components/common/ProjectAssignmentStructure";
+import DocumentViewToggle from "@/components/common/DocumentViewToggle";
 
 const AUTOSAVE_INTERVAL = 30000;
 
@@ -148,6 +152,19 @@ export default function DocumentsHub() {
   const [selectedProjectFilter, setSelectedProjectFilter] = useState("all");
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
+
+  // Sidebar view mode state
+  const [sidebarViewMode, setSidebarViewMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('proflow_document_view_mode') || 'folders';
+    }
+    return 'folders';
+  });
+  const [projectAssignmentFilter, setProjectAssignmentFilter] = useState({
+    type: null, // 'project' | 'assignment' | 'unlinked'
+    id: null
+  });
+  const [selectedFolderPath, setSelectedFolderPath] = useState(null);
 
   // Editor state
   const [title, setTitle] = useState("");
@@ -212,6 +229,11 @@ export default function DocumentsHub() {
       };
     }
   }, [title, content, activeMainTab]);
+
+  // Persist sidebar view mode
+  useEffect(() => {
+    localStorage.setItem('proflow_document_view_mode', sidebarViewMode);
+  }, [sidebarViewMode]);
 
   const loadData = async () => {
     if (!currentWorkspaceId) return;
@@ -514,7 +536,27 @@ export default function DocumentsHub() {
         (selectedProjectFilter === "unassigned" && !doc.assigned_to_project) ||
         (doc.assigned_to_project === selectedProjectFilter);
       const matchesType = typeFilter === "all" || doc.document_type === typeFilter;
-      return matchesSearch && matchesAssignment && matchesProject && matchesType;
+
+      // Sidebar filter: Folder path filter (when in folders view)
+      const matchesFolderPath = !selectedFolderPath ||
+        sidebarViewMode !== 'folders' ||
+        (doc.folder_path || '/') === selectedFolderPath ||
+        (doc.folder_path || '/').startsWith(selectedFolderPath + '/');
+
+      // Sidebar filter: Project/Assignment filter (when in projects view)
+      let matchesSidebarFilter = true;
+      if (sidebarViewMode === 'projects' && projectAssignmentFilter.type) {
+        if (projectAssignmentFilter.type === 'project') {
+          matchesSidebarFilter = doc.assigned_to_project === projectAssignmentFilter.id;
+        } else if (projectAssignmentFilter.type === 'assignment') {
+          matchesSidebarFilter = doc.assigned_to_assignments?.includes(projectAssignmentFilter.id);
+        } else if (projectAssignmentFilter.type === 'unlinked') {
+          matchesSidebarFilter = !doc.assigned_to_project &&
+            (!doc.assigned_to_assignments || doc.assigned_to_assignments.length === 0);
+        }
+      }
+
+      return matchesSearch && matchesAssignment && matchesProject && matchesType && matchesFolderPath && matchesSidebarFilter;
     });
 
   // Helper to get project name by ID
@@ -578,62 +620,150 @@ export default function DocumentsHub() {
       <div className="flex-1 overflow-hidden">
         {/* Library Tab */}
         {activeMainTab === "library" && (
-          <div className="h-full flex flex-col p-6">
-            {/* Filters */}
-            <div className="flex flex-wrap gap-3 mb-6">
-              <div className="relative flex-1 min-w-[200px] max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Search documents..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+          <div className="h-full flex">
+            {/* Sidebar */}
+            <div className="w-72 flex-shrink-0 border-r bg-gray-50 dark:bg-gray-900/50 flex flex-col overflow-hidden">
+              <div className="p-4 border-b bg-white dark:bg-gray-900">
+                <DocumentViewToggle
+                  value={sidebarViewMode}
+                  onChange={(v) => {
+                    setSidebarViewMode(v);
+                    // Clear filters when switching views
+                    setSelectedFolderPath(null);
+                    setProjectAssignmentFilter({ type: null, id: null });
+                  }}
                 />
               </div>
-              <Select value={selectedProjectFilter} onValueChange={setSelectedProjectFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All Projects" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Projects</SelectItem>
-                  <SelectItem value="unassigned">No Project</SelectItem>
-                  {projects.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={selectedAssignmentFilter} onValueChange={setSelectedAssignmentFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All Assignments" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Assignments</SelectItem>
-                  <SelectItem value="unassigned">No Assignment</SelectItem>
-                  {assignments.map(a => (
-                    <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="All Types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="contract">Contract</SelectItem>
-                  <SelectItem value="specification">Specification</SelectItem>
-                  <SelectItem value="report">Report</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="outline" onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}>
-                {viewMode === "grid" ? <List className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />}
-              </Button>
-              <Button variant="outline" onClick={() => setIsUploadOpen(true)}>
-                <Upload className="w-4 h-4 mr-2" />
-                Upload
-              </Button>
+              <div className="flex-1 overflow-auto p-4">
+                {sidebarViewMode === 'folders' ? (
+                  <FolderStructure
+                    documents={documents}
+                    onFolderSelect={(path) => setSelectedFolderPath(path)}
+                    onRefresh={loadData}
+                  />
+                ) : (
+                  <ProjectAssignmentStructure
+                    documents={documents}
+                    projects={projects}
+                    assignments={assignments}
+                    selectedItem={projectAssignmentFilter}
+                    onItemSelect={(type, id) => setProjectAssignmentFilter({ type, id })}
+                  />
+                )}
+              </div>
+              {/* Clear Filter Button */}
+              {(selectedFolderPath || projectAssignmentFilter.type) && (
+                <div className="p-4 border-t bg-white dark:bg-gray-900">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      setSelectedFolderPath(null);
+                      setProjectAssignmentFilter({ type: null, id: null });
+                    }}
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Clear Filter
+                  </Button>
+                </div>
+              )}
             </div>
+
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col p-6 overflow-hidden">
+              {/* Active Filter Indicator */}
+              {(selectedFolderPath || projectAssignmentFilter.type) && (
+                <div className="mb-4 flex items-center gap-2">
+                  <Badge variant="secondary" className="px-3 py-1">
+                    {sidebarViewMode === 'folders' && selectedFolderPath && (
+                      <>
+                        <Folder className="w-3 h-3 mr-2" />
+                        {selectedFolderPath === '/' ? 'Root' : selectedFolderPath.split('/').pop()}
+                      </>
+                    )}
+                    {sidebarViewMode === 'projects' && projectAssignmentFilter.type === 'project' && (
+                      <>
+                        <FolderKanban className="w-3 h-3 mr-2" />
+                        {projects.find(p => p.id === projectAssignmentFilter.id)?.name || 'Project'}
+                      </>
+                    )}
+                    {sidebarViewMode === 'projects' && projectAssignmentFilter.type === 'assignment' && (
+                      <>
+                        <Target className="w-3 h-3 mr-2" />
+                        {assignments.find(a => a.id === projectAssignmentFilter.id)?.title ||
+                         assignments.find(a => a.id === projectAssignmentFilter.id)?.name ||
+                         'Assignment'}
+                      </>
+                    )}
+                    {sidebarViewMode === 'projects' && projectAssignmentFilter.type === 'unlinked' && (
+                      <>
+                        <FileText className="w-3 h-3 mr-2" />
+                        Unlinked Documents
+                      </>
+                    )}
+                  </Badge>
+                  <span className="text-sm text-gray-500">
+                    {filteredDocuments.length} document{filteredDocuments.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              )}
+
+              {/* Filters */}
+              <div className="flex flex-wrap gap-3 mb-6">
+                <div className="relative flex-1 min-w-[200px] max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Search documents..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={selectedProjectFilter} onValueChange={setSelectedProjectFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All Projects" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Projects</SelectItem>
+                    <SelectItem value="unassigned">No Project</SelectItem>
+                    {projects.map(p => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={selectedAssignmentFilter} onValueChange={setSelectedAssignmentFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All Assignments" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Assignments</SelectItem>
+                    <SelectItem value="unassigned">No Assignment</SelectItem>
+                    {assignments.map(a => (
+                      <SelectItem key={a.id} value={a.id}>{a.name || a.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="All Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="contract">Contract</SelectItem>
+                    <SelectItem value="specification">Specification</SelectItem>
+                    <SelectItem value="report">Report</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}>
+                  {viewMode === "grid" ? <List className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />}
+                </Button>
+                <Button variant="outline" onClick={() => setIsUploadOpen(true)}>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload
+                </Button>
+              </div>
 
             {/* Documents Grid/List */}
             <ScrollArea className="flex-1">
@@ -764,6 +894,7 @@ export default function DocumentsHub() {
                 </div>
               )}
             </ScrollArea>
+            </div>
           </div>
         )}
 

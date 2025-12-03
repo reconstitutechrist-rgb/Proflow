@@ -126,6 +126,53 @@ export default function AIHub() {
     }
   }, [currentWorkspaceId, workspaceLoading, loadData]);
 
+  // Track last loaded context to prevent duplicate loading
+  const lastLoadedContextRef = useRef({ key: null, docCount: 0 });
+
+  // Auto-load linked documents when context changes (for Chat tab)
+  useEffect(() => {
+    // Only auto-load when on the chat tab
+    if (activeTab !== "chat") return;
+
+    // Get linked documents based on current selection
+    let linkedDocs = [];
+    let contextKey = "none";
+
+    if (selectedAssignment) {
+      contextKey = `assignment:${selectedAssignment.id}`;
+      linkedDocs = documents.filter(
+        (doc) =>
+          doc.assigned_to_assignments?.includes(selectedAssignment.id) &&
+          doc.document_type !== "folder_placeholder" &&
+          doc.file_url
+      );
+    } else if (selectedProject) {
+      contextKey = `project:${selectedProject.id}`;
+      linkedDocs = documents.filter(
+        (doc) =>
+          doc.assigned_to_project === selectedProject.id &&
+          doc.document_type !== "folder_placeholder" &&
+          doc.file_url
+      );
+    }
+
+    // Skip if we've already loaded for this exact context and document count
+    const lastLoaded = lastLoadedContextRef.current;
+    if (lastLoaded.key === contextKey && lastLoaded.docCount === linkedDocs.length) {
+      return;
+    }
+
+    // Update tracking ref
+    lastLoadedContextRef.current = { key: contextKey, docCount: linkedDocs.length };
+
+    // Load or clear documents
+    if (linkedDocs.length > 0) {
+      askAI.addLinkedDocuments(linkedDocs);
+    } else {
+      askAI.clearAutoLoadedDocuments();
+    }
+  }, [selectedAssignment, selectedProject, documents, activeTab]);
+
   // Research helpers
   const getAssignmentDocuments = (assignmentId) => {
     if (!assignmentId) return [];

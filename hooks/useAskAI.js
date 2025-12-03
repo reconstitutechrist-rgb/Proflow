@@ -1251,6 +1251,61 @@ export function useAskAI() {
     await handleFileUpload(syntheticEvent);
   };
 
+  // Add linked documents from assignments/projects
+  const addLinkedDocuments = useCallback((linkedDocs) => {
+    if (!linkedDocs || linkedDocs.length === 0) return;
+
+    // Filter out folder placeholders and docs without file_url
+    const validDocs = linkedDocs.filter(
+      (d) => d.document_type !== "folder_placeholder" && d.file_url
+    );
+
+    if (validDocs.length === 0) return;
+
+    // Convert to format expected by useAskAI, marking them as auto-loaded
+    const docsForContext = validDocs.map((doc) => ({
+      id: doc.id,
+      name: doc.title || doc.file_name || "Untitled Document",
+      file_url: doc.file_url,
+      content: doc.extracted_text || "",
+      size: doc.file_size || 0,
+      type: doc.file_type || "application/octet-stream",
+      includedInContext: true,
+      autoLoaded: true, // Flag to distinguish from manually uploaded
+      linkedDocumentId: doc.id, // Reference to original document
+      // Initialize embedding fields (will need processing if RAG is needed)
+      chunks: [],
+      embeddings: [],
+      embeddingModel: null,
+      chunkingStrategy: null,
+      structureAnalysis: null,
+      tokenCount: 0,
+      estimatedCost: 0,
+      contentHash: null,
+      fromCache: false,
+    }));
+
+    setUploadedDocuments((prev) => {
+      // Remove previous auto-loaded docs, keep manually uploaded ones
+      const manualDocs = prev.filter((d) => !d.autoLoaded);
+      // Avoid duplicates by checking linkedDocumentId
+      const existingIds = new Set(manualDocs.map((d) => d.linkedDocumentId).filter(Boolean));
+      const newDocs = docsForContext.filter((d) => !existingIds.has(d.linkedDocumentId));
+      return [...manualDocs, ...newDocs];
+    });
+
+    if (docsForContext.length > 0) {
+      toast.info(`${docsForContext.length} linked document(s) added to context`, {
+        duration: 3000,
+      });
+    }
+  }, []);
+
+  // Clear auto-loaded documents (when context changes)
+  const clearAutoLoadedDocuments = useCallback(() => {
+    setUploadedDocuments((prev) => prev.filter((d) => !d.autoLoaded));
+  }, []);
+
   return {
     // State
     currentUser,
@@ -1350,5 +1405,7 @@ export function useAskAI() {
     handleDragDropFiles,
     confirmLoadSession,
     loadInitialData,
+    addLinkedDocuments,
+    clearAutoLoadedDocuments,
   };
 }

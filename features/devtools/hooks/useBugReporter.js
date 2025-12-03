@@ -1,4 +1,3 @@
-import { useContext } from 'react';
 import { useBugReporter as useBugReporterFromProvider } from '../BugReporterProvider';
 
 // Re-export the hook from the provider for convenience

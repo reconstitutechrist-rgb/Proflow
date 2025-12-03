@@ -1,9 +1,7 @@
-import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   MousePointer2,
   Camera,
-  FileText,
   Loader2
 } from 'lucide-react';
 
@@ -16,8 +14,7 @@ export function ToolBar({
   hasScreenshot,
   isCapturing,
   onSelectElement,
-  onCaptureScreenshot,
-  onGeneratePrompt
+  onCaptureScreenshot
 }) {
   return (
     <div className="flex flex-col gap-2 p-4 border-b border-gray-200 dark:border-gray-700">

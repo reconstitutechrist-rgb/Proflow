@@ -1,5 +1,13 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import {
   Square,
   ArrowRight,
@@ -41,6 +49,11 @@ export function ScreenshotAnnotator({
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [imageLoaded, setImageLoaded] = useState(false);
   const imageRef = useRef(null);
+
+  // Text input dialog state
+  const [textDialogOpen, setTextDialogOpen] = useState(false);
+  const [textInputValue, setTextInputValue] = useState('');
+  const [textInputPosition, setTextInputPosition] = useState(null);
 
   // Load and scale image
   useEffect(() => {
@@ -183,17 +196,10 @@ export function ScreenshotAnnotator({
     setIsDrawing(true);
 
     if (tool === TOOLS.TEXT) {
-      const text = prompt('Enter text:');
-      if (text) {
-        const newAnnotation = {
-          type: TOOLS.TEXT,
-          startX: pos.x,
-          startY: pos.y,
-          text,
-          color
-        };
-        onAnnotationsChange([...annotations, newAnnotation]);
-      }
+      // Open dialog instead of using prompt()
+      setTextInputPosition(pos);
+      setTextInputValue('');
+      setTextDialogOpen(true);
       setIsDrawing(false);
       return;
     }
@@ -207,6 +213,22 @@ export function ScreenshotAnnotator({
       points: tool === TOOLS.FREEHAND ? [pos] : undefined,
       color
     });
+  };
+
+  const handleTextSubmit = () => {
+    if (textInputValue.trim() && textInputPosition) {
+      const newAnnotation = {
+        type: TOOLS.TEXT,
+        startX: textInputPosition.x,
+        startY: textInputPosition.y,
+        text: textInputValue.trim(),
+        color
+      };
+      onAnnotationsChange([...annotations, newAnnotation]);
+    }
+    setTextDialogOpen(false);
+    setTextInputValue('');
+    setTextInputPosition(null);
   };
 
   const handleMouseMove = (e) => {
@@ -260,6 +282,7 @@ export function ScreenshotAnnotator({
             className="w-8 h-8"
             onClick={() => setTool(TOOLS.RECTANGLE)}
             title="Rectangle"
+            aria-label="Rectangle tool"
           >
             <Square className="w-4 h-4" />
           </Button>
@@ -269,6 +292,7 @@ export function ScreenshotAnnotator({
             className="w-8 h-8"
             onClick={() => setTool(TOOLS.ARROW)}
             title="Arrow"
+            aria-label="Arrow tool"
           >
             <ArrowRight className="w-4 h-4" />
           </Button>
@@ -278,6 +302,7 @@ export function ScreenshotAnnotator({
             className="w-8 h-8"
             onClick={() => setTool(TOOLS.FREEHAND)}
             title="Freehand"
+            aria-label="Freehand drawing tool"
           >
             <Pencil className="w-4 h-4" />
           </Button>
@@ -287,13 +312,14 @@ export function ScreenshotAnnotator({
             className="w-8 h-8"
             onClick={() => setTool(TOOLS.TEXT)}
             title="Text"
+            aria-label="Text annotation tool"
           >
             <Type className="w-4 h-4" />
           </Button>
         </div>
 
         {/* Color selection */}
-        <div className="flex items-center gap-1 ml-2">
+        <div className="flex items-center gap-1 ml-2" role="radiogroup" aria-label="Annotation color">
           {Object.entries(COLORS).map(([name, hex]) => (
             <button
               key={name}
@@ -303,6 +329,9 @@ export function ScreenshotAnnotator({
               style={{ backgroundColor: hex }}
               onClick={() => setColor(hex)}
               title={name}
+              role="radio"
+              aria-checked={color === hex}
+              aria-label={`${name.toLowerCase()} color`}
             />
           ))}
         </div>
@@ -356,6 +385,7 @@ export function ScreenshotAnnotator({
               maxWidth: '100%',
               maxHeight: '100%'
             }}
+            aria-label="Screenshot annotation canvas"
           />
         ) : (
           <div className="text-gray-400">Loading screenshot...</div>
@@ -368,6 +398,36 @@ export function ScreenshotAnnotator({
           {annotations.length} annotation{annotations.length !== 1 ? 's' : ''}
         </div>
       )}
+
+      {/* Text input dialog */}
+      <Dialog open={textDialogOpen} onOpenChange={setTextDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Text Annotation</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={textInputValue}
+              onChange={(e) => setTextInputValue(e.target.value)}
+              placeholder="Enter annotation text..."
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleTextSubmit();
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTextDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleTextSubmit} disabled={!textInputValue.trim()}>
+              Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -41,11 +41,11 @@ export function useElementSelector({ isActive, onSelect, panelSelector = '[data-
       return;
     }
 
-    if (element && element !== hoveredElement) {
+    if (element) {
       setHoveredElement(element);
       setHoveredRect(element.getBoundingClientRect());
     }
-  }, [isActive, hoveredElement, isPartOfBugReporter]);
+  }, [isActive, isPartOfBugReporter]);
 
   // Handle click for selection
   const handleClick = useCallback((event) => {

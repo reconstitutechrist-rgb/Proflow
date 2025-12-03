@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useLocation } from 'react-router';
 
 const BugReporterContext = createContext();
@@ -44,11 +44,24 @@ export const BugReporterProvider = ({ children }) => {
   const [issueDescription, setIssueDescription] = useState('');
   const [requestedChange, setRequestedChange] = useState('');
 
-  // Viewport size
-  const [viewportSize] = useState({
+  // Viewport size - updates on window resize
+  const [viewportSize, setViewportSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight
   });
+
+  // Update viewport size on resize
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Actions
   const togglePanel = useCallback(() => {

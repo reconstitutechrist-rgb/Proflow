@@ -54,8 +54,12 @@ export function useScreenshotCapture({ onCapture, panelSelector = '[data-bug-rep
 
       // Restore panel visibility
       if (panel) {
-        panel.style.visibility = panelVisibility;
-        panel.style.display = panelDisplay;
+        if (panelVisibility !== undefined) {
+          panel.style.visibility = panelVisibility;
+        }
+        if (panelDisplay !== undefined) {
+          panel.style.display = panelDisplay;
+        }
       }
 
       // Restore overlay visibility

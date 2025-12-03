@@ -49,7 +49,9 @@ export default function AISummaryButton({
   size = "default",
   disabled = false,
   disabledMessage = null,
-  onSummaryGenerated = null // CRITICAL: New prop
+  onSummaryGenerated = null, // CRITICAL: New prop
+  assignmentId = null, // For linking saved documents to assignments
+  projectId = null // For linking saved documents to projects
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -419,13 +421,19 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
         file_type: 'text/plain',
         document_type: 'report',
         tags: ['ai-summary', contentType],
-        access_level: 'workspace' // Assuming workspace level access for AI-generated docs
+        access_level: 'workspace', // Assuming workspace level access for AI-generated docs
+        // Link to assignment(s) - uses array format
+        assigned_to_assignments: assignmentId ? [assignmentId] : [],
+        // Link to project - uses single ID
+        assigned_to_project: projectId || null,
+        // AI analysis metadata
+        ai_analysis: {
+          summary: summary.executive_summary,
+          analysis_status: 'completed'
+        },
+        auto_generated: true,
+        folder_path: '/chat-summaries'
       };
-
-      if (contentId) {
-        documentData.linked_content_id = contentId; // Link to the original content
-        documentData.linked_content_type = contentType;
-      }
 
       await db.entities.Document.create(documentData);
 

@@ -304,7 +304,7 @@ export default function ConversationSidebar({
               ) : selectedAssignment ? (
                 <div className="flex items-center gap-2">
                   <FolderOpen className="w-4 h-4 text-purple-600" />
-                  <span>{selectedAssignment.name}</span>
+                  <span>{selectedAssignment.title || selectedAssignment.name}</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
@@ -345,7 +345,7 @@ export default function ConversationSidebar({
                   <SelectItem key={`assignment:${assignment.id}`} value={`assignment:${assignment.id}`}>
                     <div className="flex items-center gap-2">
                       <FolderOpen className="w-4 h-4 text-purple-600" />
-                      <span>{assignment.name}</span>
+                      <span>{assignment.title || assignment.name}</span>
                     </div>
                   </SelectItem>
                 ))}

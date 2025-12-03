@@ -721,7 +721,7 @@ function LayoutContent({ children, currentPageName }) {
                 <Search className="w-5 h-5" />
               </Button>
 
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl">
                     <Bell className="w-5 h-5" />
@@ -812,7 +812,7 @@ function LayoutContent({ children, currentPageName }) {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all">
                     <div className="relative w-8 h-8 rounded-full overflow-hidden shadow-md">
@@ -877,7 +877,7 @@ function LayoutContent({ children, currentPageName }) {
           <nav className="px-6 py-2">
             <div className="flex items-center gap-1">
               {navigationGroups.map((group) => (
-                <DropdownMenu key={group.title}>
+                <DropdownMenu key={group.title} modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button 
                       variant="ghost" 

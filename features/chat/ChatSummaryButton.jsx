@@ -3,7 +3,7 @@ import AISummaryButton from "@/features/ai/AISummaryButton";
 import { Assignment } from "@/api/entities";
 import { Document } from "@/api/entities";
 
-export default function ChatSummaryButton({ messages, threadTopic, className, assignment_id }) {
+export default function ChatSummaryButton({ messages, threadTopic, className, assignment_id, project_id }) {
   const [assignmentContext, setAssignmentContext] = useState(null);
   const [documentContexts, setDocumentContexts] = useState([]);
   const [isLoadingContext, setIsLoadingContext] = useState(false);
@@ -51,20 +51,22 @@ export default function ChatSummaryButton({ messages, threadTopic, className, as
   return (
     <AISummaryButton
       content={chatContent}
-      type="chat"
+      contentType="chat"
       title={title}
       className={className}
       variant="outline"
       size="sm"
-      assignment_id={assignment_id}
+      contentId={assignment_id}
+      assignmentId={assignment_id}
+      projectId={project_id}
       assignmentContext={assignmentContext}
       documentContexts={documentContexts}
       disabled={messages.length === 0 || isLoadingContext}
       disabledMessage={
-        isLoadingContext 
-          ? "Loading context..." 
-          : messages.length === 0 
-            ? "No messages to summarize yet" 
+        isLoadingContext
+          ? "Loading context..."
+          : messages.length === 0
+            ? "No messages to summarize yet"
             : undefined
       }
     />

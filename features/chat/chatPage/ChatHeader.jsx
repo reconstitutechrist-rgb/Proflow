@@ -25,7 +25,8 @@ export function ChatHeader({
             <ChatSummaryButton
               messages={currentThreadMessages}
               threadTopic={currentThread.topic}
-              assignment_id={currentAssignment?.id}
+              assignment_id={currentThread.assignment_id || currentAssignment?.id}
+              project_id={currentThread.project_id}
               className="rounded-lg shadow-sm"
             />
           )}

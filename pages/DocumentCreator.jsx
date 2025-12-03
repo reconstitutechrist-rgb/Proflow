@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router";
 import { db } from "@/api/db";
 import { Document } from "@/api/entities";
@@ -25,30 +25,21 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   FileText,
   Save,
   Eye,
-  Wand2,
   Image as ImageIcon,
   Download,
   Loader2,
   Sparkles,
-  FileDown,
   Maximize2,
   Minimize2,
   Clock,
   CheckCircle,
-  Mic,
-  MicOff,
   BookOpen,
   Zap,
-  RefreshCw,
-  Copy,
-  Check,
-  AlertCircle,
   Users
 } from "lucide-react";
 import { toast } from "sonner";
@@ -98,23 +89,19 @@ export default function DocumentCreatorPage() {
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-  const [documents, setDocuments] = useState([]); // New state
-  const [editingDocId, setEditingDocId] = useState(null); // New state
 
   const [isPreview, setIsPreview] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [loading, setLoading] = useState(true); // New state
+  const [loading, setLoading] = useState(true);
   const [lastSaved, setLastSaved] = useState(null);
-  const [versions, setVersions] = useState([]);
   const [currentDocumentVersion, setCurrentDocumentVersion] = useState("1.0");
 
   const [isOutlineDialogOpen, setIsOutlineDialogOpen] = useState(false);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isGenerating] = useState(false);
 
-  const quillRef = useRef(null);
   const autosaveTimerRef = useRef(null);
 
   const { currentWorkspaceId } = useWorkspace(); // NEW: Get current workspace ID
@@ -213,7 +200,6 @@ export default function DocumentCreatorPage() {
       setProjects(projectsData || []);
       setTasks(tasksData || []);
       setUsers(usersData || []);
-      setDocuments(allDocuments || []);
       setCurrentUser(user);
 
       const assignmentIdFromUrl = searchParams.get('assignment');
@@ -229,10 +215,8 @@ export default function DocumentCreatorPage() {
           setSelectedProject(doc.assigned_to_project || null);
           setSelectedTask(doc.selected_task_id || "");
           setTags(doc.tags || []);
-          setVersions(doc.version_history || []);
           setLastSaved(doc.updated_date);
           setCurrentDocumentVersion(doc.version || "1.0");
-          setEditingDocId(documentId); // New state
         } else {
           // Document not found in the current workspace or doesn't exist
           toast.error("Document not found or not part of this workspace.");
@@ -428,7 +412,6 @@ export default function DocumentCreatorPage() {
 
         toast.success(`Document updated to version ${newVersionNumber}`);
         setCurrentDocumentVersion(newVersionNumber);
-        setVersions(versionHistory);
         setLastSaved(new Date().toISOString());
 
       } else {
@@ -455,35 +438,23 @@ export default function DocumentCreatorPage() {
   };
 
   const handleInsertContent = useCallback((newContent) => {
-    if (quillRef.current) {
-      const editor = quillRef.current.getEditor();
-      const range = editor.getSelection();
-      // Sanitize content before inserting to prevent XSS
-      const sanitizedContent = DOMPurify.sanitize(newContent, {
-        ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre', 'a', 'span', 'div', 'img'],
-        ALLOWED_ATTR: ['href', 'target', 'class', 'id', 'src', 'alt', 'width', 'height']
-      });
-
-      if (range) {
-        editor.clipboard.dangerouslyPasteHTML(range.index, sanitizedContent);
-        editor.setSelection(range.index + sanitizedContent.length);
-      } else {
-        const length = editor.getLength();
-        editor.clipboard.dangerouslyPasteHTML(length, sanitizedContent);
-        editor.setSelection(length + sanitizedContent.length);
-      }
-
-      toast.success("Content inserted");
-    }
+    // Append the new content into the document
+    // Since we're using a simple textarea-based editor, we append to the content
+    setContent(prevContent => {
+      const separator = prevContent.trim() ? '\n\n' : '';
+      return prevContent + separator + newContent;
+    });
+    toast.success("Content inserted");
   }, []);
 
   const handleInsertImage = useCallback((imageUrl) => {
-    if (quillRef.current) {
-      const editor = quillRef.current.getEditor();
-      const range = editor.getSelection() || { index: editor.getLength() };
-      editor.insertEmbed(range.index, 'image', imageUrl);
-      editor.setSelection(range.index + 1);
-    }
+    // Insert image as HTML img tag
+    const imgHtml = `<img src="${imageUrl}" alt="Generated image" style="max-width: 100%; height: auto;" />`;
+    setContent(prevContent => {
+      const separator = prevContent.trim() ? '\n\n' : '';
+      return prevContent + separator + imgHtml;
+    });
+    toast.success("Image inserted");
   }, []);
 
   const handleApplyOutline = (outlineHtml) => {
@@ -551,22 +522,6 @@ export default function DocumentCreatorPage() {
       console.error("Error with smart fill:", error);
       toast.error("Failed to insert entity data");
     }
-  };
-
-  const modules = {
-    toolbar: [
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-      [{ 'font': [] }],
-      [{ 'size': ['small', false, 'large', 'huge'] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'script': 'sub' }, { 'script': 'super' }],
-      [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
-      [{ 'align': [] }],
-      ['blockquote', 'code-block'],
-      ['link', 'image', 'video'],
-      ['clean']
-    ],
   };
 
   // Filter tasks by selected assignment (using the first selected assignment for simplicity for this UI element)

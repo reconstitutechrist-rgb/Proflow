@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router";
 import { db } from "@/api/db";
 import { Document } from "@/api/entities";
@@ -37,16 +37,11 @@ import {
   Image as ImageIcon,
   Download,
   Loader2,
-  Sparkles,
   Maximize2,
   Minimize2,
   Clock,
-  Edit3,
   Brain,
   FileUp,
-  Settings,
-  Target,
-  MessageSquare,
   Upload,
   CheckCircle,
   X,
@@ -97,10 +92,7 @@ export default function DocumentStudioPage() {
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
   const [tasks, setTasks] = useState([]);
-  const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-  const [documents, setDocuments] = useState([]);
-  const [editingDocId, setEditingDocId] = useState(null);
 
   const [isPreview, setIsPreview] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -116,7 +108,6 @@ export default function DocumentStudioPage() {
   // AI Generation states
   const [uploadedDocuments, setUploadedDocuments] = useState([]);
   const [uploadingFile, setUploadingFile] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   
   // New state for PDF conversion
   const [saveAsPdf, setSaveAsPdf] = useState(false);
@@ -126,7 +117,6 @@ export default function DocumentStudioPage() {
   const [selectedExistingDocs, setSelectedExistingDocs] = useState([]);
   const [availableDocsForReference, setAvailableDocsForReference] = useState([]);
 
-  const quillRef = useRef(null);
   const autosaveTimerRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -223,11 +213,10 @@ export default function DocumentStudioPage() {
     try {
       setLoading(true);
 
-      const [assignmentsData, projectsData, tasksData, usersData, allDocuments, user] = await Promise.all([
+      const [assignmentsData, projectsData, tasksData, allDocuments, user] = await Promise.all([
         Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
         db.entities.Project.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
         Task.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        db.entities.User.list(),
         Document.filter({ workspace_id: currentWorkspaceId }, "-updated_date", 100),
         db.auth.me()
       ]);
@@ -235,8 +224,6 @@ export default function DocumentStudioPage() {
       setAssignments(assignmentsData || []);
       setProjects(projectsData || []);
       setTasks(tasksData || []);
-      setUsers(usersData || []);
-      setDocuments(allDocuments || []);
       setCurrentUser(user);
 
       // Filter documents for reference selection (exclude current doc and folder placeholders)
@@ -262,7 +249,6 @@ export default function DocumentStudioPage() {
           setTags(doc.tags || []);
           setLastSaved(doc.updated_date);
           setCurrentDocumentVersion(doc.version || "1.0");
-          setEditingDocId(documentId);
         } else {
           toast.error("Document not found or not part of this workspace.");
           navigate("/dashboard");
@@ -506,30 +492,23 @@ export default function DocumentStudioPage() {
   };
 
   const handleInsertContent = useCallback((newContent) => {
-    if (quillRef.current) {
-      const editor = quillRef.current.getEditor();
-      const range = editor.getSelection();
-
-      if (range) {
-        editor.clipboard.dangerouslyPasteHTML(range.index, newContent);
-        editor.setSelection(range.index + newContent.length);
-      } else {
-        const length = editor.getLength();
-        editor.clipboard.dangerouslyPasteHTML(length, newContent);
-        editor.setSelection(length + newContent.length);
-      }
-
-      toast.success("Content inserted");
-    }
+    // Append the new content into the document
+    // Since we're using a simple textarea-based editor, we append to the content
+    setContent(prevContent => {
+      const separator = prevContent.trim() ? '\n\n' : '';
+      return prevContent + separator + newContent;
+    });
+    toast.success("Content inserted");
   }, []);
 
   const handleInsertImage = useCallback((imageUrl) => {
-    if (quillRef.current) {
-      const editor = quillRef.current.getEditor();
-      const range = editor.getSelection() || { index: editor.getLength() };
-      editor.insertEmbed(range.index, 'image', imageUrl);
-      editor.setSelection(range.index + 1);
-    }
+    // Insert image as HTML img tag
+    const imgHtml = `<img src="${imageUrl}" alt="Generated image" style="max-width: 100%; height: auto;" />`;
+    setContent(prevContent => {
+      const separator = prevContent.trim() ? '\n\n' : '';
+      return prevContent + separator + imgHtml;
+    });
+    toast.success("Image inserted");
   }, []);
 
   const handleApplyOutline = (outlineHtml) => {
@@ -622,12 +601,6 @@ export default function DocumentStudioPage() {
     ];
   };
 
-  const handleGenerateFromTemplate = async (generatedContent) => {
-    if (generatedContent) {
-      handleInsertContent(generatedContent);
-      toast.success("Content generated and inserted");
-    }
-  };
 
   const handleUseInGenerator = () => {
     // Save current document state to sessionStorage for the generator
@@ -653,22 +626,6 @@ export default function DocumentStudioPage() {
     navigate(url);
     
     toast.success("Document transferred to AI Generator");
-  };
-
-  const modules = {
-    toolbar: [
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-      [{ 'font': [] }],
-      [{ 'size': ['small', false, 'large', 'huge'] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'script': 'sub' }, { 'script': 'super' }],
-      [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
-      [{ 'align': [] }],
-      ['blockquote', 'code-block'],
-      ['link', 'image', 'video'],
-      ['clean']
-    ],
   };
 
   const availableTasks = selectedAssignments.length > 0
@@ -966,13 +923,7 @@ export default function DocumentStudioPage() {
                     assignments={assignments}
                     tasks={tasks}
                     onInsertContent={handleInsertContent}
-                    quillRef={quillRef}
-                    setIsOutlineDialogOpen={setIsOutlineDialogOpen}
-                    onApplyOutline={handleApplyOutline}
-                    onGenerateFromTemplate={handleGenerateFromTemplate}
-                    isGenerating={isGenerating}
-                    setIsGenerating={setIsGenerating}
-                    referenceDocumentUrls={getAllReferenceDocuments()} // Pass combined reference URLs
+                    referenceDocumentUrls={getAllReferenceDocuments()}
                   />
                 </TabsContent>
 

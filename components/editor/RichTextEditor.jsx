@@ -22,7 +22,9 @@ export default function RichTextEditor({
   onFileAttach,
   placeholder = "Type a message...",
   teamMembers = [],
-  disabled = false
+  disabled = false,
+  minHeight = "80px",
+  className = ""
 }) {
   const textareaRef = useRef(null);
   const [showMentions, setShowMentions] = useState(false);
@@ -210,7 +212,8 @@ export default function RichTextEditor({
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled}
-        className="min-h-[80px] resize-none"
+        className={`resize-none ${className}`}
+        style={{ minHeight }}
       />
 
       {/* Mention Suggestions */}

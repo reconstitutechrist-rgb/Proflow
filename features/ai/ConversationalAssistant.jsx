@@ -1,12 +1,10 @@
 
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Loader2, Send, Bot, User, Sparkles, FileText, Lightbulb, Wand2, CheckCircle } from "lucide-react";
+import { Loader2, Send, Bot, User, FileText, Lightbulb, Wand2, CheckCircle, Sparkles } from "lucide-react";
 import { db } from "@/api/db";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -21,8 +19,7 @@ export default function ConversationalAssistant({
   assignments,
   tasks,
   onInsertContent,
-  quillRef,
-  referenceDocuments // Add this new prop
+  referenceDocumentUrls = []
 }) {
   const [messages, setMessages] = useState([
     {
@@ -45,17 +42,6 @@ export default function ConversationalAssistant({
       }
     }
   }, [messages]);
-
-  const getSelectedText = () => {
-    if (quillRef?.current) {
-      const editor = quillRef.current.getEditor();
-      const range = editor.getSelection();
-      if (range && range.length > 0) {
-        return editor.getText(range.index, range.length);
-      }
-    }
-    return null;
-  };
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -81,10 +67,9 @@ export default function ConversationalAssistant({
         ? tasks.find(t => t.id === selectedTask)
         : null;
 
-      const selectedText = getSelectedText();
       const strippedContent = content ? content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
-      let systemPrompt = `You are an expert writing assistant helping to create and improve documents. 
+      let systemPrompt = `You are an expert writing assistant helping to create and improve documents.
 
 Current Document Context:
 - Title: ${title || "Untitled Document"}
@@ -92,8 +77,7 @@ Current Document Context:
 ${assignmentContext ? `- Assignment: ${assignmentContext.name} - ${assignmentContext.description}` : ""}
 ${taskContext ? `- Task: ${taskContext.title} - ${taskContext.description || ''}` : ""}
 - Current Content Length: ${strippedContent.length} characters
-${selectedText ? `- Selected Text: "${selectedText}"` : ""}
-${referenceDocuments && referenceDocuments.length > 0 ? `- Reference Documents Available: ${referenceDocuments.length} documents` : ""}
+${referenceDocumentUrls.length > 0 ? `- Reference Documents Available: ${referenceDocumentUrls.length} documents` : ""}
 
 You can help with:
 1. Generating new content (sections, paragraphs, bullet points)
@@ -101,7 +85,7 @@ You can help with:
 3. Applying document templates (project briefs, proposals, reports, etc.)
 4. Refining and improve existing text
 5. Rewriting content for different audiences
-${referenceDocuments && referenceDocuments.length > 0 ? "6. Answering questions based on the uploaded reference documents" : ""}
+${referenceDocumentUrls.length > 0 ? "6. Answering questions based on the uploaded reference documents" : ""}
 
 When generating content, use HTML formatting (<h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>) for proper structure.
 Be concise but helpful. Ask clarifying questions if needed.`;
@@ -117,7 +101,7 @@ Provide your response:`;
       const response = await db.integrations.Core.InvokeLLM({
         prompt: fullPrompt,
         add_context_from_internet: false,
-        file_urls: referenceDocuments && referenceDocuments.length > 0 ? referenceDocuments : undefined
+        file_urls: referenceDocumentUrls.length > 0 ? referenceDocumentUrls : undefined
       });
 
       const assistantMessage = {

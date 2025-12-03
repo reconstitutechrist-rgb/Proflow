@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,11 +12,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Sparkles, Image as ImageIcon, RefreshCw, Plus, AlertTriangle, Info, BarChart3, TrendingUp, PieChart } from "lucide-react";
+import { Loader2, Sparkles, Image as ImageIcon, RefreshCw, Plus, AlertTriangle, Info, BarChart3, TrendingUp, PieChart, FileText, Wand2, Search } from "lucide-react";
 import { db } from "@/api/db";
+import { InvokeLLM } from "@/api/integrations";
 import { toast } from "sonner";
 
-export default function AIImageGenerator({ onInsertImage, documentContext }) {
+export default function AIImageGenerator({ onInsertImage, documentContext, referenceDocumentUrls = [] }) {
   const [prompt, setPrompt] = useState("");
   const [style, setStyle] = useState("realistic");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -26,15 +26,11 @@ export default function AIImageGenerator({ onInsertImage, documentContext }) {
   const [generationCount, setGenerationCount] = useState(0);
   const [activeTab, setActiveTab] = useState("standard");
 
-  // Debug logging
-  useEffect(() => {
-    console.log('=== AIImageGenerator Context Debug ===');
-    console.log('Has Assignment:', !!documentContext?.selectedAssignment);
-    console.log('Assignment Name:', documentContext?.selectedAssignment?.name);
-    console.log('All Tasks Count:', documentContext?.allTasks?.length || 0);
-    console.log('All Tasks:', documentContext?.allTasks);
-    console.log('=====================================');
-  }, [documentContext]);
+  // Document-based generation states
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [documentSuggestions, setDocumentSuggestions] = useState([]);
+  const [hasAnalyzed, setHasAnalyzed] = useState(false);
+
 
   const styles = [
     { value: "realistic", label: "Photorealistic", description: "Life-like, high-detail photography" },
@@ -99,8 +95,6 @@ export default function AIImageGenerator({ onInsertImage, documentContext }) {
         todo: statusCounts['todo'] || 0,
         review: statusCounts['review'] || 0
       };
-      
-      console.log('Task Stats Generated:', info.taskStats);
     }
 
     return info;
@@ -111,7 +105,6 @@ export default function AIImageGenerator({ onInsertImage, documentContext }) {
     const suggestions = [];
 
     if (contextInfo.taskStats && contextInfo.taskStats.total > 0) {
-      console.log('Generating Data Viz Suggestions for', contextInfo.taskStats.total, 'tasks');
       
       // Task Status Breakdown - Pie Chart
       suggestions.push({
@@ -225,10 +218,6 @@ Requirements:
 - Professional infographic style
 - Clean design suitable for business presentations`
       });
-
-      console.log('Generated', suggestions.length, 'data viz suggestions');
-    } else {
-      console.log('No task stats available - no suggestions generated');
     }
 
     return suggestions;
@@ -345,8 +334,6 @@ Requirements:
       const finalStyle = isDataViz ? "infographic" : style;
       enhancedPrompt = `${enhancedPrompt}, ${finalStyle} style, high quality, professional`;
 
-      console.log('Generating image with prompt:', enhancedPrompt);
-
       const response = await db.integrations.Core.GenerateImage({
         prompt: enhancedPrompt
       });
@@ -389,11 +376,152 @@ Requirements:
   };
 
   const handleDataVizGenerate = (suggestion) => {
-    console.log('Generating data viz:', suggestion.type);
     handleGenerate(suggestion.prompt, true);
   };
 
+  // Analyze documents for visualization opportunities
+  const analyzeDocumentsForVisualization = async () => {
+    if (referenceDocumentUrls.length === 0 && (!documentContext?.content || documentContext.content.length < 50)) {
+      toast.error("Add reference documents or write more content to analyze");
+      return;
+    }
+
+    try {
+      setIsAnalyzing(true);
+      toast.info("Analyzing documents for visualization opportunities...", { duration: 3000 });
+
+      const contentToAnalyze = documentContext?.content
+        ? documentContext.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 4000)
+        : '';
+
+      const analysisPrompt = `Analyze this content and identify visualization opportunities.
+
+${documentContext?.title ? `Document Title: ${documentContext.title}` : ''}
+${contentToAnalyze ? `\nDocument Content:\n${contentToAnalyze}` : ''}
+
+${referenceDocumentUrls.length > 0 ? `\nThis document has ${referenceDocumentUrls.length} reference document(s) attached for additional context.` : ''}
+
+Identify up to 5 visualization opportunities from this content. For each, determine:
+1. What type of visualization would work best (pie_chart, bar_chart, line_chart, image, diagram, infographic)
+2. What data or concept it would visualize
+3. A detailed prompt for generating this visualization
+
+Return ONLY a valid JSON array with this exact format (no markdown, no explanation):
+[
+  {
+    "id": "1",
+    "type": "pie_chart",
+    "title": "Short title for the visualization",
+    "description": "Brief description of what this shows",
+    "dataPreview": "Q1: 25%, Q2: 30%, Q3: 20%, Q4: 25%",
+    "prompt": "Detailed image generation prompt for this visualization..."
+  }
+]
+
+If no good visualization opportunities exist, return an empty array: []`;
+
+      const response = await InvokeLLM({
+        prompt: analysisPrompt,
+        add_context_from_internet: false,
+        file_urls: referenceDocumentUrls.length > 0 ? referenceDocumentUrls : undefined
+      });
+
+      // Parse the response
+      try {
+        // Clean the response - remove markdown code blocks if present
+        let cleanedResponse = response.trim();
+        if (cleanedResponse.startsWith('```')) {
+          cleanedResponse = cleanedResponse.replace(/```json?\n?/g, '').replace(/```\n?$/g, '').trim();
+        }
+
+        const suggestions = JSON.parse(cleanedResponse);
+
+        if (Array.isArray(suggestions)) {
+          setDocumentSuggestions(suggestions);
+          setHasAnalyzed(true);
+
+          if (suggestions.length > 0) {
+            toast.success(`Found ${suggestions.length} visualization opportunity${suggestions.length > 1 ? 's' : ''}!`);
+          } else {
+            toast.info("No visualization opportunities found in this content");
+          }
+        } else {
+          throw new Error("Invalid response format");
+        }
+      } catch (parseError) {
+        console.error("Failed to parse analysis response:", parseError, response);
+        toast.error("Failed to parse analysis results");
+        setDocumentSuggestions([]);
+        setHasAnalyzed(true);
+      }
+
+    } catch (error) {
+      console.error("Error analyzing documents:", error);
+      toast.error("Failed to analyze documents");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // Generate visualization from a suggestion
+  const handleSuggestionGenerate = async (suggestion) => {
+    toast.info(`Generating ${suggestion.title}...`, { duration: 3000 });
+    await handleGenerate(suggestion.prompt, true);
+  };
+
+  // Generate visualization from document content directly
+  const handleVisualizeContent = async () => {
+    if (!documentContext?.content || documentContext.content.length < 50) {
+      toast.error("Add more content to your document first");
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      toast.info("Creating visualization from your document...", { duration: 3000 });
+
+      const contentToVisualize = documentContext.content
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .substring(0, 3000);
+
+      const promptGeneratorPrompt = `Based on this document content, create a detailed image generation prompt.
+
+Document Title: ${documentContext?.title || 'Untitled'}
+Content: ${contentToVisualize}
+
+Analyze the content and create ONE detailed image generation prompt that would best visualize the main concept, data, or idea in this document.
+
+If the content contains data/numbers, describe a professional chart or infographic.
+If the content describes a product/concept, describe a visual representation.
+If the content is about a process, describe a flowchart or diagram.
+
+Return ONLY the image generation prompt, nothing else. Make it detailed and specific for best results.`;
+
+      const generatedPrompt = await InvokeLLM({
+        prompt: promptGeneratorPrompt,
+        add_context_from_internet: false
+      });
+
+      if (generatedPrompt && generatedPrompt.trim()) {
+        await handleGenerate(generatedPrompt.trim(), true);
+      } else {
+        toast.error("Could not generate visualization prompt");
+        setIsGenerating(false);
+      }
+
+    } catch (error) {
+      console.error("Error visualizing content:", error);
+      toast.error("Failed to visualize content");
+      setIsGenerating(false);
+    }
+  };
+
   const hasDataVizData = contextInfo.taskStats && contextInfo.taskStats.total > 0;
+  const hasDocumentContent = documentContext?.content && documentContext.content.length >= 50;
+  const hasReferenceDocuments = referenceDocumentUrls.length > 0;
+  const canAnalyzeDocuments = hasDocumentContent || hasReferenceDocuments;
 
   return (
     <div className="space-y-4">
@@ -408,7 +536,7 @@ Requirements:
       )}
 
       {/* Enhanced Context Info */}
-      {(contextInfo.hasAssignment || contextInfo.hasTask) && (
+      {(contextInfo.hasAssignment || contextInfo.hasTask || referenceDocumentUrls.length > 0) && (
         <Alert className="bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800">
           <Info className="w-4 h-4 text-indigo-600" />
           <AlertDescription className="text-xs text-indigo-900 dark:text-indigo-100">
@@ -416,27 +544,41 @@ Requirements:
             {contextInfo.hasAssignment && ` ${contextInfo.assignmentName}`}
             {contextInfo.hasTask && ` • Task: ${contextInfo.taskTitle}`}
             {contextInfo.taskStats && ` • ${contextInfo.taskStats.total} tasks (${contextInfo.taskStats.completed} completed)`}
+            {referenceDocumentUrls.length > 0 && ` • ${referenceDocumentUrls.length} reference doc(s)`}
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Tabs for Standard vs Data Viz */}
+      {/* Tabs for Standard vs Data Viz vs From Documents */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="standard">
-            <ImageIcon className="w-4 h-4 mr-2" />
-            Standard Images
+            <ImageIcon className="w-4 h-4 mr-1" />
+            <span className="hidden sm:inline">Standard</span>
           </TabsTrigger>
-          <TabsTrigger 
-            value="dataviz" 
+          <TabsTrigger
+            value="dataviz"
             disabled={!hasDataVizData}
             title={!hasDataVizData ? 'Link this document to an assignment with tasks to unlock data visualizations' : 'View data visualization options'}
           >
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Data Viz
+            <BarChart3 className="w-4 h-4 mr-1" />
+            <span className="hidden sm:inline">Data Viz</span>
             {hasDataVizData && (
-              <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0 h-4">
+              <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 h-4">
                 {dataVizSuggestions.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger
+            value="fromdocs"
+            disabled={!canAnalyzeDocuments}
+            title={!canAnalyzeDocuments ? 'Add reference documents or write more content to analyze' : 'Generate visualizations from your documents'}
+          >
+            <FileText className="w-4 h-4 mr-1" />
+            <span className="hidden sm:inline">From Docs</span>
+            {hasAnalyzed && documentSuggestions.length > 0 && (
+              <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 h-4">
+                {documentSuggestions.length}
               </Badge>
             )}
           </TabsTrigger>
@@ -623,6 +765,167 @@ Requirements:
             )}
           </div>
         </TabsContent>
+
+        <TabsContent value="fromdocs" className="space-y-4 mt-4">
+          {/* Info about this feature */}
+          <Alert className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800">
+            <Wand2 className="w-4 h-4 text-purple-600" />
+            <AlertDescription className="text-xs text-purple-900 dark:text-purple-100">
+              <strong>Smart Generation:</strong> Analyze your documents to discover data, concepts, and descriptions that can be turned into visualizations.
+            </AlertDescription>
+          </Alert>
+
+          {/* Source Info */}
+          <Card className="bg-gray-50 dark:bg-gray-900 border">
+            <CardContent className="pt-4">
+              <div className="text-sm font-medium mb-2">Analysis Sources</div>
+              <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${hasDocumentContent ? 'bg-green-500' : 'bg-gray-300'}`} />
+                  <span>Document Content: {hasDocumentContent ? `${documentContext.content.length} chars` : 'Not enough content'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${hasReferenceDocuments ? 'bg-green-500' : 'bg-gray-300'}`} />
+                  <span>Reference Documents: {hasReferenceDocuments ? `${referenceDocumentUrls.length} file(s)` : 'None attached'}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Analyze Button */}
+          <Button
+            onClick={analyzeDocumentsForVisualization}
+            disabled={isAnalyzing || !canAnalyzeDocuments}
+            variant="outline"
+            className="w-full"
+          >
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Analyzing Documents...
+              </>
+            ) : (
+              <>
+                <Search className="w-4 h-4 mr-2" />
+                {hasAnalyzed ? 'Re-analyze Documents' : 'Analyze Documents for Visualizations'}
+              </>
+            )}
+          </Button>
+
+          {/* Visualization Suggestions */}
+          {hasAnalyzed && (
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                {documentSuggestions.length > 0
+                  ? `Found ${documentSuggestions.length} Visualization${documentSuggestions.length > 1 ? 's' : ''}`
+                  : 'Analysis Results'}
+              </label>
+
+              {documentSuggestions.length > 0 ? (
+                <div className="space-y-3">
+                  {documentSuggestions.map((suggestion) => (
+                    <Card key={suggestion.id} className="border hover:border-purple-300 dark:hover:border-purple-700 transition-colors">
+                      <CardContent className="pt-4">
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex-shrink-0">
+                            {suggestion.type === 'pie_chart' && <PieChart className="w-5 h-5 text-purple-600 dark:text-purple-400" />}
+                            {suggestion.type === 'bar_chart' && <BarChart3 className="w-5 h-5 text-purple-600 dark:text-purple-400" />}
+                            {suggestion.type === 'line_chart' && <TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-400" />}
+                            {(suggestion.type === 'image' || suggestion.type === 'diagram' || suggestion.type === 'infographic') && (
+                              <ImageIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                            )}
+                            {!['pie_chart', 'bar_chart', 'line_chart', 'image', 'diagram', 'infographic'].includes(suggestion.type) && (
+                              <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-sm">{suggestion.title}</h4>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                              {suggestion.description}
+                            </p>
+                            {suggestion.dataPreview && (
+                              <div className="mt-2 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs font-mono">
+                                {suggestion.dataPreview}
+                              </div>
+                            )}
+                            <Badge variant="outline" className="mt-2 text-xs">
+                              {suggestion.type.replace('_', ' ')}
+                            </Badge>
+                            <Button
+                              size="sm"
+                              className="mt-3 w-full"
+                              onClick={() => handleSuggestionGenerate(suggestion)}
+                              disabled={isGenerating}
+                            >
+                              {isGenerating ? (
+                                <>
+                                  <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                                  Generating...
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="w-3 h-3 mr-2" />
+                                  Generate This
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-gray-500 dark:text-gray-400 border-2 border-dashed rounded-lg">
+                  <Search className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                  <p className="text-sm">No visualizations identified</p>
+                  <p className="text-xs mt-1">Try adding more data or descriptive content to your documents</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Direct Content Visualization */}
+          {hasDocumentContent && (
+            <div className="border-t pt-4 mt-4">
+              <label className="text-sm font-medium mb-2 block">Quick Visualization</label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                Let AI decide the best way to visualize your current document content.
+              </p>
+              <Button
+                onClick={handleVisualizeContent}
+                disabled={isGenerating}
+                variant="secondary"
+                className="w-full"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating Visualization...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-4 h-4 mr-2" />
+                    Visualize Document Content
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!hasAnalyzed && !isAnalyzing && (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-sm">Ready to analyze</p>
+              <p className="text-xs mt-1">
+                {canAnalyzeDocuments
+                  ? "Click 'Analyze Documents' to discover visualization opportunities"
+                  : "Add reference documents or write more content first"}
+              </p>
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       {/* Generated Images Gallery */}
@@ -659,7 +962,7 @@ Requirements:
                     
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="outline" className="text-xs">
-                        {styles.find(s => s.value === image.style)?.label}
+                        {styles.find(s => s.value === image.style)?.label || image.style}
                       </Badge>
                       {image.isDataViz && (
                         <Badge className="text-xs bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">

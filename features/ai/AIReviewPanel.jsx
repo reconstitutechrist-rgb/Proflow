@@ -31,7 +31,8 @@ export default function AIReviewPanel({
   selectedAssignment,
   selectedTask,
   assignments,
-  tasks
+  tasks,
+  referenceDocumentUrls = []
 }) {
   const [review, setReview] = useState(null);
   const [isReviewing, setIsReviewing] = useState(false);
@@ -101,8 +102,12 @@ export default function AIReviewPanel({
 
       let systemPrompt = "";
       
+      const hasReferenceDocsContext = referenceDocumentUrls.length > 0
+        ? `\n\nYou have access to ${referenceDocumentUrls.length} reference document(s) that provide additional context for this review. Use them to evaluate accuracy and completeness.`
+        : '';
+
       if (reviewType === "comprehensive") {
-        systemPrompt = `You are an expert editor and writing coach. Provide a comprehensive review of this document.
+        systemPrompt = `You are an expert editor and writing coach. Provide a comprehensive review of this document.${hasReferenceDocsContext}
 
 Analyze:
 1. **Clarity & Structure**: Is the content well-organized and easy to follow?
@@ -111,6 +116,7 @@ Analyze:
 4. **Completeness**: Are there any missing sections or gaps in information?
 5. **Consistency**: Is terminology and formatting consistent throughout?
 ${taskContext ? `6. **Task Alignment**: Does the content effectively address the task: ${taskContext.title}?` : ""}
+${referenceDocumentUrls.length > 0 ? `${taskContext ? '7' : '6'}. **Reference Alignment**: Does the content align with the provided reference documents?` : ""}
 
 Provide actionable feedback in a friendly, constructive tone.`;
 
@@ -163,7 +169,8 @@ Provide your review in a structured format with clear sections and actionable re
 
       const response = await InvokeLLM({
         prompt: fullPrompt,
-        add_context_from_internet: false
+        add_context_from_internet: false,
+        file_urls: referenceDocumentUrls.length > 0 ? referenceDocumentUrls : undefined
       });
 
       setReview({

@@ -9,7 +9,7 @@ import DOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -46,7 +46,10 @@ import {
   CheckCircle,
   X,
   Users,
-  Info
+  Info,
+  ChevronDown,
+  FolderOpen,
+  Lightbulb
 } from "lucide-react";
 import { toast } from "sonner";
 import RichTextEditor from "@/components/editor/RichTextEditor";
@@ -116,6 +119,10 @@ export default function DocumentStudioPage() {
   // New state for existing document references
   const [selectedExistingDocs, setSelectedExistingDocs] = useState([]);
   const [availableDocsForReference, setAvailableDocsForReference] = useState([]);
+
+  // Tools tab section states
+  const [refDocsExpanded, setRefDocsExpanded] = useState(true);
+  const [imageGenExpanded, setImageGenExpanded] = useState(true);
 
   const autosaveTimerRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -249,6 +256,38 @@ export default function DocumentStudioPage() {
           setTags(doc.tags || []);
           setLastSaved(doc.updated_date);
           setCurrentDocumentVersion(doc.version || "1.0");
+
+          // Load saved reference documents (uploaded)
+          if (doc.reference_document_urls && doc.reference_document_urls.length > 0) {
+            const loadedUploadedDocs = doc.reference_document_urls.map((url, index) => ({
+              id: `saved_${index}_${Date.now()}`,
+              name: `Reference Document ${index + 1}`,
+              url: url,
+              includedInContext: true,
+              source: 'saved'
+            }));
+            setUploadedDocuments(loadedUploadedDocs);
+          }
+
+          // Load linked existing documents
+          if (doc.linked_document_ids && doc.linked_document_ids.length > 0) {
+            const linkedDocs = doc.linked_document_ids
+              .map(docId => {
+                const linkedDoc = allDocuments.find(d => d.id === docId);
+                if (linkedDoc) {
+                  return {
+                    id: linkedDoc.id,
+                    name: linkedDoc.title || linkedDoc.file_name,
+                    url: linkedDoc.file_url,
+                    type: linkedDoc.file_type || 'unknown',
+                    source: 'existing'
+                  };
+                }
+                return null;
+              })
+              .filter(Boolean);
+            setSelectedExistingDocs(linkedDocs);
+          }
         } else {
           toast.error("Document not found or not part of this workspace.");
           navigate("/dashboard");
@@ -424,7 +463,9 @@ export default function DocumentStudioPage() {
         folder_path: "/created",
         file_url: fileUrl,
         file_name: finalFileName,
-        file_type: finalFileType
+        file_type: finalFileType,
+        reference_document_urls: uploadedDocuments.filter(d => d.includedInContext).map(d => d.url),
+        linked_document_ids: selectedExistingDocs.map(d => d.id)
       };
 
       if (documentId) {
@@ -936,6 +977,7 @@ export default function DocumentStudioPage() {
                     selectedTask={selectedTask}
                     assignments={assignments}
                     tasks={tasks}
+                    referenceDocumentUrls={getAllReferenceDocuments()}
                   />
 
                   <div className="border-t pt-6">
@@ -944,175 +986,276 @@ export default function DocumentStudioPage() {
                       Audience Rewriter
                     </h3>
                     <AudienceRewriter
-                      initialText={content}
-                      onApplyRewrite={handleInsertContent}
-                      quillRef={quillRef}
-                      disabled={false}
+                      document={documentId ? {
+                        id: documentId,
+                        content: content,
+                        title: title,
+                        workspace_id: currentWorkspaceId,
+                        version: currentDocumentVersion,
+                        created_by: currentUser?.email
+                      } : null}
+                      onRewriteComplete={(rewrittenContent) => {
+                        setContent(rewrittenContent);
+                        toast.success("Content rewritten for selected audience");
+                      }}
                     />
                   </div>
                 </TabsContent>
 
-                <TabsContent value="tools" className="mt-0 space-y-6">
-                  <div>
-                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                      <Upload className="w-4 h-4 text-blue-600" />
-                      Reference Documents
-                    </h3>
-                    
-                    {/* Upload New Files */}
-                    <div className="mb-4">
-                      <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 block">
-                        Upload New Files
-                      </label>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        onChange={handleFileUpload}
-                        className="hidden"
-                        accept=".pdf,.doc,.docx,.txt,.md"
-                      />
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploadingFile}
-                      >
-                        {uploadingFile ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Uploading...
-                          </>
+                <TabsContent value="tools" className="mt-0 space-y-4">
+                  {/* Context Usage Indicator */}
+                  <Alert className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
+                    <Lightbulb className="w-4 h-4 text-blue-600" />
+                    <AlertDescription className="text-xs text-blue-900 dark:text-blue-100">
+                      Reference documents provide context to <strong>Assistant</strong>, <strong>Review</strong>, and <strong>Image Generator</strong> for smarter AI responses.
+                    </AlertDescription>
+                  </Alert>
+
+                  {/* Reference Documents Card */}
+                  <Card className="border shadow-sm">
+                    <CardHeader
+                      className="py-3 px-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                      onClick={() => setRefDocsExpanded(!refDocsExpanded)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded">
+                            <FileText className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <span className="font-medium text-sm">Reference Documents</span>
+                          {(uploadedDocuments.length + selectedExistingDocs.length) > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              {uploadedDocuments.length + selectedExistingDocs.length}
+                            </Badge>
+                          )}
+                        </div>
+                        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${refDocsExpanded ? 'rotate-180' : ''}`} />
+                      </div>
+                    </CardHeader>
+
+                    {refDocsExpanded && (
+                      <CardContent className="pt-0 pb-4 px-4 space-y-4">
+                        {/* Empty State */}
+                        {uploadedDocuments.length === 0 && selectedExistingDocs.length === 0 ? (
+                          <div className="text-center py-6 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
+                            <FolderOpen className="w-10 h-10 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
+                            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">No reference documents</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1 mb-4 max-w-[200px] mx-auto">
+                              Add documents to help AI generate charts, visualizations, and context-aware content
+                            </p>
+                            <div className="flex gap-2 justify-center">
+                              <input
+                                ref={fileInputRef}
+                                type="file"
+                                multiple
+                                onChange={handleFileUpload}
+                                className="hidden"
+                                accept=".pdf,.doc,.docx,.txt,.md"
+                              />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={uploadingFile}
+                              >
+                                {uploadingFile ? (
+                                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                ) : (
+                                  <Upload className="w-3 h-3 mr-1" />
+                                )}
+                                Upload
+                              </Button>
+                              <Select onValueChange={handleAddExistingDoc}>
+                                <SelectTrigger className="w-auto h-8 text-xs">
+                                  <FolderOpen className="w-3 h-3 mr-1" />
+                                  <span>Library</span>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {availableDocsForReference.length === 0 ? (
+                                    <SelectItem value="none" disabled>No documents</SelectItem>
+                                  ) : (
+                                    availableDocsForReference.map(doc => (
+                                      <SelectItem key={doc.id} value={doc.id}>
+                                        {doc.title || doc.file_name}
+                                      </SelectItem>
+                                    ))
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
                         ) : (
                           <>
-                            <Upload className="w-4 h-4 mr-2" />
-                            Upload Files
+                            {/* File Type Hints */}
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Supports PDF, Word, TXT, Markdown files
+                            </p>
+
+                            {/* Upload & Select Row */}
+                            <div className="flex gap-2">
+                              <input
+                                ref={fileInputRef}
+                                type="file"
+                                multiple
+                                onChange={handleFileUpload}
+                                className="hidden"
+                                accept=".pdf,.doc,.docx,.txt,.md"
+                              />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={uploadingFile}
+                              >
+                                {uploadingFile ? (
+                                  <>
+                                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                    Uploading...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Upload className="w-3 h-3 mr-1" />
+                                    Upload
+                                  </>
+                                )}
+                              </Button>
+                              <Select onValueChange={handleAddExistingDoc}>
+                                <SelectTrigger className="flex-1 h-8 text-xs">
+                                  <FolderOpen className="w-3 h-3 mr-1" />
+                                  <span>From Library</span>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {availableDocsForReference.length === 0 ? (
+                                    <SelectItem value="none" disabled>No documents</SelectItem>
+                                  ) : (
+                                    availableDocsForReference.map(doc => (
+                                      <SelectItem key={doc.id} value={doc.id}>
+                                        <div className="flex flex-col">
+                                          <span className="font-medium">{doc.title || doc.file_name}</span>
+                                          <span className="text-xs text-gray-500">
+                                            {doc.document_type || 'document'}
+                                          </span>
+                                        </div>
+                                      </SelectItem>
+                                    ))
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Active References List */}
+                            <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                              {/* Uploaded Documents */}
+                              {uploadedDocuments.length > 0 && (
+                                <div className="space-y-1">
+                                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Uploaded</p>
+                                  {uploadedDocuments.map(doc => (
+                                    <div
+                                      key={doc.id}
+                                      className="flex items-center justify-between p-2 border rounded-lg bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
+                                    >
+                                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                        <span className="text-sm truncate">{doc.name}</span>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 flex-shrink-0 hover:bg-blue-100 dark:hover:bg-blue-900/50"
+                                        onClick={() => handleRemoveDocument(doc.id)}
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Library Documents */}
+                              {selectedExistingDocs.length > 0 && (
+                                <div className="space-y-1">
+                                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400">From Library</p>
+                                  {selectedExistingDocs.map(doc => (
+                                    <div
+                                      key={doc.id}
+                                      className="flex items-center justify-between p-2 border rounded-lg bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
+                                    >
+                                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        <FileText className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                        <span className="text-sm truncate">{doc.name}</span>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900/50"
+                                        onClick={() => handleRemoveExistingDoc(doc.id)}
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </>
                         )}
-                      </Button>
-                    </div>
+                      </CardContent>
+                    )}
+                  </Card>
 
-                    {/* Select Existing Documents */}
-                    <div>
-                      <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 block">
-                        Select Existing Documents
-                      </label>
-                      <Select onValueChange={handleAddExistingDoc}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Choose from library..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableDocsForReference.length === 0 ? (
-                            <SelectItem value="none" disabled>No documents available</SelectItem>
-                          ) : (
-                            availableDocsForReference.map(doc => (
-                              <SelectItem key={doc.id} value={doc.id}>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{doc.title || doc.file_name}</span>
-                                  <span className="text-xs text-gray-500">
-                                    {doc.document_type || 'document'} • {new Date(doc.created_date).toLocaleDateString()}
-                                  </span>
-                                </div>
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Display All Selected Reference Documents */}
-                    {(uploadedDocuments.length > 0 || selectedExistingDocs.length > 0) && (
-                      <div className="mt-4 space-y-2">
-                        <label className="text-xs font-medium text-gray-600 dark:text-gray-400 block">
-                          Active References ({uploadedDocuments.length + selectedExistingDocs.length})
-                        </label>
-                        
-                        {/* Uploaded Documents */}
-                        {uploadedDocuments.map(doc => (
-                          <div
-                            key={doc.id}
-                            className="flex items-center justify-between p-2 border rounded-lg bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
-                          >
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <span className="text-sm truncate block">{doc.name}</span>
-                                <span className="text-xs text-gray-500">Uploaded</span>
-                              </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 flex-shrink-0"
-                              onClick={() => handleRemoveDocument(doc.id)}
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
+                  {/* AI Image Generator Card */}
+                  <Card className="border shadow-sm">
+                    <CardHeader
+                      className="py-3 px-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                      onClick={() => setImageGenExpanded(!imageGenExpanded)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 bg-pink-100 dark:bg-pink-900/30 rounded">
+                            <ImageIcon className="w-4 h-4 text-pink-600" />
                           </div>
-                        ))}
-
-                        {/* Existing Documents from Library */}
-                        {selectedExistingDocs.map(doc => (
-                          <div
-                            key={doc.id}
-                            className="flex items-center justify-between p-2 border rounded-lg bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
-                          >
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <FileText className="w-4 h-4 text-green-600 flex-shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <span className="text-sm truncate block">{doc.name}</span>
-                                <span className="text-xs text-gray-500">From library</span>
-                              </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 flex-shrink-0"
-                              onClick={() => handleRemoveExistingDoc(doc.id)}
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        ))}
+                          <span className="font-medium text-sm">AI Image & Chart Generator</span>
+                        </div>
+                        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${imageGenExpanded ? 'rotate-180' : ''}`} />
                       </div>
-                    )}
-                  </div>
+                    </CardHeader>
 
-                  <div className="border-t pt-6">
-                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                      <ImageIcon className="w-4 h-4 text-pink-600" />
-                      AI Image & Chart Generator
-                    </h3>
-                    
-                    {/* Show helpful message if no assignment selected */}
-                    {!selectedAssignments[0] && (
-                      <Alert className="mb-4 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-                        <Info className="w-4 h-4 text-blue-600" />
-                        <AlertDescription className="text-xs text-blue-900 dark:text-blue-100">
-                          <strong>Tip:</strong> Link this document to an assignment with tasks to unlock data visualization features
-                        </AlertDescription>
-                      </Alert>
+                    {imageGenExpanded && (
+                      <CardContent className="pt-0 pb-4 px-4">
+                        {/* Show helpful message if no assignment selected */}
+                        {!selectedAssignments[0] && (
+                          <Alert className="mb-4 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+                            <Info className="w-4 h-4 text-amber-600" />
+                            <AlertDescription className="text-xs text-amber-900 dark:text-amber-100">
+                              <strong>Tip:</strong> Link to an assignment with tasks for data visualization options
+                            </AlertDescription>
+                          </Alert>
+                        )}
+
+                        <AIImageGenerator
+                          onInsertImage={handleInsertImage}
+                          documentContext={{
+                            title,
+                            description,
+                            content,
+                            selectedAssignment: selectedAssignments[0]
+                              ? assignments.find(a => a.id === selectedAssignments[0])
+                              : null,
+                            selectedTask: selectedTask
+                              ? tasks.find(t => t.id === selectedTask)
+                              : null,
+                            allTasks: selectedAssignments[0]
+                              ? tasks.filter(t => t.assignment_id === selectedAssignments[0])
+                              : [],
+                            assignments: assignments,
+                            tasks: tasks
+                          }}
+                          referenceDocumentUrls={getAllReferenceDocuments()}
+                        />
+                      </CardContent>
                     )}
-                    
-                    <AIImageGenerator
-                      onInsertImage={handleInsertImage}
-                      documentContext={{
-                        title,
-                        description,
-                        selectedAssignment: selectedAssignments[0] 
-                          ? assignments.find(a => a.id === selectedAssignments[0])
-                          : null,
-                        selectedTask: selectedTask 
-                          ? tasks.find(t => t.id === selectedTask)
-                          : null,
-                        allTasks: selectedAssignments[0] 
-                          ? tasks.filter(t => t.assignment_id === selectedAssignments[0])
-                          : [],
-                        assignments: assignments,
-                        tasks: tasks
-                      }}
-                    />
-                  </div>
+                  </Card>
                 </TabsContent>
               </div>
             </Tabs>

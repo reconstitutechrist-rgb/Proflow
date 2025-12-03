@@ -171,6 +171,7 @@ export default function DocumentsHub() {
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
   const [selectedAssignments, setSelectedAssignments] = useState([]);
+  const [selectedProject, setSelectedProject] = useState("");
   const [selectedTask, setSelectedTask] = useState("");
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState("");
@@ -288,6 +289,7 @@ export default function DocumentsHub() {
           setDescription(doc.description || "");
           setContent(doc.content || "");
           setSelectedAssignments(doc.assigned_to_assignments || []);
+          setSelectedProject(doc.assigned_to_project || "");
           setSelectedTask(doc.selected_task_id || "");
           setTags(doc.tags || []);
           setLastSaved(doc.updated_date);
@@ -369,6 +371,7 @@ export default function DocumentsHub() {
         content,
         document_type: selectedTemplate?.id || "other",
         assigned_to_assignments: selectedAssignments,
+        assigned_to_project: selectedProject || null,
         selected_task_id: selectedTask || null,
         tags,
         folder_path: "/created",
@@ -475,16 +478,14 @@ export default function DocumentsHub() {
       folder_path: doc.folder_path
     });
 
-    // If it's an uploaded file (has file_url and is not a studio-created document), show preview
-    // Studio docs have folder_path="/created", uploaded files have folder_path="/" or other paths
-    const isUploadedFile = doc.file_url && doc.folder_path !== "/created";
-
-    if (isUploadedFile) {
+    // If document has a file_url, show it in the preview modal
+    // This includes both uploaded files AND studio-created documents that were saved as files
+    if (doc.file_url) {
       setPreviewDocument(doc);
       setIsPreviewOpen(true);
       return;
     }
-    // Otherwise, open in studio for editing
+    // Otherwise, open in studio for editing (documents without file_url)
     setSearchParams({ tab: "studio", id: doc.id });
   };
 
@@ -516,6 +517,7 @@ export default function DocumentsHub() {
     setDescription("");
     setContent("");
     setSelectedAssignments([]);
+    setSelectedProject("");
     setSelectedTask("");
     setTags([]);
     setSelectedTemplate(null);
@@ -941,8 +943,17 @@ export default function DocumentsHub() {
 
                 {/* Metadata */}
                 <div className="flex flex-wrap gap-3 mt-4">
+                  <Select value={selectedProject || "none"} onValueChange={(v) => setSelectedProject(v === "none" ? "" : v)}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Link to Project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Project</SelectItem>
+                      {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                   <Select value={selectedAssignments[0] || "none"} onValueChange={(v) => { setSelectedAssignments(v === "none" ? [] : [v]); setSelectedTask(""); }}>
-                    <SelectTrigger className="w-64"><SelectValue placeholder="Link to Assignment" /></SelectTrigger>
+                    <SelectTrigger className="w-48"><SelectValue placeholder="Link to Assignment" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">No Assignment</SelectItem>
                       {assignments.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
@@ -950,7 +961,7 @@ export default function DocumentsHub() {
                   </Select>
                   {selectedAssignments.length > 0 && availableTasks.length > 0 && (
                     <Select value={selectedTask || "none"} onValueChange={(v) => setSelectedTask(v === "none" ? "" : v)}>
-                      <SelectTrigger className="w-64"><SelectValue placeholder="Link to Task" /></SelectTrigger>
+                      <SelectTrigger className="w-48"><SelectValue placeholder="Link to Task" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">No Task</SelectItem>
                         {availableTasks.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
@@ -1234,6 +1245,20 @@ export default function DocumentsHub() {
               </div>
             </div>
             <div className="flex items-center gap-2 ml-4">
+              {/* Edit in Studio button - only for documents with content (studio-created) */}
+              {previewDocument?.content && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsPreviewOpen(false);
+                    setSearchParams({ tab: "studio", id: previewDocument.id });
+                  }}
+                >
+                  <FileEdit className="w-4 h-4 mr-2" />
+                  Edit in Studio
+                </Button>
+              )}
               <Button variant="outline" size="sm" onClick={() => window.open(previewDocument?.file_url, '_blank')}>
                 <Download className="w-4 h-4 mr-2" />
                 Download

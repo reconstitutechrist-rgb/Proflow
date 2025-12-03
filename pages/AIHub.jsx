@@ -719,7 +719,11 @@ export default function AIHub() {
                   <ConversationalDocumentStudio
                     assignment={selectedAssignment}
                     currentUser={currentUser}
-                    assignments={assignments}
+                    projects={projects}
+                    onDocumentCreated={() => {
+                      // Refresh documents after creation
+                      loadData();
+                    }}
                   />
                 ) : (
                   <Card className="border-0 shadow-md">

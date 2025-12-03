@@ -28,7 +28,7 @@ import DocumentGenerator from "@/features/documents/DocumentGenerator";
 import DocumentRefiner from "@/features/documents/DocumentRefiner";
 import DocToPdfConverter from "@/features/documents/DocToPdfConverter";
 
-export default function ConversationalDocumentStudio({ assignment, currentUser, assignments, onDocumentCreated }) {
+export default function ConversationalDocumentStudio({ assignment, currentUser, projects = [], onDocumentCreated }) {
   const [activeMode, setActiveMode] = useState("chat");
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
@@ -428,10 +428,9 @@ Provide helpful, actionable responses. If they're asking about uploaded document
             {/* Document Generator Tab */}
             <TabsContent value="generate" className="p-6">
               <DocumentGenerator
-                assignment={assignment} // Changed from assignmentId
-                currentUser={currentUser} // Added
-                assignments={assignments} // Added
-                currentWorkspaceId={currentWorkspaceId}
+                assignment={assignment}
+                currentUser={currentUser}
+                projects={projects}
                 onDocumentGenerated={(newDoc) => {
                   const successMsg = {
                     id: Date.now().toString(),

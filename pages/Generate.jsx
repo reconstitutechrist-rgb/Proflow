@@ -23,6 +23,7 @@ import { useWorkspace } from "@/features/workspace/WorkspaceContext";
 
 export default function GeneratePage() {
   const [assignments, setAssignments] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +44,7 @@ export default function GeneratePage() {
       if (!currentWorkspaceId) {
         setLoading(false);
         setAssignments([]);
+        setProjects([]);
         setSelectedAssignment(null);
       }
       return;
@@ -65,11 +67,18 @@ export default function GeneratePage() {
       const delay = baseDelay * Math.pow(2, currentRetry);
       await new Promise(resolve => setTimeout(resolve, delay));
       
-      const assignmentsData = await db.entities.Assignment.filter(
-        { workspace_id: currentWorkspaceId }, 
-        "-updated_date"
-      );
+      const [assignmentsData, projectsData] = await Promise.all([
+        db.entities.Assignment.filter(
+          { workspace_id: currentWorkspaceId },
+          "-updated_date"
+        ),
+        db.entities.Project.filter(
+          { workspace_id: currentWorkspaceId },
+          "-updated_date"
+        )
+      ]);
       setAssignments(assignmentsData);
+      setProjects(projectsData || []);
 
       // After fetching new assignments for the workspace,
       // if there are assignments, the new useEffect will handle initial selection from URL.
@@ -106,10 +115,12 @@ export default function GeneratePage() {
             }
           });
           setAssignments([]);
+          setProjects([]);
           setSelectedAssignment(null);
         }
       } else {
         setAssignments([]);
+        setProjects([]);
         setSelectedAssignment(null);
       }
     } finally {
@@ -242,7 +253,11 @@ export default function GeneratePage() {
               <ConversationalDocumentStudio
                 assignment={selectedAssignment}
                 currentUser={currentUser}
-                assignments={assignments}
+                projects={projects}
+                onDocumentCreated={() => {
+                  // Refresh data after document creation
+                  loadData(0);
+                }}
               />
             </ErrorBoundary>
           ) : (

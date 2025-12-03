@@ -6,7 +6,7 @@ import { getComponentInfo } from '../utils/reactComponentDetector';
  * Hook for element selection functionality
  * Handles hover highlighting and click-to-select behavior
  */
-export function useElementSelector({ isActive, onSelect, panelSelector = '[data-bug-reporter-panel]' }) {
+export function useElementSelector({ isActive, onSelect, onCancel, panelSelector = '[data-bug-reporter-panel]' }) {
   const [hoveredElement, setHoveredElement] = useState(null);
   const [hoveredRect, setHoveredRect] = useState(null);
 
@@ -92,9 +92,9 @@ export function useElementSelector({ isActive, onSelect, panelSelector = '[data-
       event.preventDefault();
       setHoveredElement(null);
       setHoveredRect(null);
-      // The parent component should handle mode exit
+      onCancel?.();
     }
-  }, [isActive]);
+  }, [isActive, onCancel]);
 
   // Set up event listeners when active
   useEffect(() => {

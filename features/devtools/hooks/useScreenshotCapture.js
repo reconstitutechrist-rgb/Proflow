@@ -12,60 +12,63 @@ export function useScreenshotCapture({ onCapture, panelSelector = '[data-bug-rep
     setIsCapturing(true);
     setError(null);
 
-    try {
-      // Temporarily hide the bug reporter panel
-      const panel = document.querySelector(panelSelector);
-      const panelDisplay = panel?.style.display;
-      const panelVisibility = panel?.style.visibility;
+    // Store elements to restore
+    const panel = document.querySelector(panelSelector);
+    const overlays = document.querySelectorAll('[data-bug-reporter]');
 
+    // Store original styles
+    const panelOriginalVisibility = panel?.style.visibility;
+    const overlayStates = Array.from(overlays).map(overlay => ({
+      element: overlay,
+      visibility: overlay.style.visibility
+    }));
+
+    // Function to restore visibility
+    const restoreVisibility = () => {
+      if (panel) {
+        panel.style.visibility = panelOriginalVisibility || '';
+      }
+      overlayStates.forEach(({ element, visibility }) => {
+        element.style.visibility = visibility || '';
+      });
+    };
+
+    try {
+      // Hide bug reporter elements
       if (panel) {
         panel.style.visibility = 'hidden';
       }
-
-      // Also hide any overlay elements
-      const overlays = document.querySelectorAll('[data-bug-reporter]');
-      const overlayStates = [];
       overlays.forEach(overlay => {
-        overlayStates.push({
-          element: overlay,
-          visibility: overlay.style.visibility
-        });
         overlay.style.visibility = 'hidden';
       });
 
-      // Wait a frame for the DOM to update
-      await new Promise(resolve => requestAnimationFrame(resolve));
+      // Wait for DOM to update
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Capture the screenshot
       const canvas = await html2canvas(document.body, {
         useCORS: true,
+        allowTaint: true,
         logging: false,
-        backgroundColor: null,
+        backgroundColor: '#ffffff',
         windowWidth: window.innerWidth,
         windowHeight: window.innerHeight,
-        scrollX: window.scrollX,
-        scrollY: window.scrollY,
+        scrollX: 0,
+        scrollY: 0,
+        x: 0,
+        y: 0,
+        width: window.innerWidth,
+        height: window.innerHeight,
         ignoreElements: (element) => {
           // Ignore bug reporter elements
+          if (!element || !element.hasAttribute) return false;
           return element.hasAttribute('data-bug-reporter') ||
                  element.hasAttribute('data-bug-reporter-panel');
         }
       });
 
-      // Restore panel visibility
-      if (panel) {
-        if (panelVisibility !== undefined) {
-          panel.style.visibility = panelVisibility;
-        }
-        if (panelDisplay !== undefined) {
-          panel.style.display = panelDisplay;
-        }
-      }
-
-      // Restore overlay visibility
-      overlayStates.forEach(({ element, visibility }) => {
-        element.style.visibility = visibility;
-      });
+      // Restore visibility before processing
+      restoreVisibility();
 
       // Convert canvas to data URL
       const dataUrl = canvas.toDataURL('image/png');
@@ -76,6 +79,9 @@ export function useScreenshotCapture({ onCapture, panelSelector = '[data-bug-rep
 
       return dataUrl;
     } catch (err) {
+      // Always restore visibility on error
+      restoreVisibility();
+
       console.error('Screenshot capture failed:', err);
       setError(err.message || 'Failed to capture screenshot');
       throw err;

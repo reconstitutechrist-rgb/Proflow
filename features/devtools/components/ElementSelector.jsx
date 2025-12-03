@@ -1,15 +1,15 @@
-import React from 'react';
 import { useElementSelector } from '../hooks/useElementSelector';
 import { SelectionHighlight } from './SelectionHighlight';
 
 /**
  * Full-screen overlay for element selection mode
- * Captures mouse events and highlights hovered elements
+ * Shows highlight and instructions - mouse events are handled by useElementSelector hook
  */
 export function ElementSelector({ isActive, onSelect, onCancel }) {
   const { hoveredRect, isSelecting } = useElementSelector({
     isActive,
-    onSelect
+    onSelect,
+    onCancel
   });
 
   if (!isActive) {
@@ -18,23 +18,7 @@ export function ElementSelector({ isActive, onSelect, onCancel }) {
 
   return (
     <>
-      {/* Invisible overlay to capture events */}
-      <div
-        data-bug-reporter="selector-overlay"
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 999997,
-          cursor: 'crosshair'
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            onCancel?.();
-          }
-        }}
-      />
-
-      {/* Highlight overlay */}
+      {/* Highlight overlay - pointer-events: none so it doesn't block clicks */}
       <SelectionHighlight rect={hoveredRect} isVisible={isSelecting} />
 
       {/* Instructions tooltip */}
@@ -55,7 +39,8 @@ export function ElementSelector({ isActive, onSelect, onCancel }) {
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          pointerEvents: 'none'
         }}
       >
         <span>Click an element to select it</span>

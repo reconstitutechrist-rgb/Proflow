@@ -71,8 +71,20 @@ export function DevToolsPanel() {
 
   const handleCaptureScreenshot = async () => {
     try {
+      // Close the panel first so the Sheet overlay doesn't appear in screenshot
+      setIsPanelOpen(false);
+
+      // Wait for the panel to close
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Capture the screenshot
       await captureScreenshot();
+
+      // Reopen the panel
+      setIsPanelOpen(true);
     } catch (error) {
+      // Reopen panel on error too
+      setIsPanelOpen(true);
       toast.error('Failed to capture screenshot');
     }
   };

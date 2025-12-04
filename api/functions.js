@@ -109,25 +109,6 @@ export const ragHelper = async (params) => {
   };
 };
 
-// Generic function invoker for any custom functions
-export const invokeFunction = async (functionName, params) => {
-  console.log(`invokeFunction called: ${functionName}`, params);
-
-  const functions = {
-    anthropicResearch,
-    ragHelper,
-  };
-
-  if (functions[functionName]) {
-    return functions[functionName](params);
-  }
-
-  return {
-    success: false,
-    error: `Function ${functionName} not found`,
-  };
-};
-
 /**
  * Export a chat/research session to PDF format.
  * 
@@ -168,6 +149,5 @@ export const exportSessionToPdf = async (params) => {
 export default {
   anthropicResearch,
   ragHelper,
-  invokeFunction,
   exportSessionToPdf,
 };

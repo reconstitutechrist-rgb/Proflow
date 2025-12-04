@@ -1229,6 +1229,7 @@ export default function DocumentsHub() {
       {/* Document Preview Dialog */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
         <DialogContent className="max-w-[95vw] w-[1400px] h-[95vh] flex flex-col p-0 gap-0">
+          <DialogTitle className="sr-only">Document Preview</DialogTitle>
           {/* Compact Header */}
           <div className="flex-shrink-0 flex items-center justify-between px-6 py-3 border-b bg-gray-50 dark:bg-gray-900">
             <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1255,7 +1256,7 @@ export default function DocumentsHub() {
                     setSearchParams({ tab: "studio", id: previewDocument.id });
                   }}
                 >
-                  <FileEdit className="w-4 h-4 mr-2" />
+                  <Edit3 className="w-4 h-4 mr-2" />
                   Edit in Studio
                 </Button>
               )}

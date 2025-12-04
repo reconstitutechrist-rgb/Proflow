@@ -25,7 +25,11 @@
       "Bash(git reset:*)",
       "Bash(npm run lint:*)",
       "Bash(for dir in features/*/)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(Remove-Item \"c:\\Users\\willi\\Projects\\Proflow\\components\\DocumentSidebar.jsx\" -Force)",
+      "Bash(Remove-Item \"c:\\Users\\willi\\Projects\\Proflow\\hooks\\useData.js\" -Force)",
+      "Bash(del /f \"c:\\Users\\willi\\Projects\\Proflow\\components\\DocumentSidebar.jsx\")",
+      "Bash(del /f \"c:\\Users\\willi\\Projects\\Proflow\\hooks\\useData.js\")"
     ],
     "deny": [],
     "ask": []

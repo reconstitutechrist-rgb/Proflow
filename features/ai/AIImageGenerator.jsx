@@ -556,11 +556,7 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
             <ImageIcon className="w-4 h-4 mr-1" />
             <span className="hidden sm:inline">Standard</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="dataviz"
-            disabled={!hasDataVizData}
-            title={!hasDataVizData ? 'Link this document to an assignment with tasks to unlock data visualizations' : 'View data visualization options'}
-          >
+          <TabsTrigger value="dataviz">
             <BarChart3 className="w-4 h-4 mr-1" />
             <span className="hidden sm:inline">Data Viz</span>
             {hasDataVizData && (
@@ -569,11 +565,7 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger
-            value="fromdocs"
-            disabled={!canAnalyzeDocuments}
-            title={!canAnalyzeDocuments ? 'Add reference documents or write more content to analyze' : 'Generate visualizations from your documents'}
-          >
+          <TabsTrigger value="fromdocs">
             <FileText className="w-4 h-4 mr-1" />
             <span className="hidden sm:inline">From Docs</span>
             {hasAnalyzed && documentSuggestions.length > 0 && (
@@ -693,12 +685,24 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
         </TabsContent>
 
         <TabsContent value="dataviz" className="space-y-4 mt-4">
-          <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
-            <AlertTriangle className="w-4 h-4 text-amber-600" />
-            <AlertDescription className="text-xs text-amber-900 dark:text-amber-100">
-              <strong>Note:</strong> AI-generated charts are visual interpretations. For precise data visualizations, consider using dedicated charting tools.
-            </AlertDescription>
-          </Alert>
+          {/* Requirements Not Met Warning */}
+          {!hasDataVizData && (
+            <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
+              <AlertDescription className="text-xs text-amber-900 dark:text-amber-100">
+                <strong>Requirements:</strong> Link this document to an assignment that has tasks. Task status and priority data will be used to generate charts.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {hasDataVizData && (
+            <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
+              <AlertDescription className="text-xs text-amber-900 dark:text-amber-100">
+                <strong>Note:</strong> AI-generated charts are visual interpretations. For precise data visualizations, consider using dedicated charting tools.
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div>
             <label className="text-sm font-medium mb-2 block">Available Data Visualizations</label>
@@ -767,13 +771,25 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
         </TabsContent>
 
         <TabsContent value="fromdocs" className="space-y-4 mt-4">
+          {/* Requirements Not Met Warning */}
+          {!canAnalyzeDocuments && (
+            <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
+              <AlertDescription className="text-xs text-amber-900 dark:text-amber-100">
+                <strong>Requirements:</strong> Add reference documents in the Tools tab above, or write at least 50 characters of content in your document.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Info about this feature */}
-          <Alert className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800">
-            <Wand2 className="w-4 h-4 text-purple-600" />
-            <AlertDescription className="text-xs text-purple-900 dark:text-purple-100">
-              <strong>Smart Generation:</strong> Analyze your documents to discover data, concepts, and descriptions that can be turned into visualizations.
-            </AlertDescription>
-          </Alert>
+          {canAnalyzeDocuments && (
+            <Alert className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800">
+              <Wand2 className="w-4 h-4 text-purple-600" />
+              <AlertDescription className="text-xs text-purple-900 dark:text-purple-100">
+                <strong>Smart Generation:</strong> Analyze your documents to discover data, concepts, and descriptions that can be turned into visualizations.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Source Info */}
           <Card className="bg-gray-50 dark:bg-gray-900 border">
@@ -782,7 +798,7 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
               <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${hasDocumentContent ? 'bg-green-500' : 'bg-gray-300'}`} />
-                  <span>Document Content: {hasDocumentContent ? `${documentContext.content.length} chars` : 'Not enough content'}</span>
+                  <span>Document Content: {hasDocumentContent ? `${documentContext?.content?.length || 0} chars` : 'Not enough content (need 50+ chars)'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${hasReferenceDocuments ? 'bg-green-500' : 'bg-gray-300'}`} />

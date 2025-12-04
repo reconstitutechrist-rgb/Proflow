@@ -70,7 +70,7 @@ export function AskAIChatArea({
 
   return (
     <div className="flex-1 flex flex-col min-w-0">
-      <Card className="flex-1 shadow-lg border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl overflow-hidden flex flex-col">
+      <Card className="flex-1 shadow-lg border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl overflow-hidden flex flex-col min-h-0">
         <CardHeader className="border-b bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 flex-shrink-0">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">
@@ -102,7 +102,8 @@ export function AskAIChatArea({
           </div>
         </CardHeader>
 
-        <ScrollArea className="flex-1 p-6">
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ScrollArea className="h-full p-6">
           <div className="space-y-6 max-w-4xl mx-auto">
             {messages.length > 0 ? (
               messages.map((message, index) => (
@@ -234,7 +235,8 @@ export function AskAIChatArea({
               />
             </div>
           )}
-        </ScrollArea>
+          </ScrollArea>
+        </div>
 
         <div className="border-t p-4 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0" id="message-input">
           <div className="flex gap-3">

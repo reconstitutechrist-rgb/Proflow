@@ -304,9 +304,8 @@ function LayoutContent({ children, currentPageName }) {
             break;
           case 'r':
             event.preventDefault();
-            if (location.pathname !== createPageUrl("Research")) {
-              navigate(createPageUrl("Research"));
-            }
+            // Redirect to AI Hub research tab (Research page is deprecated)
+            navigate(createPageUrl("AIHub") + "?tab=research");
             break;
           case 'g':
             event.preventDefault();

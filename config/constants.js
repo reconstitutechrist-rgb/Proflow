@@ -134,27 +134,21 @@ export const ROUTES = {
   DASHBOARD: '/Dashboard',
   TASKS: '/Tasks',
   DOCUMENTS: '/Documents',
+  DOCUMENTS_HUB: '/DocumentsHub',
   ASSIGNMENTS: '/Assignments',
   PROJECTS: '/Projects',
   CHAT: '/Chat',
-  RESEARCH: '/Research',
+  AI_HUB: '/AIHub',
   GENERATE: '/Generate',
   ASK_AI: '/AskAI',
   USERS: '/Users',
   WORKSPACES: '/Workspaces',
   PREFERENCES: '/Preferences',
   DOCUMENTATION: '/Documentation',
-  DOCUMENT_CREATOR: '/DocumentCreator',
-  DOCUMENT_STUDIO: '/DocumentStudio',
-  DOCUMENT_WORKSHOP: '/DocumentWorkshop',
 };
 
-// Keyboard shortcuts
+// Keyboard shortcuts (implemented in Layout.jsx)
 export const KEYBOARD_SHORTCUTS = {
-  SAVE: 'ctrl+s',
   SEARCH: 'ctrl+k',
-  NEW_TASK: 'ctrl+n',
-  NEW_DOCUMENT: 'ctrl+shift+n',
-  TOGGLE_SIDEBAR: 'ctrl+b',
   ESCAPE: 'escape',
 };

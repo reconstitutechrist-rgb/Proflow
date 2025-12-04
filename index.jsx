@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect } from "react";
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router';
+import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router';
 import Layout from "@/components/common/Layout";
 import { AuthProvider, useAuth } from "@/components/auth/AuthProvider";
 import AuthPage from "@/pages/AuthPage";
@@ -14,7 +14,6 @@ import DocumentsHub from "@/pages/DocumentsHub";
 // Lazy load less frequently used pages
 const Users = React.lazy(() => import("@/pages/Users"));
 const Chat = React.lazy(() => import("@/pages/Chat"));
-const Research = React.lazy(() => import("@/pages/Research"));
 const Generate = React.lazy(() => import("@/pages/Generate"));
 const AskAI = React.lazy(() => import("@/pages/AskAI"));
 const AIHub = React.lazy(() => import("@/pages/AIHub"));
@@ -36,7 +35,6 @@ const PAGES = {
     Users,
     Chat,
     Tasks,
-    Research,
     Generate,
     Assignments,
     AskAI,
@@ -45,7 +43,8 @@ const PAGES = {
     Projects,
     Workspaces,
     Documentation,
-    // Redirect old document routes to DocumentsHub
+    // Redirect old routes to consolidated pages
+    Research: AIHub, // Research is now part of AIHub
     DocumentCreator: DocumentsHub,
     DocumentStudio: DocumentsHub,
     DocumentWorkshop: DocumentsHub,
@@ -125,8 +124,9 @@ function ProtectedContent() {
                     <Route path="/Users" element={<Users />} />
                     <Route path="/Chat" element={<Chat />} />
                     <Route path="/Tasks" element={<Tasks />} />
-                    <Route path="/Research" element={<Research />} />
                     <Route path="/Generate" element={<Generate />} />
+                    {/* Redirect old Research route to AIHub research tab */}
+                    <Route path="/Research" element={<Navigate to="/AIHub?tab=research" replace />} />
                     <Route path="/Assignments" element={<Assignments />} />
                     <Route path="/AskAI" element={<AskAI />} />
                     <Route path="/AIHub" element={<AIHub />} />

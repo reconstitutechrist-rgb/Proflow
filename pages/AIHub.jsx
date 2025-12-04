@@ -242,7 +242,7 @@ export default function AIHub() {
 
   return (
     <ErrorBoundary>
-      <div className="h-full flex flex-col overflow-hidden">
+      <div className="flex flex-col overflow-hidden -m-8 h-[calc(100vh-56px)]">
         {/* Header */}
         <div className="flex-shrink-0 border-b bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 p-6">
           <div className="flex items-center justify-between">
@@ -360,8 +360,8 @@ export default function AIHub() {
           </div>
 
           {/* Chat Tab - Document Q&A */}
-          <TabsContent value="chat" className="flex-1 flex flex-col min-h-0 m-0">
-            <div className="flex-1 flex flex-col overflow-hidden">
+          <TabsContent value="chat" className="flex-1 flex flex-col min-h-0 m-0 overflow-hidden">
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
               {/* AskAI Header */}
               <AskAIHeader
                 useRAG={askAI.useRAG}
@@ -431,7 +431,7 @@ export default function AIHub() {
               )}
 
               {/* Main content area */}
-              <div className="flex-1 flex gap-6 min-h-0 p-4">
+              <div className="flex-1 flex gap-6 min-h-0 p-4 overflow-hidden">
                 {/* Left Sidebar - Documents */}
                 <AskAIDocumentSidebar
                   uploadedDocuments={askAI.uploadedDocuments}

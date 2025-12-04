@@ -43,7 +43,7 @@ export default function MobileBottomNav() {
       label: 'AI',
       icon: Brain,
       href: createPageUrl('AIHub'),
-      match: ['/AIHub', '/AskAI', '/Research', '/Generate']
+      match: ['/AIHub', '/AskAI', '/Generate']
     },
     {
       label: 'Team',

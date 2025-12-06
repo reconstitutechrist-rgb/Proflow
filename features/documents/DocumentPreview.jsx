@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -52,6 +53,9 @@ export default function DocumentPreview({
   const [pdfLoading, setPdfLoading] = useState(true);
   const [loadAttempts, setLoadAttempts] = useState(0);
   const [activeTab, setActiveTab] = useState("preview"); // New state for active tab
+  const [textContent, setTextContent] = useState(null);
+  const [textLoading, setTextLoading] = useState(false);
+  const [textError, setTextError] = useState(false);
 
   // NEW STATES FOR EDITING/SAVING functionality referenced by handleSaveChanges
   const [editedDocument, setEditedDocument] = useState(document);
@@ -109,6 +113,44 @@ export default function DocumentPreview({
     }
   }, [pdfLoading, pdfViewMode, loadAttempts]);
 
+  // Fetch text content for markdown files
+  useEffect(() => {
+    const fetchTextContent = async () => {
+      // Handle both camelCase and snake_case property names
+      const fileUrl = document?.file_url || document?.fileUrl;
+      if (!fileUrl) return;
+
+      const fileName = (document?.file_name || document?.fileName || '').toLowerCase();
+      const fileExtension = fileName.includes('.') ? fileName.split('.').pop() : '';
+      const fileType = (document?.file_type || document?.fileType || '').toLowerCase();
+
+      // Only fetch for markdown files
+      if (fileType !== 'text/markdown' && fileExtension !== 'md') {
+        return;
+      }
+
+      setTextLoading(true);
+      setTextError(false);
+      setTextContent(null);
+
+      try {
+        const response = await fetch(fileUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.status}`);
+        }
+        const text = await response.text();
+        setTextContent(text);
+      } catch (error) {
+        console.error('Failed to fetch markdown content:', error);
+        setTextError(true);
+      } finally {
+        setTextLoading(false);
+      }
+    };
+
+    fetchTextContent();
+  }, [document?.file_url, document?.fileUrl, document?.file_name, document?.fileName, document?.file_type, document?.fileType]);
+
   // Loading state while currentUser loads
   if (currentUser === undefined) {
     return (
@@ -155,8 +197,9 @@ export default function DocumentPreview({
 
 
   const getFileTypeInfo = () => {
-    const fileType = (document.file_type || '').toLowerCase();
-    const fileName = (document.file_name || '').toLowerCase();
+    // Handle both camelCase and snake_case property names
+    const fileType = (document.file_type || document.fileType || '').toLowerCase();
+    const fileName = (document.file_name || document.fileName || '').toLowerCase();
     const fileExtension = fileName.includes('.') ? fileName.split('.').pop() : '';
 
     const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff', 'ico'];
@@ -176,7 +219,16 @@ export default function DocumentPreview({
       };
     }
 
-    const textExtensions = ['txt', 'md', 'csv', 'json', 'xml', 'log'];
+    // Markdown files get special treatment - they can be previewed
+    if (fileType === 'text/markdown' || fileExtension === 'md') {
+      return {
+        type: 'markdown',
+        canPreview: true,
+        icon: FileText
+      };
+    }
+
+    const textExtensions = ['txt', 'csv', 'json', 'xml', 'log'];
     if (fileType.startsWith('text/') || textExtensions.includes(fileExtension)) {
       return {
         type: 'text',
@@ -433,6 +485,51 @@ export default function DocumentPreview({
                 }, 500);
               }}
             />
+          </div>
+        </div>
+      );
+    }
+
+    if (fileInfo.type === 'markdown') {
+      // Show loading state if loading OR if content hasn't been fetched yet
+      if (textLoading || (textContent === null && !textError)) {
+        return (
+          <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900">
+            <div className="text-center">
+              <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-600" />
+              <p className="text-gray-600 dark:text-gray-400">Loading markdown...</p>
+            </div>
+          </div>
+        );
+      }
+
+      if (textError) {
+        return (
+          <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900">
+            <div className="text-center p-8">
+              <AlertTriangle className="w-16 h-16 mx-auto text-red-400 mb-4" />
+              <p className="text-gray-600 dark:text-gray-400 mb-4">Failed to load markdown content</p>
+              <div className="flex gap-3 justify-center">
+                <Button onClick={handleOpenInNewTab}>
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Open Original
+                </Button>
+                <Button onClick={handleDownload} variant="outline">
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="h-full w-full bg-white dark:bg-gray-900 overflow-auto">
+          <div className="max-w-4xl mx-auto p-8">
+            <div className="prose prose-gray dark:prose-invert max-w-none prose-headings:font-semibold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-base prose-p:leading-relaxed prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800 prose-pre:p-4 prose-pre:rounded-lg">
+              <ReactMarkdown>{textContent}</ReactMarkdown>
+            </div>
           </div>
         </div>
       );

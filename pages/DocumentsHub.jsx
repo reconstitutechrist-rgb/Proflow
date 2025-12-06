@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
 import { useSearchParams, useNavigate } from "react-router";
 import { db } from "@/api/db";
 import { Document } from "@/api/entities";
@@ -206,6 +207,8 @@ export default function DocumentsHub() {
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewDocument, setPreviewDocument] = useState(null);
+  const [markdownContent, setMarkdownContent] = useState(null);
+  const [markdownLoading, setMarkdownLoading] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -230,6 +233,40 @@ export default function DocumentsHub() {
       };
     }
   }, [title, content, activeMainTab]);
+
+  // Fetch markdown content when preview document changes
+  useEffect(() => {
+    const fetchMarkdownContent = async () => {
+      if (!previewDocument?.file_url) {
+        setMarkdownContent(null);
+        return;
+      }
+
+      const fileName = (previewDocument.file_name || '').toLowerCase();
+      const fileType = (previewDocument.file_type || '').toLowerCase();
+      const isMarkdown = fileType === 'text/markdown' || fileName.endsWith('.md');
+
+      if (!isMarkdown) {
+        setMarkdownContent(null);
+        return;
+      }
+
+      setMarkdownLoading(true);
+      try {
+        const response = await fetch(previewDocument.file_url);
+        if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
+        const text = await response.text();
+        setMarkdownContent(text);
+      } catch (error) {
+        console.error('Failed to fetch markdown content:', error);
+        setMarkdownContent(null);
+      } finally {
+        setMarkdownLoading(false);
+      }
+    };
+
+    fetchMarkdownContent();
+  }, [previewDocument]);
 
   // Persist sidebar view mode
   useEffect(() => {
@@ -1404,6 +1441,46 @@ export default function DocumentsHub() {
                       Your browser does not support audio playback.
                     </audio>
                   </div>
+                );
+              }
+
+              // Markdown files - render with ReactMarkdown
+              const isMarkdown = fileType === 'text/markdown' ||
+                fileName.endsWith('.md') ||
+                urlPath.endsWith('.md');
+
+              if (isMarkdown) {
+                if (markdownLoading) {
+                  return (
+                    <div className="w-full h-full flex items-center justify-center bg-white dark:bg-gray-900">
+                      <div className="text-center">
+                        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                        <p className="text-gray-600 dark:text-gray-400">Loading markdown...</p>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (markdownContent) {
+                  return (
+                    <div className="w-full h-full bg-white dark:bg-gray-900 overflow-auto">
+                      <div className="max-w-4xl mx-auto p-8">
+                        <div className="prose prose-gray dark:prose-invert max-w-none prose-headings:font-semibold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-base prose-p:leading-relaxed prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800 prose-pre:p-4 prose-pre:rounded-lg">
+                          <ReactMarkdown>{markdownContent}</ReactMarkdown>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Fallback to iframe if markdown content failed to load
+                return (
+                  <iframe
+                    src={fileUrl}
+                    className="w-full h-full bg-white border-0"
+                    title={previewDocument.title}
+                    style={{ minHeight: 'calc(95vh - 80px)' }}
+                  />
                 );
               }
 

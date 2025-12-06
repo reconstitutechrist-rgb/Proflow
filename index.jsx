@@ -14,7 +14,7 @@ import DocumentsHub from "@/pages/DocumentsHub";
 // Lazy load less frequently used pages
 const Users = React.lazy(() => import("@/pages/Users"));
 const Chat = React.lazy(() => import("@/pages/Chat"));
-const Generate = React.lazy(() => import("@/pages/Generate"));
+// const Generate = React.lazy(() => import("@/pages/Generate")); // Deprecated
 const AskAI = React.lazy(() => import("@/pages/AskAI"));
 const AIHub = React.lazy(() => import("@/pages/AIHub"));
 const Preferences = React.lazy(() => import("@/pages/Preferences"));
@@ -35,7 +35,7 @@ const PAGES = {
     Users,
     Chat,
     Tasks,
-    Generate,
+    Generate: DocumentsHub, // Redirected
     Assignments,
     AskAI,
     AIHub,
@@ -124,7 +124,8 @@ function ProtectedContent() {
                     <Route path="/Users" element={<Users />} />
                     <Route path="/Chat" element={<Chat />} />
                     <Route path="/Tasks" element={<Tasks />} />
-                    <Route path="/Generate" element={<Generate />} />
+                    {/* Redirect Generate to DocumentsHub templates */}
+                    <Route path="/Generate" element={<Navigate to="/DocumentsHub?tab=templates" replace />} />
                     {/* Redirect old Research route to AIHub research tab */}
                     <Route path="/Research" element={<Navigate to="/AIHub?tab=research" replace />} />
                     <Route path="/Assignments" element={<Assignments />} />

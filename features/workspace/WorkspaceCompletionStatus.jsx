@@ -13,6 +13,8 @@ import {
   Award
 } from "lucide-react";
 
+// DocumentRefiner removed - consolidated into DocumentsHub
+
 export default function WorkspaceCompletionStatus() {
   const completionData = {
     pages: {

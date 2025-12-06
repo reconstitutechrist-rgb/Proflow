@@ -33,7 +33,6 @@ import { useAskAI, MEMORY_LIMITS } from "@/hooks/useAskAI";
 import { AskAIHeader, AskAIDocumentSidebar, AskAIChatArea, AskAIDialogs } from "@/features/ai/askAI";
 import AIResearchAssistant from "@/features/ai/AIResearchAssistant";
 import ResearchSuggestions from "@/features/research/ResearchSuggestions";
-import ConversationalDocumentStudio from "@/features/documents/ConversationalDocumentStudio";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { useWorkspace } from "@/features/workspace/WorkspaceContext";
 import { db } from "@/api/db";
@@ -349,13 +348,6 @@ export default function AIHub() {
                 <FileSearch className="w-4 h-4 mr-2" />
                 Research
               </TabsTrigger>
-              <TabsTrigger
-                value="generate"
-                className="data-[state=active]:bg-indigo-100 dark:data-[state=active]:bg-indigo-900/30 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300 px-6 py-3 rounded-lg"
-              >
-                <Wand2 className="w-4 h-4 mr-2" />
-                Generate
-              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -669,78 +661,6 @@ export default function AIHub() {
                   </Card>
                 </TabsContent>
               </Tabs>
-            </ErrorBoundary>
-          </TabsContent>
-
-          {/* Generate Tab */}
-          <TabsContent value="generate" className="flex-1 overflow-auto m-0 p-6">
-            <ErrorBoundary>
-              <div className="space-y-6">
-                {/* Assignment Selector */}
-                <Card className="border-0 shadow-md">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                      <Briefcase className="w-5 h-5 text-purple-600" />
-                      Select Assignment for Generation
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {assignments.length > 0 ? (
-                        assignments.map((assignment) => (
-                          <div
-                            key={assignment.id}
-                            onClick={() => setSelectedAssignment(assignment)}
-                            className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                              selectedAssignment?.id === assignment.id
-                                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 ring-2 ring-purple-500'
-                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-                            }`}
-                          >
-                            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">{assignment.name}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{assignment.description}</p>
-                            <div className="flex items-center gap-2 mt-3">
-                              <Badge variant="outline">{assignment.status?.replace('_', ' ')}</Badge>
-                              <Badge variant="outline">{assignment.priority} priority</Badge>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="col-span-full text-center py-6 text-gray-500">
-                          No assignments available. Create one to get started.
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Document Studio */}
-                {selectedAssignment ? (
-                  <ConversationalDocumentStudio
-                    assignment={selectedAssignment}
-                    currentUser={currentUser}
-                    projects={projects}
-                    onDocumentCreated={() => {
-                      // Refresh documents after creation
-                      loadData();
-                    }}
-                  />
-                ) : (
-                  <Card className="border-0 shadow-md">
-                    <CardContent className="py-12">
-                      <div className="text-center">
-                        <Wand2 className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                          Select an Assignment
-                        </h3>
-                        <p className="text-gray-600 dark:text-gray-400">
-                          Choose an assignment above to start generating documents
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
             </ErrorBoundary>
           </TabsContent>
         </Tabs>

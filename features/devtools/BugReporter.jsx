@@ -91,11 +91,9 @@ function BugReporterContent() {
  * Renders in development mode OR when VITE_ENABLE_DEVTOOLS is set to 'true'.
  */
 export function BugReporter() {
-  // Render in development mode OR when explicitly enabled via env var
-  const isDev = import.meta.env.MODE === 'development';
-  const isExplicitlyEnabled = import.meta.env.VITE_ENABLE_DEVTOOLS === 'true';
-
-  if (!isDev && !isExplicitlyEnabled) {
+  // Only render in development mode for now
+  // TODO: Fix production devtools - html2canvas may have issues in prod build
+  if (import.meta.env.MODE !== 'development') {
     return null;
   }
 

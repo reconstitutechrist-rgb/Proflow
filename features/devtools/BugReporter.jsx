@@ -88,11 +88,14 @@ function BugReporterContent() {
  * - Screenshot capture with annotation tools
  * - Claude-ready prompt generation
  *
- * Only renders in development mode.
+ * Renders in development mode OR when VITE_ENABLE_DEVTOOLS is set to 'true'.
  */
 export function BugReporter() {
-  // Only render in development mode
-  if (import.meta.env.MODE !== 'development') {
+  // Render in development mode OR when explicitly enabled via env var
+  const isDev = import.meta.env.MODE === 'development';
+  const isExplicitlyEnabled = import.meta.env.VITE_ENABLE_DEVTOOLS === 'true';
+
+  if (!isDev && !isExplicitlyEnabled) {
     return null;
   }
 

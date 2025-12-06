@@ -22,7 +22,6 @@ import {
 import {
   FileText,
   Save,
-  Eye,
   Image as ImageIcon,
   Download,
   Loader2,
@@ -33,10 +32,8 @@ import {
   Upload,
   CheckCircle,
   X,
-  Users,
   FileUp,
-  LayoutList,
-  Sparkles,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import RichTextEditor from "@/components/editor/RichTextEditor";
@@ -44,22 +41,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 import OutlineGenerator from "@/features/ai/OutlineGenerator";
 import AIReviewPanel from "@/features/ai/AIReviewPanel";
-import EnhancedAIReviewPanel from "@/features/ai/EnhancedAIReviewPanel";
-import AIDocumentStructurer from "@/features/ai/AIDocumentStructurer";
 import ExportOptions from "@/features/documents/ExportOptions";
-import AudienceRewriter from "@/features/ai/AudienceRewriter";
 import AIImageGenerator from "@/features/ai/AIImageGenerator";
 import ConversationalAssistant from "@/features/ai/ConversationalAssistant";
 import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import EditorPreviewSplit, { VIEW_MODES } from "@/components/editor/EditorPreviewSplit";
-import LivePreview from "@/components/editor/LivePreview";
-import DiffReviewView from "@/components/editor/DiffReviewView";
+import DocumentReviewModal from "@/components/documents/DocumentReviewModal";
 
 const AUTOSAVE_INTERVAL = 30000;
 
 export default function DocumentEditor({
   documentId,
-  initialData, // Optional, if we already have the doc loaded
+  initialData,
   projects,
   assignments,
   tasks,
@@ -85,12 +77,8 @@ export default function DocumentEditor({
   const [isConverting, setIsConverting] = useState(false);
   const [activeAITab, setActiveAITab] = useState("assistant");
 
-  // View mode state (edit, preview, split)
-  const [viewMode, setViewMode] = useState(VIEW_MODES.EDIT);
-
-  // Diff review state
-  const [pendingChanges, setPendingChanges] = useState([]);
-  const [showDiffReview, setShowDiffReview] = useState(false);
+  // Review modal state
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   // Data
   const [uploadedDocuments, setUploadedDocuments] = useState([]);
@@ -110,7 +98,6 @@ export default function DocumentEditor({
     if (documentId && currentWorkspaceId) {
       loadDocument(documentId);
     } else if (initialData) {
-      // Initialize from passed data (e.g. from template generation)
       setTitle(initialData.title || "");
       setDescription(initialData.description || "");
       setContent(initialData.content || "");
@@ -118,15 +105,12 @@ export default function DocumentEditor({
       setSelectedProject(initialData.assigned_to_project || "");
       setLoading(false);
     } else {
-      // New blank document
       setLoading(false);
-      // Check for draft
       const draftKey = `doc_draft_hub_${currentWorkspaceId}`;
       const savedDraft = localStorage.getItem(draftKey);
       if (savedDraft) {
         try {
           const draft = JSON.parse(savedDraft);
-          // Only load recent drafts (less than 24h)
           if (new Date() - new Date(draft.timestamp) < 24 * 60 * 60 * 1000) {
             setTitle(draft.title);
             setDescription(draft.description);
@@ -203,8 +187,12 @@ export default function DocumentEditor({
     }
   };
 
-  const handleSave = async () => {
-    if (!title.trim()) {
+  const handleSave = async (overrideData = null) => {
+    const saveTitle = overrideData?.title ?? title;
+    const saveDescription = overrideData?.description ?? description;
+    const saveContent = overrideData?.content ?? content;
+
+    if (!saveTitle.trim()) {
       toast.error("Please enter a document title");
       return;
     }
@@ -217,12 +205,12 @@ export default function DocumentEditor({
       setIsSaving(true);
       if (saveAsPdf) setIsConverting(true);
 
-      const htmlContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
+      const htmlContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${saveTitle}</title>
         <style>body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:20px;line-height:1.6}</style>
-        </head><body>${content}</body></html>`;
+        </head><body>${saveContent}</body></html>`;
 
       let fileUrl = null;
-      let finalFileName = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.html`;
+      let finalFileName = `${saveTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.html`;
       let finalFileType = 'text/html';
 
       const blob = new Blob([htmlContent], { type: 'text/html; charset=utf-8' });
@@ -251,9 +239,9 @@ export default function DocumentEditor({
       }
 
       const documentData = {
-        title: title.trim(),
-        description: description.trim(),
-        content,
+        title: saveTitle.trim(),
+        description: saveDescription.trim(),
+        content: saveContent,
         document_type: "document",
         assigned_to_assignments: selectedAssignments,
         assigned_to_project: selectedProject || null,
@@ -292,9 +280,18 @@ export default function DocumentEditor({
         localStorage.removeItem(`doc_draft_hub_${currentWorkspaceId}`);
         toast.success("Document created!");
       }
+
+      // Update local state with saved values
+      if (overrideData) {
+        setTitle(saveTitle);
+        setDescription(saveDescription);
+        setContent(saveContent);
+      }
       setLastSaved(new Date().toISOString());
-      
+
       if (onSaveComplete) onSaveComplete(savedDoc);
+
+      return savedDoc;
 
     } catch (error) {
       console.error("Save error:", error);
@@ -322,25 +319,32 @@ export default function DocumentEditor({
     toast.success("Outline applied");
   };
 
-  // Handler for when AI generates actionable changes
-  const handleChangesGenerated = useCallback((changes) => {
-    setPendingChanges(changes);
-    setShowDiffReview(true);
-  }, []);
+  // Handle "Done" button - open review modal
+  const handleDone = () => {
+    if (!content.trim()) {
+      toast.error("Please add some content before reviewing");
+      return;
+    }
+    setIsReviewModalOpen(true);
+  };
 
-  // Handler for applying accepted changes from diff review
-  const handleApplyChanges = useCallback((finalContent) => {
-    setContent(finalContent);
-    setShowDiffReview(false);
-    setPendingChanges([]);
-    toast.success("Changes applied successfully");
-  }, []);
+  // Handle save from review modal
+  const handleReviewModalSave = async (data) => {
+    const savedDoc = await handleSave(data);
+    if (savedDoc) {
+      setIsReviewModalOpen(false);
+    }
+  };
 
-  // Handler for canceling diff review
-  const handleCancelDiffReview = useCallback(() => {
-    setShowDiffReview(false);
-    setPendingChanges([]);
-  }, []);
+  // Handle close from review modal (back to editing)
+  const handleReviewModalClose = (data) => {
+    if (data?.hasChanges) {
+      setTitle(data.title);
+      setDescription(data.description);
+      setContent(data.content);
+    }
+    setIsReviewModalOpen(false);
+  };
 
   const availableTasks = selectedAssignments.length > 0
     ? tasks.filter(task => task.assignment_id === selectedAssignments[0])
@@ -389,7 +393,16 @@ export default function DocumentEditor({
                 <Checkbox id="save-pdf" checked={saveAsPdf} onCheckedChange={setSaveAsPdf} />
                 <label htmlFor="save-pdf" className="text-xs cursor-pointer">PDF</label>
               </div>
-              <Button onClick={handleSave} disabled={isSaving || !title.trim()} className="bg-gradient-to-r from-indigo-600 to-purple-600">
+              <Button
+                variant="outline"
+                onClick={handleDone}
+                disabled={!content.trim()}
+                className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-300 dark:hover:bg-purple-950/20"
+              >
+                <Check className="w-4 h-4" />
+                Done
+              </Button>
+              <Button onClick={() => handleSave()} disabled={isSaving || !title.trim()} className="bg-gradient-to-r from-indigo-600 to-purple-600">
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                 Save
               </Button>
@@ -441,164 +454,106 @@ export default function DocumentEditor({
           </div>
         </div>
 
-        {/* Editor/Preview Content with Split View */}
-        <div className="flex-1 overflow-hidden">
-          <EditorPreviewSplit
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            editorContent={
-              <div className="max-w-4xl mx-auto space-y-4 p-6">
-                <Input placeholder="Document title..." value={title} onChange={(e) => setTitle(e.target.value)} className="text-lg font-semibold" />
-                <Textarea placeholder="Brief description..." value={description} onChange={(e) => setDescription(e.target.value)} className="h-20" />
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm min-h-[400px]">
-                  <RichTextEditor value={content} onChange={setContent} placeholder="Start writing..." minHeight="400px" />
-                </div>
-              </div>
-            }
-            previewContent={
-              <LivePreview
-                content={content}
-                title={title}
-                description={description}
-              />
-            }
-          />
+        {/* Editor Content - Simple layout */}
+        <div className="flex-1 overflow-auto p-6">
+          <div className="max-w-4xl mx-auto space-y-4">
+            <Input placeholder="Document title..." value={title} onChange={(e) => setTitle(e.target.value)} className="text-lg font-semibold" />
+            <Textarea placeholder="Brief description..." value={description} onChange={(e) => setDescription(e.target.value)} className="h-20" />
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm min-h-[400px]">
+              <RichTextEditor value={content} onChange={setContent} placeholder="Start writing..." minHeight="400px" />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* AI Sidebar - Show in edit and split modes */}
-      {viewMode !== VIEW_MODES.PREVIEW && (
-        <div className="w-[380px] border-l bg-white dark:bg-gray-900 overflow-hidden flex flex-col">
-          <Tabs value={activeAITab} onValueChange={setActiveAITab} className="flex flex-col h-full">
-            <TabsList className="w-full grid grid-cols-3 border-b rounded-none flex-shrink-0">
-              <TabsTrigger value="assistant"><Brain className="w-4 h-4 mr-1" />AI</TabsTrigger>
-              <TabsTrigger value="review"><CheckCircle className="w-4 h-4 mr-1" />Review</TabsTrigger>
-              <TabsTrigger value="tools"><FileUp className="w-4 h-4 mr-1" />Tools</TabsTrigger>
-            </TabsList>
+      {/* AI Sidebar */}
+      <div className="w-[380px] border-l bg-white dark:bg-gray-900 overflow-hidden flex flex-col">
+        <Tabs value={activeAITab} onValueChange={setActiveAITab} className="flex flex-col h-full">
+          <TabsList className="w-full grid grid-cols-3 border-b rounded-none flex-shrink-0">
+            <TabsTrigger value="assistant"><Brain className="w-4 h-4 mr-1" />AI</TabsTrigger>
+            <TabsTrigger value="review"><CheckCircle className="w-4 h-4 mr-1" />Review</TabsTrigger>
+            <TabsTrigger value="tools"><FileUp className="w-4 h-4 mr-1" />Tools</TabsTrigger>
+          </TabsList>
 
-            <div className="flex-1 overflow-auto p-4">
-              <TabsContent value="assistant" className="mt-0 h-full">
-                <ConversationalAssistant
-                  content={content}
-                  title={title}
-                  description={description}
-                  selectedAssignment={selectedAssignments[0]}
-                  selectedTask={selectedTask}
-                  assignments={assignments}
-                  tasks={tasks}
-                  onInsertContent={handleInsertContent}
-                  setIsOutlineDialogOpen={setIsOutlineDialogOpen}
-                  onApplyOutline={handleApplyOutline}
-                  referenceDocumentUrls={getAllReferenceDocuments()}
+          <div className="flex-1 overflow-auto p-4">
+            <TabsContent value="assistant" className="mt-0 h-full">
+              <ConversationalAssistant
+                content={content}
+                title={title}
+                description={description}
+                selectedAssignment={selectedAssignments[0]}
+                selectedTask={selectedTask}
+                assignments={assignments}
+                tasks={tasks}
+                onInsertContent={handleInsertContent}
+                setIsOutlineDialogOpen={setIsOutlineDialogOpen}
+                onApplyOutline={handleApplyOutline}
+                referenceDocumentUrls={getAllReferenceDocuments()}
+              />
+            </TabsContent>
+
+            <TabsContent value="review" className="mt-0 space-y-6">
+              <AIReviewPanel
+                content={content}
+                title={title}
+                description={description}
+                selectedAssignment={selectedAssignments[0]}
+                selectedTask={selectedTask}
+                assignments={assignments}
+                tasks={tasks}
+              />
+            </TabsContent>
+
+            <TabsContent value="tools" className="mt-0 space-y-6">
+              <div>
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-blue-600" />Reference Documents
+                </h3>
+                <Select onValueChange={(docId) => {
+                  const doc = availableDocsForReference.find(d => d.id === docId);
+                  if (doc && !selectedExistingDocs.some(d => d.id === docId)) {
+                    setSelectedExistingDocs([...selectedExistingDocs, { id: doc.id, name: doc.title, url: doc.file_url }]);
+                  }
+                }}>
+                  <SelectTrigger><SelectValue placeholder="Add from library..." /></SelectTrigger>
+                  <SelectContent>
+                    {availableDocsForReference.map(doc => (
+                      <SelectItem key={doc.id} value={doc.id}>{doc.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedExistingDocs.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {selectedExistingDocs.map(doc => (
+                      <div key={doc.id} className="flex items-center justify-between p-2 border rounded-lg bg-green-50 dark:bg-green-950/20">
+                        <span className="text-sm truncate">{doc.name}</span>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedExistingDocs(selectedExistingDocs.filter(d => d.id !== doc.id))}>
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-pink-600" />AI Image Generator
+                </h3>
+                <AIImageGenerator
+                  onInsertImage={handleInsertImage}
+                  documentContext={{
+                    title,
+                    description,
+                    selectedAssignment: assignments.find(a => a.id === selectedAssignments[0]),
+                    selectedTask: tasks.find(t => t.id === selectedTask),
+                    allTasks: tasks.filter(t => t.assignment_id === selectedAssignments[0])
+                  }}
                 />
-              </TabsContent>
-
-              <TabsContent value="review" className="mt-0 space-y-6">
-                {/* Enhanced Review with Actionable Changes */}
-                <div>
-                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-purple-600" />Smart Review
-                  </h3>
-                  <EnhancedAIReviewPanel
-                    content={content}
-                    title={title}
-                    description={description}
-                    selectedAssignment={selectedAssignments[0]}
-                    selectedTask={selectedTask}
-                    assignments={assignments}
-                    tasks={tasks}
-                    referenceDocumentUrls={getAllReferenceDocuments()}
-                    onChangesGenerated={handleChangesGenerated}
-                  />
-                </div>
-
-                <div className="border-t pt-4">
-                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-blue-600" />Basic Review
-                  </h3>
-                  <AIReviewPanel
-                    content={content}
-                    title={title}
-                    description={description}
-                    selectedAssignment={selectedAssignments[0]}
-                    selectedTask={selectedTask}
-                    assignments={assignments}
-                    tasks={tasks}
-                  />
-                </div>
-
-                <div className="border-t pt-4">
-                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <Users className="w-4 h-4 text-green-600" />Audience Rewriter
-                  </h3>
-                  <AudienceRewriter initialText={content} onApplyRewrite={handleInsertContent} />
-                </div>
-              </TabsContent>
-
-              <TabsContent value="tools" className="mt-0 space-y-6">
-                {/* Document Structurer */}
-                <div>
-                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <LayoutList className="w-4 h-4 text-teal-600" />Document Structurer
-                  </h3>
-                  <AIDocumentStructurer
-                    content={content}
-                    title={title}
-                    description={description}
-                    onChangesGenerated={handleChangesGenerated}
-                  />
-                </div>
-
-                <div className="border-t pt-4">
-                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <Upload className="w-4 h-4 text-blue-600" />Reference Documents
-                  </h3>
-                  <Select onValueChange={(docId) => {
-                    const doc = availableDocsForReference.find(d => d.id === docId);
-                    if (doc && !selectedExistingDocs.some(d => d.id === docId)) {
-                      setSelectedExistingDocs([...selectedExistingDocs, { id: doc.id, name: doc.title, url: doc.file_url }]);
-                    }
-                  }}>
-                    <SelectTrigger><SelectValue placeholder="Add from library..." /></SelectTrigger>
-                    <SelectContent>
-                      {availableDocsForReference.map(doc => (
-                        <SelectItem key={doc.id} value={doc.id}>{doc.title}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {selectedExistingDocs.length > 0 && (
-                    <div className="mt-3 space-y-2">
-                      {selectedExistingDocs.map(doc => (
-                        <div key={doc.id} className="flex items-center justify-between p-2 border rounded-lg bg-green-50 dark:bg-green-950/20">
-                          <span className="text-sm truncate">{doc.name}</span>
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedExistingDocs(selectedExistingDocs.filter(d => d.id !== doc.id))}>
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="border-t pt-4">
-                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <ImageIcon className="w-4 h-4 text-pink-600" />AI Image Generator
-                  </h3>
-                  <AIImageGenerator
-                    onInsertImage={handleInsertImage}
-                    documentContext={{
-                      title,
-                      description,
-                      selectedAssignment: assignments.find(a => a.id === selectedAssignments[0]),
-                      selectedTask: tasks.find(t => t.id === selectedTask),
-                      allTasks: tasks.filter(t => t.assignment_id === selectedAssignments[0])
-                    }}
-                  />
-                </div>
-              </TabsContent>
-            </div>
-          </Tabs>
-        </div>
-      )}
+              </div>
+            </TabsContent>
+          </div>
+        </Tabs>
+      </div>
 
       {/* Outline Dialog */}
       <Dialog open={isOutlineDialogOpen} onOpenChange={setIsOutlineDialogOpen}>
@@ -628,23 +583,21 @@ export default function DocumentEditor({
         </DialogContent>
       </Dialog>
 
-      {/* Diff Review Dialog */}
-      <Dialog open={showDiffReview} onOpenChange={setShowDiffReview}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0">
-          <DialogHeader className="px-6 pt-6 pb-0">
-            <DialogTitle className="flex items-center gap-2">
-              <Eye className="w-5 h-5 text-purple-600" />
-              Review Suggested Changes
-            </DialogTitle>
-          </DialogHeader>
-          <DiffReviewView
-            originalContent={content}
-            changes={pendingChanges}
-            onApply={handleApplyChanges}
-            onCancel={handleCancelDiffReview}
-          />
-        </DialogContent>
-      </Dialog>
+      {/* Review Modal */}
+      <DocumentReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={handleReviewModalClose}
+        initialContent={content}
+        initialTitle={title}
+        initialDescription={description}
+        onSave={handleReviewModalSave}
+        isSaving={isSaving}
+        selectedAssignment={selectedAssignments[0]}
+        selectedTask={selectedTask}
+        assignments={assignments}
+        tasks={tasks}
+        referenceDocumentUrls={getAllReferenceDocuments()}
+      />
     </div>
   );
 }

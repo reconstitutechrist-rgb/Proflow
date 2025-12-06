@@ -1,9 +1,50 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Component } from 'react';
 import { Button } from '@/components/ui/button';
-import { Bug } from 'lucide-react';
+import { Bug, AlertTriangle } from 'lucide-react';
 import { BugReporterProvider, useBugReporter } from './BugReporterProvider';
 import { DevToolsPanel } from './components/DevToolsPanel';
 import { ElementSelector } from './components/ElementSelector';
+
+/**
+ * Error boundary specifically for DevTools - prevents crashes from breaking the main app
+ */
+class DevToolsErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('DevTools Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      // Show a small error indicator instead of crashing the whole app
+      return (
+        <div className="fixed bottom-20 md:bottom-6 left-6 z-40">
+          <Button
+            className="w-14 h-14 rounded-full shadow-lg bg-gray-500 hover:bg-gray-600 cursor-not-allowed"
+            size="icon"
+            title={`DevTools Error: ${this.state.error?.message || 'Unknown error'}`}
+            onClick={() => {
+              console.error('DevTools failed to load:', this.state.error);
+              alert(`DevTools Error: ${this.state.error?.message}\n\nCheck browser console for details.`);
+            }}
+          >
+            <AlertTriangle className="w-6 h-6 text-white" />
+          </Button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 /**
  * Internal component that uses the bug reporter context
@@ -89,18 +130,23 @@ function BugReporterContent() {
  * - Claude-ready prompt generation
  *
  * Renders in development mode OR when VITE_ENABLE_DEVTOOLS is set to 'true'.
+ * Wrapped in error boundary to prevent crashes from breaking the main app.
  */
 export function BugReporter() {
-  // Only render in development mode for now
-  // TODO: Fix production devtools - html2canvas may have issues in prod build
-  if (import.meta.env.MODE !== 'development') {
+  // Render in development mode OR when explicitly enabled via env var
+  const isDev = import.meta.env.MODE === 'development';
+  const isExplicitlyEnabled = import.meta.env.VITE_ENABLE_DEVTOOLS === 'true';
+
+  if (!isDev && !isExplicitlyEnabled) {
     return null;
   }
 
   return (
-    <BugReporterProvider>
-      <BugReporterContent />
-    </BugReporterProvider>
+    <DevToolsErrorBoundary>
+      <BugReporterProvider>
+        <BugReporterContent />
+      </BugReporterProvider>
+    </DevToolsErrorBoundary>
   );
 }
 

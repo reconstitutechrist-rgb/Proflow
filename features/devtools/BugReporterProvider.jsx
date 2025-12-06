@@ -12,11 +12,6 @@ export const useBugReporter = () => {
 };
 
 export const BugReporterProvider = ({ children }) => {
-  // Only enable in development mode
-  if (import.meta.env.MODE !== 'development') {
-    return <>{children}</>;
-  }
-
   const location = useLocation();
 
   // Panel state

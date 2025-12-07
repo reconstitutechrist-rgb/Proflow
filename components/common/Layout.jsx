@@ -84,6 +84,7 @@ import { useAuth } from '@/components/auth/AuthProvider'; // Import auth hook
 import MobileBottomNav from '@/components/common/MobileBottomNav'; // Mobile navigation
 import WhatsNewModal from '@/features/onboarding/WhatsNewModal'; // Feature discovery
 import BugReporter from '@/features/devtools/BugReporter'; // Visual Bug Reporter (dev only)
+import TeamChatBubble from '@/features/teamchat/TeamChatBubble'; // Team Chat Bubble
 
 const GlobalSearch = React.lazy(() =>
   import("@/components/search/GlobalSearch").catch(() => ({
@@ -941,6 +942,9 @@ function LayoutContent({ children, currentPageName }) {
 
       {/* Unified AI Assistant */}
       <UnifiedAIAssistant />
+
+      {/* Team Chat Bubble */}
+      <TeamChatBubble />
 
       {/* Visual Bug Reporter - Development Only */}
       <BugReporter />

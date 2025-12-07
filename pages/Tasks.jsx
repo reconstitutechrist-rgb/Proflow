@@ -12,16 +12,12 @@ import {
   Trash2,
   AlertCircle,
   X,
-  ChevronLeft,
-  ChevronRight,
   Search,
   LayoutGrid,
   List,
   Calendar,
   Clock,
-  User,
-  Filter,
-  SlidersHorizontal
+  User
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import {
@@ -46,7 +42,6 @@ import { toast } from "sonner";
 import TaskForm from "@/features/tasks/TaskForm";
 import TaskBoard from "@/features/tasks/TaskBoard";
 import ShareButton from "@/components/common/ShareButton";
-import AITaskAssistantPanel from "@/features/ai/AITaskAssistantPanel";
 import { useWorkspace } from "@/features/workspace/WorkspaceContext";
 
 export default function TasksPage() {
@@ -79,9 +74,6 @@ export default function TasksPage() {
 
   // Quick filter presets
   const [activePreset, setActivePreset] = useState('all');
-
-  // AI Assistant state
-  const [isAIAssistantCollapsed, setIsAIAssistantCollapsed] = useState(false);
 
   // Filter presets
   const filterPresets = [
@@ -432,24 +424,6 @@ export default function TasksPage() {
             </div>
 
             <Button
-              onClick={() => setIsAIAssistantCollapsed(!isAIAssistantCollapsed)}
-              variant="outline"
-              size="sm"
-              className="border-gray-200 dark:border-gray-800"
-            >
-              {isAIAssistantCollapsed ? (
-                <>
-                  <ChevronLeft className="w-4 h-4 mr-2" />
-                  AI
-                </>
-              ) : (
-                <>
-                  <ChevronRight className="w-4 h-4 mr-2" />
-                  AI
-                </>
-              )}
-            </Button>
-            <Button
               onClick={() => setIsTaskFormOpen(true)}
               className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white transition-all duration-200 shadow-sm hover:shadow-md"
             >
@@ -552,9 +526,9 @@ export default function TasksPage() {
       </div>
 
       {/* Content */}
-      <div className={`flex-1 ${viewMode === 'kanban' ? 'grid grid-cols-1 lg:grid-cols-2' : 'flex'} gap-8 overflow-hidden`}>
+      <div className="flex-1 flex gap-8 overflow-hidden">
         {/* Task Views */}
-        <div className={`overflow-auto ${viewMode !== 'kanban' ? 'flex-1' : ''}`}>
+        <div className="overflow-auto flex-1">
           {/* Bulk Actions */}
           {selectedTasks.length > 0 && (
             <Card className="shadow-lg border-2 border-green-500 bg-green-50 dark:bg-green-900/20 backdrop-blur-xl rounded-2xl mb-6">
@@ -846,21 +820,6 @@ export default function TasksPage() {
             </Card>
           )}
         </div>
-
-        {/* AI Assistant */}
-        {!isAIAssistantCollapsed && (
-          <div className="overflow-auto">
-            <AITaskAssistantPanel
-              assignments={assignments}
-              projects={projects}
-              users={users}
-              currentUser={currentUser}
-              onTasksCreated={loadData}
-              isCollapsed={isAIAssistantCollapsed}
-              onToggleCollapse={() => setIsAIAssistantCollapsed(!isAIAssistantCollapsed)}
-            />
-          </div>
-        )}
       </div>
 
       {/* Bulk Delete Dialog */}

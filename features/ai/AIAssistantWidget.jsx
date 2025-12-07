@@ -19,7 +19,9 @@ import {
   Edit2,
   Trash2,
   Check,
+  CheckSquare,
 } from "lucide-react";
+import { format } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -30,8 +32,22 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { db } from "@/api/db";
+import { Task } from "@/api/entities";
+import { InvokeLLM } from "@/api/integrations";
 import MessageBubble from "./AIMessageBubble";
 import SmartContextDetector from "./SmartContextDetector";
+import TaskProposalPanel from "./TaskProposalPanel";
+import {
+  parseDateString,
+  validateTaskStructure,
+  checkForDuplicates,
+  validateRecurrencePattern,
+  validateSubtasks,
+  TASK_TEMPLATES,
+  saveTaskDraft,
+  loadTaskDraft,
+  clearTaskDraft
+} from "@/utils/taskUtils";
 
 const showToast = {
   success: (message) => console.log("✅", message),
@@ -59,6 +75,21 @@ export default function AIAssistantWidget({ currentPageName, workspaceId }) {
   const [showSearch, setShowSearch] = useState(false);
   const [highlightedMessageId, setHighlightedMessageId] = useState(null);
   const [copiedMessageId, setCopiedMessageId] = useState(null);
+
+  // Task proposal workflow state
+  const [proposedTasks, setProposedTasks] = useState([]);
+  const [existingTasks, setExistingTasks] = useState([]);
+  const [failedTasks, setFailedTasks] = useState([]);
+  const [duplicateWarnings, setDuplicateWarnings] = useState([]);
+  const [isTaskCreating, setIsTaskCreating] = useState(false);
+  const [creationProgress, setCreationProgress] = useState({ current: 0, total: 0, currentTask: "" });
+  const [showTaskTemplates, setShowTaskTemplates] = useState(false);
+
+  // Context data for task creation
+  const [contextAssignments, setContextAssignments] = useState([]);
+  const [contextProjects, setContextProjects] = useState([]);
+  const [contextUsers, setContextUsers] = useState([]);
+
   const [seenTips, setSeenTips] = useState(() => {
     try {
       const saved = localStorage.getItem("ai_assistant_seen_tips");
@@ -216,7 +247,11 @@ export default function AIAssistantWidget({ currentPageName, workspaceId }) {
 
 📁 **Create Projects** - "Create a project called Marketing Campaign"
 📋 **Create Assignments** - "Create an assignment called Homepage Design"
-✅ **Create Tasks** - "Create a task called Review docs assigned to @John"
+✅ **Create Tasks** - Full task creation with advanced features:
+   - Recurring tasks: "Create a weekly task to review metrics every Monday"
+   - Subtasks: "Break down the onboarding process into subtasks"
+   - Checklists: "Create a task with a checklist for code review"
+   - Due dates: "Create a task due next Friday" or "in 2 weeks"
 📝 **Create Notes** - "Create a note called Meeting Summary"
 
 🔄 **Update Items** - "Update task [id] status to done"
@@ -224,15 +259,16 @@ export default function AIAssistantWidget({ currentPageName, workspaceId }) {
 👥 **Assign Team Members** - Tag anyone on your team to tasks
 
 **Quick Examples:**
-- "Create a high priority task for Sarah to review the proposal"
+- "Create a high priority recurring task for Sarah to check reports weekly"
+- "Break down the new feature into subtasks with a checklist"
 - "What's my current status?"
-- "Help" to see all commands
 
 What would you like me to do?`,
         timestamp: new Date().toISOString(),
       };
 
       setMessages([welcomeMessage]);
+      setShowTaskTemplates(true); // Auto-show templates on first open
 
       const unsubscribe = db.agents.subscribeToConversation(
         conversation.id,
@@ -394,6 +430,12 @@ What would you like me to do?`,
         }
       });
 
+      // Store context data for task proposal panel
+      setContextAssignments(assignments);
+      setContextProjects(projects);
+      setContextUsers(teamMembers);
+      setExistingTasks(tasks);
+
       // Find current project if viewing one
       const currentProject = context.current_entity_type === "project" && context.current_entity_id
         ? projects.find(p => p.id === context.current_entity_id)
@@ -492,6 +534,185 @@ Respond helpfully and execute the requested action if possible.
     }
   };
 
+  // Process task creation requests with structured LLM response
+  const processTaskCreation = async (userRequest) => {
+    if (!workspaceId || contextAssignments.length === 0) {
+      showToast.error("No assignments available. Please create an assignment first.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const assignmentsList = contextAssignments.slice(0, 10).map(a =>
+        `- ${a.name || a.title} (ID: ${a.id})`
+      ).join('\n');
+
+      const projectsList = contextProjects.slice(0, 10).map(p =>
+        `- ${p.name} (ID: ${p.id})`
+      ).join('\n');
+
+      const usersList = contextUsers.slice(0, 20).map(u =>
+        `- ${u.full_name || u.email} (${u.email})`
+      ).join('\n');
+
+      const systemPrompt = `You are a task creation assistant. Parse the user's natural language request and create structured task objects.
+
+**Available Assignments (required for each task):**
+${assignmentsList || 'No assignments available'}
+
+**Available Projects (optional):**
+${projectsList || 'No projects available'}
+
+**Available Team Members (for assignment):**
+${usersList || 'No team members available'}
+
+**Current User:** ${currentUser?.email || 'Unknown'}
+**Today's Date:** ${format(new Date(), 'yyyy-MM-dd')}
+
+**User Request:** "${userRequest}"
+
+Parse the request and extract all tasks. For each task, determine:
+- title (required)
+- description (optional)
+- assignment_id (required - pick the most relevant from the list)
+- project_id (optional - if mentioned or relevant)
+- assigned_to (email - pick from team members)
+- priority (low, medium, high, urgent)
+- due_date (natural language like "next Friday" or ISO format)
+- is_recurring (boolean)
+- recurrence_pattern (if recurring: { frequency: daily|weekly|monthly|yearly, interval: number, days_of_week: [0-6] })
+- subtasks (array of { title, description })
+- checklist_items (array of strings)
+
+Return a JSON response with analysis and tasks array.`;
+
+      const response = await InvokeLLM({
+        prompt: systemPrompt,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            analysis: { type: "string" },
+            tasks: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  description: { type: "string" },
+                  assignment_id: { type: "string" },
+                  project_id: { type: "string" },
+                  assigned_to: { type: "string" },
+                  priority: { type: "string" },
+                  due_date: { type: "string" },
+                  is_recurring: { type: "boolean" },
+                  recurrence_pattern: { type: "object" },
+                  subtasks: { type: "array" },
+                  checklist_items: { type: "array" }
+                },
+                required: ["title"]
+              }
+            },
+            suggestions: { type: "array" },
+            warnings: { type: "array" }
+          },
+          required: ["analysis", "tasks"]
+        }
+      });
+
+      if (!response || !Array.isArray(response.tasks) || response.tasks.length === 0) {
+        showToast.error("Could not extract tasks from request. Please try again with more detail.");
+        return;
+      }
+
+      // Validate and prepare tasks
+      const validatedTasks = [];
+      const warnings = [];
+
+      for (const task of response.tasks) {
+        const validation = validateTaskStructure(task, {
+          assignments: contextAssignments,
+          projects: contextProjects,
+          users: contextUsers,
+          currentUser
+        });
+
+        if (validation.isValid) {
+          // Check for duplicates
+          const duplicates = checkForDuplicates(validation.validatedTask, existingTasks);
+          if (duplicates.length > 0) {
+            warnings.push(`"${task.title}" may duplicate existing task`);
+            setDuplicateWarnings(prev => [...prev, { task: validation.validatedTask, duplicates }]);
+          }
+          validatedTasks.push(validation.validatedTask);
+        } else {
+          // Add with errors for user to fix
+          validatedTasks.push({ ...task, _validationErrors: validation.errors });
+          warnings.push(...validation.errors);
+        }
+      }
+
+      // Add tasks to proposals
+      setProposedTasks(prev => [...prev, ...validatedTasks]);
+
+      // Add AI response to messages
+      const aiMessage = {
+        id: "msg_" + Date.now(),
+        role: "assistant",
+        content: response.analysis + (warnings.length > 0
+          ? `\n\n⚠️ **Notes:** ${warnings.join(', ')}`
+          : '\n\n✅ Tasks are ready for review below.'),
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, aiMessage]);
+
+      showToast.success(`Prepared ${validatedTasks.length} task(s) for review`);
+
+    } catch (error) {
+      console.error("Error processing task creation:", error);
+      showToast.error("Failed to process task request");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Detect task creation intent
+  const isTaskCreationIntent = (text) => {
+    const taskKeywords = [
+      'create task', 'add task', 'new task', 'make task',
+      'create a task', 'add a task', 'new a task',
+      'recurring task', 'weekly task', 'daily task', 'monthly task',
+      'break down', 'subtask', 'checklist',
+      'create tasks', 'add tasks', 'generate tasks'
+    ];
+    const lowerText = text.toLowerCase();
+    return taskKeywords.some(keyword => lowerText.includes(keyword));
+  };
+
+  // Enhanced send message that detects task intent
+  const handleSendWithTaskDetection = async (messageText = null) => {
+    const textToSend = messageText || inputValue.trim();
+    if (!textToSend || isLoading) return;
+
+    // Check for task creation intent
+    if (isTaskCreationIntent(textToSend)) {
+      setInputValue("");
+
+      const userMessage = {
+        id: "msg_" + Date.now(),
+        role: "user",
+        content: textToSend,
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, userMessage]);
+
+      await processTaskCreation(textToSend);
+    } else {
+      // Use regular agent-based message handling
+      await handleSendMessage(messageText);
+    }
+  };
+
   const handleCopyMessage = async (messageContent) => {
     try {
       await navigator.clipboard.writeText(messageContent);
@@ -539,7 +760,7 @@ Respond helpfully and execute the requested action if possible.
     });
 
     // Resend the conversation with edited message
-    handleSendMessage(editedContent);
+    handleSendWithTaskDetection(editedContent);
   };
 
   const handleDeleteMessage = (messageId) => {
@@ -656,19 +877,226 @@ Respond helpfully and execute the requested action if possible.
   const handleNewConversation = async () => {
     setMessages([]);
     setConversationId(null);
-    setAgentConversation(null); // Clear agentConversation as well
+    setAgentConversation(null);
     setMessageFeedback({});
     setError(null);
     setSmartSuggestion(null);
     setSearchQuery("");
     setShowSearch(false);
-    await initConversation(); // Await the new async init
+    // Clear task state
+    setProposedTasks([]);
+    setFailedTasks([]);
+    setDuplicateWarnings([]);
+    setShowTaskTemplates(false);
+    clearTaskDraft();
+    await initConversation();
+  };
+
+  // Load existing tasks for duplicate detection
+  const loadExistingTasks = useCallback(async () => {
+    if (!workspaceId) return;
+    try {
+      const tasks = await Task.list({ workspace_id: workspaceId });
+      setExistingTasks(tasks);
+    } catch (error) {
+      console.error("Error loading existing tasks:", error);
+    }
+  }, [workspaceId]);
+
+  // Restore task draft on open
+  useEffect(() => {
+    if (isOpen && workspaceId) {
+      loadExistingTasks();
+      const draft = loadTaskDraft();
+      if (draft && draft.proposedTasks?.length > 0) {
+        const resume = window.confirm(
+          `You have ${draft.proposedTasks.length} unsaved task(s) from ${new Date(draft.timestamp).toLocaleTimeString()}.\n\nWould you like to restore them?`
+        );
+        if (resume) {
+          setProposedTasks(draft.proposedTasks);
+          showToast.success("Task draft restored");
+        } else {
+          clearTaskDraft();
+        }
+      }
+    }
+  }, [isOpen, workspaceId, loadExistingTasks]);
+
+  // Save task draft when proposed tasks change
+  useEffect(() => {
+    if (proposedTasks.length > 0) {
+      saveTaskDraft({ proposedTasks });
+    }
+  }, [proposedTasks]);
+
+  // Create tasks from proposals
+  const handleCreateTasks = async () => {
+    if (!workspaceId || proposedTasks.length === 0) {
+      showToast.error("No tasks to create");
+      return;
+    }
+
+    setIsTaskCreating(true);
+    setCreationProgress({ current: 0, total: proposedTasks.length, currentTask: "" });
+    setFailedTasks([]);
+
+    const results = { successful: [], failed: [] };
+
+    try {
+      for (let i = 0; i < proposedTasks.length; i++) {
+        const taskData = proposedTasks[i];
+
+        setCreationProgress({
+          current: i + 1,
+          total: proposedTasks.length,
+          currentTask: taskData.title
+        });
+
+        try {
+          const taskToCreate = {
+            workspace_id: workspaceId,
+            title: taskData.title,
+            description: taskData.description || "",
+            assignment_id: taskData.assignment_id,
+            project_id: taskData.project_id || null,
+            assigned_to: taskData.assigned_to,
+            assigned_by: currentUser?.email || "",
+            status: taskData.status || "todo",
+            priority: taskData.priority || "medium",
+            due_date: taskData.due_date ? parseDateString(taskData.due_date) : null,
+            estimated_effort: taskData.estimated_effort || null,
+            auto_generated: true,
+            generation_source: {
+              source_type: "ai_assistant",
+              confidence: 95,
+              reasoning: taskData.reasoning || "Created via AI Assistant"
+            },
+            skill_requirements: taskData.skill_requirements || []
+          };
+
+          // Add checklist if provided
+          if (taskData.checklist_items && taskData.checklist_items.length > 0) {
+            taskToCreate.checklist = taskData.checklist_items.map((item, idx) => ({
+              id: `check_${Date.now()}_${idx}`,
+              text: typeof item === 'string' ? item : item.text,
+              completed: false
+            }));
+          }
+
+          // Add recurrence if provided
+          if (taskData.is_recurring && taskData.recurrence_pattern) {
+            const recurrenceValidation = validateRecurrencePattern(taskData.recurrence_pattern);
+            if (recurrenceValidation.isValid) {
+              taskToCreate.is_recurring = true;
+              taskToCreate.recurrence_pattern = taskData.recurrence_pattern;
+            }
+          }
+
+          const createdTask = await Task.create(taskToCreate);
+          results.successful.push(createdTask);
+
+          // Create subtasks if provided
+          if (taskData.subtasks && taskData.subtasks.length > 0) {
+            const subtasksValidation = validateSubtasks(taskData.subtasks);
+            if (subtasksValidation.isValid) {
+              const subtaskPromises = taskData.subtasks.map(subtask =>
+                Task.create({
+                  workspace_id: workspaceId,
+                  title: subtask.title,
+                  description: subtask.description || "",
+                  assignment_id: taskToCreate.assignment_id,
+                  project_id: taskToCreate.project_id,
+                  assigned_to: taskToCreate.assigned_to,
+                  assigned_by: currentUser?.email || "",
+                  status: "todo",
+                  priority: taskToCreate.priority,
+                  parent_task_id: createdTask.id,
+                  auto_generated: true
+                })
+              );
+
+              const subtaskResults = await Promise.allSettled(subtaskPromises);
+              const createdSubtasks = subtaskResults
+                .filter(r => r.status === 'fulfilled')
+                .map(r => r.value);
+
+              if (createdSubtasks.length > 0) {
+                await Task.update(createdTask.id, {
+                  subtask_ids: createdSubtasks.map(st => st.id)
+                });
+                results.successful.push(...createdSubtasks);
+              }
+            }
+          }
+
+        } catch (taskError) {
+          results.failed.push({
+            task: taskData,
+            error: taskError.message || "Unknown error"
+          });
+        }
+      }
+
+      const successCount = results.successful.filter(t => !t.parent_task_id).length;
+      const subtaskCount = results.successful.filter(t => t.parent_task_id).length;
+
+      if (results.failed.length === 0) {
+        let message = `Created ${successCount} task(s)`;
+        if (subtaskCount > 0) message += ` with ${subtaskCount} subtask(s)`;
+        showToast.success(message);
+        clearTaskDraft();
+        setProposedTasks([]);
+        setDuplicateWarnings([]);
+        loadExistingTasks();
+      } else {
+        showToast.error(`Created ${successCount} task(s), ${results.failed.length} failed.`);
+        setFailedTasks(results.failed);
+        setProposedTasks(prev => prev.filter(pTask =>
+          !results.successful.some(sTask => sTask.title === pTask.title && sTask.assignment_id === pTask.assignment_id)
+        ));
+      }
+
+    } catch (error) {
+      console.error("Error in task creation:", error);
+      showToast.error("Unexpected error during task creation");
+    } finally {
+      setIsTaskCreating(false);
+      setCreationProgress({ current: 0, total: 0, currentTask: "" });
+    }
+  };
+
+  // Retry a failed task
+  const handleRetryFailed = (taskToRetry) => {
+    setFailedTasks(prev => prev.filter(f => f.task !== taskToRetry));
+    setProposedTasks(prev => [...prev, taskToRetry]);
+    showToast.success(`"${taskToRetry.title}" added back for retry.`);
+  };
+
+  // Clear all task proposals
+  const handleClearTasks = () => {
+    if (proposedTasks.length > 0 || failedTasks.length > 0) {
+      const confirmed = window.confirm(
+        `Clear ${proposedTasks.length} proposed and ${failedTasks.length} failed task(s)?`
+      );
+      if (!confirmed) return;
+    }
+    setProposedTasks([]);
+    setFailedTasks([]);
+    setDuplicateWarnings([]);
+    clearTaskDraft();
+  };
+
+  // Handle template click
+  const handleTemplateClick = (template) => {
+    setInputValue(template.example);
+    setShowTaskTemplates(false);
+    setTimeout(() => inputRef.current?.focus(), 100);
   };
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      handleSendWithTaskDetection();
     }
   };
 
@@ -721,7 +1149,7 @@ Respond helpfully and execute the requested action if possible.
                               onClick={() => {
                                 setIsOpen(true);
                                 setTimeout(() => {
-                                  handleSendMessage(action.prompt);
+                                  handleSendWithTaskDetection(action.prompt);
                                 }, 500);
                               }}
                             >
@@ -1018,18 +1446,72 @@ Respond helpfully and execute the requested action if possible.
                   </div>
                 )}
 
+                {/* Message Limit Warning */}
+                {messages.length >= 40 && (
+                  <div className="text-xs text-yellow-700 dark:text-yellow-400 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800 mx-2">
+                    <strong>Note:</strong> Conversation history is limited to 50 messages. Consider starting a new chat for better performance.
+                  </div>
+                )}
+
                 <div ref={messagesEndRef} />
+
+                {/* Task Templates */}
+                {showTaskTemplates && messages.length <= 1 && (
+                  <div className="space-y-3 mt-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 text-center">
+                      Quick Task Templates
+                    </p>
+                    <div className="grid grid-cols-1 gap-2">
+                      {TASK_TEMPLATES.map((template, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleTemplateClick(template)}
+                          className="text-left p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-sm transition-all duration-200 group"
+                        >
+                          <div className="flex items-start gap-2">
+                            <span className="text-lg">{template.icon}</span>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-xs text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                                {template.title}
+                              </h4>
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                                {template.description}
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
+              {/* Task Proposal Panel */}
+              <TaskProposalPanel
+                proposedTasks={proposedTasks}
+                failedTasks={failedTasks}
+                duplicateWarnings={duplicateWarnings}
+                assignments={contextAssignments}
+                projects={contextProjects}
+                users={contextUsers}
+                currentUser={currentUser}
+                isCreating={isTaskCreating}
+                creationProgress={creationProgress}
+                onTasksChange={setProposedTasks}
+                onCreateTasks={handleCreateTasks}
+                onClear={handleClearTasks}
+                onRetryFailed={handleRetryFailed}
+              />
+
               {/* Input */}
-              <div className="p-4 border-t bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
+              <div className="p-4 border-t bg-gray-50 dark:bg-gray-800/50 shrink-0">
                 <div className="flex gap-2 mb-2">
                   <Button
                     variant="outline"
                     size="sm"
                     className="text-xs"
                     onClick={handleNewConversation}
-                    disabled={isLoading}
+                    disabled={isLoading || isTaskCreating}
                   >
                     <RefreshCw className="w-3 h-3 mr-1" />
                     New Chat
@@ -1038,10 +1520,19 @@ Respond helpfully and execute the requested action if possible.
                     variant="outline"
                     size="sm"
                     className="text-xs"
+                    onClick={() => setShowTaskTemplates(!showTaskTemplates)}
+                  >
+                    <CheckSquare className="w-3 h-3 mr-1" />
+                    Tasks
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
                     onClick={() => setShowTip(true)}
                   >
                     <Sparkles className="w-3 h-3 mr-1" />
-                    Show Tip
+                    Tips
                   </Button>
                 </div>
                 <div className="flex gap-2">
@@ -1056,9 +1547,9 @@ Respond helpfully and execute the requested action if possible.
                     aria-label="Message input"
                   />
                   <Button
-                    onClick={() => handleSendMessage()}
-                    disabled={!inputValue.trim() || isLoading}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 flex-shrink-0"
+                    onClick={() => handleSendWithTaskDetection()}
+                    disabled={!inputValue.trim() || isLoading || isTaskCreating}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shrink-0"
                     aria-label="Send message"
                   >
                     <Send className="w-4 h-4" />

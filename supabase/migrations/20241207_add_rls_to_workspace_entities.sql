@@ -2,15 +2,41 @@
 -- These tables were missing RLS policies, causing documents to appear disconnected
 
 -- ============================================
--- Step 1: Enable RLS on all workspace-scoped tables
+-- Step 1: Enable RLS on all workspace-scoped tables (only if they exist)
 -- ============================================
 
-ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE assignments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE ai_research_chats ENABLE ROW LEVEL SECURITY;
-ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE folders ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+    -- Enable RLS on projects if exists
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'projects') THEN
+        ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+    END IF;
+
+    -- Enable RLS on assignments if exists
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'assignments') THEN
+        ALTER TABLE assignments ENABLE ROW LEVEL SECURITY;
+    END IF;
+
+    -- Enable RLS on tasks if exists
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'tasks') THEN
+        ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+    END IF;
+
+    -- Enable RLS on ai_research_chats if exists
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ai_research_chats') THEN
+        ALTER TABLE ai_research_chats ENABLE ROW LEVEL SECURITY;
+    END IF;
+
+    -- Enable RLS on notes if exists
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'notes') THEN
+        ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+    END IF;
+
+    -- Enable RLS on folders if exists
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'folders') THEN
+        ALTER TABLE folders ENABLE ROW LEVEL SECURITY;
+    END IF;
+END $$;
 
 -- ============================================
 -- Step 2: Drop any existing policies (clean slate)
@@ -36,15 +62,7 @@ DROP POLICY IF EXISTS "ai_research_chats_insert" ON ai_research_chats;
 DROP POLICY IF EXISTS "ai_research_chats_update" ON ai_research_chats;
 DROP POLICY IF EXISTS "ai_research_chats_delete" ON ai_research_chats;
 
-DROP POLICY IF EXISTS "notes_select" ON notes;
-DROP POLICY IF EXISTS "notes_insert" ON notes;
-DROP POLICY IF EXISTS "notes_update" ON notes;
-DROP POLICY IF EXISTS "notes_delete" ON notes;
-
-DROP POLICY IF EXISTS "folders_select" ON folders;
-DROP POLICY IF EXISTS "folders_insert" ON folders;
-DROP POLICY IF EXISTS "folders_update" ON folders;
-DROP POLICY IF EXISTS "folders_delete" ON folders;
+-- Notes and folders policies are dropped conditionally in their respective DO blocks below
 
 -- ============================================
 -- Step 3: Create PROJECTS policies
@@ -208,7 +226,13 @@ CREATE POLICY "ai_research_chats_delete" ON ai_research_chats
 
 DO $$
 BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'notes') THEN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'notes') THEN
+        -- Drop existing policies first
+        DROP POLICY IF EXISTS "notes_select" ON notes;
+        DROP POLICY IF EXISTS "notes_insert" ON notes;
+        DROP POLICY IF EXISTS "notes_update" ON notes;
+        DROP POLICY IF EXISTS "notes_delete" ON notes;
+
         EXECUTE '
             CREATE POLICY "notes_select" ON notes
                 FOR SELECT USING (
@@ -260,7 +284,13 @@ END $$;
 
 DO $$
 BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'folders') THEN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'folders') THEN
+        -- Drop existing policies first
+        DROP POLICY IF EXISTS "folders_select" ON folders;
+        DROP POLICY IF EXISTS "folders_insert" ON folders;
+        DROP POLICY IF EXISTS "folders_update" ON folders;
+        DROP POLICY IF EXISTS "folders_delete" ON folders;
+
         EXECUTE '
             CREATE POLICY "folders_select" ON folders
                 FOR SELECT USING (

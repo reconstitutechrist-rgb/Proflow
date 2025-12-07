@@ -63,16 +63,26 @@ export default function TeamChatBubble() {
   }, [teamChat.chats]);
 
   /**
-   * Handle mouse down for drag start
+   * Track if this was a drag vs a click
+   */
+  const dragStartPosRef = useRef({ x: 0, y: 0 });
+  const wasDraggedRef = useRef(false);
+
+  /**
+   * Handle mouse down for drag start (works on both bubble and expanded window)
    */
   const handleMouseDown = useCallback((e) => {
-    // Only start drag from the grip handle or header
-    if (!e.target.closest('.drag-handle')) return;
+    // For expanded window, only start drag from the drag-handle
+    // For closed bubble, allow drag from anywhere on the bubble
+    const isExpandedWindow = isOpen;
+    if (isExpandedWindow && !e.target.closest('.drag-handle')) return;
 
     e.preventDefault();
     setIsDragging(true);
+    wasDraggedRef.current = false;
+    dragStartPosRef.current = { x: e.clientX, y: e.clientY };
 
-    const element = windowRef.current || bubbleRef.current;
+    const element = isOpen ? windowRef.current : bubbleRef.current;
     if (!element) return;
 
     const rect = element.getBoundingClientRect();
@@ -80,13 +90,20 @@ export default function TeamChatBubble() {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
     });
-  }, []);
+  }, [isOpen]);
 
   /**
    * Handle mouse move for dragging
    */
   const handleMouseMove = useCallback((e) => {
     if (!isDragging) return;
+
+    // Check if we've moved enough to consider this a drag (not a click)
+    const dx = Math.abs(e.clientX - dragStartPosRef.current.x);
+    const dy = Math.abs(e.clientY - dragStartPosRef.current.y);
+    if (dx > 5 || dy > 5) {
+      wasDraggedRef.current = true;
+    }
 
     const newX = e.clientX - dragOffset.x;
     const newY = e.clientY - dragOffset.y;
@@ -180,9 +197,15 @@ export default function TeamChatBubble() {
     savePosition(DEFAULT_POSITION);
   };
 
-  const handleOpen = () => {
-    setIsOpen(true);
-    setIsMinimized(false);
+  /**
+   * Handle opening the chat - only if it wasn't a drag
+   */
+  const handleBubbleClick = () => {
+    // Only open if we didn't just drag
+    if (!wasDraggedRef.current) {
+      setIsOpen(true);
+      setIsMinimized(false);
+    }
   };
 
   const handleClose = () => {
@@ -196,13 +219,14 @@ export default function TeamChatBubble() {
       <div
         ref={bubbleRef}
         style={getPositionStyle()}
-        className="z-50"
+        className={`z-50 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleBubbleClick}
       >
         <Button
-          onClick={handleOpen}
-          className="h-14 w-14 rounded-full shadow-2xl bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 group relative"
+          className={`h-14 w-14 rounded-full shadow-2xl bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 group relative ${isDragging ? 'scale-110' : ''} transition-transform`}
           aria-label="Open Team Chat"
-          title="Open Team Chat"
+          title="Drag to move • Click to open"
         >
           <div className="relative">
             <Users className="w-6 h-6 text-white" />

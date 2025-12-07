@@ -1,18 +1,13 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
-import { db } from "@/api/db";
-import { toast } from "sonner";
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
+import { db } from '@/api/db';
+import { toast } from 'sonner';
 
 const WorkspaceContext = createContext();
 
 // Simple user management without external auth
 const getCurrentUser = () => {
-  const stored = localStorage.getItem("proflow_current_user");
+  const stored = localStorage.getItem('proflow_current_user');
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
@@ -20,25 +15,25 @@ const getCurrentUser = () => {
       if (parsed && parsed.email && parsed.id) {
         return parsed;
       }
-    } catch (e) {
-      console.warn("Invalid user data in localStorage, resetting...");
+    } catch {
+      console.warn('Invalid user data in localStorage, resetting...');
     }
   }
   // Create a default user with a unique ID
   const defaultUser = {
     id: crypto.randomUUID ? crypto.randomUUID() : `user-${Date.now()}`,
-    email: "user@proflow.local",
-    full_name: "Proflow User",
+    email: 'user@proflow.local',
+    full_name: 'Proflow User',
     active_workspace_id: null,
   };
-  localStorage.setItem("proflow_current_user", JSON.stringify(defaultUser));
+  localStorage.setItem('proflow_current_user', JSON.stringify(defaultUser));
   return defaultUser;
 };
 
 const updateCurrentUser = (updates) => {
   const user = getCurrentUser();
   const updated = { ...user, ...updates };
-  localStorage.setItem("proflow_current_user", JSON.stringify(updated));
+  localStorage.setItem('proflow_current_user', JSON.stringify(updated));
   return updated;
 };
 
@@ -49,9 +44,7 @@ const userHasWorkspaceAccess = (workspace, userEmail) => {
   if (workspace.owner_email === userEmail) return true;
   // Check members array
   if (workspace.members && Array.isArray(workspace.members)) {
-    return workspace.members.some(
-      (member) => member.toLowerCase() === userEmail.toLowerCase()
-    );
+    return workspace.members.some((member) => member.toLowerCase() === userEmail.toLowerCase());
   }
   return false;
 };
@@ -86,20 +79,14 @@ export function WorkspaceProvider({ children }) {
       let activeWorkspace = null;
 
       // Priority 1: Check local storage (but verify access)
-      const localStorageWorkspaceId = localStorage.getItem(
-        "active_workspace_id"
-      );
+      const localStorageWorkspaceId = localStorage.getItem('active_workspace_id');
       if (localStorageWorkspaceId) {
-        activeWorkspace = accessibleWorkspaces.find(
-          (w) => w.id === localStorageWorkspaceId
-        );
+        activeWorkspace = accessibleWorkspaces.find((w) => w.id === localStorageWorkspaceId);
       }
 
       // Priority 2: Check user preference (but verify access)
       if (!activeWorkspace && user.active_workspace_id) {
-        activeWorkspace = accessibleWorkspaces.find(
-          (w) => w.id === user.active_workspace_id
-        );
+        activeWorkspace = accessibleWorkspaces.find((w) => w.id === user.active_workspace_id);
       }
 
       // Priority 3: Use default personal workspace
@@ -118,14 +105,14 @@ export function WorkspaceProvider({ children }) {
       if (!activeWorkspace) {
         const newWorkspace = await db.entities.Workspace.create({
           name: `${user.full_name}'s Workspace`,
-          description: "My personal workspace",
+          description: 'My personal workspace',
           owner_email: user.email,
           members: [user.email],
-          type: "personal",
+          type: 'personal',
           is_default: true,
           settings: {
-            color: "#3B82F6",
-            icon: "👤",
+            color: '#3B82F6',
+            icon: '👤',
           },
         });
 
@@ -133,7 +120,7 @@ export function WorkspaceProvider({ children }) {
         try {
           await db.entities.WorkspaceMember.create({
             workspace_id: newWorkspace.id,
-            user_id: user.id,
+            user_email: user.email,
             role: 'owner',
           });
         } catch (memberError) {
@@ -147,16 +134,14 @@ export function WorkspaceProvider({ children }) {
       setCurrentWorkspace(activeWorkspace);
 
       // Sync to local storage
-      localStorage.setItem("active_workspace_id", activeWorkspace.id);
+      localStorage.setItem('active_workspace_id', activeWorkspace.id);
       if (user.active_workspace_id !== activeWorkspace.id) {
         updateCurrentUser({ active_workspace_id: activeWorkspace.id });
       }
     } catch (err) {
-      console.error("Error loading workspaces:", err);
-      setError(
-        err.message || "Failed to load workspaces. Please refresh the page."
-      );
-      toast.error("Failed to load workspaces");
+      console.error('Error loading workspaces:', err);
+      setError(err.message || 'Failed to load workspaces. Please refresh the page.');
+      toast.error('Failed to load workspaces');
     } finally {
       setLoading(false);
     }
@@ -167,7 +152,7 @@ export function WorkspaceProvider({ children }) {
     async (workspaceId) => {
       const workspace = availableWorkspaces.find((w) => w.id === workspaceId);
       if (!workspace) {
-        console.error("Workspace not found:", workspaceId);
+        console.error('Workspace not found:', workspaceId);
         return;
       }
 
@@ -178,7 +163,7 @@ export function WorkspaceProvider({ children }) {
 
       try {
         // Update local storage first
-        localStorage.setItem("active_workspace_id", workspaceId);
+        localStorage.setItem('active_workspace_id', workspaceId);
 
         // Update user preference
         updateCurrentUser({ active_workspace_id: workspaceId });
@@ -189,8 +174,8 @@ export function WorkspaceProvider({ children }) {
         // Notify user of workspace switch
         toast.success(`Switched to ${workspace.name}`);
       } catch (err) {
-        console.error("Error switching workspace:", err);
-        toast.error("Failed to switch workspace");
+        console.error('Error switching workspace:', err);
+        toast.error('Failed to switch workspace');
       }
     },
     [availableWorkspaces, currentWorkspace]
@@ -205,14 +190,14 @@ export function WorkspaceProvider({ children }) {
   const addMember = useCallback(
     async (email) => {
       if (!currentWorkspace) {
-        throw new Error("No workspace selected");
+        throw new Error('No workspace selected');
       }
 
       const normalizedEmail = email.trim().toLowerCase();
       const currentMembers = currentWorkspace.members || [];
 
       if (currentMembers.some((m) => m.toLowerCase() === normalizedEmail)) {
-        throw new Error("User is already a member");
+        throw new Error('User is already a member');
       }
 
       const updatedMembers = [...currentMembers, normalizedEmail];
@@ -237,20 +222,18 @@ export function WorkspaceProvider({ children }) {
   const removeMember = useCallback(
     async (email) => {
       if (!currentWorkspace) {
-        throw new Error("No workspace selected");
+        throw new Error('No workspace selected');
       }
 
       const normalizedEmail = email.trim().toLowerCase();
 
       // Cannot remove owner
       if (normalizedEmail === currentWorkspace.owner_email?.toLowerCase()) {
-        throw new Error("Cannot remove workspace owner");
+        throw new Error('Cannot remove workspace owner');
       }
 
       const currentMembers = currentWorkspace.members || [];
-      const updatedMembers = currentMembers.filter(
-        (m) => m.toLowerCase() !== normalizedEmail
-      );
+      const updatedMembers = currentMembers.filter((m) => m.toLowerCase() !== normalizedEmail);
 
       await db.entities.Workspace.update(currentWorkspace.id, {
         members: updatedMembers,
@@ -271,10 +254,7 @@ export function WorkspaceProvider({ children }) {
   // Check if current user is owner of current workspace
   const isWorkspaceOwner = useCallback(() => {
     if (!currentWorkspace || !currentUser) return false;
-    return (
-      currentWorkspace.owner_email?.toLowerCase() ===
-      currentUser.email?.toLowerCase()
-    );
+    return currentWorkspace.owner_email?.toLowerCase() === currentUser.email?.toLowerCase();
   }, [currentWorkspace, currentUser]);
 
   useEffect(() => {
@@ -296,17 +276,17 @@ export function WorkspaceProvider({ children }) {
     isWorkspaceOwner,
   };
 
-  return (
-    <WorkspaceContext.Provider value={value}>
-      {children}
-    </WorkspaceContext.Provider>
-  );
+  return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }
+
+WorkspaceProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};
 
 export function useWorkspace() {
   const context = useContext(WorkspaceContext);
   if (!context) {
-    throw new Error("useWorkspace must be used within a WorkspaceProvider");
+    throw new Error('useWorkspace must be used within a WorkspaceProvider');
   }
   return context;
 }

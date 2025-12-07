@@ -1,9 +1,10 @@
-import React, { useState } from "react";
-import { db } from "@/api/db";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+import { useState } from 'react';
+import PropTypes from 'prop-types';
+import { db } from '@/api/db';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -11,17 +12,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Briefcase,
   Users,
@@ -32,37 +33,29 @@ import {
   UserPlus,
   UserMinus,
   Star,
-  CheckCircle2,
   Loader2,
   Mail,
   X,
-  MoreVertical
-} from "lucide-react";
-import { toast } from "sonner";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
 export default function WorkspaceModal({ open, onOpenChange }) {
-  const {
-    availableWorkspaces,
-    currentWorkspace,
-    currentUser,
-    loading,
-    switchWorkspace,
-    refreshWorkspaces
-  } = useWorkspace();
+  const { availableWorkspaces, currentWorkspace, currentUser, switchWorkspace, refreshWorkspaces } =
+    useWorkspace();
 
-  const [activeTab, setActiveTab] = useState("workspaces");
+  const [activeTab, setActiveTab] = useState('workspaces');
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [newWorkspace, setNewWorkspace] = useState({
-    name: "",
-    description: "",
-    type: "personal"
+    name: '',
+    description: '',
+    type: 'personal',
   });
   const [creating, setCreating] = useState(false);
 
   // Invite members state
   const [inviteWorkspace, setInviteWorkspace] = useState(null);
-  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
 
   // Manage members state
@@ -71,12 +64,12 @@ export default function WorkspaceModal({ open, onOpenChange }) {
 
   const handleCreateWorkspace = async () => {
     if (!newWorkspace.name.trim()) {
-      toast.error("Please enter a workspace name");
+      toast.error('Please enter a workspace name');
       return;
     }
 
     if (!currentUser) {
-      toast.error("User information not available");
+      toast.error('User information not available');
       return;
     }
 
@@ -90,28 +83,33 @@ export default function WorkspaceModal({ open, onOpenChange }) {
         members: [currentUser.email],
         is_default: false,
         settings: {
-          color: "#3B82F6",
-          icon: newWorkspace.type === "personal" ? "user" : newWorkspace.type === "team" ? "users" : "building"
-        }
+          color: '#3B82F6',
+          icon:
+            newWorkspace.type === 'personal'
+              ? 'user'
+              : newWorkspace.type === 'team'
+                ? 'users'
+                : 'building',
+        },
       });
 
       try {
         await db.entities.WorkspaceMember.create({
           workspace_id: createdWorkspace.id,
-          user_id: currentUser.id,
+          user_email: currentUser.email,
           role: 'owner',
         });
       } catch (memberError) {
         console.warn('Could not add workspace member record:', memberError);
       }
 
-      toast.success("Workspace created successfully");
+      toast.success('Workspace created successfully');
       setIsCreateMode(false);
-      setNewWorkspace({ name: "", description: "", type: "personal" });
+      setNewWorkspace({ name: '', description: '', type: 'personal' });
       await refreshWorkspaces();
     } catch (error) {
-      console.error("Error creating workspace:", error);
-      toast.error("Failed to create workspace");
+      console.error('Error creating workspace:', error);
+      toast.error('Failed to create workspace');
     } finally {
       setCreating(false);
     }
@@ -120,59 +118,61 @@ export default function WorkspaceModal({ open, onOpenChange }) {
   const handleSetActiveWorkspace = async (workspaceId) => {
     try {
       await switchWorkspace(workspaceId);
-      toast.success("Switched workspace successfully");
+      toast.success('Switched workspace successfully');
     } catch (error) {
-      console.error("Error setting active workspace:", error);
-      toast.error("Failed to switch workspace");
+      console.error('Error setting active workspace:', error);
+      toast.error('Failed to switch workspace');
     }
   };
 
   const handleDeleteWorkspace = async (workspace) => {
     if (workspace.is_default) {
-      toast.error("Cannot delete your default personal workspace");
+      toast.error('Cannot delete your default personal workspace');
       return;
     }
 
     if (workspace.owner_email !== currentUser?.email) {
-      toast.error("Only the workspace owner can delete it");
+      toast.error('Only the workspace owner can delete it');
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete "${workspace.name}"? This action cannot be undone.`)) {
+    if (
+      !confirm(`Are you sure you want to delete "${workspace.name}"? This action cannot be undone.`)
+    ) {
       return;
     }
 
     try {
       await db.entities.Workspace.delete(workspace.id);
-      toast.success("Workspace deleted successfully");
+      toast.success('Workspace deleted successfully');
       await refreshWorkspaces();
     } catch (error) {
-      console.error("Error deleting workspace:", error);
-      toast.error("Failed to delete workspace");
+      console.error('Error deleting workspace:', error);
+      toast.error('Failed to delete workspace');
     }
   };
 
   const handleInviteMember = async () => {
     if (!inviteEmail.trim()) {
-      toast.error("Please enter an email address");
+      toast.error('Please enter an email address');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(inviteEmail.trim())) {
-      toast.error("Please enter a valid email address");
+      toast.error('Please enter a valid email address');
       return;
     }
 
     if (!inviteWorkspace) {
-      toast.error("No workspace selected");
+      toast.error('No workspace selected');
       return;
     }
 
     const email = inviteEmail.trim().toLowerCase();
 
     if (inviteWorkspace.members?.includes(email)) {
-      toast.error("This user is already a member of this workspace");
+      toast.error('This user is already a member of this workspace');
       return;
     }
 
@@ -181,18 +181,18 @@ export default function WorkspaceModal({ open, onOpenChange }) {
       const updatedMembers = [...(inviteWorkspace.members || []), email];
 
       await db.entities.Workspace.update(inviteWorkspace.id, {
-        members: updatedMembers
+        members: updatedMembers,
       });
 
       try {
         const users = await db.entities.User.list();
-        const invitedUser = users.find(u => u.email?.toLowerCase() === email);
+        const invitedUser = users.find((u) => u.email?.toLowerCase() === email);
         if (invitedUser) {
           await db.entities.WorkspaceMember.create({
             workspace_id: inviteWorkspace.id,
-            user_id: invitedUser.id,
+            user_email: invitedUser.email,
             role: 'member',
-            invited_by: currentUser?.id,
+            invited_by: currentUser?.email,
           });
         }
       } catch (memberError) {
@@ -200,12 +200,12 @@ export default function WorkspaceModal({ open, onOpenChange }) {
       }
 
       toast.success(`Invited ${email} to ${inviteWorkspace.name}`);
-      setInviteEmail("");
+      setInviteEmail('');
       setInviteWorkspace(null);
       await refreshWorkspaces();
     } catch (error) {
-      console.error("Error inviting member:", error);
-      toast.error("Failed to invite member");
+      console.error('Error inviting member:', error);
+      toast.error('Failed to invite member');
     } finally {
       setInviting(false);
     }
@@ -215,28 +215,28 @@ export default function WorkspaceModal({ open, onOpenChange }) {
     if (!membersWorkspace) return;
 
     if (email === membersWorkspace.owner_email) {
-      toast.error("Cannot remove the workspace owner");
+      toast.error('Cannot remove the workspace owner');
       return;
     }
 
     try {
       setRemovingMember(email);
-      const updatedMembers = (membersWorkspace.members || []).filter(m => m !== email);
+      const updatedMembers = (membersWorkspace.members || []).filter((m) => m !== email);
 
       await db.entities.Workspace.update(membersWorkspace.id, {
-        members: updatedMembers
+        members: updatedMembers,
       });
 
       setMembersWorkspace({
         ...membersWorkspace,
-        members: updatedMembers
+        members: updatedMembers,
       });
 
       toast.success(`Removed ${email} from the workspace`);
       await refreshWorkspaces();
     } catch (error) {
-      console.error("Error removing member:", error);
-      toast.error("Failed to remove member");
+      console.error('Error removing member:', error);
+      toast.error('Failed to remove member');
     } finally {
       setRemovingMember(null);
     }
@@ -244,19 +244,27 @@ export default function WorkspaceModal({ open, onOpenChange }) {
 
   const getWorkspaceIcon = (type) => {
     switch (type) {
-      case 'personal': return <Briefcase className="w-5 h-5" />;
-      case 'team': return <Users className="w-5 h-5" />;
-      case 'client': return <Building2 className="w-5 h-5" />;
-      default: return <Briefcase className="w-5 h-5" />;
+      case 'personal':
+        return <Briefcase className="w-5 h-5" />;
+      case 'team':
+        return <Users className="w-5 h-5" />;
+      case 'client':
+        return <Building2 className="w-5 h-5" />;
+      default:
+        return <Briefcase className="w-5 h-5" />;
     }
   };
 
   const getWorkspaceColor = (type) => {
     switch (type) {
-      case 'personal': return 'from-blue-500 to-indigo-600';
-      case 'team': return 'from-green-500 to-emerald-600';
-      case 'client': return 'from-purple-500 to-pink-600';
-      default: return 'from-gray-500 to-gray-600';
+      case 'personal':
+        return 'from-blue-500 to-indigo-600';
+      case 'team':
+        return 'from-green-500 to-emerald-600';
+      case 'client':
+        return 'from-purple-500 to-pink-600';
+      default:
+        return 'from-gray-500 to-gray-600';
     }
   };
 
@@ -308,7 +316,9 @@ export default function WorkspaceModal({ open, onOpenChange }) {
                     id="description"
                     placeholder="What is this workspace for?"
                     value={newWorkspace.description}
-                    onChange={(e) => setNewWorkspace({ ...newWorkspace, description: e.target.value })}
+                    onChange={(e) =>
+                      setNewWorkspace({ ...newWorkspace, description: e.target.value })
+                    }
                     className="mt-1"
                     rows={3}
                   />
@@ -381,8 +391,11 @@ export default function WorkspaceModal({ open, onOpenChange }) {
                       const isActive = currentWorkspace?.id === workspace.id;
                       // Case-insensitive owner check
                       const isOwner =
-                        workspace.owner_email?.toLowerCase() === currentUser?.email?.toLowerCase() ||
-                        (workspace.members?.[0]?.toLowerCase() === currentUser?.email?.toLowerCase() && !workspace.owner_email);
+                        workspace.owner_email?.toLowerCase() ===
+                          currentUser?.email?.toLowerCase() ||
+                        (workspace.members?.[0]?.toLowerCase() ===
+                          currentUser?.email?.toLowerCase() &&
+                          !workspace.owner_email);
 
                       return (
                         <div
@@ -394,7 +407,9 @@ export default function WorkspaceModal({ open, onOpenChange }) {
                           }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg bg-gradient-to-r ${getWorkspaceColor(workspace.type)} text-white`}>
+                            <div
+                              className={`p-2 rounded-lg bg-gradient-to-r ${getWorkspaceColor(workspace.type)} text-white`}
+                            >
                               {getWorkspaceIcon(workspace.type)}
                             </div>
                             <div>
@@ -406,7 +421,9 @@ export default function WorkspaceModal({ open, onOpenChange }) {
                                   <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                                 )}
                                 {isActive && (
-                                  <Badge variant="secondary" className="text-xs">Active</Badge>
+                                  <Badge variant="secondary" className="text-xs">
+                                    Active
+                                  </Badge>
                                 )}
                               </div>
                               <p className="text-sm text-gray-500">
@@ -450,16 +467,18 @@ export default function WorkspaceModal({ open, onOpenChange }) {
             <div>
               <Label>Select Workspace</Label>
               <Select
-                value={inviteWorkspace?.id || ""}
-                onValueChange={(id) => setInviteWorkspace(availableWorkspaces.find(w => w.id === id))}
+                value={inviteWorkspace?.id || ''}
+                onValueChange={(id) =>
+                  setInviteWorkspace(availableWorkspaces.find((w) => w.id === id))
+                }
               >
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Choose a workspace" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableWorkspaces
-                    .filter(w => w.owner_email === currentUser?.email)
-                    .map(workspace => (
+                    .filter((w) => w.owner_email === currentUser?.email)
+                    .map((workspace) => (
                       <SelectItem key={workspace.id} value={workspace.id}>
                         {workspace.name}
                       </SelectItem>
@@ -523,16 +542,18 @@ export default function WorkspaceModal({ open, onOpenChange }) {
             <div>
               <Label>Select Workspace</Label>
               <Select
-                value={membersWorkspace?.id || ""}
-                onValueChange={(id) => setMembersWorkspace(availableWorkspaces.find(w => w.id === id))}
+                value={membersWorkspace?.id || ''}
+                onValueChange={(id) =>
+                  setMembersWorkspace(availableWorkspaces.find((w) => w.id === id))
+                }
               >
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Choose a workspace" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableWorkspaces
-                    .filter(w => w.owner_email === currentUser?.email)
-                    .map(workspace => (
+                    .filter((w) => w.owner_email === currentUser?.email)
+                    .map((workspace) => (
                       <SelectItem key={workspace.id} value={workspace.id}>
                         {workspace.name} ({workspace.members?.length || 0} members)
                       </SelectItem>
@@ -606,3 +627,8 @@ export default function WorkspaceModal({ open, onOpenChange }) {
     </Dialog>
   );
 }
+
+WorkspaceModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onOpenChange: PropTypes.func.isRequired,
+};

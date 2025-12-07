@@ -29,7 +29,8 @@
       "Bash(Remove-Item \"c:\\Users\\willi\\Projects\\Proflow\\components\\DocumentSidebar.jsx\" -Force)",
       "Bash(Remove-Item \"c:\\Users\\willi\\Projects\\Proflow\\hooks\\useData.js\" -Force)",
       "Bash(del /f \"c:\\Users\\willi\\Projects\\Proflow\\components\\DocumentSidebar.jsx\")",
-      "Bash(del /f \"c:\\Users\\willi\\Projects\\Proflow\\hooks\\useData.js\")"
+      "Bash(del /f \"c:\\Users\\willi\\Projects\\Proflow\\hooks\\useData.js\")",
+      "Bash(start http://localhost:5173/documents)"
     ],
     "deny": [],
     "ask": []

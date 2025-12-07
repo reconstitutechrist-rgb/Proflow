@@ -142,17 +142,26 @@ export function getContentWithHighlight(content, change, showSuggested = true) {
 
 /**
  * Parse AI response to extract changes
- * @param {string} responseText - Raw AI response
+ * @param {string|Array} responseText - Raw AI response string or already-parsed array
  * @returns {Array} - Array of parsed change objects
  */
 export function parseAIChanges(responseText) {
   try {
-    // Try to find JSON in the response
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return [];
+    let changes = [];
 
-    const parsed = JSON.parse(jsonMatch[0]);
-    const changes = parsed.changes || [];
+    // Handle case where input is already an array (already parsed)
+    if (Array.isArray(responseText)) {
+      changes = responseText;
+    } else if (typeof responseText === 'string') {
+      // Try to find JSON in the response string
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) return [];
+
+      const parsed = JSON.parse(jsonMatch[0]);
+      changes = parsed.changes || [];
+    } else {
+      return [];
+    }
 
     return changes.map(change => ({
       id: generateChangeId(),

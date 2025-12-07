@@ -379,7 +379,10 @@ export default function WorkspaceModal({ open, onOpenChange }) {
                   <div className="space-y-3">
                     {availableWorkspaces.map((workspace) => {
                       const isActive = currentWorkspace?.id === workspace.id;
-                      const isOwner = workspace.owner_email === currentUser?.email;
+                      // Case-insensitive owner check
+                      const isOwner =
+                        workspace.owner_email?.toLowerCase() === currentUser?.email?.toLowerCase() ||
+                        (workspace.members?.[0]?.toLowerCase() === currentUser?.email?.toLowerCase() && !workspace.owner_email);
 
                       return (
                         <div

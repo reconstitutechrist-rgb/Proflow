@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { 
-  Search, 
-  Users as UsersIcon, 
-  Mail, 
-  Phone, 
+import { Label } from "@/components/ui/label";
+import {
+  Search,
+  Users as UsersIcon,
+  Mail,
+  Phone,
   MapPin,
   Calendar,
   Settings,
@@ -19,11 +20,15 @@ import {
   AlertCircle,
   Shield,
   Building2,
-  Globe
+  Globe,
+  Loader2,
+  Clock
 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -31,6 +36,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+import { toast } from "sonner";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -41,7 +47,12 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState("workspace"); // "workspace" or "all"
 
-  const { currentWorkspace, currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
+  // Invite dialog state
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviting, setInviting] = useState(false);
+
+  const { currentWorkspace, currentWorkspaceId, refreshWorkspaces, loading: workspaceLoading } = useWorkspace();
 
   useEffect(() => {
     if (!workspaceLoading) {
@@ -67,6 +78,73 @@ export default function UsersPage() {
       console.error("Error loading data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle inviting a member to the workspace
+  const handleInviteMember = async () => {
+    if (!inviteEmail.trim()) {
+      toast.error("Please enter an email address");
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(inviteEmail.trim())) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (!currentWorkspace) {
+      toast.error("No workspace selected");
+      return;
+    }
+
+    const email = inviteEmail.trim().toLowerCase();
+
+    // Check if already a member
+    if (currentWorkspace.members?.some(m => m.toLowerCase() === email)) {
+      toast.error("This user is already a member of this workspace");
+      return;
+    }
+
+    try {
+      setInviting(true);
+
+      // Add the email to the members array
+      const updatedMembers = [...(currentWorkspace.members || []), email];
+
+      await db.entities.Workspace.update(currentWorkspace.id, {
+        members: updatedMembers
+      });
+
+      // Try to add to workspace_members table if user exists
+      try {
+        const invitedUser = users.find(u => u.email?.toLowerCase() === email);
+        if (invitedUser) {
+          await db.entities.WorkspaceMember.create({
+            workspace_id: currentWorkspace.id,
+            user_id: invitedUser.id,
+            role: 'member',
+            invited_by: currentUser?.id,
+          });
+        }
+      } catch (memberError) {
+        console.warn('Could not add workspace member record:', memberError);
+      }
+
+      toast.success(`Invited ${email} to ${currentWorkspace.name}`);
+      setIsInviteDialogOpen(false);
+      setInviteEmail("");
+
+      // Refresh workspaces and reload data
+      await refreshWorkspaces();
+      await loadData();
+    } catch (error) {
+      console.error("Error inviting member:", error);
+      toast.error("Failed to invite member");
+    } finally {
+      setInviting(false);
     }
   };
 
@@ -107,12 +185,42 @@ export default function UsersPage() {
   };
 
   // Filter users based on workspace membership
-  const workspaceMembers = users.filter(user => 
-    currentWorkspace?.members?.includes(user.email)
+  const workspaceMembers = users.filter(user =>
+    currentWorkspace?.members?.some(m => m.toLowerCase() === user.email?.toLowerCase())
+  );
+
+  // Check if owner is in the users list
+  const userEmails = users.map(u => u.email?.toLowerCase());
+  const currentUserEmail = currentUser?.email?.toLowerCase();
+  const ownerEmail = currentWorkspace?.owner_email?.toLowerCase();
+  const ownerInUsersList = ownerEmail && userEmails.includes(ownerEmail);
+
+  // If owner is not in users list but is the current user, create a synthetic user entry
+  const syntheticOwner = (!ownerInUsersList && ownerEmail === currentUserEmail && currentUser) ? [{
+    id: 'current-user',
+    email: currentUser.email,
+    full_name: currentUser.full_name || 'Workspace Owner',
+    user_role: 'admin',
+    _isSynthetic: true
+  }] : [];
+
+  // Combine real workspace members with synthetic owner if needed
+  const allWorkspaceMembers = [...workspaceMembers, ...syntheticOwner];
+
+  // Find pending invites - emails in workspace.members that don't have a user account
+  // Exclude the workspace owner and the current user (they're not "pending")
+  const pendingInvites = (currentWorkspace?.members || []).filter(
+    email => {
+      const lowerEmail = email?.toLowerCase();
+      // Not pending if: has a user account, is the owner, or is the current user
+      return !userEmails.includes(lowerEmail) &&
+             lowerEmail !== ownerEmail &&
+             lowerEmail !== currentUserEmail;
+    }
   );
 
   // Determine which user list to use based on view mode
-  const displayUsers = viewMode === "workspace" ? workspaceMembers : users;
+  const displayUsers = viewMode === "workspace" ? allWorkspaceMembers : users;
 
   const filteredUsers = displayUsers.filter(user => {
     const matchesSearch =
@@ -138,7 +246,7 @@ export default function UsersPage() {
     client: userList.filter(u => normalizeUserRole(u.user_role, u.email) === 'client').length
   });
 
-  const workspaceCounts = countUsersByRole(workspaceMembers);
+  const workspaceCounts = countUsersByRole(allWorkspaceMembers);
   const allCounts = countUsersByRole(users);
 
   const currentCounts = viewMode === "workspace" ? workspaceCounts : allCounts;
@@ -163,7 +271,10 @@ export default function UsersPage() {
             </p>
           </div>
           {canInviteUsers && (
-            <Button className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 shrink-0">
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 shrink-0"
+              onClick={() => setIsInviteDialogOpen(true)}
+            >
               <UserPlus className="w-4 h-4" />
               Invite User
             </Button>
@@ -185,7 +296,7 @@ export default function UsersPage() {
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="workspace" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
-              Workspace Members ({workspaceMembers.length})
+              Workspace Members ({allWorkspaceMembers.length + pendingInvites.length})
             </TabsTrigger>
             <TabsTrigger value="all" className="flex items-center gap-2">
               <Globe className="w-4 h-4" />
@@ -251,8 +362,9 @@ export default function UsersPage() {
           [...Array(6)].map((_, i) => (
             <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse h-48"></div>
           ))
-        ) : filteredUsers.length > 0 ? (
-          filteredUsers.map((user) => {
+        ) : filteredUsers.length > 0 || (viewMode === "workspace" && pendingInvites.length > 0) ? (
+          <>
+          {filteredUsers.map((user) => {
             const userAssignments = getUserAssignments(user.email);
             const normalizedRole = normalizeUserRole(user.user_role, user.email);
             const isWorkspaceMember = currentWorkspace?.members?.includes(user.email);
@@ -328,7 +440,52 @@ export default function UsersPage() {
                 </CardContent>
               </Card>
             );
-          })
+          })}
+
+          {/* Pending Invites - show only in workspace view */}
+          {viewMode === "workspace" && pendingInvites.length > 0 && (
+            <>
+              {pendingInvites.map((email) => (
+                <Card key={email} className="shadow-md border-dashed border-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4 mb-4">
+                      <Avatar className="w-12 h-12">
+                        <AvatarFallback className="bg-linear-to-r from-gray-400 to-gray-500 text-white">
+                          {email?.[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-semibold text-gray-600 dark:text-gray-300 truncate">
+                            Pending Invite
+                          </h3>
+                          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800 shrink-0">
+                            <Clock className="w-3 h-3 mr-1" />
+                            Pending
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">Awaiting account creation</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <Mail className="w-4 h-4 shrink-0" />
+                        <span className="truncate">{email}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <p className="text-xs text-gray-500 dark:text-gray-500">
+                        This user has been invited but hasn't created an account yet.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </>
+          )}
+          </>
         ) : (
           <div className="col-span-full text-center py-12">
             <UsersIcon className="w-16 h-16 mx-auto text-gray-300 mb-4" />
@@ -382,6 +539,85 @@ export default function UsersPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Invite User Dialog */}
+      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite Team Member</DialogTitle>
+            <DialogDescription>
+              Add a new member to {currentWorkspace?.name || "this workspace"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="invite-email">Email Address *</Label>
+              <div className="relative mt-1">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  id="invite-email"
+                  type="email"
+                  placeholder="colleague@company.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="pl-10"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleInviteMember();
+                    }
+                  }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                The user will be added to the workspace and can access all shared content.
+              </p>
+            </div>
+
+            {/* Show current members */}
+            {currentWorkspace?.members && currentWorkspace.members.length > 0 && (
+              <div>
+                <Label className="text-sm text-gray-600">Current Members ({currentWorkspace.members.length})</Label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {currentWorkspace.members.slice(0, 5).map((email) => (
+                    <Badge key={email} variant="secondary" className="text-xs">
+                      {email}
+                      {email === currentWorkspace.owner_email && (
+                        <span className="ml-1 text-yellow-600">★</span>
+                      )}
+                    </Badge>
+                  ))}
+                  {currentWorkspace.members.length > 5 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{currentWorkspace.members.length - 5} more
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleInviteMember} disabled={inviting}>
+              {inviting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Inviting...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Invite Member
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

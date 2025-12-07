@@ -350,7 +350,10 @@ export default function WorkspacesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {availableWorkspaces.map((workspace) => {
           const isActive = currentWorkspace?.id === workspace.id;
-          const isOwner = workspace.owner_email === currentUser?.email;
+          // Case-insensitive owner check, also consider first member as owner for backwards compatibility
+          const isOwner =
+            workspace.owner_email?.toLowerCase() === currentUser?.email?.toLowerCase() ||
+            (workspace.members?.[0]?.toLowerCase() === currentUser?.email?.toLowerCase() && !workspace.owner_email);
 
           return (
             <Card
@@ -405,11 +408,21 @@ export default function WorkspacesPage() {
                       )}
                       {isOwner && (
                         <>
-                          <DropdownMenuItem onClick={() => openInviteDialog(workspace)}>
+                          <DropdownMenuItem
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              openInviteDialog(workspace);
+                            }}
+                          >
                             <UserPlus className="w-4 h-4 mr-2" />
                             Invite Members
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openMembersDialog(workspace)}>
+                          <DropdownMenuItem
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              openMembersDialog(workspace);
+                            }}
+                          >
                             <Users className="w-4 h-4 mr-2" />
                             Manage Members
                           </DropdownMenuItem>

@@ -943,8 +943,10 @@ function LayoutContent({ children, currentPageName }) {
       {/* Unified AI Assistant */}
       <UnifiedAIAssistant />
 
-      {/* Team Chat Bubble */}
-      <TeamChatBubble />
+      {/* Team Chat Bubble - wrapped in ErrorBoundary to prevent crashes */}
+      <ErrorBoundary minimal>
+        <TeamChatBubble />
+      </ErrorBoundary>
 
       {/* Visual Bug Reporter - Development Only */}
       <BugReporter />

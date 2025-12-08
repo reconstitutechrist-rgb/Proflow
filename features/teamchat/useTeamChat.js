@@ -206,50 +206,56 @@ export function useTeamChat() {
 
   // Typing indicator presence channel
   useEffect(() => {
-    if (!currentChat?.id || !currentUser) {
+    if (!currentChat?.id || !currentUser?.email) {
       setTypingUsers([]);
       return;
     }
 
     let isMounted = true;
-    const channelName = `team-chat-typing:${currentChat.id}`;
+    let channel = null;
 
-    const channel = supabase.channel(channelName, {
-      config: {
-        presence: {
-          key: currentUser.email,
+    try {
+      const channelName = `team-chat-typing:${currentChat.id}`;
+
+      channel = supabase.channel(channelName, {
+        config: {
+          presence: {
+            key: currentUser.email,
+          },
         },
-      },
-    });
-
-    channel.on('presence', { event: 'sync' }, () => {
-      if (!isMounted) return;
-      const state = channel.presenceState();
-      const users = Object.values(state)
-        .flat()
-        .filter((user) => user.email !== currentUser.email && user.isTyping);
-      setTypingUsers(users);
-    });
-
-    channel.on('presence', { event: 'join' }, ({ newPresences }) => {
-      if (!isMounted) return;
-      setTypingUsers((prev) => {
-        const newUsers = newPresences.filter((p) => p.email !== currentUser.email && p.isTyping);
-        return [...prev.filter((u) => !newUsers.find((n) => n.email === u.email)), ...newUsers];
       });
-    });
 
-    channel.on('presence', { event: 'leave' }, ({ leftPresences }) => {
-      if (!isMounted) return;
-      setTypingUsers((prev) => prev.filter((u) => !leftPresences.find((l) => l.email === u.email)));
-    });
+      channel.on('presence', { event: 'sync' }, () => {
+        if (!isMounted) return;
+        const state = channel.presenceState();
+        const users = Object.values(state)
+          .flat()
+          .filter((user) => user.email !== currentUser.email && user.isTyping);
+        setTypingUsers(users);
+      });
 
-    channel.subscribe((status) => {
-      if (!isMounted) return;
-      if (status === 'SUBSCRIBED') {
-        typingChannelRef.current = channel;
-      }
-    });
+      channel.on('presence', { event: 'join' }, ({ newPresences }) => {
+        if (!isMounted) return;
+        setTypingUsers((prev) => {
+          const newUsers = newPresences.filter((p) => p.email !== currentUser.email && p.isTyping);
+          return [...prev.filter((u) => !newUsers.find((n) => n.email === u.email)), ...newUsers];
+        });
+      });
+
+      channel.on('presence', { event: 'leave' }, ({ leftPresences }) => {
+        if (!isMounted) return;
+        setTypingUsers((prev) => prev.filter((u) => !leftPresences.find((l) => l.email === u.email)));
+      });
+
+      channel.subscribe((status) => {
+        if (!isMounted) return;
+        if (status === 'SUBSCRIBED') {
+          typingChannelRef.current = channel;
+        }
+      });
+    } catch (error) {
+      console.error('Error setting up typing indicator channel:', error);
+    }
 
     return () => {
       isMounted = false;
@@ -257,7 +263,9 @@ export function useTeamChat() {
         clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = null;
       }
-      channel.unsubscribe();
+      if (channel) {
+        channel.unsubscribe();
+      }
       typingChannelRef.current = null;
       setTypingUsers([]);
     };

@@ -1,29 +1,29 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router";
-import { createPageUrl } from "@/lib/utils";
-import { Plus, Upload, MessageSquare, Users } from "lucide-react";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router';
+import { createPageUrl } from '@/lib/utils';
+import { Plus, Upload, MessageSquare, Users } from 'lucide-react';
 
 export default function QuickActions() {
   const actions = [
     {
-      title: "New Assignment",
+      title: 'New Assignment',
       icon: Plus,
-      url: createPageUrl("Assignments") + "?action=create",
-      variant: "default"
+      url: createPageUrl('Assignments') + '?action=create',
+      variant: 'default',
     },
     {
-      title: "Upload Document",
+      title: 'Upload Document',
       icon: Upload,
-      url: createPageUrl("Documents") + "?action=upload",
-      variant: "outline"
+      url: createPageUrl('Documents') + '?action=upload',
+      variant: 'outline',
     },
     {
-      title: "Join Chat",
+      title: 'Join Chat',
       icon: MessageSquare,
-      url: createPageUrl("Chat"),
-      variant: "outline"
-    }
+      url: createPageUrl('Chat'),
+      variant: 'outline',
+    },
   ];
 
   return (

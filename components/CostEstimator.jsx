@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import './CostEstimator.css';
 
-const CostEstimator = ({ documents, estimatedTokens, onConfirm, onCancel, operation = 'embedding' }) => {
+const CostEstimator = ({
+  documents,
+  estimatedTokens,
+  onConfirm,
+  onCancel,
+  operation = 'embedding',
+}) => {
   const [costBreakdown, setCostBreakdown] = useState(null);
 
   // Cost per 1K tokens (example rates - adjust based on actual API pricing)
   const COST_PER_1K_TOKENS = {
     embedding: 0.0001, // $0.0001 per 1K tokens
     completion: 0.002, // $0.002 per 1K tokens for output
-    input: 0.0005 // $0.0005 per 1K tokens for input
+    input: 0.0005, // $0.0005 per 1K tokens for input
   };
 
   useEffect(() => {
@@ -25,7 +31,7 @@ const CostEstimator = ({ documents, estimatedTokens, onConfirm, onCancel, operat
         return {
           name: doc.name,
           tokens: estimatedTokenCount,
-          cost: cost
+          cost: cost,
         };
       });
 
@@ -36,7 +42,7 @@ const CostEstimator = ({ documents, estimatedTokens, onConfirm, onCancel, operat
         items: breakdown,
         total,
         totalTokens,
-        operation: 'Generate Embeddings'
+        operation: 'Generate Embeddings',
       });
     } else if (operation === 'completion' && estimatedTokens) {
       const inputCost = (estimatedTokens.input / 1000) * COST_PER_1K_TOKENS.input;
@@ -48,17 +54,17 @@ const CostEstimator = ({ documents, estimatedTokens, onConfirm, onCancel, operat
           {
             name: 'Input tokens',
             tokens: estimatedTokens.input,
-            cost: inputCost
+            cost: inputCost,
           },
           {
             name: 'Estimated output tokens',
             tokens: estimatedTokens.output,
-            cost: outputCost
-          }
+            cost: outputCost,
+          },
         ],
         total,
         totalTokens: estimatedTokens.input + estimatedTokens.output,
-        operation: 'Generate Response'
+        operation: 'Generate Response',
       });
     }
   };
@@ -89,12 +95,8 @@ const CostEstimator = ({ documents, estimatedTokens, onConfirm, onCancel, operat
                 <div key={idx} className="breakdown-item">
                   <div className="breakdown-name">{item.name}</div>
                   <div className="breakdown-details">
-                    <span className="token-count">
-                      {item.tokens.toLocaleString()} tokens
-                    </span>
-                    <span className="cost-amount">
-                      ${item.cost.toFixed(6)}
-                    </span>
+                    <span className="token-count">{item.tokens.toLocaleString()} tokens</span>
+                    <span className="cost-amount">${item.cost.toFixed(6)}</span>
                   </div>
                 </div>
               ))}

@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  X, 
+import React, { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  ChevronLeft,
+  ChevronRight,
+  X,
   Maximize2,
   Minimize2,
   FileText,
@@ -13,14 +13,14 @@ import {
   User,
   Presentation,
   Eye,
-  Download
-} from "lucide-react";
+  Download,
+} from 'lucide-react';
 
-export default function PresentationMode({ 
-  documents, 
-  initialDocumentIndex = 0, 
-  onClose, 
-  companyBranding = null 
+export default function PresentationMode({
+  documents,
+  initialDocumentIndex = 0,
+  onClose,
+  companyBranding = null,
 }) {
   const [currentIndex, setCurrentIndex] = useState(initialDocumentIndex);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -114,24 +114,20 @@ export default function PresentationMode({
   }
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black bg-opacity-95 z-50 flex flex-col"
       onMouseMove={handleMouseMove}
     >
       {/* Header with Company Branding */}
       {companyBranding && (
-        <div 
+        <div
           className="flex-shrink-0 p-4 text-white border-b border-gray-700"
           style={{ backgroundColor: companyBranding.color_scheme || '#1f2937' }}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {companyBranding.logo_url && (
-                <img 
-                  src={companyBranding.logo_url} 
-                  alt="Company Logo" 
-                  className="h-8 w-auto"
-                />
+                <img src={companyBranding.logo_url} alt="Company Logo" className="h-8 w-auto" />
               )}
               <div>
                 <h1 className="text-xl font-bold">{companyBranding.company_name}</h1>
@@ -156,9 +152,7 @@ export default function PresentationMode({
             <div className="p-6 border-b border-gray-200 bg-gray-50">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    {currentDocument.title}
-                  </h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">{currentDocument.title}</h2>
                   <div className="flex items-center gap-4 text-sm text-gray-600">
                     <div className="flex items-center gap-1">
                       <User className="w-4 h-4" />
@@ -168,20 +162,13 @@ export default function PresentationMode({
                       <Clock className="w-4 h-4" />
                       {new Date(currentDocument.created_date).toLocaleDateString()}
                     </div>
-                    <Badge variant="outline">
-                      {currentDocument.document_type}
-                    </Badge>
+                    <Badge variant="outline">{currentDocument.document_type}</Badge>
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  asChild
-                  className="flex items-center gap-2"
-                >
-                  <a 
-                    href={currentDocument.file_url} 
-                    target="_blank" 
+                <Button variant="outline" size="sm" asChild className="flex items-center gap-2">
+                  <a
+                    href={currentDocument.file_url}
+                    target="_blank"
                     rel="noopener noreferrer"
                     download={currentDocument.file_name}
                   >
@@ -237,19 +224,11 @@ export default function PresentationMode({
                   Document content preview not available in presentation mode
                 </p>
                 <p className="text-sm text-gray-500">
-                  File: {currentDocument.file_name} 
-                  ({((currentDocument.file_size || 0) / 1024 / 1024).toFixed(2)} MB)
+                  File: {currentDocument.file_name}(
+                  {((currentDocument.file_size || 0) / 1024 / 1024).toFixed(2)} MB)
                 </p>
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  asChild
-                >
-                  <a 
-                    href={currentDocument.file_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
+                <Button variant="outline" className="mt-4" asChild>
+                  <a href={currentDocument.file_url} target="_blank" rel="noopener noreferrer">
                     Open Original Document
                   </a>
                 </Button>
@@ -273,9 +252,11 @@ export default function PresentationMode({
         </Card>
 
         {/* Navigation Controls (Hidden by default) */}
-        <div className={`absolute inset-0 pointer-events-none transition-opacity duration-300 ${
-          showControls ? 'opacity-100' : 'opacity-0'
-        }`}>
+        <div
+          className={`absolute inset-0 pointer-events-none transition-opacity duration-300 ${
+            showControls ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
           {/* Left Arrow */}
           {currentIndex > 0 && (
             <Button
@@ -304,7 +285,7 @@ export default function PresentationMode({
 
       {/* Footer with Company Branding */}
       {companyBranding?.footer_text && (
-        <div 
+        <div
           className="flex-shrink-0 p-4 text-center text-white border-t border-gray-700"
           style={{ backgroundColor: companyBranding.color_scheme || '#1f2937' }}
         >
@@ -313,9 +294,11 @@ export default function PresentationMode({
       )}
 
       {/* Control Bar */}
-      <div className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 transition-opacity duration-300 ${
-        showControls ? 'opacity-100' : 'opacity-0'
-      }`}>
+      <div
+        className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 transition-opacity duration-300 ${
+          showControls ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
         <div className="flex items-center gap-2 bg-black/70 text-white rounded-lg p-3">
           <Button
             variant="ghost"
@@ -325,7 +308,7 @@ export default function PresentationMode({
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </Button>
-          
+
           <div className="flex items-center gap-1 px-3">
             <Presentation className="w-4 h-4" />
             <span className="text-sm">
@@ -345,9 +328,11 @@ export default function PresentationMode({
       </div>
 
       {/* Keyboard Shortcuts Help */}
-      <div className={`absolute top-4 right-4 transition-opacity duration-300 ${
-        showControls ? 'opacity-100' : 'opacity-0'
-      }`}>
+      <div
+        className={`absolute top-4 right-4 transition-opacity duration-300 ${
+          showControls ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
         <Card className="bg-black/70 text-white border-gray-600">
           <CardContent className="p-3">
             <div className="text-xs space-y-1">

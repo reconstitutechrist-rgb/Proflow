@@ -10,26 +10,26 @@ const generateId = () => {
 // Map entity names to table names (handles pluralization)
 const entityToTableName = (entityName) => {
   const tableMap = {
-    'Workspace': 'workspaces',
-    'Project': 'projects',
-    'Task': 'tasks',
-    'Document': 'documents',
-    'User': 'users',
-    'Assignment': 'assignments',
-    'WorkspaceMember': 'workspace_members',
-    'DocumentVersion': 'document_versions',
-    'Comment': 'comments',
-    'DocumentComment': 'document_comments',
-    'Tag': 'tags',
-    'Message': 'messages',
-    'WorkflowPattern': 'workflow_patterns',
-    'ConversationThread': 'conversation_threads',
-    'ChatSession': 'chat_sessions',
-    'Note': 'notes',
-    'Folder': 'folders',
-    'AIResearchChat': 'ai_research_chats',
-    'TeamChat': 'team_chats',
-    'TeamChatMessage': 'team_chat_messages',
+    Workspace: 'workspaces',
+    Project: 'projects',
+    Task: 'tasks',
+    Document: 'documents',
+    User: 'users',
+    Assignment: 'assignments',
+    WorkspaceMember: 'workspace_members',
+    DocumentVersion: 'document_versions',
+    Comment: 'comments',
+    DocumentComment: 'document_comments',
+    Tag: 'tags',
+    Message: 'messages',
+    WorkflowPattern: 'workflow_patterns',
+    ConversationThread: 'conversation_threads',
+    ChatSession: 'chat_sessions',
+    Note: 'notes',
+    Folder: 'folders',
+    AIResearchChat: 'ai_research_chats',
+    TeamChat: 'team_chats',
+    TeamChatMessage: 'team_chat_messages',
   };
 
   return tableMap[entityName] || entityName.toLowerCase();
@@ -71,7 +71,7 @@ const createEntityManager = (entityName) => {
         // This is a data leakage vulnerability. Use object filters instead.
         console.error(
           `SECURITY WARNING: Function filters are disabled for ${entityName}. ` +
-          `Use object filters with workspace_id to ensure data isolation.`
+            `Use object filters with workspace_id to ensure data isolation.`
         );
         throw new Error(
           'Function filters are not supported. Use object filters with workspace_id.'
@@ -84,11 +84,7 @@ const createEntityManager = (entityName) => {
 
     // Get a single item by ID
     get: async (id) => {
-      const { data, error } = await supabase
-        .from(tableName)
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data, error } = await supabase.from(tableName).select('*').eq('id', id).single();
 
       if (error) {
         console.error(`Error getting ${entityName}:`, error);
@@ -119,8 +115,16 @@ const createEntityManager = (entityName) => {
         .single();
 
       if (error) {
-        console.error(`Error creating ${entityName}:`, error.message, error.details, error.hint, error.code);
-        throw new Error(`${error.message}${error.details ? ` - ${error.details}` : ''}${error.hint ? ` (Hint: ${error.hint})` : ''}`);
+        console.error(
+          `Error creating ${entityName}:`,
+          error.message,
+          error.details,
+          error.hint,
+          error.code
+        );
+        throw new Error(
+          `${error.message}${error.details ? ` - ${error.details}` : ''}${error.hint ? ` (Hint: ${error.hint})` : ''}`
+        );
       }
 
       return created;
@@ -128,17 +132,14 @@ const createEntityManager = (entityName) => {
 
     // Bulk create multiple items
     bulkCreate: async (dataArray) => {
-      const newItems = dataArray.map(data => ({
+      const newItems = dataArray.map((data) => ({
         ...data,
         id: data.id || generateId(),
         created_date: data.created_date || new Date().toISOString(),
         updated_date: new Date().toISOString(),
       }));
 
-      const { data: created, error } = await supabase
-        .from(tableName)
-        .insert(newItems)
-        .select();
+      const { data: created, error } = await supabase.from(tableName).insert(newItems).select();
 
       if (error) {
         console.error(`Error bulk creating ${entityName}:`, error);
@@ -172,10 +173,7 @@ const createEntityManager = (entityName) => {
 
     // Delete an item
     delete: async (id) => {
-      const { error } = await supabase
-        .from(tableName)
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from(tableName).delete().eq('id', id);
 
       if (error) {
         console.error(`Error deleting ${entityName}:`, error);
@@ -213,7 +211,10 @@ const createEntityManager = (entityName) => {
 // Auth management using Supabase Auth
 const auth = {
   me: async () => {
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
     if (error || !user) {
       // SECURITY: Do not return fake user in production
@@ -245,7 +246,7 @@ const auth = {
 
   updateMe: async (updates) => {
     const { data, error } = await supabase.auth.updateUser({
-      data: updates
+      data: updates,
     });
 
     if (error) {
@@ -264,7 +265,9 @@ const auth = {
 
   // Check if user is logged in
   isLoggedIn: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     return !!session;
   },
 
@@ -378,7 +381,7 @@ const agents = {
 const notifySubscribers = (conversationId, data) => {
   const subscribers = agentSubscribers.get(conversationId);
   if (subscribers) {
-    subscribers.forEach(callback => {
+    subscribers.forEach((callback) => {
       try {
         callback(data);
       } catch (err) {
@@ -428,17 +431,21 @@ const extractNoteDetails = (message) => {
     } else if (lowerLine.startsWith('content:')) {
       content = line.substring(8).trim();
     } else if (lowerLine.startsWith('tags:')) {
-      tags = line.substring(5).split(',').map(t => t.trim()).filter(t => t);
+      tags = line
+        .substring(5)
+        .split(',')
+        .map((t) => t.trim())
+        .filter((t) => t);
     } else if (lowerLine.startsWith('color:')) {
       const colorInput = line.substring(6).trim().toLowerCase();
       const colorMap = {
-        'yellow': '#FBBF24',
-        'blue': '#60A5FA',
-        'green': '#34D399',
-        'red': '#F87171',
-        'purple': '#A78BFA',
-        'orange': '#FB923C',
-        'pink': '#EC4899'
+        yellow: '#FBBF24',
+        blue: '#60A5FA',
+        green: '#34D399',
+        red: '#F87171',
+        purple: '#A78BFA',
+        orange: '#FB923C',
+        pink: '#EC4899',
       };
       color = colorMap[colorInput] || color;
     }
@@ -447,13 +454,17 @@ const extractNoteDetails = (message) => {
   // If no structured format, try to extract from natural language
   if (!title && !content) {
     // Look for patterns like "create a note called X" or "note titled X"
-    const titleMatch = message.match(/(?:note\s+(?:called|titled|named)|title[d]?\s*[:\s])\s*["']?([^"'\n]+)["']?/i);
+    const titleMatch = message.match(
+      /(?:note\s+(?:called|titled|named)|title[d]?\s*[:\s])\s*["']?([^"'\n]+)["']?/i
+    );
     if (titleMatch) {
       title = titleMatch[1].trim();
     }
 
     // Look for content patterns
-    const contentMatch = message.match(/(?:content|body|text|saying|with)[:\s]+["']?([^"'\n]+)["']?/i);
+    const contentMatch = message.match(
+      /(?:content|body|text|saying|with)[:\s]+["']?([^"'\n]+)["']?/i
+    );
     if (contentMatch) {
       content = contentMatch[1].trim();
     }
@@ -464,7 +475,9 @@ const extractNoteDetails = (message) => {
       if (userInput) {
         const input = userInput[1].trim();
         // Extract potential title from "create note X" pattern
-        const simpleMatch = input.match(/create\s+(?:a\s+)?note\s+(?:called\s+|titled\s+|named\s+)?["']?(.+?)["']?(?:\s+with|\s+content|$)/i);
+        const simpleMatch = input.match(
+          /create\s+(?:a\s+)?note\s+(?:called\s+|titled\s+|named\s+)?["']?(.+?)["']?(?:\s+with|\s+content|$)/i
+        );
         if (simpleMatch) {
           title = simpleMatch[1].trim();
         }
@@ -510,7 +523,9 @@ const extractProjectDetails = (message) => {
 
   // Natural language extraction
   if (!name) {
-    const nameMatch = userInput.match(/(?:project\s+(?:called|titled|named)|create\s+(?:a\s+)?project\s+)["']?([^"'\n,]+)["']?/i);
+    const nameMatch = userInput.match(
+      /(?:project\s+(?:called|titled|named)|create\s+(?:a\s+)?project\s+)["']?([^"'\n,]+)["']?/i
+    );
     if (nameMatch) {
       name = nameMatch[1].trim();
     }
@@ -539,7 +554,9 @@ const extractAssignmentDetails = (message) => {
       description = line.split(':').slice(1).join(':').trim();
     } else if (lowerLine.startsWith('status:')) {
       const statusInput = line.split(':')[1]?.trim().toLowerCase().replace(' ', '_');
-      if (['not_started', 'in_progress', 'under_review', 'completed', 'on_hold'].includes(statusInput)) {
+      if (
+        ['not_started', 'in_progress', 'under_review', 'completed', 'on_hold'].includes(statusInput)
+      ) {
         status = statusInput;
       }
     } else if (lowerLine.startsWith('priority:')) {
@@ -556,15 +573,18 @@ const extractAssignmentDetails = (message) => {
 
   // Natural language extraction
   if (!name) {
-    const nameMatch = userInput.match(/(?:assignment\s+(?:called|titled|named)|create\s+(?:an?\s+)?assignment\s+)["']?([^"'\n,]+)["']?/i);
+    const nameMatch = userInput.match(
+      /(?:assignment\s+(?:called|titled|named)|create\s+(?:an?\s+)?assignment\s+)["']?([^"'\n,]+)["']?/i
+    );
     if (nameMatch) {
       name = nameMatch[1].trim();
     }
   }
 
   // Extract project reference from context
-  const projectMatch = message.match(/Project ID:\s*([a-f0-9-]+)/i) ||
-                       message.match(/for\s+project\s+["']?([^"'\n]+)["']?/i);
+  const projectMatch =
+    message.match(/Project ID:\s*([a-f0-9-]+)/i) ||
+    message.match(/for\s+project\s+["']?([^"'\n]+)["']?/i);
   if (projectMatch && !project_id) {
     project_id = projectMatch[1].trim();
   }
@@ -588,7 +608,11 @@ const extractTaskDetails = (message) => {
   const lines = message.split('\n');
   for (const line of lines) {
     const lowerLine = line.toLowerCase().trim();
-    if (lowerLine.startsWith('title:') || lowerLine.startsWith('task:') || lowerLine.startsWith('task name:')) {
+    if (
+      lowerLine.startsWith('title:') ||
+      lowerLine.startsWith('task:') ||
+      lowerLine.startsWith('task name:')
+    ) {
       title = line.split(':').slice(1).join(':').trim();
     } else if (lowerLine.startsWith('description:')) {
       description = line.split(':').slice(1).join(':').trim();
@@ -602,7 +626,11 @@ const extractTaskDetails = (message) => {
       if (['low', 'medium', 'high', 'urgent'].includes(priorityInput)) {
         priority = priorityInput;
       }
-    } else if (lowerLine.startsWith('assign to:') || lowerLine.startsWith('assigned to:') || lowerLine.startsWith('assign:')) {
+    } else if (
+      lowerLine.startsWith('assign to:') ||
+      lowerLine.startsWith('assigned to:') ||
+      lowerLine.startsWith('assign:')
+    ) {
       assigned_to = line.split(':').slice(1).join(':').trim();
     } else if (lowerLine.startsWith('project:') || lowerLine.startsWith('project_id:')) {
       project_id = line.split(':').slice(1).join(':').trim();
@@ -615,7 +643,9 @@ const extractTaskDetails = (message) => {
 
   // Natural language extraction for title
   if (!title) {
-    const titleMatch = userInput.match(/(?:task\s+(?:called|titled|named)|create\s+(?:a\s+)?task\s+)["']?([^"'\n,]+)["']?/i);
+    const titleMatch = userInput.match(
+      /(?:task\s+(?:called|titled|named)|create\s+(?:a\s+)?task\s+)["']?([^"'\n,]+)["']?/i
+    );
     if (titleMatch) {
       title = titleMatch[1].trim();
     }
@@ -623,7 +653,9 @@ const extractTaskDetails = (message) => {
 
   // Extract assignment from natural language
   if (!assigned_to) {
-    const assignMatch = userInput.match(/(?:assign(?:ed)?\s+to|for)\s+@?([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|[A-Za-z]+(?:\s+[A-Za-z]+)?)/i);
+    const assignMatch = userInput.match(
+      /(?:assign(?:ed)?\s+to|for)\s+@?([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|[A-Za-z]+(?:\s+[A-Za-z]+)?)/i
+    );
     if (assignMatch) {
       assigned_to = assignMatch[1].trim();
     }
@@ -661,17 +693,18 @@ const findTeamMember = (identifier, teamMembers) => {
   const lowerIdentifier = identifier.toLowerCase();
 
   // First try exact email match
-  let member = teamMembers.find(m => m.email.toLowerCase() === lowerIdentifier);
+  let member = teamMembers.find((m) => m.email.toLowerCase() === lowerIdentifier);
   if (member) return member.email;
 
   // Try name match
-  member = teamMembers.find(m => m.name.toLowerCase() === lowerIdentifier);
+  member = teamMembers.find((m) => m.name.toLowerCase() === lowerIdentifier);
   if (member) return member.email;
 
   // Try partial name match
-  member = teamMembers.find(m =>
-    m.name.toLowerCase().includes(lowerIdentifier) ||
-    lowerIdentifier.includes(m.name.toLowerCase().split(' ')[0])
+  member = teamMembers.find(
+    (m) =>
+      m.name.toLowerCase().includes(lowerIdentifier) ||
+      lowerIdentifier.includes(m.name.toLowerCase().split(' ')[0])
   );
   if (member) return member.email;
 
@@ -685,11 +718,12 @@ const generateAIResponse = async (userMessage, conversation) => {
   const teamMembers = parseTeamMembers(userMessage);
 
   // Check for workspace context
-  if (!context.workspace_id && (
-    lowercaseMsg.includes('create') ||
-    lowercaseMsg.includes('update') ||
-    lowercaseMsg.includes('delete')
-  )) {
+  if (
+    !context.workspace_id &&
+    (lowercaseMsg.includes('create') ||
+      lowercaseMsg.includes('update') ||
+      lowercaseMsg.includes('delete'))
+  ) {
     return `I'd be happy to help, but I need you to be in a workspace first.
 
 Please make sure you have a workspace selected, then try again.`;
@@ -859,7 +893,7 @@ Or simply say: "Create an assignment called Homepage Design"`;
 
         let assignedToDisplay = createdTask.assigned_to || 'Unassigned';
         if (createdTask.assigned_to && teamMembers.length > 0) {
-          const member = teamMembers.find(m => m.email === createdTask.assigned_to);
+          const member = teamMembers.find((m) => m.email === createdTask.assigned_to);
           if (member) assignedToDisplay = `${member.name} (${member.email})`;
         }
 
@@ -889,7 +923,7 @@ Please try again or create the task manually from the Tasks page.`;
     // Show available team members if we have them
     let teamMembersList = '';
     if (teamMembers.length > 0) {
-      teamMembersList = `\n\n**Available Team Members:**\n${teamMembers.map(m => `- ${m.name} (${m.email})`).join('\n')}`;
+      teamMembersList = `\n\n**Available Team Members:**\n${teamMembers.map((m) => `- ${m.name} (${m.email})`).join('\n')}`;
     }
 
     return `I'd be happy to create a task for you! Please provide the details:
@@ -977,9 +1011,15 @@ Or simply say: "Create a note called Meeting Notes"`;
   // ==================== UPDATE OPERATIONS ====================
 
   // Handle updates
-  if (lowercaseMsg.includes('update') || lowercaseMsg.includes('change') || lowercaseMsg.includes('modify')) {
+  if (
+    lowercaseMsg.includes('update') ||
+    lowercaseMsg.includes('change') ||
+    lowercaseMsg.includes('modify')
+  ) {
     // Extract entity type and ID
-    const entityMatch = lowercaseMsg.match(/(project|assignment|task|note)\s+(?:id\s*)?([a-f0-9-]+)/i);
+    const entityMatch = lowercaseMsg.match(
+      /(project|assignment|task|note)\s+(?:id\s*)?([a-f0-9-]+)/i
+    );
 
     if (entityMatch) {
       const entityType = entityMatch[1].toLowerCase();
@@ -996,7 +1036,11 @@ Or simply say: "Create a note called Meeting Notes"`;
         } else if (lowerLine.startsWith('priority:')) {
           updateFields.priority = line.split(':').slice(1).join(':').trim();
         } else if (lowerLine.startsWith('title:') || lowerLine.startsWith('name:')) {
-          updateFields[entityType === 'task' ? 'title' : 'name'] = line.split(':').slice(1).join(':').trim();
+          updateFields[entityType === 'task' ? 'title' : 'name'] = line
+            .split(':')
+            .slice(1)
+            .join(':')
+            .trim();
         } else if (lowerLine.startsWith('description:')) {
           updateFields.description = line.split(':').slice(1).join(':').trim();
         } else if (lowerLine.startsWith('assign to:') || lowerLine.startsWith('assigned to:')) {
@@ -1010,13 +1054,17 @@ Or simply say: "Create a note called Meeting Notes"`;
 
       if (Object.keys(updateFields).length > 0) {
         try {
-          const entityManager = createEntityManager(entityType.charAt(0).toUpperCase() + entityType.slice(1));
+          const entityManager = createEntityManager(
+            entityType.charAt(0).toUpperCase() + entityType.slice(1)
+          );
           const updated = await entityManager.update(entityId, updateFields);
 
           return `✅ **${entityType.charAt(0).toUpperCase() + entityType.slice(1)} updated successfully!**
 
 Updated fields:
-${Object.entries(updateFields).map(([key, value]) => `- **${key}:** ${value}`).join('\n')}
+${Object.entries(updateFields)
+  .map(([key, value]) => `- **${key}:** ${value}`)
+  .join('\n')}
 
 The changes have been saved.`;
         } catch (error) {
@@ -1048,7 +1096,9 @@ Or: "Update task abc-123 status to done"`;
 
   // Handle deletions (with confirmation)
   if (lowercaseMsg.includes('delete') || lowercaseMsg.includes('remove')) {
-    const entityMatch = lowercaseMsg.match(/(project|assignment|task|note)\s+(?:id\s*)?([a-f0-9-]+)/i);
+    const entityMatch = lowercaseMsg.match(
+      /(project|assignment|task|note)\s+(?:id\s*)?([a-f0-9-]+)/i
+    );
 
     if (entityMatch) {
       const entityType = entityMatch[1].toLowerCase();
@@ -1057,7 +1107,9 @@ Or: "Update task abc-123 status to done"`;
       // Check for confirmation
       if (lowercaseMsg.includes('confirm') || lowercaseMsg.includes('yes')) {
         try {
-          const entityManager = createEntityManager(entityType.charAt(0).toUpperCase() + entityType.slice(1));
+          const entityManager = createEntityManager(
+            entityType.charAt(0).toUpperCase() + entityType.slice(1)
+          );
           await entityManager.delete(entityId);
 
           return `✅ **${entityType.charAt(0).toUpperCase() + entityType.slice(1)} deleted successfully!**
@@ -1094,7 +1146,10 @@ I'll ask for confirmation before deleting anything.`;
   if (lowercaseMsg.includes('help') || lowercaseMsg.includes('what can you do')) {
     let teamInfo = '';
     if (teamMembers.length > 0) {
-      teamInfo = `\n\n**Your Team Members:**\n${teamMembers.slice(0, 5).map(m => `- ${m.name}`).join('\n')}${teamMembers.length > 5 ? `\n... and ${teamMembers.length - 5} more` : ''}`;
+      teamInfo = `\n\n**Your Team Members:**\n${teamMembers
+        .slice(0, 5)
+        .map((m) => `- ${m.name}`)
+        .join('\n')}${teamMembers.length > 5 ? `\n... and ${teamMembers.length - 5} more` : ''}`;
     }
 
     return `I'm your ProjectFlow AI Assistant! Here's everything I can do for you:
@@ -1122,11 +1177,15 @@ I'll ask for confirmation before deleting anything.`;
 What would you like me to do?`;
   }
 
-  if (lowercaseMsg.includes('status') || lowercaseMsg.includes('overview') || lowercaseMsg.includes('my tasks')) {
+  if (
+    lowercaseMsg.includes('status') ||
+    lowercaseMsg.includes('overview') ||
+    lowercaseMsg.includes('my tasks')
+  ) {
     // Extract counts from context
-    const taskCount = (userMessage.match(/Recent Tasks \((\d+)/)?.[1]) || '0';
-    const projectCount = (userMessage.match(/Recent Projects \((\d+)/)?.[1]) || '0';
-    const assignmentCount = (userMessage.match(/Recent Assignments \((\d+)/)?.[1]) || '0';
+    const taskCount = userMessage.match(/Recent Tasks \((\d+)/)?.[1] || '0';
+    const projectCount = userMessage.match(/Recent Projects \((\d+)/)?.[1] || '0';
+    const assignmentCount = userMessage.match(/Recent Assignments \((\d+)/)?.[1] || '0';
 
     return `Here's your workspace overview:
 
@@ -1184,18 +1243,16 @@ const integrations = {
       }
 
       const fileName = `${Date.now()}-${file.name}`;
-      const { data, error } = await supabase.storage
-        .from('uploads')
-        .upload(fileName, file);
+      const { data, error } = await supabase.storage.from('uploads').upload(fileName, file);
 
       if (error) {
         console.error('Error uploading file:', error);
         throw error;
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('uploads')
-        .getPublicUrl(fileName);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('uploads').getPublicUrl(fileName);
 
       return {
         success: true,
@@ -1212,7 +1269,11 @@ const functionsRegistry = {
   anthropicResearch: async (params) => {
     const { question, assignment, documents, useWebSearch } = params;
 
-    console.log('anthropicResearch invoked with:', { question, assignment: assignment?.name, useWebSearch });
+    console.log('anthropicResearch invoked with:', {
+      question,
+      assignment: assignment?.name,
+      useWebSearch,
+    });
 
     // Stub implementation - returns structured research response
     // Replace with actual Anthropic API integration
@@ -1227,14 +1288,14 @@ const functionsRegistry = {
             {
               action: 'Configure API Integration',
               description: 'Set up your Anthropic API key to enable AI-powered research',
-              priority: 'high'
-            }
+              priority: 'high',
+            },
           ],
           suggested_documents: [],
-          web_sources_used: useWebSearch || false
+          web_sources_used: useWebSearch || false,
         },
-        model_used: 'claude-sonnet-4-20250514'
-      }
+        model_used: 'claude-sonnet-4-20250514',
+      },
     };
   },
 
@@ -1246,23 +1307,27 @@ const functionsRegistry = {
       data: {
         success: true,
         response: 'RAG helper placeholder response',
-        sources: []
-      }
+        sources: [],
+      },
     };
   },
 
   exportSessionToPdf: async (params) => {
     const { session, messages, title } = params;
-    console.log('exportSessionToPdf invoked with:', { session, messagesCount: messages?.length, title });
+    console.log('exportSessionToPdf invoked with:', {
+      session,
+      messagesCount: messages?.length,
+      title,
+    });
 
     return {
       data: {
         success: true,
         message: 'PDF export not configured',
-        pdfUrl: null
-      }
+        pdfUrl: null,
+      },
     };
-  }
+  },
 };
 
 // Functions invoker - provides a unified way to call registered functions
@@ -1276,8 +1341,8 @@ const functions = {
         return {
           data: {
             success: false,
-            error: error.message
-          }
+            error: error.message,
+          },
         };
       }
     }
@@ -1286,22 +1351,25 @@ const functions = {
     return {
       data: {
         success: false,
-        error: `Function ${functionName} not found`
-      }
+        error: `Function ${functionName} not found`,
+      },
     };
-  }
+  },
 };
 
 // Main client object with entities, integrations, auth, agents, and functions
 export const db = {
-  entities: new Proxy({}, {
-    get: (target, entityName) => {
-      if (!target[entityName]) {
-        target[entityName] = createEntityManager(entityName);
-      }
-      return target[entityName];
+  entities: new Proxy(
+    {},
+    {
+      get: (target, entityName) => {
+        if (!target[entityName]) {
+          target[entityName] = createEntityManager(entityName);
+        }
+        return target[entityName];
+      },
     }
-  }),
+  ),
   integrations,
   auth,
   agents,

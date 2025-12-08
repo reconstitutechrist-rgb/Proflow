@@ -1,26 +1,26 @@
-import React, { useState, useEffect } from "react";
-import { db } from "@/api/db";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Plus, Search, Loader2, Target } from "lucide-react";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import React, { useState, useEffect } from 'react';
+import { db } from '@/api/db';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Plus, Search, Loader2, Target } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
-import { useNavigate } from "react-router";
-import { createPageUrl } from "@/lib/utils";
+} from '@/components/ui/select';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router';
+import { createPageUrl } from '@/lib/utils';
 
-import ProjectForm from "@/features/projects/ProjectForm";
-import ProjectGrid from "@/features/projects/ProjectGrid";
-import ProjectDetails from "@/features/projects/ProjectDetails";
-import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+import ProjectForm from '@/features/projects/ProjectForm';
+import ProjectGrid from '@/features/projects/ProjectGrid';
+import ProjectDetails from '@/features/projects/ProjectDetails';
+import ConfirmationDialog from '@/components/dialogs/ConfirmationDialog';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState([]);
@@ -33,9 +33,9 @@ export default function ProjectsPage() {
   const [editingProject, setEditingProject] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
 
   // Delete confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -53,26 +53,19 @@ export default function ProjectsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [workspaceProjects, allProjects, assignmentsData, usersData, user] =
-        await Promise.all([
-          db.entities.Project.filter(
-            { workspace_id: currentWorkspaceId },
-            "-updated_date"
-          ),
-          db.entities.Project.list("-updated_date", 100),
-          db.entities.Assignment.filter(
-            { workspace_id: currentWorkspaceId },
-            "-updated_date"
-          ),
-          db.entities.User.list(),
-          db.auth.me(),
-        ]);
+      const [workspaceProjects, allProjects, assignmentsData, usersData, user] = await Promise.all([
+        db.entities.Project.filter({ workspace_id: currentWorkspaceId }, '-updated_date'),
+        db.entities.Project.list('-updated_date', 100),
+        db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, '-updated_date'),
+        db.entities.User.list(),
+        db.auth.me(),
+      ]);
 
       // Include legacy projects that don't have a workspace_id set
-      const legacyProjects = (allProjects || []).filter(p => !p.workspace_id);
+      const legacyProjects = (allProjects || []).filter((p) => !p.workspace_id);
       const combinedProjects = [...(workspaceProjects || []), ...legacyProjects];
-      const uniqueProjects = combinedProjects.filter((project, index, self) =>
-        index === self.findIndex(p => p.id === project.id)
+      const uniqueProjects = combinedProjects.filter(
+        (project, index, self) => index === self.findIndex((p) => p.id === project.id)
       );
 
       setProjects(uniqueProjects);
@@ -80,8 +73,8 @@ export default function ProjectsPage() {
       setUsers(usersData);
       setCurrentUser(user);
     } catch (error) {
-      console.error("Error loading projects:", error);
-      toast.error("Failed to load projects");
+      console.error('Error loading projects:', error);
+      toast.error('Failed to load projects');
     } finally {
       setLoading(false);
     }
@@ -101,20 +94,20 @@ export default function ProjectsPage() {
     try {
       if (editingProject) {
         await db.entities.Project.update(editingProject.id, projectData);
-        toast.success("Project updated successfully");
+        toast.success('Project updated successfully');
       } else {
         await db.entities.Project.create({
           ...projectData,
           workspace_id: currentWorkspaceId,
         });
-        toast.success("Project created successfully");
+        toast.success('Project created successfully');
       }
       setIsFormOpen(false);
       setEditingProject(null);
       loadData();
     } catch (error) {
-      console.error("Error saving project:", error);
-      toast.error("Failed to save project");
+      console.error('Error saving project:', error);
+      toast.error('Failed to save project');
     }
   };
 
@@ -128,12 +121,12 @@ export default function ProjectsPage() {
 
     try {
       await db.entities.Project.delete(projectToDelete.id);
-      toast.success("Project deleted successfully");
+      toast.success('Project deleted successfully');
       setSelectedProject(null);
       loadData();
     } catch (error) {
-      console.error("Error deleting project:", error);
-      toast.error("Failed to delete project");
+      console.error('Error deleting project:', error);
+      toast.error('Failed to delete project');
     } finally {
       setDeleteDialogOpen(false);
       setProjectToDelete(null);
@@ -141,19 +134,17 @@ export default function ProjectsPage() {
   };
 
   const handleNavigateToAssignments = (projectId) => {
-    navigate(createPageUrl("Assignments") + `?project=${projectId}`);
+    navigate(createPageUrl('Assignments') + `?project=${projectId}`);
   };
 
   const filteredProjects = projects.filter((project) => {
     const matchesSearch =
-      searchQuery === "" ||
+      searchQuery === '' ||
       project.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus =
-      statusFilter === "all" || project.status === statusFilter;
-    const matchesPriority =
-      priorityFilter === "all" || project.priority === priorityFilter;
+    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+    const matchesPriority = priorityFilter === 'all' || project.priority === priorityFilter;
 
     return matchesSearch && matchesStatus && matchesPriority;
   });
@@ -176,14 +167,10 @@ export default function ProjectsPage() {
             Projects
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {filteredProjects.length}{" "}
-            {filteredProjects.length === 1 ? "project" : "projects"}
+            {filteredProjects.length} {filteredProjects.length === 1 ? 'project' : 'projects'}
           </p>
         </div>
-        <Button
-          onClick={handleCreateProject}
-          className="bg-purple-600 hover:bg-purple-700"
-        >
+        <Button onClick={handleCreateProject} className="bg-purple-600 hover:bg-purple-700">
           <Plus className="w-4 h-4 mr-2" />
           New Project
         </Button>
@@ -251,19 +238,12 @@ export default function ProjectsPage() {
               No projects found
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {searchQuery || statusFilter !== "all" || priorityFilter !== "all"
-                ? "Try adjusting your filters"
-                : "Get started by creating your first project"}
+              {searchQuery || statusFilter !== 'all' || priorityFilter !== 'all'
+                ? 'Try adjusting your filters'
+                : 'Get started by creating your first project'}
             </p>
-            {!(
-              searchQuery ||
-              statusFilter !== "all" ||
-              priorityFilter !== "all"
-            ) && (
-              <Button
-                onClick={handleCreateProject}
-                className="bg-purple-600 hover:bg-purple-700"
-              >
+            {!(searchQuery || statusFilter !== 'all' || priorityFilter !== 'all') && (
+              <Button onClick={handleCreateProject} className="bg-purple-600 hover:bg-purple-700">
                 <Plus className="w-4 h-4 mr-2" />
                 Create Project
               </Button>
@@ -276,10 +256,10 @@ export default function ProjectsPage() {
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">
-            {editingProject ? "Edit Project" : "Create Project"}
+            {editingProject ? 'Edit Project' : 'Create Project'}
           </DialogTitle>
           <DialogDescription className="sr-only">
-            {editingProject ? "Edit the project details" : "Create a new project"}
+            {editingProject ? 'Edit the project details' : 'Create a new project'}
           </DialogDescription>
           <ProjectForm
             project={editingProject}
@@ -295,17 +275,10 @@ export default function ProjectsPage() {
       </Dialog>
 
       {/* Project Details Dialog */}
-      <Dialog
-        open={!!selectedProject}
-        onOpenChange={(open) => !open && setSelectedProject(null)}
-      >
+      <Dialog open={!!selectedProject} onOpenChange={(open) => !open && setSelectedProject(null)}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogTitle className="sr-only">
-            Project Details: {selectedProject?.name}
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            View and manage project details
-          </DialogDescription>
+          <DialogTitle className="sr-only">Project Details: {selectedProject?.name}</DialogTitle>
+          <DialogDescription className="sr-only">View and manage project details</DialogDescription>
           {selectedProject && (
             <ProjectDetails
               project={selectedProject}

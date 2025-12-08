@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -6,35 +6,29 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { 
-  MessageSquare, 
-  FileText, 
-  Hash,
-  Sparkles,
-  Loader2
-} from "lucide-react";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { MessageSquare, FileText, Hash, Sparkles, Loader2 } from 'lucide-react';
 
 export default function SessionCreationDialog({
   isOpen,
   onClose,
   onCreateSession,
-  suggestedName = "",
-  suggestedDescription = "",
+  suggestedName = '',
+  suggestedDescription = '',
   suggestedTags = [],
   assignmentName = null,
   documentCount = 0,
-  messageCount = 0
+  messageCount = 0,
 }) {
   const [sessionName, setSessionName] = useState(suggestedName);
   const [description, setDescription] = useState(suggestedDescription);
   const [tags, setTags] = useState(suggestedTags);
-  const [tagInput, setTagInput] = useState("");
+  const [tagInput, setTagInput] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
@@ -49,12 +43,12 @@ export default function SessionCreationDialog({
     const trimmedTag = tagInput.trim();
     if (trimmedTag && !tags.includes(trimmedTag)) {
       setTags([...tags, trimmedTag]);
-      setTagInput("");
+      setTagInput('');
     }
   };
 
   const handleRemoveTag = (tagToRemove) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
+    setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
   const handleKeyPress = (e) => {
@@ -74,11 +68,11 @@ export default function SessionCreationDialog({
       await onCreateSession({
         name: sessionName.trim(),
         description: description.trim(),
-        tags: tags
+        tags: tags,
       });
       onClose();
     } catch (error) {
-      console.error("Error creating session:", error);
+      console.error('Error creating session:', error);
     } finally {
       setIsCreating(false);
     }
@@ -167,20 +161,15 @@ export default function SessionCreationDialog({
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyPress={handleKeyPress}
               />
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm"
-                onClick={handleAddTag}
-              >
+              <Button type="button" variant="outline" size="sm" onClick={handleAddTag}>
                 <Hash className="w-4 h-4" />
               </Button>
             </div>
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {tags.map((tag) => (
-                  <Badge 
-                    key={tag} 
+                  <Badge
+                    key={tag}
                     variant="secondary"
                     className="cursor-pointer hover:bg-red-100 dark:hover:bg-red-900"
                     onClick={() => handleRemoveTag(tag)}
@@ -196,17 +185,10 @@ export default function SessionCreationDialog({
         </div>
 
         <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={onClose}
-            disabled={isCreating}
-          >
+          <Button variant="outline" onClick={onClose} disabled={isCreating}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleCreate}
-            disabled={!sessionName.trim() || isCreating}
-          >
+          <Button onClick={handleCreate} disabled={!sessionName.trim() || isCreating}>
             {isCreating ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

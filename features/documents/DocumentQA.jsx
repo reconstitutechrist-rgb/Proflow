@@ -1,16 +1,15 @@
-
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { MessageCircle, Loader2 } from "lucide-react";
-import { toast } from "sonner";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import { db } from "@/api/db";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { MessageCircle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { db } from '@/api/db';
 
 export default function DocumentQA({ documentId }) {
   const [document, setDocument] = useState(null); // New state for the loaded document
-  const [question, setQuestion] = useState("");
+  const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false); // Renamed from isProcessing
   const [answer, setAnswer] = useState(null); // New state for the current AI response
   const [chatHistory, setChatHistory] = useState([]); // Renamed from conversation
@@ -35,27 +34,31 @@ export default function DocumentQA({ documentId }) {
   const loadDocument = async () => {
     if (!currentWorkspaceId || !documentId) return;
     try {
-      const docs = await db.entities.Document.filter({
-        workspace_id: currentWorkspaceId,
-        id: documentId
-      }, "-updated_date", 1); // Get latest document by ID, limit 1
+      const docs = await db.entities.Document.filter(
+        {
+          workspace_id: currentWorkspaceId,
+          id: documentId,
+        },
+        '-updated_date',
+        1
+      ); // Get latest document by ID, limit 1
 
       if (docs.length > 0) {
         // CRITICAL: Validate document is in current workspace
         if (docs[0].workspace_id !== currentWorkspaceId) {
-          console.error("Security violation: Document not in current workspace");
-          toast.error("Cannot access document from other workspaces");
+          console.error('Security violation: Document not in current workspace');
+          toast.error('Cannot access document from other workspaces');
           setDocument(null); // Clear any potentially invalid document
           return;
         }
         setDocument(docs[0]);
       } else {
         setDocument(null); // Document not found or filter returned empty
-        toast.error("Document not found.");
+        toast.error('Document not found.');
       }
     } catch (error) {
-      console.error("Error loading document:", error);
-      toast.error("Error loading document details.");
+      console.error('Error loading document:', error);
+      toast.error('Error loading document details.');
       setDocument(null); // Clear document on error
     }
   };
@@ -64,46 +67,53 @@ export default function DocumentQA({ documentId }) {
     if (!currentWorkspaceId || !documentId) return;
     try {
       // CRITICAL: Load only Q&A from current workspace
-      const history = await db.entities.AIChat.filter({
-        workspace_id: currentWorkspaceId,
-        chat_type: 'document_query'
-      }, "-created_date", 50); // Get recent chats, increased limit to 50 for more history
+      const history = await db.entities.AIChat.filter(
+        {
+          workspace_id: currentWorkspaceId,
+          chat_type: 'document_query',
+        },
+        '-created_date',
+        50
+      ); // Get recent chats, increased limit to 50 for more history
 
       // Filter history to only include chats related to the current document
-      setChatHistory(history.filter(h => h.source_documents?.includes(documentId)));
+      setChatHistory(history.filter((h) => h.source_documents?.includes(documentId)));
     } catch (error) {
-      console.error("Error loading history:", error);
-      toast.error("Error loading chat history.");
+      console.error('Error loading history:', error);
+      toast.error('Error loading chat history.');
       setChatHistory([]); // Clear history on error
     }
   };
 
   const handleAskQuestion = async () => {
     if (!question.trim()) {
-      toast.error("Please enter a question");
+      toast.error('Please enter a question');
       return;
     }
 
     if (!document) {
-      toast.error("Document not loaded yet. Please wait or select a document.");
+      toast.error('Document not loaded yet. Please wait or select a document.');
       return;
     }
 
     // CRITICAL: Validate document workspace before querying
     if (document.workspace_id !== currentWorkspaceId) {
-      toast.error("Cannot query documents from other workspaces");
+      toast.error('Cannot query documents from other workspaces');
       return;
     }
 
     const userQuestionForProcessing = question.trim();
     setTempUserQuestionForDisplay(userQuestionForProcessing); // Store for immediate display
-    setQuestion(""); // Clear the input field
+    setQuestion(''); // Clear the input field
     setAnswer(null); // Clear previous AI answer
     setLoading(true);
 
     try {
       // Sanitize document content for the prompt
-      const strippedContent = (document.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      const strippedContent = (document.content || '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 
       const prompt = `Based on this document, answer the user's question:
 
@@ -115,7 +125,7 @@ User Question: ${userQuestionForProcessing}
 Provide a clear, specific answer based only on the information in the document. If the answer isn't in the document, say so.`;
 
       const response = await db.integrations.Core.InvokeLLM({
-        prompt: prompt
+        prompt: prompt,
       });
 
       setAnswer(response); // Temporarily display the response
@@ -130,7 +140,7 @@ Provide a clear, specific answer based only on the information in the document. 
         response: response,
         source_documents: [document.id],
         confidence_score: 80, // Example confidence score
-        chat_type: 'document_query'
+        chat_type: 'document_query',
       });
 
       // Refresh chat history to include the newly saved Q&A
@@ -139,13 +149,12 @@ Provide a clear, specific answer based only on the information in the document. 
       // Clear temporary display states after history has been reloaded
       setTempUserQuestionForDisplay(null);
       setAnswer(null);
-
     } catch (error) {
-      console.error("Error asking question:", error);
-      toast.error("Failed to get answer");
+      console.error('Error asking question:', error);
+      toast.error('Failed to get answer');
 
       // Set an error message as the answer if the request fails
-      setAnswer("Sorry, I encountered an error processing your question. Please try again.");
+      setAnswer('Sorry, I encountered an error processing your question. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -155,26 +164,42 @@ Provide a clear, specific answer based only on the information in the document. 
   const displayMessages = [];
 
   // Add historical Q&A from chatHistory
-  chatHistory.forEach(chat => {
-    displayMessages.push({ type: 'user', content: chat.question, timestamp: new Date(chat.created_date) });
-    displayMessages.push({ type: 'assistant', content: chat.response, timestamp: new Date(chat.created_date) });
+  chatHistory.forEach((chat) => {
+    displayMessages.push({
+      type: 'user',
+      content: chat.question,
+      timestamp: new Date(chat.created_date),
+    });
+    displayMessages.push({
+      type: 'assistant',
+      content: chat.response,
+      timestamp: new Date(chat.created_date),
+    });
   });
 
   // Add the currently processing question and its potential answer/loading state
   if (tempUserQuestionForDisplay) {
-    displayMessages.push({ type: 'user', content: tempUserQuestionForDisplay, timestamp: new Date() });
+    displayMessages.push({
+      type: 'user',
+      content: tempUserQuestionForDisplay,
+      timestamp: new Date(),
+    });
     if (loading) {
-      displayMessages.push({ type: 'assistant', content: 'Thinking...', isLoading: true, timestamp: new Date() });
+      displayMessages.push({
+        type: 'assistant',
+        content: 'Thinking...',
+        isLoading: true,
+        timestamp: new Date(),
+      });
     } else if (answer) {
       // If answer is available but not yet cleared (e.g., just received from LLM)
       displayMessages.push({ type: 'assistant', content: answer, timestamp: new Date() });
     }
   } else if (answer && !loading) {
-      // This case handles situations where `answer` might be set (e.g., error message)
-      // and `tempUserQuestionForDisplay` was not set or already cleared.
-      displayMessages.push({ type: 'assistant', content: answer, timestamp: new Date() });
+    // This case handles situations where `answer` might be set (e.g., error message)
+    // and `tempUserQuestionForDisplay` was not set or already cleared.
+    displayMessages.push({ type: 'assistant', content: answer, timestamp: new Date() });
   }
-
 
   return (
     <Card className="shadow-md">
@@ -186,7 +211,9 @@ Provide a clear, specific answer based only on the information in the document. 
           <div>
             <CardTitle>Document Q&A</CardTitle>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {document ? `Asking questions about: ${document.title}` : "Select a document to ask questions"}
+              {document
+                ? `Asking questions about: ${document.title}`
+                : 'Select a document to ask questions'}
             </p>
           </div>
         </div>
@@ -219,7 +246,9 @@ Provide a clear, specific answer based only on the information in the document. 
                       }`}
                     >
                       <p className="text-sm whitespace-pre-wrap">
-                        {msg.isLoading ? <Loader2 className="w-4 h-4 animate-spin inline-block mr-2" /> : null}
+                        {msg.isLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin inline-block mr-2" />
+                        ) : null}
                         {msg.content}
                       </p>
                     </div>

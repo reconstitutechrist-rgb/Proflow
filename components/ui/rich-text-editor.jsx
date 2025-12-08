@@ -22,7 +22,7 @@ import {
   Heading3,
   Highlighter,
   Palette,
-  RemoveFormatting
+  RemoveFormatting,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -33,10 +33,7 @@ const MenuButton = ({ onClick, isActive, disabled, children, title }) => (
     size="sm"
     onClick={onClick}
     disabled={disabled}
-    className={cn(
-      "h-8 w-8 p-0",
-      isActive && "bg-muted"
-    )}
+    className={cn('h-8 w-8 p-0', isActive && 'bg-muted')}
     title={title}
   >
     {children}
@@ -127,11 +124,7 @@ const MenuBar = ({ editor }) => {
 
       <div className="w-px h-6 bg-border mx-1 self-center" />
 
-      <MenuButton
-        onClick={addLink}
-        isActive={editor.isActive('link')}
-        title="Add Link"
-      >
+      <MenuButton onClick={addLink} isActive={editor.isActive('link')} title="Add Link">
         <LinkIcon className="h-4 w-4" />
       </MenuButton>
       <MenuButton
@@ -177,7 +170,7 @@ export function RichTextEditor({
   placeholder = 'Start typing...',
   className,
   minHeight = '200px',
-  editable = true
+  editable = true,
 }) {
   const editor = useEditor({
     extensions: [
@@ -229,7 +222,7 @@ export function RichTextEditor({
   }, [value, editor]);
 
   return (
-    <div className={cn("border rounded-md overflow-hidden bg-background", className)}>
+    <div className={cn('border rounded-md overflow-hidden bg-background', className)}>
       {editable && <MenuBar editor={editor} />}
       <EditorContent editor={editor} />
     </div>

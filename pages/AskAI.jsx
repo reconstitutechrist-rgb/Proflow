@@ -1,18 +1,23 @@
-import React, { useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { AlertCircle } from "lucide-react";
-import { toast } from "sonner";
+import React, { useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { useAskAI, MEMORY_LIMITS } from "@/hooks/useAskAI";
-import { AskAIHeader, AskAIDocumentSidebar, AskAIChatArea, AskAIDialogs } from "@/features/ai/askAI";
+import { useAskAI, MEMORY_LIMITS } from '@/hooks/useAskAI';
+import {
+  AskAIHeader,
+  AskAIDocumentSidebar,
+  AskAIChatArea,
+  AskAIDialogs,
+} from '@/features/ai/askAI';
 
 // Import enhancement components
-import OnboardingTutorial from "@/components/OnboardingTutorial";
-import SessionTemplates from "@/components/SessionTemplates";
-import CostEstimator from "@/components/CostEstimator";
-import QuickStartGuide from "@/components/QuickStartGuide";
-import KeyboardShortcuts from "@/components/KeyboardShortcuts";
+import OnboardingTutorial from '@/components/OnboardingTutorial';
+import SessionTemplates from '@/components/SessionTemplates';
+import CostEstimator from '@/components/CostEstimator';
+import QuickStartGuide from '@/components/QuickStartGuide';
+import KeyboardShortcuts from '@/components/KeyboardShortcuts';
 
 export default function AskAIPage() {
   const {
@@ -144,11 +149,11 @@ export default function AskAIPage() {
 
       if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
         const activeElement = document.activeElement;
-        const isInputField = activeElement && (
-          activeElement.tagName === 'INPUT' ||
-          activeElement.tagName === 'TEXTAREA' ||
-          activeElement.isContentEditable
-        );
+        const isInputField =
+          activeElement &&
+          (activeElement.tagName === 'INPUT' ||
+            activeElement.tagName === 'TEXTAREA' ||
+            activeElement.isContentEditable);
         if (!isInputField) {
           e.preventDefault();
           setShowKeyboardShortcuts(true);
@@ -166,7 +171,20 @@ export default function AskAIPage() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [inputMessage, currentSession, handleSendMessage, handleNewConversation, handleSaveSession, setIsSaveDialogOpen, setShowKeyboardShortcuts, setShowQuickStartGuide, setShowOnboardingTutorial, setShowSessionTemplates, setShowCostEstimator, fileInputRef]);
+  }, [
+    inputMessage,
+    currentSession,
+    handleSendMessage,
+    handleNewConversation,
+    handleSaveSession,
+    setIsSaveDialogOpen,
+    setShowKeyboardShortcuts,
+    setShowQuickStartGuide,
+    setShowOnboardingTutorial,
+    setShowSessionTemplates,
+    setShowCostEstimator,
+    fileInputRef,
+  ]);
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -218,7 +236,8 @@ export default function AskAIPage() {
                   {showDocumentWarning && (
                     <div>
                       <p className="text-xs text-amber-700 dark:text-amber-300">
-                        Documents: {uploadedDocuments.length}/{MEMORY_LIMITS.MAX_DOCUMENTS} ({documentCapacityPercent.toFixed(0)}%)
+                        Documents: {uploadedDocuments.length}/{MEMORY_LIMITS.MAX_DOCUMENTS} (
+                        {documentCapacityPercent.toFixed(0)}%)
                       </p>
                       <Progress value={documentCapacityPercent} className="h-1.5 mt-1" />
                     </div>
@@ -226,13 +245,15 @@ export default function AskAIPage() {
                   {showMessageWarning && (
                     <div>
                       <p className="text-xs text-amber-700 dark:text-amber-300">
-                        Messages: {messages.length}/{MEMORY_LIMITS.MAX_MESSAGES} ({messageCapacityPercent.toFixed(0)}%)
+                        Messages: {messages.length}/{MEMORY_LIMITS.MAX_MESSAGES} (
+                        {messageCapacityPercent.toFixed(0)}%)
                       </p>
                       <Progress value={messageCapacityPercent} className="h-1.5 mt-1" />
                     </div>
                   )}
                   <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
-                    May increase response time and API costs. Consider saving this session and starting a new conversation.
+                    May increase response time and API costs. Consider saving this session and
+                    starting a new conversation.
                   </p>
                 </div>
               </div>
@@ -342,7 +363,7 @@ export default function AskAIPage() {
           onClose={() => setShowOnboardingTutorial(false)}
           onComplete={() => {
             setShowOnboardingTutorial(false);
-            toast.success('Welcome to Ask AI! Let\'s get started.');
+            toast.success("Welcome to Ask AI! Let's get started.");
           }}
         />
       )}

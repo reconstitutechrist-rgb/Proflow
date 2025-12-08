@@ -1,34 +1,34 @@
-import React, { useState } from "react";
-import { Task } from "@/api/entities";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+import React, { useState } from 'react';
+import { Task } from '@/api/entities';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { CheckSquare, Loader2, Sparkles } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+} from '@/components/ui/select';
+import { CheckSquare, Loader2, Sparkles } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 export default function QuickTaskCreationDialog({
   isOpen,
   onClose,
   taskData,
   assignments,
-  currentUser
+  currentUser,
 }) {
   const { currentWorkspaceId } = useWorkspace();
   const [formData, setFormData] = useState({
@@ -38,7 +38,7 @@ export default function QuickTaskCreationDialog({
     assigned_to: currentUser?.email || '',
     priority: taskData?.priority || 'medium',
     status: 'todo',
-    related_documents: taskData?.related_documents || []
+    related_documents: taskData?.related_documents || [],
   });
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState(null);
@@ -53,21 +53,21 @@ export default function QuickTaskCreationDialog({
         assigned_to: currentUser?.email || '',
         priority: taskData.priority || 'medium',
         status: 'todo',
-        related_documents: taskData.related_documents || []
+        related_documents: taskData.related_documents || [],
       });
     }
   }, [taskData, currentUser]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.title.trim()) {
-      setError("Task title is required");
+      setError('Task title is required');
       return;
     }
-    
+
     if (!formData.assignment_id) {
-      setError("Please select an assignment");
+      setError('Please select an assignment');
       return;
     }
 
@@ -90,17 +90,16 @@ export default function QuickTaskCreationDialog({
           source_type: 'document_analysis',
           source_id: 'ai_suggestion',
           confidence: 85,
-          reasoning: 'Generated from AI document analysis'
-        }
+          reasoning: 'Generated from AI document analysis',
+        },
       });
 
-      toast.success("Task created successfully!");
+      toast.success('Task created successfully!');
       onClose();
-      
     } catch (err) {
-      console.error("Error creating task:", err);
+      console.error('Error creating task:', err);
       setError(`Failed to create task: ${err.message}`);
-      toast.error("Failed to create task");
+      toast.error('Failed to create task');
     } finally {
       setIsCreating(false);
     }
@@ -155,12 +154,12 @@ export default function QuickTaskCreationDialog({
                 <SelectValue placeholder="Select assignment..." />
               </SelectTrigger>
               <SelectContent>
-                {(!assignments || assignments.length === 0) ? (
+                {!assignments || assignments.length === 0 ? (
                   <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
                     No assignments available
                   </div>
                 ) : (
-                  assignments.map(assignment => (
+                  assignments.map((assignment) => (
                     <SelectItem key={assignment.id} value={assignment.id}>
                       {assignment.name}
                     </SelectItem>
@@ -214,12 +213,7 @@ export default function QuickTaskCreationDialog({
 
           {/* Dialog Footer */}
           <DialogFooter className="gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isCreating}
-            >
+            <Button type="button" variant="outline" onClick={onClose} disabled={isCreating}>
               Cancel
             </Button>
             <Button

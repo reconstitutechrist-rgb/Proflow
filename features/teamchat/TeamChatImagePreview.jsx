@@ -56,10 +56,7 @@ export default function TeamChatImagePreview({ src, fileName, fileSize }) {
   return (
     <>
       {/* Thumbnail */}
-      <div
-        className="relative group cursor-pointer"
-        onClick={() => setShowLightbox(true)}
-      >
+      <div className="relative group cursor-pointer" onClick={() => setShowLightbox(true)}>
         {/* Loading skeleton */}
         {isLoading && (
           <div className="w-48 h-32 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse flex items-center justify-center">
@@ -90,12 +87,7 @@ export default function TeamChatImagePreview({ src, fileName, fileSize }) {
             >
               <Maximize2 className="w-4 h-4" />
             </Button>
-            <Button
-              size="icon"
-              variant="secondary"
-              className="h-8 w-8"
-              onClick={handleDownload}
-            >
+            <Button size="icon" variant="secondary" className="h-8 w-8" onClick={handleDownload}>
               <Download className="w-4 h-4" />
             </Button>
           </div>

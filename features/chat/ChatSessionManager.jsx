@@ -1,19 +1,18 @@
-
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { db } from "@/api/db";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { db } from '@/api/db';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -21,8 +20,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import {
   MessageSquare,
   Plus,
@@ -38,25 +37,25 @@ import {
   FileText,
   Star,
   ChevronRight,
-  Loader2
-} from "lucide-react";
-import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
+  Loader2,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function ChatSessionManager({
   currentSession, // Keep currentSession for active state
   onSessionSelect,
-  currentAssignment // Keep currentAssignment for filtering
+  currentAssignment, // Keep currentAssignment for filtering
 }) {
   const [sessions, setSessions] = useState([]);
   const [filteredSessions, setFilteredSessions] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [renamingSession, setRenamingSession] = useState(null);
-  const [newSessionName, setNewSessionName] = useState("");
-  const [newSessionDescription, setNewSessionDescription] = useState("");
-  const [filterStatus, setFilterStatus] = useState("active");
+  const [newSessionName, setNewSessionName] = useState('');
+  const [newSessionDescription, setNewSessionDescription] = useState('');
+  const [filterStatus, setFilterStatus] = useState('active');
 
   const { currentWorkspaceId } = useWorkspace(); // Get currentWorkspaceId from context
 
@@ -75,20 +74,23 @@ export default function ChatSessionManager({
     try {
       const user = await db.auth.me(); // Fetch user internally
       if (!user?.email) {
-        toast.error("User not authenticated.");
+        toast.error('User not authenticated.');
         setSessions([]); // Clear sessions if user is not authenticated
         return;
       }
 
-      const userSessions = await db.entities.AIChatSession.filter({
-        workspace_id: currentWorkspaceId, // Filter by current workspace
-        created_by: user.email
-      }, "-last_activity");
+      const userSessions = await db.entities.AIChatSession.filter(
+        {
+          workspace_id: currentWorkspaceId, // Filter by current workspace
+          created_by: user.email,
+        },
+        '-last_activity'
+      );
 
       setSessions(userSessions);
     } catch (error) {
-      console.error("Error loading chat sessions:", error);
-      toast.error("Failed to load chat history");
+      console.error('Error loading chat sessions:', error);
+      toast.error('Failed to load chat history');
     } finally {
       setLoading(false);
       isLoadingRef.current = false;
@@ -110,42 +112,42 @@ export default function ChatSessionManager({
     let filtered = [...sessions];
 
     // Filter by status
-    if (filterStatus !== "all") {
-      filtered = filtered.filter(session => session.status === filterStatus);
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter((session) => session.status === filterStatus);
     }
 
     // Filter by assignment if selected
     if (currentAssignment) {
-      filtered = filtered.filter(session =>
-        !session.assignment_id || session.assignment_id === currentAssignment.id
+      filtered = filtered.filter(
+        (session) => !session.assignment_id || session.assignment_id === currentAssignment.id
       );
     }
 
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(session =>
-        session.name.toLowerCase().includes(query) ||
-        session.description?.toLowerCase().includes(query) ||
-        session.tags?.some(tag => tag.toLowerCase().includes(query))
+      filtered = filtered.filter(
+        (session) =>
+          session.name.toLowerCase().includes(query) ||
+          session.description?.toLowerCase().includes(query) ||
+          session.tags?.some((tag) => tag.toLowerCase().includes(query))
       );
     }
 
     setFilteredSessions(filtered);
   }, [sessions, filterStatus, currentAssignment, searchQuery]);
 
-
   // Internal function to create a new session (as per outline)
   const handleCreateSession = async (name, description, assignmentId) => {
     if (!currentWorkspaceId) {
-      toast.error("No active workspace selected.");
+      toast.error('No active workspace selected.');
       return;
     }
 
     try {
       const user = await db.auth.me(); // Fetch user internally
       if (!user?.email) {
-        toast.error("User not authenticated.");
+        toast.error('User not authenticated.');
         return;
       }
 
@@ -157,141 +159,141 @@ export default function ChatSessionManager({
         created_by: user.email,
         messages: [],
         documents: [],
-        status: "active",
+        status: 'active',
         message_count: 0,
-        last_activity: new Date().toISOString()
+        last_activity: new Date().toISOString(),
       };
 
       const newSession = await db.entities.AIChatSession.create(sessionData); // Use db entity
-      
+
       // Update local state and trigger selection
-      setSessions(prev => [newSession, ...prev]);
-      toast.success("Chat session created");
+      setSessions((prev) => [newSession, ...prev]);
+      toast.success('Chat session created');
       onSessionSelect?.(newSession);
     } catch (error) {
-      console.error("Error creating session:", error);
-      toast.error("Failed to create chat session");
+      console.error('Error creating session:', error);
+      toast.error('Failed to create chat session');
     }
   };
 
   // Wrapper for "New Thread" button clicks, calling the internal creation
   const internalCreateNewSession = () => {
     // Default values for a new chat
-    const defaultName = "New Chat";
-    const defaultDescription = "";
+    const defaultName = 'New Chat';
+    const defaultDescription = '';
     const assignmentId = currentAssignment?.id || null; // Auto-associate if an assignment is active
 
     handleCreateSession(defaultName, defaultDescription, assignmentId);
   };
 
-
   const handleRenameSession = async () => {
     if (!renamingSession || !newSessionName.trim()) {
-      toast.error("Please enter a name for the thread");
+      toast.error('Please enter a name for the thread');
       return;
     }
 
     try {
-      await db.entities.AIChatSession.update(renamingSession.id, { // Use db entity
+      await db.entities.AIChatSession.update(renamingSession.id, {
+        // Use db entity
         name: newSessionName.trim(),
-        description: newSessionDescription.trim() || renamingSession.description
+        description: newSessionDescription.trim() || renamingSession.description,
       });
 
-      toast.success("Thread renamed successfully");
+      toast.success('Thread renamed successfully');
 
       // Update local state without refetching
-      setSessions(prev => prev.map(s =>
-        s.id === renamingSession.id
-          ? { ...s, name: newSessionName.trim(), description: newSessionDescription.trim() }
-          : s
-      ));
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === renamingSession.id
+            ? { ...s, name: newSessionName.trim(), description: newSessionDescription.trim() }
+            : s
+        )
+      );
 
       setIsRenameDialogOpen(false);
       setRenamingSession(null);
-      setNewSessionName("");
-      setNewSessionDescription("");
+      setNewSessionName('');
+      setNewSessionDescription('');
     } catch (error) {
-      console.error("Error renaming session:", error);
-      toast.error("Failed to rename thread");
+      console.error('Error renaming session:', error);
+      toast.error('Failed to rename thread');
     }
   };
 
   const handleDeleteSession = async (sessionId) => {
-    if (!confirm("Are you sure you want to delete this thread? This cannot be undone.")) {
+    if (!confirm('Are you sure you want to delete this thread? This cannot be undone.')) {
       return;
     }
 
     try {
       await db.entities.AIChatSession.delete(sessionId); // Use db entity
-      toast.success("Thread deleted");
+      toast.success('Thread deleted');
 
       // Update local state without refetching
-      setSessions(prev => prev.filter(s => s.id !== sessionId));
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
 
       // If deleted session was active, create new one
       if (currentSession?.id === sessionId) {
         internalCreateNewSession(); // Call internal function
       }
     } catch (error) {
-      console.error("Error deleting session:", error);
-      toast.error("Failed to delete thread");
+      console.error('Error deleting session:', error);
+      toast.error('Failed to delete thread');
     }
   };
 
   const handleArchiveSession = async (session) => {
     try {
-      const newStatus = session.status === "archived" ? "active" : "archived";
+      const newStatus = session.status === 'archived' ? 'active' : 'archived';
 
-      await db.entities.AIChatSession.update(session.id, { // Use db entity
-        status: newStatus
+      await db.entities.AIChatSession.update(session.id, {
+        // Use db entity
+        status: newStatus,
       });
 
-      toast.success(
-        session.status === "archived" ? "Thread restored" : "Thread archived"
-      );
+      toast.success(session.status === 'archived' ? 'Thread restored' : 'Thread archived');
 
       // Update local state without refetching
-      setSessions(prev => prev.map(s =>
-        s.id === session.id ? { ...s, status: newStatus } : s
-      ));
+      setSessions((prev) =>
+        prev.map((s) => (s.id === session.id ? { ...s, status: newStatus } : s))
+      );
     } catch (error) {
-      console.error("Error archiving session:", error);
-      toast.error("Failed to archive thread");
+      console.error('Error archiving session:', error);
+      toast.error('Failed to archive thread');
     }
   };
 
   const handlePinSession = async (session) => {
     try {
-      const newStatus = session.status === "pinned" ? "active" : "pinned";
+      const newStatus = session.status === 'pinned' ? 'active' : 'pinned';
 
-      await db.entities.AIChatSession.update(session.id, { // Use db entity
-        status: newStatus
+      await db.entities.AIChatSession.update(session.id, {
+        // Use db entity
+        status: newStatus,
       });
 
-      toast.success(
-        session.status === "pinned" ? "Thread unpinned" : "Thread pinned"
-      );
+      toast.success(session.status === 'pinned' ? 'Thread unpinned' : 'Thread pinned');
 
       // Update local state without refetching
-      setSessions(prev => prev.map(s =>
-        s.id === session.id ? { ...s, status: newStatus } : s
-      ));
+      setSessions((prev) =>
+        prev.map((s) => (s.id === session.id ? { ...s, status: newStatus } : s))
+      );
     } catch (error) {
-      console.error("Error pinning session:", error);
-      toast.error("Failed to pin thread");
+      console.error('Error pinning session:', error);
+      toast.error('Failed to pin thread');
     }
   };
 
   const handleDuplicateSession = async (session) => {
     if (!currentWorkspaceId) {
-      toast.error("No active workspace to duplicate into.");
+      toast.error('No active workspace to duplicate into.');
       return;
     }
 
     try {
       const user = await db.auth.me(); // Fetch user internally
       if (!user?.email) {
-        toast.error("User not found for duplication.");
+        toast.error('User not found for duplication.');
         return;
       }
 
@@ -306,28 +308,28 @@ export default function ChatSessionManager({
         query_mode: session.query_mode,
         custom_json_schema: session.custom_json_schema,
         tags: session.tags || [],
-        status: "active",
+        status: 'active',
         message_count: session.message_count || 0,
-        last_activity: new Date().toISOString()
+        last_activity: new Date().toISOString(),
       };
 
       const newSession = await db.entities.AIChatSession.create(duplicate); // Use db entity
-      toast.success("Thread duplicated");
+      toast.success('Thread duplicated');
 
       // Add to local state without refetching
-      setSessions(prev => [newSession, ...prev]);
+      setSessions((prev) => [newSession, ...prev]);
 
       onSessionSelect(newSession);
     } catch (error) {
-      console.error("Error duplicating session:", error);
-      toast.error("Failed to duplicate thread");
+      console.error('Error duplicating session:', error);
+      toast.error('Failed to duplicate thread');
     }
   };
 
   const openRenameDialog = (session) => {
     setRenamingSession(session);
     setNewSessionName(session.name);
-    setNewSessionDescription(session.description || "");
+    setNewSessionDescription(session.description || '');
     setIsRenameDialogOpen(true);
   };
 
@@ -338,7 +340,9 @@ export default function ChatSessionManager({
           <div className="text-center">
             <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <h3 className="font-medium text-gray-900 mb-1">No Workspace Selected</h3>
-            <p className="text-sm text-gray-500">Please select or create a workspace to view chat history.</p>
+            <p className="text-sm text-gray-500">
+              Please select or create a workspace to view chat history.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -391,34 +395,34 @@ export default function ChatSessionManager({
           {/* Filter Tabs */}
           <div className="flex items-center gap-2 overflow-x-auto">
             <Button
-              variant={filterStatus === "all" ? "default" : "outline"}
+              variant={filterStatus === 'all' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setFilterStatus("all")}
+              onClick={() => setFilterStatus('all')}
             >
               All ({sessions.length})
             </Button>
             <Button
-              variant={filterStatus === "active" ? "default" : "outline"}
+              variant={filterStatus === 'active' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setFilterStatus("active")}
+              onClick={() => setFilterStatus('active')}
             >
-              Active ({sessions.filter(s => s.status === "active").length})
+              Active ({sessions.filter((s) => s.status === 'active').length})
             </Button>
             <Button
-              variant={filterStatus === "pinned" ? "default" : "outline"}
+              variant={filterStatus === 'pinned' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setFilterStatus("pinned")}
+              onClick={() => setFilterStatus('pinned')}
             >
               <Pin className="w-3 h-3 mr-1" />
-              Pinned ({sessions.filter(s => s.status === "pinned").length})
+              Pinned ({sessions.filter((s) => s.status === 'pinned').length})
             </Button>
             <Button
-              variant={filterStatus === "archived" ? "default" : "outline"}
+              variant={filterStatus === 'archived' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setFilterStatus("archived")}
+              onClick={() => setFilterStatus('archived')}
             >
               <Archive className="w-3 h-3 mr-1" />
-              Archived ({sessions.filter(s => s.status === "archived").length})
+              Archived ({sessions.filter((s) => s.status === 'archived').length})
             </Button>
           </div>
         </CardHeader>
@@ -429,15 +433,17 @@ export default function ChatSessionManager({
               <div className="text-center py-12 px-4">
                 <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                 <h3 className="font-medium text-gray-900 mb-1">
-                  {searchQuery ? "No threads found" : "No chat history yet"}
+                  {searchQuery ? 'No threads found' : 'No chat history yet'}
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
                   {searchQuery
-                    ? "Try a different search term"
-                    : "Start a new conversation to begin"}
+                    ? 'Try a different search term'
+                    : 'Start a new conversation to begin'}
                 </p>
                 {!searchQuery && (
-                  <Button size="sm" onClick={internalCreateNewSession}> {/* Use internal creation function */}
+                  <Button size="sm" onClick={internalCreateNewSession}>
+                    {' '}
+                    {/* Use internal creation function */}
                     <Plus className="w-4 h-4 mr-2" />
                     Start New Thread
                   </Button>
@@ -459,7 +465,7 @@ export default function ChatSessionManager({
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          {session.status === "pinned" && (
+                          {session.status === 'pinned' && (
                             <Pin className="w-3 h-3 text-amber-500 flex-shrink-0" />
                           )}
                           <h4 className="font-semibold text-gray-900 dark:text-white truncate">
@@ -495,11 +501,11 @@ export default function ChatSessionManager({
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handlePinSession(session)}>
                             <Pin className="w-4 h-4 mr-2" />
-                            {session.status === "pinned" ? "Unpin" : "Pin"}
+                            {session.status === 'pinned' ? 'Unpin' : 'Pin'}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleArchiveSession(session)}>
                             <Archive className="w-4 h-4 mr-2" />
-                            {session.status === "archived" ? "Restore" : "Archive"}
+                            {session.status === 'archived' ? 'Restore' : 'Archive'}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
@@ -529,9 +535,12 @@ export default function ChatSessionManager({
                         <Calendar className="w-3 h-3" />
                         <span>
                           {session.last_activity
-                            ? formatDistanceToNow(new Date(session.last_activity), { addSuffix: true })
-                            : formatDistanceToNow(new Date(session.created_date), { addSuffix: true })
-                          }
+                            ? formatDistanceToNow(new Date(session.last_activity), {
+                                addSuffix: true,
+                              })
+                            : formatDistanceToNow(new Date(session.created_date), {
+                                addSuffix: true,
+                              })}
                         </span>
                       </div>
                     </div>
@@ -600,15 +609,10 @@ export default function ChatSessionManager({
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsRenameDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleRenameSession}>
-              Save Changes
-            </Button>
+            <Button onClick={handleRenameSession}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

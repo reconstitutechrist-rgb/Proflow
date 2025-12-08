@@ -1,17 +1,17 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useSearchParams } from "react-router";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Brain,
   FileSearch,
@@ -25,28 +25,33 @@ import {
   X,
   Briefcase,
   Loader2,
-} from "lucide-react";
-import { toast } from "sonner";
+} from 'lucide-react';
+import { toast } from 'sonner';
 
 // Import hooks and components
-import { useAskAI, MEMORY_LIMITS } from "@/hooks/useAskAI";
-import { AskAIHeader, AskAIDocumentSidebar, AskAIChatArea, AskAIDialogs } from "@/features/ai/askAI";
-import AIResearchAssistant from "@/features/ai/AIResearchAssistant";
-import ResearchSuggestions from "@/features/research/ResearchSuggestions";
-import { ErrorBoundary } from "@/components/common/ErrorBoundary";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import { db } from "@/api/db";
+import { useAskAI, MEMORY_LIMITS } from '@/hooks/useAskAI';
+import {
+  AskAIHeader,
+  AskAIDocumentSidebar,
+  AskAIChatArea,
+  AskAIDialogs,
+} from '@/features/ai/askAI';
+import AIResearchAssistant from '@/features/ai/AIResearchAssistant';
+import ResearchSuggestions from '@/features/research/ResearchSuggestions';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { db } from '@/api/db';
 
 // Enhancement components for AskAI
-import OnboardingTutorial from "@/components/OnboardingTutorial";
-import SessionTemplates from "@/components/SessionTemplates";
-import CostEstimator from "@/components/CostEstimator";
-import QuickStartGuide from "@/components/QuickStartGuide";
-import KeyboardShortcuts from "@/components/KeyboardShortcuts";
+import OnboardingTutorial from '@/components/OnboardingTutorial';
+import SessionTemplates from '@/components/SessionTemplates';
+import CostEstimator from '@/components/CostEstimator';
+import QuickStartGuide from '@/components/QuickStartGuide';
+import KeyboardShortcuts from '@/components/KeyboardShortcuts';
 
 export default function AIHub() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab") || "chat";
+  const activeTab = searchParams.get('tab') || 'chat';
   const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
 
   // Shared state
@@ -60,9 +65,9 @@ export default function AIHub() {
   const [researchHistory, setResearchHistory] = useState([]);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
-  const [contextType, setContextType] = useState("none");
+  const [contextType, setContextType] = useState('none');
   const [pendingResearchQuestion, setPendingResearchQuestion] = useState(null);
-  const [researchActiveTab, setResearchActiveTab] = useState("research");
+  const [researchActiveTab, setResearchActiveTab] = useState('research');
 
   // Generate state
   const [retryAttempt, setRetryAttempt] = useState(0);
@@ -89,11 +94,15 @@ export default function AIHub() {
     try {
       setLoading(true);
       const [assignmentsData, projectsData, documentsData, researchData, user] = await Promise.all([
-        db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        db.entities.Project.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        db.entities.Document.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        db.entities.AIResearchChat.filter({ workspace_id: currentWorkspaceId }, "-created_date", 50),
-        db.auth.me()
+        db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, '-updated_date'),
+        db.entities.Project.filter({ workspace_id: currentWorkspaceId }, '-updated_date'),
+        db.entities.Document.filter({ workspace_id: currentWorkspaceId }, '-updated_date'),
+        db.entities.AIResearchChat.filter(
+          { workspace_id: currentWorkspaceId },
+          '-created_date',
+          50
+        ),
+        db.auth.me(),
       ]);
 
       setAssignments(assignmentsData || []);
@@ -103,17 +112,17 @@ export default function AIHub() {
       setCurrentUser(user);
 
       // Clear selections if they no longer exist
-      if (selectedAssignment && !assignmentsData.find(a => a.id === selectedAssignment.id)) {
+      if (selectedAssignment && !assignmentsData.find((a) => a.id === selectedAssignment.id)) {
         setSelectedAssignment(null);
-        setContextType("none");
+        setContextType('none');
       }
-      if (selectedProject && !projectsData.find(p => p.id === selectedProject.id)) {
+      if (selectedProject && !projectsData.find((p) => p.id === selectedProject.id)) {
         setSelectedProject(null);
-        setContextType("none");
+        setContextType('none');
       }
     } catch (error) {
-      console.error("Error loading data:", error);
-      toast.error("Failed to load data");
+      console.error('Error loading data:', error);
+      toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -131,18 +140,18 @@ export default function AIHub() {
   // Auto-load linked documents when context changes (for Chat tab)
   useEffect(() => {
     // Only auto-load when on the chat tab
-    if (activeTab !== "chat") return;
+    if (activeTab !== 'chat') return;
 
     // Get linked documents based on current selection
     let linkedDocs = [];
-    let contextKey = "none";
+    let contextKey = 'none';
 
     if (selectedAssignment) {
       contextKey = `assignment:${selectedAssignment.id}`;
       linkedDocs = documents.filter(
         (doc) =>
           doc.assigned_to_assignments?.includes(selectedAssignment.id) &&
-          doc.document_type !== "folder_placeholder" &&
+          doc.document_type !== 'folder_placeholder' &&
           doc.file_url
       );
     } else if (selectedProject) {
@@ -150,7 +159,7 @@ export default function AIHub() {
       linkedDocs = documents.filter(
         (doc) =>
           doc.assigned_to_project === selectedProject.id &&
-          doc.document_type !== "folder_placeholder" &&
+          doc.document_type !== 'folder_placeholder' &&
           doc.file_url
       );
     }
@@ -175,53 +184,53 @@ export default function AIHub() {
   // Research helpers
   const getAssignmentDocuments = (assignmentId) => {
     if (!assignmentId) return [];
-    return documents.filter(doc => doc.assigned_to_assignments?.includes(assignmentId));
+    return documents.filter((doc) => doc.assigned_to_assignments?.includes(assignmentId));
   };
 
   const handleContextChange = (value) => {
-    if (value === "none") {
+    if (value === 'none') {
       setSelectedAssignment(null);
       setSelectedProject(null);
-      setContextType("none");
-    } else if (value.startsWith("project:")) {
-      const projectId = value.replace("project:", "");
-      const project = projects.find(p => p.id === projectId);
+      setContextType('none');
+    } else if (value.startsWith('project:')) {
+      const projectId = value.replace('project:', '');
+      const project = projects.find((p) => p.id === projectId);
       setSelectedProject(project);
       setSelectedAssignment(null);
-      setContextType("project");
-    } else if (value.startsWith("assignment:")) {
-      const assignmentId = value.replace("assignment:", "");
-      const assignment = assignments.find(a => a.id === assignmentId);
+      setContextType('project');
+    } else if (value.startsWith('assignment:')) {
+      const assignmentId = value.replace('assignment:', '');
+      const assignment = assignments.find((a) => a.id === assignmentId);
       setSelectedAssignment(assignment);
       setSelectedProject(null);
-      setContextType("assignment");
+      setContextType('assignment');
     }
   };
 
   const clearContext = () => {
     setSelectedAssignment(null);
     setSelectedProject(null);
-    setContextType("none");
+    setContextType('none');
   };
 
   const getContextValue = () => {
-    if (contextType === "project" && selectedProject) {
+    if (contextType === 'project' && selectedProject) {
       return `project:${selectedProject.id}`;
-    } else if (contextType === "assignment" && selectedAssignment) {
+    } else if (contextType === 'assignment' && selectedAssignment) {
       return `assignment:${selectedAssignment.id}`;
     }
-    return "none";
+    return 'none';
   };
 
   const handleResearchComplete = () => {
-    db.entities.AIResearchChat.filter({ workspace_id: currentWorkspaceId }, "-created_date", 50)
+    db.entities.AIResearchChat.filter({ workspace_id: currentWorkspaceId }, '-created_date', 50)
       .then(setResearchHistory)
       .catch(console.error);
   };
 
   const handleResearchStart = (question) => {
     setPendingResearchQuestion(question);
-    setResearchActiveTab("research");
+    setResearchActiveTab('research');
   };
 
   const handlePendingQuestionUsed = () => {
@@ -250,9 +259,7 @@ export default function AIHub() {
                 <Brain className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  AI Hub
-                </h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">AI Hub</h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Chat, Research, and Generate with AI assistance
                 </p>
@@ -294,7 +301,7 @@ export default function AIHub() {
                       <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 border-t mt-1 pt-2">
                         Projects
                       </div>
-                      {projects.map(project => (
+                      {projects.map((project) => (
                         <SelectItem key={`project:${project.id}`} value={`project:${project.id}`}>
                           <div className="flex items-center gap-2">
                             <Target className="w-4 h-4 text-indigo-600" />
@@ -309,8 +316,11 @@ export default function AIHub() {
                       <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 border-t mt-1 pt-2">
                         Assignments
                       </div>
-                      {assignments.map(assignment => (
-                        <SelectItem key={`assignment:${assignment.id}`} value={`assignment:${assignment.id}`}>
+                      {assignments.map((assignment) => (
+                        <SelectItem
+                          key={`assignment:${assignment.id}`}
+                          value={`assignment:${assignment.id}`}
+                        >
                           <div className="flex items-center gap-2">
                             <FolderOpen className="w-4 h-4 text-purple-600" />
                             <span>{assignment.name}</span>
@@ -331,7 +341,11 @@ export default function AIHub() {
         </div>
 
         {/* Main Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex-1 flex flex-col min-h-0"
+        >
           <div className="flex-shrink-0 border-b px-6 bg-white dark:bg-gray-900">
             <TabsList className="h-14 bg-transparent gap-2">
               <TabsTrigger
@@ -402,17 +416,26 @@ export default function AIHub() {
                           {askAI.showDocumentWarning && (
                             <div>
                               <p className="text-xs text-amber-700 dark:text-amber-300">
-                                Documents: {askAI.uploadedDocuments.length}/{MEMORY_LIMITS.MAX_DOCUMENTS} ({askAI.documentCapacityPercent.toFixed(0)}%)
+                                Documents: {askAI.uploadedDocuments.length}/
+                                {MEMORY_LIMITS.MAX_DOCUMENTS} (
+                                {askAI.documentCapacityPercent.toFixed(0)}%)
                               </p>
-                              <Progress value={askAI.documentCapacityPercent} className="h-1.5 mt-1" />
+                              <Progress
+                                value={askAI.documentCapacityPercent}
+                                className="h-1.5 mt-1"
+                              />
                             </div>
                           )}
                           {askAI.showMessageWarning && (
                             <div>
                               <p className="text-xs text-amber-700 dark:text-amber-300">
-                                Messages: {askAI.messages.length}/{MEMORY_LIMITS.MAX_MESSAGES} ({askAI.messageCapacityPercent.toFixed(0)}%)
+                                Messages: {askAI.messages.length}/{MEMORY_LIMITS.MAX_MESSAGES} (
+                                {askAI.messageCapacityPercent.toFixed(0)}%)
                               </p>
-                              <Progress value={askAI.messageCapacityPercent} className="h-1.5 mt-1" />
+                              <Progress
+                                value={askAI.messageCapacityPercent}
+                                className="h-1.5 mt-1"
+                              />
                             </div>
                           )}
                         </div>
@@ -523,7 +546,7 @@ export default function AIHub() {
                   onClose={() => askAI.setShowOnboardingTutorial(false)}
                   onComplete={() => {
                     askAI.setShowOnboardingTutorial(false);
-                    toast.success("Welcome to AI Chat!");
+                    toast.success('Welcome to AI Chat!');
                   }}
                 />
               )}
@@ -560,7 +583,11 @@ export default function AIHub() {
           {/* Research Tab */}
           <TabsContent value="research" className="flex-1 overflow-auto m-0 p-6">
             <ErrorBoundary>
-              <Tabs value={researchActiveTab} onValueChange={setResearchActiveTab} className="space-y-6">
+              <Tabs
+                value={researchActiveTab}
+                onValueChange={setResearchActiveTab}
+                className="space-y-6"
+              >
                 <TabsList className="grid w-full grid-cols-2 h-12 max-w-md">
                   <TabsTrigger value="research" className="text-base font-medium">
                     <Brain className="w-4 h-4 mr-2" />
@@ -581,7 +608,9 @@ export default function AIHub() {
                         <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
                           Researching for: {selectedProject.name}
                         </span>
-                        <Badge variant="outline" className="ml-auto">Project</Badge>
+                        <Badge variant="outline" className="ml-auto">
+                          Project
+                        </Badge>
                       </div>
                     )}
                     {selectedAssignment && (
@@ -609,7 +638,9 @@ export default function AIHub() {
                       <AIResearchAssistant
                         assignment={selectedAssignment}
                         project={selectedProject}
-                        documents={selectedAssignment ? getAssignmentDocuments(selectedAssignment.id) : []}
+                        documents={
+                          selectedAssignment ? getAssignmentDocuments(selectedAssignment.id) : []
+                        }
                         currentUser={currentUser}
                         onResearchComplete={handleResearchComplete}
                         workspaceId={currentWorkspaceId}
@@ -634,9 +665,14 @@ export default function AIHub() {
                       {researchHistory.length > 0 ? (
                         <div className="space-y-4">
                           {researchHistory.map((research) => (
-                            <div key={research.id} className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                            <div
+                              key={research.id}
+                              className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                            >
                               <div className="flex items-start justify-between mb-2">
-                                <h4 className="font-medium text-gray-900 dark:text-white">{research.question}</h4>
+                                <h4 className="font-medium text-gray-900 dark:text-white">
+                                  {research.question}
+                                </h4>
                                 <Badge variant="outline">{research.research_type}</Badge>
                               </div>
                               <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3 mb-3">

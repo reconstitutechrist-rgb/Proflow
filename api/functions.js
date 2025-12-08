@@ -19,9 +19,26 @@ export const anthropicResearch = async (params) => {
 // RAG (Retrieval Augmented Generation) helper - stub implementation
 // Supports multiple endpoints: generateEmbeddings, findSimilarChunks
 export const ragHelper = async (params) => {
-  const { endpoint, query, documents, context, documentId, content, fileName, chunkingStrategy, chunks, topK, cachedEmbeddings } = params;
+  const {
+    endpoint,
+    query,
+    documents,
+    context,
+    documentId,
+    content,
+    fileName,
+    chunkingStrategy,
+    chunks,
+    topK,
+    cachedEmbeddings,
+  } = params;
 
-  console.log('ragHelper called with:', { endpoint, query, documentsCount: documents?.length, fileName });
+  console.log('ragHelper called with:', {
+    endpoint,
+    query,
+    documentsCount: documents?.length,
+    fileName,
+  });
 
   // Handle different RAG endpoints
   if (endpoint === 'generateEmbeddings') {
@@ -36,8 +53,8 @@ export const ragHelper = async (params) => {
           structureAnalysis: cachedEmbeddings.structure_analysis || null,
           tokenCount: cachedEmbeddings.token_count || 0,
           estimatedCost: 0, // No cost for cached
-          fromCache: true
-        }
+          fromCache: true,
+        },
       };
     }
 
@@ -51,17 +68,19 @@ export const ragHelper = async (params) => {
       generatedChunks.push({
         text: textContent.substring(i, i + chunkSize),
         chunkType: 'text',
-        index: generatedChunks.length
+        index: generatedChunks.length,
       });
     }
 
     // Simulate embeddings (would be real vectors in production)
     const simulatedEmbeddings = generatedChunks.map(() =>
-      Array(384).fill(0).map(() => Math.random() - 0.5)
+      Array(384)
+        .fill(0)
+        .map(() => Math.random() - 0.5)
     );
 
     const tokenCount = Math.ceil(textContent.length / 4); // Rough token estimate
-    const estimatedCost = tokenCount * 0.0001 / 1000; // Simulated cost
+    const estimatedCost = (tokenCount * 0.0001) / 1000; // Simulated cost
 
     return {
       data: {
@@ -72,8 +91,8 @@ export const ragHelper = async (params) => {
         structureAnalysis: null,
         tokenCount: tokenCount,
         estimatedCost: estimatedCost,
-        fromCache: false
-      }
+        fromCache: false,
+      },
     };
   }
 
@@ -87,14 +106,14 @@ export const ragHelper = async (params) => {
     const shuffled = [...inputChunks].sort(() => Math.random() - 0.5);
     const selectedChunks = shuffled.slice(0, Math.min(k, inputChunks.length)).map((chunk, idx) => ({
       ...chunk,
-      score: 0.9 - (idx * 0.1), // Simulated relevance scores
+      score: 0.9 - idx * 0.1, // Simulated relevance scores
     }));
 
     return {
       data: {
         chunks: selectedChunks,
-        usingRealEmbeddings: false // Would be true with real OpenAI embeddings
-      }
+        usingRealEmbeddings: false, // Would be true with real OpenAI embeddings
+      },
     };
   }
 
@@ -105,27 +124,27 @@ export const ragHelper = async (params) => {
       message: 'RAG helper not configured. Please set up your preferred RAG implementation.',
       response: 'RAG response placeholder',
       sources: [],
-    }
+    },
   };
 };
 
 /**
  * Export a chat/research session to PDF format.
- * 
+ *
  * @description This is a stub implementation. To enable PDF export,
  * integrate with a PDF generation library (e.g., jsPDF, pdfmake, or Puppeteer)
  * or a server-side PDF generation service.
- * 
+ *
  * @param {Object} params - Export parameters
  * @param {Object} params.session - Session metadata (id, name, dates, etc.)
  * @param {Array<Object>} params.messages - Array of message objects to include in the PDF
  * @param {string} params.title - Title for the PDF document
- * 
+ *
  * @returns {Promise<Object>} Export result
  * @returns {boolean} returns.success - Whether the export was successful
  * @returns {string} returns.message - Status message
  * @returns {string|null} returns.pdfUrl - URL to download the generated PDF (null if not configured)
- * 
+ *
  * @example
  * const result = await exportSessionToPdf({
  *   session: { id: 'sess-123', name: 'Research Session' },
@@ -135,9 +154,13 @@ export const ragHelper = async (params) => {
  */
 export const exportSessionToPdf = async (params) => {
   const { session, messages, title } = params;
-  
-  console.log('exportSessionToPdf called with:', { session, messagesCount: messages?.length, title });
-  
+
+  console.log('exportSessionToPdf called with:', {
+    session,
+    messagesCount: messages?.length,
+    title,
+  });
+
   // Stub implementation
   return {
     success: true,

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { db } from "@/api/db";
+import React, { useState, useEffect, useCallback } from 'react';
+import { db } from '@/api/db';
 import {
   CommandDialog,
   CommandEmpty,
@@ -8,8 +8,8 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "@/components/ui/command";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/command';
+import { Badge } from '@/components/ui/badge';
 import {
   Search,
   FileText,
@@ -17,18 +17,18 @@ import {
   MessageSquare,
   CheckSquare,
   Loader2,
-  Target
-} from "lucide-react";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+  Target,
+} from 'lucide-react';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
 export default function GlobalSearch({ isOpen, onClose }) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState({
     projects: [],
     assignments: [],
     documents: [],
     tasks: [],
-    messages: []
+    messages: [],
   });
   const [loading, setLoading] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState(null);
@@ -37,13 +37,13 @@ export default function GlobalSearch({ isOpen, onClose }) {
 
   useEffect(() => {
     if (!isOpen) {
-      setSearchQuery("");
+      setSearchQuery('');
       setResults({
         projects: [],
         assignments: [],
         documents: [],
         tasks: [],
-        messages: []
+        messages: [],
       });
     }
   }, [isOpen]);
@@ -59,7 +59,7 @@ export default function GlobalSearch({ isOpen, onClose }) {
         assignments: [],
         documents: [],
         tasks: [],
-        messages: []
+        messages: [],
       });
       return;
     }
@@ -85,56 +85,78 @@ export default function GlobalSearch({ isOpen, onClose }) {
       const searchLower = query.toLowerCase();
 
       const [projects, assignments, documents, tasks, messages] = await Promise.allSettled([
-        db.entities.Project.filter({ 
-          workspace_id: currentWorkspaceId 
-        }, "-updated_date", 20),
-        db.entities.Assignment.filter({ 
-          workspace_id: currentWorkspaceId 
-        }, "-updated_date", 20),
-        db.entities.Document.filter({ 
-          workspace_id: currentWorkspaceId 
-        }, "-updated_date", 20),
-        db.entities.Task.filter({ 
-          workspace_id: currentWorkspaceId 
-        }, "-updated_date", 20),
-        db.entities.Message.filter({ 
-          workspace_id: currentWorkspaceId 
-        }, "-created_date", 20).catch(() => [])
+        db.entities.Project.filter(
+          {
+            workspace_id: currentWorkspaceId,
+          },
+          '-updated_date',
+          20
+        ),
+        db.entities.Assignment.filter(
+          {
+            workspace_id: currentWorkspaceId,
+          },
+          '-updated_date',
+          20
+        ),
+        db.entities.Document.filter(
+          {
+            workspace_id: currentWorkspaceId,
+          },
+          '-updated_date',
+          20
+        ),
+        db.entities.Task.filter(
+          {
+            workspace_id: currentWorkspaceId,
+          },
+          '-updated_date',
+          20
+        ),
+        db.entities.Message.filter(
+          {
+            workspace_id: currentWorkspaceId,
+          },
+          '-created_date',
+          20
+        ).catch(() => []),
       ]);
 
       const projectResults = (projects.status === 'fulfilled' ? projects.value : [])
-        .filter(p => 
-          p.name?.toLowerCase().includes(searchLower) ||
-          p.description?.toLowerCase().includes(searchLower)
+        .filter(
+          (p) =>
+            p.name?.toLowerCase().includes(searchLower) ||
+            p.description?.toLowerCase().includes(searchLower)
         )
         .slice(0, 5);
 
       const assignmentResults = (assignments.status === 'fulfilled' ? assignments.value : [])
-        .filter(a => 
-          a.name?.toLowerCase().includes(searchLower) ||
-          a.description?.toLowerCase().includes(searchLower)
+        .filter(
+          (a) =>
+            a.name?.toLowerCase().includes(searchLower) ||
+            a.description?.toLowerCase().includes(searchLower)
         )
         .slice(0, 5);
 
       const documentResults = (documents.status === 'fulfilled' ? documents.value : [])
-        .filter(d => 
-          d.title?.toLowerCase().includes(searchLower) ||
-          d.description?.toLowerCase().includes(searchLower) ||
-          d.content?.toLowerCase().includes(searchLower)
+        .filter(
+          (d) =>
+            d.title?.toLowerCase().includes(searchLower) ||
+            d.description?.toLowerCase().includes(searchLower) ||
+            d.content?.toLowerCase().includes(searchLower)
         )
         .slice(0, 5);
 
       const taskResults = (tasks.status === 'fulfilled' ? tasks.value : [])
-        .filter(t => 
-          t.title?.toLowerCase().includes(searchLower) ||
-          t.description?.toLowerCase().includes(searchLower)
+        .filter(
+          (t) =>
+            t.title?.toLowerCase().includes(searchLower) ||
+            t.description?.toLowerCase().includes(searchLower)
         )
         .slice(0, 5);
 
       const messageResults = (messages.status === 'fulfilled' ? messages.value : [])
-        .filter(m => 
-          m.content?.toLowerCase().includes(searchLower)
-        )
+        .filter((m) => m.content?.toLowerCase().includes(searchLower))
         .slice(0, 5);
 
       setResults({
@@ -142,10 +164,10 @@ export default function GlobalSearch({ isOpen, onClose }) {
         assignments: assignmentResults,
         documents: documentResults,
         tasks: taskResults,
-        messages: messageResults
+        messages: messageResults,
       });
     } catch (error) {
-      console.error("Error performing search:", error);
+      console.error('Error performing search:', error);
     } finally {
       setLoading(false);
     }
@@ -155,14 +177,14 @@ export default function GlobalSearch({ isOpen, onClose }) {
     onClose();
     // Navigation will be handled by the parent via onResultClick callback
     if (typeof window !== 'undefined') {
-      const event = new CustomEvent('globalSearchResult', { 
-        detail: { result, type } 
+      const event = new CustomEvent('globalSearchResult', {
+        detail: { result, type },
       });
       window.dispatchEvent(event);
     }
   };
 
-  const totalResults = 
+  const totalResults =
     results.projects.length +
     results.assignments.length +
     results.documents.length +
@@ -171,8 +193,8 @@ export default function GlobalSearch({ isOpen, onClose }) {
 
   return (
     <CommandDialog open={isOpen} onOpenChange={onClose}>
-      <CommandInput 
-        placeholder="Search projects, assignments, documents, tasks..." 
+      <CommandInput
+        placeholder="Search projects, assignments, documents, tasks..."
         value={searchQuery}
         onValueChange={setSearchQuery}
       />

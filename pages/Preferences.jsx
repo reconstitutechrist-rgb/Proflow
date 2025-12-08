@@ -1,16 +1,21 @@
-
-import React, { useState, useEffect } from "react";
-import { db } from "@/api/db";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+import React, { useState, useEffect } from 'react';
+import { db } from '@/api/db';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import {
   Settings,
   User as UserIcon,
@@ -24,32 +29,32 @@ import {
   Phone,
   MapPin,
   Briefcase,
-  RefreshCw
-} from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+  RefreshCw,
+} from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function PreferencesPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   // Form data
   const [formData, setFormData] = useState({
-    full_name: "",
-    email: "",
-    department: "",
-    job_title: "",
-    phone: "",
-    bio: "",
+    full_name: '',
+    email: '',
+    department: '',
+    job_title: '',
+    phone: '',
+    bio: '',
     notification_preferences: {
       email_notifications: true,
       task_reminders: true,
       project_updates: true,
       assignment_mentions: true,
-      document_shares: true
-    }
+      document_shares: true,
+    },
   });
 
   useEffect(() => {
@@ -63,61 +68,61 @@ export default function PreferencesPage() {
       setUser(userData);
 
       setFormData({
-        full_name: userData.full_name || "",
-        email: userData.email || "",
-        department: userData.department || "",
-        job_title: userData.job_title || "",
-        phone: userData.phone || "",
-        bio: userData.bio || "",
-        notification_preferences: { // Preserving notification preferences load
+        full_name: userData.full_name || '',
+        email: userData.email || '',
+        department: userData.department || '',
+        job_title: userData.job_title || '',
+        phone: userData.phone || '',
+        bio: userData.bio || '',
+        notification_preferences: {
+          // Preserving notification preferences load
           email_notifications: userData.notification_preferences?.email_notifications ?? true,
           task_reminders: userData.notification_preferences?.task_reminders ?? true,
           project_updates: userData.notification_preferences?.project_updates ?? true,
           assignment_mentions: userData.notification_preferences?.assignment_mentions ?? true,
-          document_shares: userData.notification_preferences?.document_shares ?? true
-        }
+          document_shares: userData.notification_preferences?.document_shares ?? true,
+        },
       });
     } catch (error) {
-      console.error("Error loading user data:", error);
-      setError("Failed to load user preferences"); // Using existing error state for consistency
+      console.error('Error loading user data:', error);
+      setError('Failed to load user preferences'); // Using existing error state for consistency
     } finally {
       setLoading(false);
     }
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
     setSaved(false);
-    setError(""); // Clear error on new input
+    setError(''); // Clear error on new input
   };
 
   const handleNotificationChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       notification_preferences: {
         ...prev.notification_preferences,
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
     setSaved(false);
-    setError(""); // Clear error on new input
+    setError(''); // Clear error on new input
   };
 
   const handleSave = async () => {
     try {
       setSaving(true);
-      setError(""); // Clear previous errors
+      setError(''); // Clear previous errors
       await db.auth.updateMe(formData); // FIXED: Use db.auth.updateMe()
       setUser({ ...user, ...formData }); // Update local user state
       setSaved(true); // Using existing success state for consistency
       setTimeout(() => setSaved(false), 3000); // Using existing timeout for consistency
-
     } catch (error) {
-      console.error("Error saving preferences:", error);
-      setError("Failed to save preferences. Please try again."); // Using existing error state for consistency
+      console.error('Error saving preferences:', error);
+      setError('Failed to save preferences. Please try again.'); // Using existing error state for consistency
     } finally {
       setSaving(false);
     }
@@ -164,9 +169,7 @@ export default function PreferencesPage() {
       {error && (
         <Alert className="border-red-200 bg-red-50">
           <AlertCircle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-800">
-            {error}
-          </AlertDescription>
+          <AlertDescription className="text-red-800">{error}</AlertDescription>
         </Alert>
       )}
 
@@ -185,7 +188,10 @@ export default function PreferencesPage() {
               <div className="flex items-center gap-6">
                 <Avatar className="w-20 h-20">
                   <AvatarFallback className="bg-blue-100 text-blue-600 text-xl font-semibold">
-                    {user?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                    {user?.full_name
+                      ?.split(' ')
+                      .map((n) => n[0])
+                      .join('') || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <div>
@@ -211,7 +217,9 @@ export default function PreferencesPage() {
                     disabled // Built-in field, typically can't be changed
                     className="bg-gray-50"
                   />
-                  <p className="text-xs text-gray-500">Contact your administrator to change your name</p>
+                  <p className="text-xs text-gray-500">
+                    Contact your administrator to change your name
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -225,7 +233,9 @@ export default function PreferencesPage() {
                     disabled // Built-in field, typically can't be changed
                     className="bg-gray-50"
                   />
-                  <p className="text-xs text-gray-500">Contact your administrator to change your email</p>
+                  <p className="text-xs text-gray-500">
+                    Contact your administrator to change your email
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -296,14 +306,18 @@ export default function PreferencesPage() {
                   </div>
                   <Switch
                     checked={formData.notification_preferences.email_notifications}
-                    onCheckedChange={(value) => handleNotificationChange('email_notifications', value)}
+                    onCheckedChange={(value) =>
+                      handleNotificationChange('email_notifications', value)
+                    }
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="text-base">Task Reminders</Label>
-                    <p className="text-sm text-gray-500">Get notified about upcoming task deadlines</p>
+                    <p className="text-sm text-gray-500">
+                      Get notified about upcoming task deadlines
+                    </p>
                   </div>
                   <Switch
                     checked={formData.notification_preferences.task_reminders}
@@ -314,7 +328,9 @@ export default function PreferencesPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="text-base">Assignment Updates</Label>
-                    <p className="text-sm text-gray-500">Receive updates about assignments you're involved in</p>
+                    <p className="text-sm text-gray-500">
+                      Receive updates about assignments you're involved in
+                    </p>
                   </div>
                   <Switch
                     checked={formData.notification_preferences.project_updates}
@@ -325,18 +341,24 @@ export default function PreferencesPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="text-base">Assignment Mentions</Label>
-                    <p className="text-sm text-gray-500">Get notified when you're mentioned in discussions</p>
+                    <p className="text-sm text-gray-500">
+                      Get notified when you're mentioned in discussions
+                    </p>
                   </div>
                   <Switch
                     checked={formData.notification_preferences.assignment_mentions}
-                    onCheckedChange={(value) => handleNotificationChange('assignment_mentions', value)}
+                    onCheckedChange={(value) =>
+                      handleNotificationChange('assignment_mentions', value)
+                    }
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="text-base">Document Shares</Label>
-                    <p className="text-sm text-gray-500">Receive notifications when documents are shared with you</p>
+                    <p className="text-sm text-gray-500">
+                      Receive notifications when documents are shared with you
+                    </p>
                   </div>
                   <Switch
                     checked={formData.notification_preferences.document_shares}
@@ -369,7 +391,9 @@ export default function PreferencesPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Member Since</span>
                   <span className="text-sm font-medium">
-                    {user?.created_date ? new Date(user.created_date).toLocaleDateString() : 'Unknown'}
+                    {user?.created_date
+                      ? new Date(user.created_date).toLocaleDateString()
+                      : 'Unknown'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">

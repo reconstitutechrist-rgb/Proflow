@@ -1,35 +1,30 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Loader2, Target } from "lucide-react";
-import {
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { toast } from "sonner";
+} from '@/components/ui/select';
+import { Loader2, Target } from 'lucide-react';
+import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 export default function AssignmentForm({
   assignment,
   onSubmit,
   onCancel,
   defaultProjectId = null,
-  projects = []
+  projects = [],
 }) {
   const [formData, setFormData] = useState({
-    project_id: "",
-    title: "",
-    description: ""
+    project_id: '',
+    title: '',
+    description: '',
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -37,15 +32,15 @@ export default function AssignmentForm({
   useEffect(() => {
     if (assignment) {
       setFormData({
-        project_id: assignment.project_id || defaultProjectId || "",
-        title: assignment.title || "",
-        description: assignment.description || ""
+        project_id: assignment.project_id || defaultProjectId || '',
+        title: assignment.title || '',
+        description: assignment.description || '',
       });
     } else {
       setFormData({
-        project_id: defaultProjectId || "",
-        title: "",
-        description: ""
+        project_id: defaultProjectId || '',
+        title: '',
+        description: '',
       });
     }
   }, [assignment, defaultProjectId]);
@@ -54,7 +49,7 @@ export default function AssignmentForm({
     e.preventDefault();
 
     if (!formData.title.trim()) {
-      toast.error("Please enter an assignment title");
+      toast.error('Please enter an assignment title');
       return;
     }
 
@@ -62,12 +57,12 @@ export default function AssignmentForm({
     try {
       await onSubmit({
         ...formData,
-        project_id: formData.project_id || null
+        project_id: formData.project_id || null,
       });
     } catch (error) {
-      console.error("Error submitting form:", error);
-      toast.error("Failed to save assignment", {
-        description: error.message || "Please try again"
+      console.error('Error submitting form:', error);
+      toast.error('Failed to save assignment', {
+        description: error.message || 'Please try again',
       });
     } finally {
       setIsSaving(false);
@@ -78,10 +73,12 @@ export default function AssignmentForm({
     <>
       <DialogHeader>
         <DialogTitle className="text-2xl font-bold">
-          {assignment ? "Edit Assignment" : "Create New Assignment"}
+          {assignment ? 'Edit Assignment' : 'Create New Assignment'}
         </DialogTitle>
         <DialogDescription>
-          {assignment ? "Update assignment details" : "Create a new assignment to organize your work"}
+          {assignment
+            ? 'Update assignment details'
+            : 'Create a new assignment to organize your work'}
         </DialogDescription>
       </DialogHeader>
 
@@ -94,11 +91,13 @@ export default function AssignmentForm({
               Project (Optional)
             </Label>
             <Select
-              value={formData.project_id || "none"}
-              onValueChange={(value) => setFormData({
-                ...formData,
-                project_id: value === "none" ? "" : value
-              })}
+              value={formData.project_id || 'none'}
+              onValueChange={(value) =>
+                setFormData({
+                  ...formData,
+                  project_id: value === 'none' ? '' : value,
+                })
+              }
             >
               <SelectTrigger className="mt-2">
                 <SelectValue placeholder="Select a project..." />
@@ -149,8 +148,10 @@ export default function AssignmentForm({
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Saving...
               </>
+            ) : assignment ? (
+              'Update Assignment'
             ) : (
-              assignment ? "Update Assignment" : "Create Assignment"
+              'Create Assignment'
             )}
           </Button>
         </DialogFooter>

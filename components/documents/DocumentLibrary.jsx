@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   FileText,
   Eye,
@@ -35,13 +35,13 @@ import {
   Trash2,
   MoreVertical,
   FolderKanban,
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import DocumentUploader from "@/features/documents/DocumentUploader";
-import FolderStructure from "@/components/common/FolderStructure";
-import ProjectAssignmentStructure from "@/components/common/ProjectAssignmentStructure";
-import DocumentViewToggle from "@/components/common/DocumentViewToggle";
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import DocumentUploader from '@/features/documents/DocumentUploader';
+import FolderStructure from '@/components/common/FolderStructure';
+import ProjectAssignmentStructure from '@/components/common/ProjectAssignmentStructure';
+import DocumentViewToggle from '@/components/common/DocumentViewToggle';
 
 export default function DocumentLibrary({
   documents,
@@ -51,14 +51,14 @@ export default function DocumentLibrary({
   onEditDocument,
   onDeleteDocument,
   onCreateDocument,
-  onRefresh
+  onRefresh,
 }) {
   // Local UI State
-  const [viewMode, setViewMode] = useState("grid");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [selectedAssignmentFilter, setSelectedAssignmentFilter] = useState("all");
-  const [selectedProjectFilter, setSelectedProjectFilter] = useState("all");
+  const [viewMode, setViewMode] = useState('grid');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [selectedAssignmentFilter, setSelectedAssignmentFilter] = useState('all');
+  const [selectedProjectFilter, setSelectedProjectFilter] = useState('all');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [sidebarViewMode, setSidebarViewMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -68,7 +68,7 @@ export default function DocumentLibrary({
   });
   const [projectAssignmentFilter, setProjectAssignmentFilter] = useState({
     type: null, // 'project' | 'assignment' | 'unlinked'
-    id: null
+    id: null,
   });
   const [selectedFolderPath, setSelectedFolderPath] = useState(null);
 
@@ -79,46 +79,58 @@ export default function DocumentLibrary({
 
   // Helper to get project name by ID
   const getProjectName = (projectId) => {
-    const project = projects.find(p => p.id === projectId);
+    const project = projects.find((p) => p.id === projectId);
     return project?.name || null;
   };
 
   // Filter documents
-  const filteredDocuments = documents
-    .filter(doc => {
-      if (doc.document_type === "folder_placeholder") return false;
-      const matchesSearch = !searchQuery ||
-        doc.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.file_name?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesAssignment = selectedAssignmentFilter === "all" ||
-        (selectedAssignmentFilter === "unassigned" && (!doc.assigned_to_assignments || doc.assigned_to_assignments.length === 0)) ||
-        (doc.assigned_to_assignments?.includes(selectedAssignmentFilter));
-      const matchesProject = selectedProjectFilter === "all" ||
-        (selectedProjectFilter === "unassigned" && !doc.assigned_to_project) ||
-        (doc.assigned_to_project === selectedProjectFilter);
-      const matchesType = typeFilter === "all" || doc.document_type === typeFilter;
+  const filteredDocuments = documents.filter((doc) => {
+    if (doc.document_type === 'folder_placeholder') return false;
+    const matchesSearch =
+      !searchQuery ||
+      doc.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.file_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesAssignment =
+      selectedAssignmentFilter === 'all' ||
+      (selectedAssignmentFilter === 'unassigned' &&
+        (!doc.assigned_to_assignments || doc.assigned_to_assignments.length === 0)) ||
+      doc.assigned_to_assignments?.includes(selectedAssignmentFilter);
+    const matchesProject =
+      selectedProjectFilter === 'all' ||
+      (selectedProjectFilter === 'unassigned' && !doc.assigned_to_project) ||
+      doc.assigned_to_project === selectedProjectFilter;
+    const matchesType = typeFilter === 'all' || doc.document_type === typeFilter;
 
-      // Sidebar filter: Folder path filter (when in folders view)
-      const matchesFolderPath = !selectedFolderPath ||
-        sidebarViewMode !== 'folders' ||
-        (doc.folder_path || '/') === selectedFolderPath ||
-        (doc.folder_path || '/').startsWith(selectedFolderPath + '/');
+    // Sidebar filter: Folder path filter (when in folders view)
+    const matchesFolderPath =
+      !selectedFolderPath ||
+      sidebarViewMode !== 'folders' ||
+      (doc.folder_path || '/') === selectedFolderPath ||
+      (doc.folder_path || '/').startsWith(selectedFolderPath + '/');
 
-      // Sidebar filter: Project/Assignment filter (when in projects view)
-      let matchesSidebarFilter = true;
-      if (sidebarViewMode === 'projects' && projectAssignmentFilter.type) {
-        if (projectAssignmentFilter.type === 'project') {
-          matchesSidebarFilter = doc.assigned_to_project === projectAssignmentFilter.id;
-        } else if (projectAssignmentFilter.type === 'assignment') {
-          matchesSidebarFilter = doc.assigned_to_assignments?.includes(projectAssignmentFilter.id);
-        } else if (projectAssignmentFilter.type === 'unlinked') {
-          matchesSidebarFilter = !doc.assigned_to_project &&
-            (!doc.assigned_to_assignments || doc.assigned_to_assignments.length === 0);
-        }
+    // Sidebar filter: Project/Assignment filter (when in projects view)
+    let matchesSidebarFilter = true;
+    if (sidebarViewMode === 'projects' && projectAssignmentFilter.type) {
+      if (projectAssignmentFilter.type === 'project') {
+        matchesSidebarFilter = doc.assigned_to_project === projectAssignmentFilter.id;
+      } else if (projectAssignmentFilter.type === 'assignment') {
+        matchesSidebarFilter = doc.assigned_to_assignments?.includes(projectAssignmentFilter.id);
+      } else if (projectAssignmentFilter.type === 'unlinked') {
+        matchesSidebarFilter =
+          !doc.assigned_to_project &&
+          (!doc.assigned_to_assignments || doc.assigned_to_assignments.length === 0);
       }
+    }
 
-      return matchesSearch && matchesAssignment && matchesProject && matchesType && matchesFolderPath && matchesSidebarFilter;
-    });
+    return (
+      matchesSearch &&
+      matchesAssignment &&
+      matchesProject &&
+      matchesType &&
+      matchesFolderPath &&
+      matchesSidebarFilter
+    );
+  });
 
   const handleUploadComplete = () => {
     setIsUploadOpen(false);
@@ -191,15 +203,15 @@ export default function DocumentLibrary({
               {sidebarViewMode === 'projects' && projectAssignmentFilter.type === 'project' && (
                 <>
                   <FolderKanban className="w-3 h-3 mr-2" />
-                  {projects.find(p => p.id === projectAssignmentFilter.id)?.name || 'Project'}
+                  {projects.find((p) => p.id === projectAssignmentFilter.id)?.name || 'Project'}
                 </>
               )}
               {sidebarViewMode === 'projects' && projectAssignmentFilter.type === 'assignment' && (
                 <>
                   <Target className="w-3 h-3 mr-2" />
-                  {assignments.find(a => a.id === projectAssignmentFilter.id)?.title ||
-                   assignments.find(a => a.id === projectAssignmentFilter.id)?.name ||
-                   'Assignment'}
+                  {assignments.find((a) => a.id === projectAssignmentFilter.id)?.title ||
+                    assignments.find((a) => a.id === projectAssignmentFilter.id)?.name ||
+                    'Assignment'}
                 </>
               )}
               {sidebarViewMode === 'projects' && projectAssignmentFilter.type === 'unlinked' && (
@@ -233,8 +245,10 @@ export default function DocumentLibrary({
             <SelectContent>
               <SelectItem value="all">All Projects</SelectItem>
               <SelectItem value="unassigned">No Project</SelectItem>
-              {projects.map(p => (
-                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              {projects.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -245,8 +259,10 @@ export default function DocumentLibrary({
             <SelectContent>
               <SelectItem value="all">All Assignments</SelectItem>
               <SelectItem value="unassigned">No Assignment</SelectItem>
-              {assignments.map(a => (
-                <SelectItem key={a.id} value={a.id}>{a.name || a.title}</SelectItem>
+              {assignments.map((a) => (
+                <SelectItem key={a.id} value={a.id}>
+                  {a.name || a.title}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -262,8 +278,15 @@ export default function DocumentLibrary({
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}>
-            {viewMode === "grid" ? <List className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />}
+          <Button
+            variant="outline"
+            onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+          >
+            {viewMode === 'grid' ? (
+              <List className="w-4 h-4" />
+            ) : (
+              <LayoutGrid className="w-4 h-4" />
+            )}
           </Button>
           <Button variant="outline" onClick={() => setIsUploadOpen(true)}>
             <Upload className="w-4 h-4 mr-2" />
@@ -276,18 +299,25 @@ export default function DocumentLibrary({
           {filteredDocuments.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-center">
               <FileText className="w-12 h-12 text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No documents found</h3>
-              <p className="text-sm text-gray-500 mb-4">Try adjusting filters or create a new document</p>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No documents found
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Try adjusting filters or create a new document
+              </p>
               <Button onClick={onCreateDocument} variant="outline">
                 <Plus className="w-4 h-4 mr-2" />
                 Create Document
               </Button>
             </div>
           ) : (
-            <div className={viewMode === "grid"
-              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-              : "space-y-2"
-            }>
+            <div
+              className={
+                viewMode === 'grid'
+                  ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
+                  : 'space-y-2'
+              }
+            >
               <AnimatePresence mode="popLayout">
                 {filteredDocuments.map((doc) => (
                   <motion.div
@@ -300,9 +330,11 @@ export default function DocumentLibrary({
                       className="cursor-pointer hover:shadow-lg hover:border-indigo-300 transition-all group relative"
                       onClick={() => onEditDocument(doc)}
                     >
-                      <CardContent className={viewMode === "grid" ? "p-4" : "p-3 flex items-center gap-4"}>
+                      <CardContent
+                        className={viewMode === 'grid' ? 'p-4' : 'p-3 flex items-center gap-4'}
+                      >
                         {/* Grid view layout */}
-                        {viewMode === "grid" && (
+                        {viewMode === 'grid' && (
                           <>
                             <div className="flex items-start justify-between mb-3">
                               <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
@@ -319,7 +351,12 @@ export default function DocumentLibrary({
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEditDocument(doc); }}>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onEditDocument(doc);
+                                    }}
+                                  >
                                     <Eye className="w-4 h-4 mr-2" />
                                     Open
                                   </DropdownMenuItem>
@@ -334,35 +371,51 @@ export default function DocumentLibrary({
                               </DropdownMenu>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-medium text-gray-900 dark:text-white truncate">{doc.title}</h3>
+                              <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                                {doc.title}
+                              </h3>
                               <div className="flex items-center gap-2 mt-1">
-                                <p className="text-xs text-gray-500">{new Date(doc.created_date).toLocaleDateString()}</p>
-                                {doc.assigned_to_project && getProjectName(doc.assigned_to_project) && (
-                                  <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                                    <FolderKanban className="w-3 h-3 mr-1" />
-                                    {getProjectName(doc.assigned_to_project)}
-                                  </Badge>
-                                )}
+                                <p className="text-xs text-gray-500">
+                                  {new Date(doc.created_date).toLocaleDateString()}
+                                </p>
+                                {doc.assigned_to_project &&
+                                  getProjectName(doc.assigned_to_project) && (
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-xs px-1.5 py-0 h-5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                                    >
+                                      <FolderKanban className="w-3 h-3 mr-1" />
+                                      {getProjectName(doc.assigned_to_project)}
+                                    </Badge>
+                                  )}
                               </div>
                             </div>
                           </>
                         )}
                         {/* List view layout */}
-                        {viewMode === "list" && (
+                        {viewMode === 'list' && (
                           <>
                             <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
                               <FileText className="w-5 h-5 text-gray-500" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-medium text-gray-900 dark:text-white truncate">{doc.title}</h3>
+                              <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                                {doc.title}
+                              </h3>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <p className="text-xs text-gray-500">{new Date(doc.created_date).toLocaleDateString()}</p>
-                                {doc.assigned_to_project && getProjectName(doc.assigned_to_project) && (
-                                  <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                                    <FolderKanban className="w-3 h-3 mr-1" />
-                                    {getProjectName(doc.assigned_to_project)}
-                                  </Badge>
-                                )}
+                                <p className="text-xs text-gray-500">
+                                  {new Date(doc.created_date).toLocaleDateString()}
+                                </p>
+                                {doc.assigned_to_project &&
+                                  getProjectName(doc.assigned_to_project) && (
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-xs px-1.5 py-0 h-5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                                    >
+                                      <FolderKanban className="w-3 h-3 mr-1" />
+                                      {getProjectName(doc.assigned_to_project)}
+                                    </Badge>
+                                  )}
                               </div>
                             </div>
                             <DropdownMenu>
@@ -376,7 +429,12 @@ export default function DocumentLibrary({
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEditDocument(doc); }}>
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEditDocument(doc);
+                                  }}
+                                >
                                   <Eye className="w-4 h-4 mr-2" />
                                   Open
                                 </DropdownMenuItem>

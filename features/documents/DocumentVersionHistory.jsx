@@ -1,9 +1,8 @@
-
-import React, { useState, useEffect } from "react";
-import { Document } from "@/api/entities";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import React, { useState, useEffect } from 'react';
+import { Document } from '@/api/entities';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,13 +12,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Clock,
   Download,
@@ -28,11 +22,11 @@ import {
   User,
   AlertCircle,
   Loader2,
-  Eye
-} from "lucide-react";
-import { format } from "date-fns";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import { toast } from "sonner";
+  Eye,
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { toast } from 'sonner';
 
 // Error Boundary
 class VersionHistoryErrorBoundary extends React.Component {
@@ -46,7 +40,7 @@ class VersionHistoryErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("VersionHistory Error:", error, errorInfo);
+    console.error('VersionHistory Error:', error, errorInfo);
   }
 
   render() {
@@ -58,7 +52,7 @@ class VersionHistoryErrorBoundary extends React.Component {
             Failed to load version history
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            {this.state.error?.message || "An error occurred"}
+            {this.state.error?.message || 'An error occurred'}
           </p>
           <Button onClick={() => window.location.reload()} variant="outline">
             Reload Page
@@ -84,10 +78,10 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
     if (isOpen && document && currentWorkspaceId) {
       // CRITICAL: Validate document is in current workspace
       if (document.workspace_id !== currentWorkspaceId) {
-        toast.error("Cannot access version history from other workspaces");
-        console.error("Security violation: Cross-workspace version access attempt", {
+        toast.error('Cannot access version history from other workspaces');
+        console.error('Security violation: Cross-workspace version access attempt', {
           documentWorkspace: document.workspace_id,
-          currentWorkspace: currentWorkspaceId
+          currentWorkspace: currentWorkspaceId,
         });
         onClose();
         return;
@@ -110,19 +104,19 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
 
       // Add current version to the list
       const currentVersion = {
-        version: document.version || "1.0",
+        version: document.version || '1.0',
         content: document.content, // From outline
         file_url: document.file_url,
         created_date: document.updated_date || document.created_date,
         created_by: document.created_by,
-        change_notes: "Current version",
-        is_current: true
+        change_notes: 'Current version',
+        is_current: true,
       };
 
       // Combine and sort (re-use existing sort logic from allVersions)
       const combinedVersions = [
         currentVersion,
-        ...versionHistory.map(v => ({ ...v, is_current: false })) // Ensure is_current is set for historical ones
+        ...versionHistory.map((v) => ({ ...v, is_current: false })), // Ensure is_current is set for historical ones
       ].sort((a, b) => {
         const aTime = a.version.split('.')[2] || new Date(a.created_date).getTime();
         const bTime = b.version.split('.')[2] || new Date(b.created_date).getTime();
@@ -131,8 +125,8 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
 
       setVersions(combinedVersions);
     } catch (error) {
-      console.error("Error loading version history:", error);
-      toast.error("Failed to load version history");
+      console.error('Error loading version history:', error);
+      toast.error('Failed to load version history');
     } finally {
       setLoading(false);
     }
@@ -140,7 +134,7 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
 
   // Get display version (remove timestamp for cleaner UI)
   const getDisplayVersion = (version) => {
-    if (!version) return "1.0";
+    if (!version) return '1.0';
     // If version has timestamp (e.g., "1.2.1234567890"), show only major.minor
     const parts = version.split('.');
     if (parts.length > 2 && parts[2].length > 5) {
@@ -151,19 +145,19 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
 
   // Get full version (with timestamp for uniqueness)
   const getFullVersion = (version) => {
-    return version || "1.0";
+    return version || '1.0';
   };
 
   const handleDownloadVersion = (versionData) => {
     if (!versionData.file_url) {
-      toast.error("File URL not available for this version");
+      toast.error('File URL not available for this version');
       return;
     }
 
     // Force download
     fetch(versionData.file_url)
-      .then(response => response.blob())
-      .then(blob => {
+      .then((response) => response.blob())
+      .then((blob) => {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -174,9 +168,9 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
         window.URL.revokeObjectURL(url);
         toast.success(`Downloaded version ${getDisplayVersion(versionData.version)}`);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error('Download failed:', error);
-        toast.error("Failed to download file");
+        toast.error('Failed to download file');
       });
   };
 
@@ -185,8 +179,8 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
 
     // CRITICAL: Double-check workspace before restore
     if (document.workspace_id !== currentWorkspaceId) {
-      toast.error("Cannot restore versions from other workspaces");
-      console.error("Security violation: Cross-workspace version restore attempt");
+      toast.error('Cannot restore versions from other workspaces');
+      console.error('Security violation: Cross-workspace version restore attempt');
       return;
     }
 
@@ -200,15 +194,15 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
         file_url: document.file_url,
         created_date: new Date().toISOString(),
         created_by: document.created_by,
-        change_notes: `Version before restore to ${getDisplayVersion(version.version)}`
+        change_notes: `Version before restore to ${getDisplayVersion(version.version)}`,
       };
 
       // Ensure version_history is an array before spreading
       const updatedHistory = [currentVersionData, ...(document.version_history || [])];
 
       // Determine new version number (increment minor by 0.1)
-      const currentMajorMinor = parseFloat(document.version || "1.0");
-      const newVersionNum = (currentMajorMinor + 0.1);
+      const currentMajorMinor = parseFloat(document.version || '1.0');
+      const newVersionNum = currentMajorMinor + 0.1;
       const newVersion = `${newVersionNum.toFixed(1)}.${Date.now()}`; // Append timestamp for uniqueness
 
       // Restore the selected version
@@ -217,16 +211,18 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
         file_url: version.file_url,
         version: newVersion,
         version_history: updatedHistory,
-        workspace_id: currentWorkspaceId // CRITICAL: Maintain workspace_id
+        workspace_id: currentWorkspaceId, // CRITICAL: Maintain workspace_id
       });
 
-      toast.success(`Restored to version ${getDisplayVersion(version.version)} (new current v${getDisplayVersion(newVersion)})`);
+      toast.success(
+        `Restored to version ${getDisplayVersion(version.version)} (new current v${getDisplayVersion(newVersion)})`
+      );
       setSelectedVersion(null); // Clear selected version to close AlertDialog
       setRestoring(false);
       onClose(); // Close the main dialog after successful restore
     } catch (error) {
-      console.error("Error restoring version:", error);
-      toast.error("Failed to restore version");
+      console.error('Error restoring version:', error);
+      toast.error('Failed to restore version');
     } finally {
       setRestoring(false);
     }
@@ -242,10 +238,10 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white">
-            Version History for "{document?.title || "Document"}"
+            Version History for "{document?.title || 'Document'}"
           </DialogTitle>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Current version: {getDisplayVersion(document?.version || "1.0")}
+            Current version: {getDisplayVersion(document?.version || '1.0')}
           </p>
         </DialogHeader>
 
@@ -289,12 +285,13 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
                         <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                           <div className="flex items-center gap-1">
                             <User className="w-4 h-4" />
-                            <span>{versionData.created_by || "Unknown"}</span>
+                            <span>{versionData.created_by || 'Unknown'}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <Clock className="w-4 h-4" />
                             <span>
-                              {format(new Date(versionData.created_date), 'MMM d, yyyy')} at {format(new Date(versionData.created_date), 'h:mm a')}
+                              {format(new Date(versionData.created_date), 'MMM d, yyyy')} at{' '}
+                              {format(new Date(versionData.created_date), 'h:mm a')}
                             </span>
                           </div>
                         </div>
@@ -348,20 +345,25 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
         </div>
 
         {/* Restore Confirmation Dialog */}
-        <AlertDialog open={!!selectedVersion && !showPreview} onOpenChange={(open) => {
-          if (!open) {
-            setSelectedVersion(null); // Clear selected version when dialog closes
-          }
-        }}>
+        <AlertDialog
+          open={!!selectedVersion && !showPreview}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedVersion(null); // Clear selected version when dialog closes
+            }
+          }}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Restore to Previous Version?</AlertDialogTitle>
               <AlertDialogDescription className="space-y-2">
                 <p>
-                  Are you sure you want to restore to version <strong>{getDisplayVersion(selectedVersion?.version)}</strong>?
+                  Are you sure you want to restore to version{' '}
+                  <strong>{getDisplayVersion(selectedVersion?.version)}</strong>?
                 </p>
                 <p className="text-amber-600 dark:text-amber-400">
-                  ⚠️ The current version will be saved in history, and a new version will be created.
+                  ⚠️ The current version will be saved in history, and a new version will be
+                  created.
                 </p>
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -389,12 +391,15 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
         </AlertDialog>
 
         {/* Preview Dialog */}
-        <Dialog open={showPreview} onOpenChange={(open) => {
-          if (!open) {
-            setShowPreview(false);
-            setSelectedVersion(null); // Clear selected version when preview closes
-          }
-        }}>
+        <Dialog
+          open={showPreview}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowPreview(false);
+              setSelectedVersion(null); // Clear selected version when preview closes
+            }
+          }}
+        >
           <DialogContent className="max-w-7xl h-[90vh]">
             <DialogHeader>
               <DialogTitle>
@@ -403,7 +408,9 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
             </DialogHeader>
             <div className="h-full overflow-hidden flex flex-col">
               <div className="mb-2 p-2 bg-gray-100 dark:bg-gray-800 rounded">
-                <p className="text-sm font-semibold">Version {getDisplayVersion(selectedVersion?.version)}</p>
+                <p className="text-sm font-semibold">
+                  Version {getDisplayVersion(selectedVersion?.version)}
+                </p>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
                   {selectedVersion && format(new Date(selectedVersion.created_date), 'MMM d, yyyy')}
                 </p>

@@ -1,9 +1,8 @@
-import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 import { Bot, User, CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 export default function MessageBubble({ message }) {
   const isUser = message.role === 'user';
@@ -28,7 +27,7 @@ export default function MessageBubble({ message }) {
   };
 
   return (
-    <div className={cn("flex gap-3", isUser ? "justify-end" : "justify-start")}>
+    <div className={cn('flex gap-3', isUser ? 'justify-end' : 'justify-start')}>
       {/* Avatar */}
       {!isUser && (
         <div className="flex-shrink-0">
@@ -39,15 +38,15 @@ export default function MessageBubble({ message }) {
       )}
 
       {/* Message Content */}
-      <div className={cn("max-w-[85%] space-y-2", isUser && "flex flex-col items-end")}>
+      <div className={cn('max-w-[85%] space-y-2', isUser && 'flex flex-col items-end')}>
         {/* Main Message */}
         {message.content && (
           <div
             className={cn(
-              "rounded-2xl px-4 py-3 shadow-sm",
+              'rounded-2xl px-4 py-3 shadow-sm',
               isUser
-                ? "bg-blue-600 text-white"
-                : "bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700"
+                ? 'bg-blue-600 text-white'
+                : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
             )}
           >
             {isUser ? (
@@ -93,13 +92,17 @@ export default function MessageBubble({ message }) {
                 <div
                   key={idx}
                   className={cn(
-                    "px-3 py-2 rounded-lg border text-xs flex items-center gap-2",
+                    'px-3 py-2 rounded-lg border text-xs flex items-center gap-2',
                     statusConfig.bg,
-                    "border-gray-200 dark:border-gray-700"
+                    'border-gray-200 dark:border-gray-700'
                   )}
                 >
                   <StatusIcon
-                    className={cn("w-3 h-3", statusConfig.color, statusConfig.spin && "animate-spin")}
+                    className={cn(
+                      'w-3 h-3',
+                      statusConfig.color,
+                      statusConfig.spin && 'animate-spin'
+                    )}
                   />
                   <span className="font-medium text-gray-700 dark:text-gray-300">
                     {toolCall.name || 'Processing...'}

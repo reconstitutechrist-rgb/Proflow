@@ -26,7 +26,7 @@
 .progress-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid #4CAF50;
+  border: 2px solid #4caf50;
   border-top-color: transparent;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -66,7 +66,7 @@
 
 .progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, #4CAF50, #8BC34A);
+  background: linear-gradient(90deg, #4caf50, #8bc34a);
   border-radius: 4px;
   transition: width 0.3s ease;
   position: relative;
@@ -79,12 +79,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
   animation: shimmer 2s infinite;
 }
 

@@ -2,4 +2,4 @@
 export {
   OptimizedWorkspaceProvider as WorkspaceProvider,
   useWorkspace,
-} from "@/features/workspace/OptimizedWorkspaceContext";
+} from '@/features/workspace/OptimizedWorkspaceContext';

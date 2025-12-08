@@ -1,6 +1,6 @@
-import React from "react";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Folder, FolderKanban } from "lucide-react";
+import React from 'react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Folder, FolderKanban } from 'lucide-react';
 
 export default function DocumentViewToggle({ value, onChange }) {
   return (

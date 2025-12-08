@@ -2,12 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Plus,
   Send,
@@ -47,12 +42,7 @@ export default function TeamChatWindow({ teamChat, onResetPosition }) {
 
   const fileInputRef = useRef(null);
 
-  const {
-    summarizing,
-    summary,
-    summarizeConversation,
-    clearSummary,
-  } = useTeamChatAI();
+  const { summarizing, summary, summarizeConversation, clearSummary } = useTeamChatAI();
 
   const {
     chats,
@@ -303,10 +293,7 @@ export default function TeamChatWindow({ teamChat, onResetPosition }) {
               {summarizing ? 'Summarizing...' : 'Summarize Chat'}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={archiveChat}
-              className="text-orange-600"
-            >
+            <DropdownMenuItem onClick={archiveChat} className="text-orange-600">
               <Archive className="w-4 h-4 mr-2" />
               Archive Chat
             </DropdownMenuItem>
@@ -338,7 +325,8 @@ export default function TeamChatWindow({ teamChat, onResetPosition }) {
         {/* Typing Indicator */}
         {typingUsers.length > 0 && (
           <div className="text-xs text-gray-500 mt-2 animate-pulse">
-            {typingUsers.map(u => u.name || u.email).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+            {typingUsers.map((u) => u.name || u.email).join(', ')}{' '}
+            {typingUsers.length === 1 ? 'is' : 'are'} typing...
           </div>
         )}
       </ScrollArea>
@@ -416,9 +404,7 @@ export default function TeamChatWindow({ teamChat, onResetPosition }) {
               <div className="space-y-4 py-2">
                 {/* Overall Summary */}
                 <div>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    {summary.summary}
-                  </p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">{summary.summary}</p>
                 </div>
 
                 {/* Key Points */}
@@ -430,7 +416,10 @@ export default function TeamChatWindow({ teamChat, onResetPosition }) {
                     </h4>
                     <ul className="space-y-1">
                       {summary.key_points.map((point, i) => (
-                        <li key={i} className="text-sm text-gray-600 dark:text-gray-400 pl-4 relative before:content-['•'] before:absolute before:left-0">
+                        <li
+                          key={i}
+                          className="text-sm text-gray-600 dark:text-gray-400 pl-4 relative before:content-['•'] before:absolute before:left-0"
+                        >
                           {point}
                         </li>
                       ))}
@@ -447,7 +436,10 @@ export default function TeamChatWindow({ teamChat, onResetPosition }) {
                     </h4>
                     <ul className="space-y-1">
                       {summary.decisions.map((decision, i) => (
-                        <li key={i} className="text-sm text-gray-600 dark:text-gray-400 pl-4 relative before:content-['•'] before:absolute before:left-0">
+                        <li
+                          key={i}
+                          className="text-sm text-gray-600 dark:text-gray-400 pl-4 relative before:content-['•'] before:absolute before:left-0"
+                        >
                           {decision}
                         </li>
                       ))}
@@ -464,7 +456,10 @@ export default function TeamChatWindow({ teamChat, onResetPosition }) {
                     </h4>
                     <ul className="space-y-1">
                       {summary.action_items.map((item, i) => (
-                        <li key={i} className="text-sm text-gray-600 dark:text-gray-400 pl-4 relative before:content-['→'] before:absolute before:left-0">
+                        <li
+                          key={i}
+                          className="text-sm text-gray-600 dark:text-gray-400 pl-4 relative before:content-['→'] before:absolute before:left-0"
+                        >
                           {item}
                         </li>
                       ))}
@@ -481,7 +476,10 @@ export default function TeamChatWindow({ teamChat, onResetPosition }) {
                     </h4>
                     <ul className="space-y-1">
                       {summary.pending_items.map((item, i) => (
-                        <li key={i} className="text-sm text-gray-600 dark:text-gray-400 pl-4 relative before:content-['?'] before:absolute before:left-0">
+                        <li
+                          key={i}
+                          className="text-sm text-gray-600 dark:text-gray-400 pl-4 relative before:content-['?'] before:absolute before:left-0"
+                        >
                           {item}
                         </li>
                       ))}
@@ -497,9 +495,7 @@ export default function TeamChatWindow({ teamChat, onResetPosition }) {
             )}
           </ScrollArea>
           <div className="pt-4 border-t flex justify-end">
-            <Button onClick={handleCloseSummary}>
-              Close
-            </Button>
+            <Button onClick={handleCloseSummary}>Close</Button>
           </div>
         </DialogContent>
       </Dialog>

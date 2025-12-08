@@ -1,34 +1,33 @@
-
-import React, { useState, useEffect } from "react";
-import { Assignment } from "@/api/entities";
-import { Document } from "@/api/entities";
-import { Task } from "@/api/entities";
-import { Message } from "@/api/entities";
-import { InvokeLLM } from "@/api/integrations";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { 
-  Brain, 
-  FolderOpen, 
-  FileText, 
-  CheckCircle, 
-  MessageSquare, 
+import React, { useState, useEffect } from 'react';
+import { Assignment } from '@/api/entities';
+import { Document } from '@/api/entities';
+import { Task } from '@/api/entities';
+import { Message } from '@/api/entities';
+import { InvokeLLM } from '@/api/integrations';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Brain,
+  FolderOpen,
+  FileText,
+  CheckCircle,
+  MessageSquare,
   Loader2,
   Link2,
   Sparkles,
   ArrowRight,
-  Lightbulb
-} from "lucide-react";
-import { Link } from "react-router";
-import { createPageUrl } from "@/lib/utils";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+  Lightbulb,
+} from 'lucide-react';
+import { Link } from 'react-router';
+import { createPageUrl } from '@/lib/utils';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
-export default function RelatedContentSuggestions({ 
-  currentItem, 
+export default function RelatedContentSuggestions({
+  currentItem,
   itemType, // "assignment", "document", "task", "message"
   maxSuggestions = 6,
-  className = ""
+  className = '',
 }) {
   const [relatedContent, setRelatedContent] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -53,29 +52,47 @@ export default function RelatedContentSuggestions({
         description: getItemDescription(currentItem, itemType),
         keywords: currentItem.ai_keywords || [],
         status: currentItem.status,
-        created_date: currentItem.created_date
+        created_date: currentItem.created_date,
       };
 
       // Load workspace-scoped content for comparison, as specified in the outline
       // Using .filter with workspace_id to scope results
       // Limits changed to 20 as per outline
       const [documents, tasks, assignments] = await Promise.all([
-        Document.filter({ 
-          workspace_id: currentWorkspaceId 
-        }, "-updated_date", 20),
-        Task.filter({ 
-          workspace_id: currentWorkspaceId 
-        }, "-updated_date", 20),
-        Assignment.filter({ 
-          workspace_id: currentWorkspaceId 
-        }, "-updated_date", 20)
+        Document.filter(
+          {
+            workspace_id: currentWorkspaceId,
+          },
+          '-updated_date',
+          20
+        ),
+        Task.filter(
+          {
+            workspace_id: currentWorkspaceId,
+          },
+          '-updated_date',
+          20
+        ),
+        Assignment.filter(
+          {
+            workspace_id: currentWorkspaceId,
+          },
+          '-updated_date',
+          20
+        ),
         // Messages are no longer fetched as per the provided outline
       ]);
 
       // Filter out the current item from the fetched content
-      const filteredDocuments = documents.filter(item => !(itemType === 'document' && item.id === currentItem.id));
-      const filteredTasks = tasks.filter(item => !(itemType === 'task' && item.id === currentItem.id));
-      const filteredAssignments = assignments.filter(item => !(itemType === 'assignment' && item.id === currentItem.id));
+      const filteredDocuments = documents.filter(
+        (item) => !(itemType === 'document' && item.id === currentItem.id)
+      );
+      const filteredTasks = tasks.filter(
+        (item) => !(itemType === 'task' && item.id === currentItem.id)
+      );
+      const filteredAssignments = assignments.filter(
+        (item) => !(itemType === 'assignment' && item.id === currentItem.id)
+      );
 
       // Generate AI suggestions (simplified structure based on outline)
       // The outline suggested a simplified data structure for setSuggestions,
@@ -84,51 +101,50 @@ export default function RelatedContentSuggestions({
       let generatedSuggestions = [];
 
       // Add document suggestions
-      filteredDocuments.slice(0, 3).forEach(d => {
+      filteredDocuments.slice(0, 3).forEach((d) => {
         generatedSuggestions.push({
           id: d.id,
           confidence: 80, // Example confidence from outline
-          explanation: "This document provides relevant background information.", // Example explanation from outline
-          relationship_type: "supporting_document",
+          explanation: 'This document provides relevant background information.', // Example explanation from outline
+          relationship_type: 'supporting_document',
           item: d,
-          itemType: getContentType(d)
+          itemType: getContentType(d),
         });
       });
 
       // Add task suggestions
-      filteredTasks.slice(0, 3).forEach(t => {
+      filteredTasks.slice(0, 3).forEach((t) => {
         generatedSuggestions.push({
           id: t.id,
           confidence: 75, // Example confidence from outline
-          explanation: "This task might be a follow-up or related action item.", // Example explanation from outline
-          relationship_type: "related_task",
+          explanation: 'This task might be a follow-up or related action item.', // Example explanation from outline
+          relationship_type: 'related_task',
           item: t,
-          itemType: getContentType(t)
+          itemType: getContentType(t),
         });
       });
 
       // Add assignment suggestions
-      filteredAssignments.slice(0, 2).forEach(a => {
+      filteredAssignments.slice(0, 2).forEach((a) => {
         generatedSuggestions.push({
           id: a.id,
           confidence: 85, // Example confidence from outline
-          explanation: "This assignment shares a similar context or objective.", // Example explanation from outline
-          relationship_type: "context", // Using 'context' as a generic relationship for assignments
+          explanation: 'This assignment shares a similar context or objective.', // Example explanation from outline
+          relationship_type: 'context', // Using 'context' as a generic relationship for assignments
           item: a,
-          itemType: getContentType(a)
+          itemType: getContentType(a),
         });
       });
-      
+
       // Shuffle and take up to maxSuggestions to mix types
       // A simple shuffle to ensure a diverse set of item types in the final suggestions
-      generatedSuggestions.sort(() => Math.random() - 0.5); 
+      generatedSuggestions.sort(() => Math.random() - 0.5);
       const finalSuggestions = generatedSuggestions.slice(0, maxSuggestions);
 
       setRelatedContent(finalSuggestions);
-
     } catch (error) {
-      console.error("Error loading suggestions:", error);
-      setError("Failed to load related content suggestions");
+      console.error('Error loading suggestions:', error);
+      setError('Failed to load related content suggestions');
     } finally {
       setIsLoading(false);
     }
@@ -145,52 +161,78 @@ export default function RelatedContentSuggestions({
 
   const getItemTitle = (item, type) => {
     switch (type) {
-      case 'assignment': return item.name;
-      case 'document': return item.title;
-      case 'task': return item.title;
-      case 'message': return item.content?.substring(0, 50) + '...';
-      default: return 'Untitled';
+      case 'assignment':
+        return item.name;
+      case 'document':
+        return item.title;
+      case 'task':
+        return item.title;
+      case 'message':
+        return item.content?.substring(0, 50) + '...';
+      default:
+        return 'Untitled';
     }
   };
 
   const getItemDescription = (item, type) => {
     switch (type) {
-      case 'assignment': return item.description || '';
-      case 'document': return item.description || '';
-      case 'task': return item.description || '';
-      case 'message': return item.content || '';
-      default: return '';
+      case 'assignment':
+        return item.description || '';
+      case 'document':
+        return item.description || '';
+      case 'task':
+        return item.description || '';
+      case 'message':
+        return item.content || '';
+      default:
+        return '';
     }
   };
 
   const getItemIcon = (type) => {
     switch (type) {
-      case 'assignment': return FolderOpen;
-      case 'document': return FileText;
-      case 'task': return CheckCircle;
-      case 'message': return MessageSquare;
-      default: return FileText;
+      case 'assignment':
+        return FolderOpen;
+      case 'document':
+        return FileText;
+      case 'task':
+        return CheckCircle;
+      case 'message':
+        return MessageSquare;
+      default:
+        return FileText;
     }
   };
 
   const getItemUrl = (item, type) => {
     switch (type) {
-      case 'assignment': return createPageUrl("Assignments") + `?assignment=${item.id}`;
-      case 'document': return createPageUrl("Documents") + `?doc=${item.id}`;
-      case 'task': return createPageUrl("Tasks") + `?task=${item.id}`;
-      case 'message': return createPageUrl("Chat") + `?message=${item.id}`;
-      default: return '#';
+      case 'assignment':
+        return createPageUrl('Assignments') + `?assignment=${item.id}`;
+      case 'document':
+        return createPageUrl('Documents') + `?doc=${item.id}`;
+      case 'task':
+        return createPageUrl('Tasks') + `?task=${item.id}`;
+      case 'message':
+        return createPageUrl('Chat') + `?message=${item.id}`;
+      default:
+        return '#';
     }
   };
 
   const getRelationshipColor = (type) => {
     switch (type) {
-      case 'supporting_document': return 'bg-blue-100 text-blue-800';
-      case 'related_task': return 'bg-green-100 text-green-800';
-      case 'follow_up': return 'bg-purple-100 text-purple-800';
-      case 'context': return 'bg-orange-100 text-orange-800'; // Added 'context' type for coloring
-      case 'similar_topic': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'supporting_document':
+        return 'bg-blue-100 text-blue-800';
+      case 'related_task':
+        return 'bg-green-100 text-green-800';
+      case 'follow_up':
+        return 'bg-purple-100 text-purple-800';
+      case 'context':
+        return 'bg-orange-100 text-orange-800'; // Added 'context' type for coloring
+      case 'similar_topic':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -215,7 +257,7 @@ export default function RelatedContentSuggestions({
           </Badge>
         </CardTitle>
       </CardHeader>
-      
+
       <CardContent>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
@@ -231,7 +273,9 @@ export default function RelatedContentSuggestions({
                 <Lightbulb className="w-6 h-6 text-red-500" />
               </div>
               <p className="text-sm text-red-600 mb-3">{error}</p>
-              <Button variant="outline" size="sm" onClick={loadSuggestions}> {/* Updated onClick */}
+              <Button variant="outline" size="sm" onClick={loadSuggestions}>
+                {' '}
+                {/* Updated onClick */}
                 Try Again
               </Button>
             </div>
@@ -263,7 +307,7 @@ export default function RelatedContentSuggestions({
                       <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         <Icon className="w-4 h-4 text-purple-600" />
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="font-medium text-gray-900 truncate">
@@ -271,14 +315,14 @@ export default function RelatedContentSuggestions({
                           </h4>
                           <ArrowRight className="w-3 h-3 text-gray-400 flex-shrink-0" />
                         </div>
-                        
+
                         <p className="text-sm text-gray-600 line-clamp-2 mb-2">
                           {suggestion.explanation}
                         </p>
-                        
+
                         <div className="flex items-center gap-2">
-                          <Badge 
-                            variant="outline" 
+                          <Badge
+                            variant="outline"
                             className={`text-xs ${getRelationshipColor(suggestion.relationship_type)}`}
                           >
                             {suggestion.relationship_type.replace('_', ' ')}
@@ -296,12 +340,12 @@ export default function RelatedContentSuggestions({
                 </Link>
               );
             })}
-            
+
             {/* Refresh Button */}
             <div className="pt-3 border-t border-gray-100">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={loadSuggestions} // Updated onClick
                 disabled={isLoading}
                 className="w-full text-purple-600 hover:text-purple-700 hover:bg-purple-50"

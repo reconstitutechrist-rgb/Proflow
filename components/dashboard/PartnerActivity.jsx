@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { Task } from "@/api/entities";
-import { Document } from "@/api/entities";
-import { Message } from "@/api/entities";
-import { User } from "@/api/entities";
-import { db } from "@/api/db";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
+import React, { useState, useEffect } from 'react';
+import { Task } from '@/api/entities';
+import { Document } from '@/api/entities';
+import { Message } from '@/api/entities';
+import { User } from '@/api/entities';
+import { db } from '@/api/db';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Users,
   CheckCircle2,
@@ -19,11 +19,11 @@ import {
   Activity,
   Eye,
   RefreshCw,
-} from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { Link } from "react-router";
-import { createPageUrl } from "@/lib/utils";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { Link } from 'react-router';
+import { createPageUrl } from '@/lib/utils';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
 export default function PartnerActivity({ currentUser }) {
   const [partner, setPartner] = useState(null);
@@ -50,9 +50,7 @@ export default function PartnerActivity({ currentUser }) {
 
       // Get workspace members and find the partner (other user)
       const workspaceMembers = currentWorkspace?.members || [];
-      const partnerEmail = workspaceMembers.find(
-        (email) => email !== currentUser?.email
-      );
+      const partnerEmail = workspaceMembers.find((email) => email !== currentUser?.email);
 
       if (!partnerEmail) {
         setPartner(null);
@@ -66,7 +64,7 @@ export default function PartnerActivity({ currentUser }) {
       setPartner(
         partnerUser || {
           email: partnerEmail,
-          full_name: partnerEmail.split("@")[0],
+          full_name: partnerEmail.split('@')[0],
         }
       );
 
@@ -75,17 +73,9 @@ export default function PartnerActivity({ currentUser }) {
       today.setHours(0, 0, 0, 0);
 
       const [tasks, documents, messages] = await Promise.all([
-        Task.filter({ workspace_id: currentWorkspaceId }, "-updated_date", 50),
-        Document.filter(
-          { workspace_id: currentWorkspaceId },
-          "-updated_date",
-          50
-        ),
-        Message.filter(
-          { workspace_id: currentWorkspaceId },
-          "-created_date",
-          50
-        ).catch(() => []),
+        Task.filter({ workspace_id: currentWorkspaceId }, '-updated_date', 50),
+        Document.filter({ workspace_id: currentWorkspaceId }, '-updated_date', 50),
+        Message.filter({ workspace_id: currentWorkspaceId }, '-created_date', 50).catch(() => []),
       ]);
 
       // Filter for partner's activity
@@ -97,37 +87,32 @@ export default function PartnerActivity({ currentUser }) {
       );
 
       const partnerDocs = documents.filter(
-        (d) =>
-          d.created_by === partnerEmail || d.last_edited_by === partnerEmail
+        (d) => d.created_by === partnerEmail || d.last_edited_by === partnerEmail
       );
 
-      const partnerMessages = messages.filter(
-        (m) => m.author_email === partnerEmail
-      );
+      const partnerMessages = messages.filter((m) => m.author_email === partnerEmail);
 
       // Build activity feed
       const activities = [];
 
       // Add task activities
       partnerTasks.slice(0, 5).forEach((task) => {
-        const isCompleted = task.status === "completed";
+        const isCompleted = task.status === 'completed';
         const activityDate = new Date(task.updated_date || task.created_date);
 
         activities.push({
           id: `task-${task.id}`,
-          type: "task",
+          type: 'task',
           action: isCompleted
-            ? "completed"
+            ? 'completed'
             : task.created_by === partnerEmail
-            ? "created"
-            : "updated",
+              ? 'created'
+              : 'updated',
           title: task.title,
           entityId: task.id,
           timestamp: activityDate,
           icon: CheckCircle2,
-          color: isCompleted
-            ? "text-green-600 bg-green-50"
-            : "text-blue-600 bg-blue-50",
+          color: isCompleted ? 'text-green-600 bg-green-50' : 'text-blue-600 bg-blue-50',
         });
       });
 
@@ -135,18 +120,17 @@ export default function PartnerActivity({ currentUser }) {
       partnerDocs.slice(0, 5).forEach((doc) => {
         const activityDate = new Date(doc.updated_date || doc.created_date);
         const isNew =
-          doc.created_by === partnerEmail &&
-          new Date() - activityDate < 24 * 60 * 60 * 1000;
+          doc.created_by === partnerEmail && new Date() - activityDate < 24 * 60 * 60 * 1000;
 
         activities.push({
           id: `doc-${doc.id}`,
-          type: "document",
-          action: isNew ? "created" : "edited",
+          type: 'document',
+          action: isNew ? 'created' : 'edited',
           title: doc.title || doc.file_name,
           entityId: doc.id,
           timestamp: activityDate,
           icon: FileText,
-          color: "text-purple-600 bg-purple-50",
+          color: 'text-purple-600 bg-purple-50',
         });
       });
 
@@ -154,15 +138,13 @@ export default function PartnerActivity({ currentUser }) {
       partnerMessages.slice(0, 3).forEach((msg) => {
         activities.push({
           id: `msg-${msg.id}`,
-          type: "message",
-          action: "sent",
-          title:
-            msg.content?.substring(0, 60) +
-            (msg.content?.length > 60 ? "..." : ""),
+          type: 'message',
+          action: 'sent',
+          title: msg.content?.substring(0, 60) + (msg.content?.length > 60 ? '...' : ''),
           entityId: msg.thread_id,
           timestamp: new Date(msg.created_date),
           icon: MessageSquare,
-          color: "text-orange-600 bg-orange-50",
+          color: 'text-orange-600 bg-orange-50',
         });
       });
 
@@ -173,7 +155,7 @@ export default function PartnerActivity({ currentUser }) {
       // Calculate stats
       const tasksCompletedToday = partnerTasks.filter((t) => {
         const completedDate = new Date(t.completed_date || t.updated_date);
-        return t.status === "completed" && completedDate >= today;
+        return t.status === 'completed' && completedDate >= today;
       }).length;
 
       setPartnerStats({
@@ -184,7 +166,7 @@ export default function PartnerActivity({ currentUser }) {
 
       setLastRefresh(new Date());
     } catch (error) {
-      console.error("Error loading partner activity:", error);
+      console.error('Error loading partner activity:', error);
     } finally {
       setLoading(false);
     }
@@ -192,14 +174,14 @@ export default function PartnerActivity({ currentUser }) {
 
   const getActivityLink = (activity) => {
     switch (activity.type) {
-      case "task":
-        return createPageUrl("Tasks") + `?task=${activity.entityId}`;
-      case "document":
-        return createPageUrl("Documents") + `?doc=${activity.entityId}`;
-      case "message":
-        return createPageUrl("Chat") + `?thread=${activity.entityId}`;
+      case 'task':
+        return createPageUrl('Tasks') + `?task=${activity.entityId}`;
+      case 'document':
+        return createPageUrl('Documents') + `?doc=${activity.entityId}`;
+      case 'message':
+        return createPageUrl('Chat') + `?thread=${activity.entityId}`;
       default:
-        return "#";
+        return '#';
     }
   };
 
@@ -235,13 +217,9 @@ export default function PartnerActivity({ currentUser }) {
         <CardContent>
           <div className="text-center py-8">
             <Users className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-            <p className="text-gray-500 font-medium">
-              No partner in this workspace
-            </p>
-            <p className="text-sm text-gray-400 mt-1">
-              Invite a team member to collaborate
-            </p>
-            <Link to={createPageUrl("Users")}>
+            <p className="text-gray-500 font-medium">No partner in this workspace</p>
+            <p className="text-sm text-gray-400 mt-1">Invite a team member to collaborate</p>
+            <Link to={createPageUrl('Users')}>
               <Button variant="outline" size="sm" className="mt-4">
                 Manage Team
               </Button>
@@ -260,12 +238,7 @@ export default function PartnerActivity({ currentUser }) {
             <Users className="w-5 h-5 text-indigo-600" />
             Partner Activity
           </CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={loadPartnerActivity}
-            className="h-8 w-8 p-0"
-          >
+          <Button variant="ghost" size="sm" onClick={loadPartnerActivity} className="h-8 w-8 p-0">
             <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
@@ -276,10 +249,10 @@ export default function PartnerActivity({ currentUser }) {
           <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
             <AvatarFallback className="bg-indigo-100 text-indigo-700 font-semibold">
               {partner?.full_name
-                ?.split(" ")
+                ?.split(' ')
                 .map((n) => n[0])
-                .join("")
-                .toUpperCase() || "?"}
+                .join('')
+                .toUpperCase() || '?'}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
@@ -291,7 +264,7 @@ export default function PartnerActivity({ currentUser }) {
               {partnerStats.tasksCompletedToday} tasks today
             </p>
           </div>
-          <Link to={createPageUrl("Chat")}>
+          <Link to={createPageUrl('Chat')}>
             <Button size="sm" variant="outline" className="gap-1">
               <MessageSquare className="w-3 h-3" />
               Message
@@ -347,7 +320,7 @@ export default function PartnerActivity({ currentUser }) {
                         {activity.title}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {activity.action} •{" "}
+                        {activity.action} •{' '}
                         {formatDistanceToNow(activity.timestamp, {
                           addSuffix: true,
                         })}

@@ -30,21 +30,24 @@ const SuggestedQuestions = ({ documents, lastMessage, onSelectQuestion }) => {
       }
 
       // Context-specific suggestions based on document names
-      const hasResearch = documents.some(doc =>
-        doc.name.toLowerCase().includes('research') ||
-        doc.name.toLowerCase().includes('study') ||
-        doc.name.toLowerCase().includes('paper')
+      const hasResearch = documents.some(
+        (doc) =>
+          doc.name.toLowerCase().includes('research') ||
+          doc.name.toLowerCase().includes('study') ||
+          doc.name.toLowerCase().includes('paper')
       );
 
-      const hasContract = documents.some(doc =>
-        doc.name.toLowerCase().includes('contract') ||
-        doc.name.toLowerCase().includes('agreement')
+      const hasContract = documents.some(
+        (doc) =>
+          doc.name.toLowerCase().includes('contract') ||
+          doc.name.toLowerCase().includes('agreement')
       );
 
-      const hasFinancial = documents.some(doc =>
-        doc.name.toLowerCase().includes('financial') ||
-        doc.name.toLowerCase().includes('report') ||
-        doc.name.toLowerCase().includes('statement')
+      const hasFinancial = documents.some(
+        (doc) =>
+          doc.name.toLowerCase().includes('financial') ||
+          doc.name.toLowerCase().includes('report') ||
+          doc.name.toLowerCase().includes('statement')
       );
 
       if (hasResearch) {
@@ -82,9 +85,7 @@ const SuggestedQuestions = ({ documents, lastMessage, onSelectQuestion }) => {
     }
 
     // Limit to 6 suggestions and randomize slightly
-    const selectedSuggestions = baseSuggestions
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 6);
+    const selectedSuggestions = baseSuggestions.sort(() => Math.random() - 0.5).slice(0, 6);
 
     setSuggestions(selectedSuggestions);
   };

@@ -1,4 +1,3 @@
-import React from 'react';
 import './SessionTemplates.css';
 
 const SessionTemplates = ({ onSelectTemplate, onClose }) => {
@@ -12,13 +11,13 @@ const SessionTemplates = ({ onSelectTemplate, onClose }) => {
         ragEnabled: true,
         numContexts: 5,
         contextCharsLimit: 3000,
-        temperature: 0.3
+        temperature: 0.3,
       },
       sampleQuestions: [
         'What are the main findings in these papers?',
         'Compare the methodologies used across these studies',
-        'Summarize the key conclusions'
-      ]
+        'Summarize the key conclusions',
+      ],
     },
     {
       id: 'legal',
@@ -29,13 +28,13 @@ const SessionTemplates = ({ onSelectTemplate, onClose }) => {
         ragEnabled: true,
         numContexts: 8,
         contextCharsLimit: 5000,
-        temperature: 0.2
+        temperature: 0.2,
       },
       sampleQuestions: [
         'What are the key terms in this contract?',
         'Are there any unusual clauses or red flags?',
-        'Summarize the obligations of each party'
-      ]
+        'Summarize the obligations of each party',
+      ],
     },
     {
       id: 'study',
@@ -46,13 +45,13 @@ const SessionTemplates = ({ onSelectTemplate, onClose }) => {
         ragEnabled: true,
         numContexts: 4,
         contextCharsLimit: 2500,
-        temperature: 0.4
+        temperature: 0.4,
       },
       sampleQuestions: [
         'What are the main concepts in this chapter?',
         'Create a summary of key points',
-        'Explain this concept in simpler terms'
-      ]
+        'Explain this concept in simpler terms',
+      ],
     },
     {
       id: 'technical',
@@ -63,13 +62,13 @@ const SessionTemplates = ({ onSelectTemplate, onClose }) => {
         ragEnabled: true,
         numContexts: 6,
         contextCharsLimit: 4000,
-        temperature: 0.3
+        temperature: 0.3,
       },
       sampleQuestions: [
         'How does this API work?',
         'What are the main features of this system?',
-        'Explain the architecture described in these docs'
-      ]
+        'Explain the architecture described in these docs',
+      ],
     },
     {
       id: 'financial',
@@ -80,13 +79,13 @@ const SessionTemplates = ({ onSelectTemplate, onClose }) => {
         ragEnabled: true,
         numContexts: 7,
         contextCharsLimit: 4500,
-        temperature: 0.2
+        temperature: 0.2,
       },
       sampleQuestions: [
         'What are the key financial metrics?',
         'Identify trends in revenue and expenses',
-        'Summarize the financial health of the company'
-      ]
+        'Summarize the financial health of the company',
+      ],
     },
     {
       id: 'general',
@@ -97,14 +96,14 @@ const SessionTemplates = ({ onSelectTemplate, onClose }) => {
         ragEnabled: true,
         numContexts: 5,
         contextCharsLimit: 3000,
-        temperature: 0.5
+        temperature: 0.5,
       },
       sampleQuestions: [
         'What is this document about?',
         'Summarize the main points',
-        'Find information about [topic]'
-      ]
-    }
+        'Find information about [topic]',
+      ],
+    },
   ];
 
   const handleSelect = (template) => {
@@ -144,21 +143,19 @@ const SessionTemplates = ({ onSelectTemplate, onClose }) => {
                 <div className="setting-badge">
                   RAG: {template.settings.ragEnabled ? 'On' : 'Off'}
                 </div>
-                <div className="setting-badge">
-                  Contexts: {template.settings.numContexts}
-                </div>
+                <div className="setting-badge">Contexts: {template.settings.numContexts}</div>
               </div>
 
               <div className="template-samples">
                 <div className="samples-label">Example questions:</div>
                 {template.sampleQuestions.slice(0, 2).map((q, idx) => (
-                  <div key={idx} className="sample-question">• {q}</div>
+                  <div key={idx} className="sample-question">
+                    • {q}
+                  </div>
                 ))}
               </div>
 
-              <button className="template-select-btn">
-                Use Template
-              </button>
+              <button className="template-select-btn">Use Template</button>
             </div>
           ))}
         </div>

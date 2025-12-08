@@ -15,7 +15,9 @@ Combine **DocumentGenerator** and **DocumentStudio** into a single, powerful **"
 ## Current State Analysis
 
 ### DocumentGenerator (1,434 lines)
+
 **Strengths:**
+
 - ✅ Template-based generation (4 professional templates)
 - ✅ Conversational AI with command detection (summarize, extract, translate, rewrite, expand, shorten)
 - ✅ Task auto-generation from content
@@ -25,6 +27,7 @@ Combine **DocumentGenerator** and **DocumentStudio** into a single, powerful **"
 - ✅ Apply/reject workflow for changes
 
 **Limitations:**
+
 - ❌ No version history
 - ❌ No auto-save
 - ❌ Limited editing tools
@@ -32,7 +35,9 @@ Combine **DocumentGenerator** and **DocumentStudio** into a single, powerful **"
 - ❌ Basic preview only
 
 ### DocumentStudio (1,186 lines)
+
 **Strengths:**
+
 - ✅ Rich text editor with full toolbar
 - ✅ Auto-save every 30 seconds
 - ✅ Version history tracking
@@ -45,6 +50,7 @@ Combine **DocumentGenerator** and **DocumentStudio** into a single, powerful **"
 - ✅ Fullscreen mode
 
 **Limitations:**
+
 - ❌ No template-based quick start
 - ❌ No conversational refinement commands
 - ❌ No task auto-generation
@@ -66,6 +72,7 @@ Combine **DocumentGenerator** and **DocumentStudio** into a single, powerful **"
 ### Core Concept
 
 One intelligent document editor that adapts to your workflow:
+
 - **Quick Start Mode** → Template-based generation for fast document creation
 - **Editor Mode** → Advanced editing with full formatting tools
 - **AI Copilot** → Always-available AI assistant with command detection
@@ -107,6 +114,7 @@ New Document → Template Selection → AI Generation → Rich Editing → Revie
 ```
 
 **User-Friendly Features:**
+
 - Clear path selection with visual cards
 - Descriptive text for each option
 - Quick access to recent documents
@@ -186,6 +194,7 @@ When user clicks "Quick Generate":
 ```
 
 **User-Friendly Features:**
+
 - Step-by-step wizard (1 of 3, 2 of 3, 3 of 3)
 - Back button to change template
 - Pre-filled intelligent defaults
@@ -240,6 +249,7 @@ When user clicks "Quick Generate":
 ```
 
 **User-Friendly Features:**
+
 - **Split-pane design** - Editor on left, AI on right
 - **Collapsible AI panel** - More space when not needed
 - **Quick command palette** - Common AI commands at fingertips
@@ -409,6 +419,7 @@ Press `Ctrl/Cmd + K` anywhere:
 ```
 
 **User-Friendly Features:**
+
 - Keyboard shortcuts for power users
 - Searchable command list
 - Grouped by category
@@ -500,33 +511,35 @@ Bottom right corner:
 
 ## Feature Comparison
 
-| Feature | Current Generator | Current Studio | Unified Workshop |
-|---------|------------------|----------------|------------------|
-| Template-based generation | ✅ | ❌ | ✅ Enhanced |
-| Rich text editing | Basic | ✅ | ✅ |
-| Auto-save | ❌ | ✅ | ✅ Improved |
-| Version history | ❌ | ✅ | ✅ |
-| AI commands | ✅ | Limited | ✅ Expanded |
-| Reference documents | ❌ | ✅ | ✅ |
-| Task generation | ✅ | ❌ | ✅ |
-| Team notifications | ✅ | ❌ | ✅ |
-| Diff view | ✅ | ❌ | ✅ |
-| Draft recovery | ❌ | ✅ | ✅ |
-| Export options | Limited | ✅ | ✅ Enhanced |
-| Command palette | ❌ | ❌ | ✅ NEW |
-| Mobile support | ❌ | Limited | ✅ Full |
-| Guided onboarding | Limited | ❌ | ✅ NEW |
+| Feature                   | Current Generator | Current Studio | Unified Workshop |
+| ------------------------- | ----------------- | -------------- | ---------------- |
+| Template-based generation | ✅                | ❌             | ✅ Enhanced      |
+| Rich text editing         | Basic             | ✅             | ✅               |
+| Auto-save                 | ❌                | ✅             | ✅ Improved      |
+| Version history           | ❌                | ✅             | ✅               |
+| AI commands               | ✅                | Limited        | ✅ Expanded      |
+| Reference documents       | ❌                | ✅             | ✅               |
+| Task generation           | ✅                | ❌             | ✅               |
+| Team notifications        | ✅                | ❌             | ✅               |
+| Diff view                 | ✅                | ❌             | ✅               |
+| Draft recovery            | ❌                | ✅             | ✅               |
+| Export options            | Limited           | ✅             | ✅ Enhanced      |
+| Command palette           | ❌                | ❌             | ✅ NEW           |
+| Mobile support            | ❌                | Limited        | ✅ Full          |
+| Guided onboarding         | Limited           | ❌             | ✅ NEW           |
 
 ---
 
 ## User Experience Improvements
 
 ### 1. **Progressive Disclosure**
+
 - Start simple (3 cards), reveal complexity as needed
 - Beginners use templates, power users use commands
 - Features appear contextually (e.g., task generation when assignment linked)
 
 ### 2. **Clear Visual Hierarchy**
+
 ```
 Primary Actions:    Large, colorful buttons (Save, Generate)
 Secondary Actions:  Outline buttons (Export, Preview)
@@ -534,11 +547,13 @@ Tertiary Actions:   Icon buttons or menu items (Settings, Help)
 ```
 
 ### 3. **Smart Defaults**
+
 - Auto-fill document title based on template
 - Pre-select current assignment if coming from project page
 - Remember user preferences (always save as PDF, preferred template)
 
 ### 4. **Helpful Empty States**
+
 ```
 ┌─────────────────────────────────────────┐
 │           📄 No content yet              │
@@ -553,12 +568,14 @@ Tertiary Actions:   Icon buttons or menu items (Settings, Help)
 ```
 
 ### 5. **Contextual Help**
+
 - Tooltips on hover (desktop)
 - ? icon for feature explanations
 - Inline hints ("💡 Tip: Use Ctrl+K for quick actions")
 - Tutorial mode for first-time users
 
 ### 6. **Error Prevention**
+
 - Confirm before discarding changes
 - Warn before leaving with unsaved content
 - Validate required fields with inline messages
@@ -569,6 +586,7 @@ Tertiary Actions:   Icon buttons or menu items (Settings, Help)
 ## Implementation Roadmap
 
 ### Phase 1: Core Unification (Week 1-2)
+
 1. **Create new `DocumentWorkshop.jsx` component**
 2. **Implement adaptive UI states:**
    - Welcome screen
@@ -584,6 +602,7 @@ Tertiary Actions:   Icon buttons or menu items (Settings, Help)
    - Mobile responsive
 
 ### Phase 2: AI Integration (Week 3)
+
 1. **Unified AI Copilot:**
    - Combine conversational assistant
    - Integrate command detection
@@ -600,6 +619,7 @@ Tertiary Actions:   Icon buttons or menu items (Settings, Help)
    - Audience rewriter
 
 ### Phase 3: User Experience (Week 4)
+
 1. **Onboarding wizard:**
    - First-run tutorial
    - Template showcase
@@ -615,6 +635,7 @@ Tertiary Actions:   Icon buttons or menu items (Settings, Help)
    - Bottom sheet panels
 
 ### Phase 4: Advanced Features (Week 5-6)
+
 1. **Smart features:**
    - Task auto-generation
    - Team notifications
@@ -629,6 +650,7 @@ Tertiary Actions:   Icon buttons or menu items (Settings, Help)
    - Real-time presence (future)
 
 ### Phase 5: Polish & Testing (Week 7)
+
 1. **Performance optimization:**
    - Lazy loading
    - Code splitting
@@ -682,19 +704,19 @@ DocumentWorkshop/
 const documentState = {
   // Document data
   id: null,
-  title: "",
-  content: "",
-  description: "",
+  title: '',
+  content: '',
+  description: '',
 
   // Metadata
   selectedAssignments: [],
   selectedTask: null,
   tags: [],
-  version: "1.0",
+  version: '1.0',
 
   // UI state
-  mode: "welcome", // welcome | template | editor | preview
-  activeTab: "chat", // chat | tools | review
+  mode: 'welcome', // welcome | template | editor | preview
+  activeTab: 'chat', // chat | tools | review
   isAIPanelOpen: true,
   isFullscreen: false,
 
@@ -710,19 +732,21 @@ const documentState = {
   // Auto-save
   isDirty: false,
   lastSaved: null,
-  autoSaveEnabled: true
+  autoSaveEnabled: true,
 };
 ```
 
 ### Performance Considerations
 
 1. **Code Splitting:**
+
    ```javascript
    const AICopilot = lazy(() => import('./components/AICopilot'));
    const CommandPalette = lazy(() => import('./components/CommandPalette'));
    ```
 
 2. **Debounced Auto-Save:**
+
    ```javascript
    const debouncedSave = useDebounce(autoSave, 30000);
    ```
@@ -749,6 +773,7 @@ const documentState = {
    - Week 4: 100% rollout
 
 2. **Feature Flags:**
+
    ```javascript
    if (featureFlags.unifiedEditor) {
      return <DocumentWorkshop />;
@@ -806,13 +831,13 @@ const documentState = {
 
 ## Risks & Mitigation
 
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|---------|------------|
-| User confusion during transition | High | Medium | Guided tutorial, help docs, gradual rollout |
-| Performance issues with rich editor | Medium | High | Code splitting, lazy loading, optimization |
-| Feature regression | Medium | High | Comprehensive testing, feature parity checklist |
-| Mobile UX challenges | Medium | Medium | Mobile-first design, extensive testing |
-| AI latency frustration | Low | Medium | Progress indicators, cancellation, offline mode |
+| Risk                                | Probability | Impact | Mitigation                                      |
+| ----------------------------------- | ----------- | ------ | ----------------------------------------------- |
+| User confusion during transition    | High        | Medium | Guided tutorial, help docs, gradual rollout     |
+| Performance issues with rich editor | Medium      | High   | Code splitting, lazy loading, optimization      |
+| Feature regression                  | Medium      | High   | Comprehensive testing, feature parity checklist |
+| Mobile UX challenges                | Medium      | Medium | Mobile-first design, extensive testing          |
+| AI latency frustration              | Low         | Medium | Progress indicators, cancellation, offline mode |
 
 ---
 
@@ -828,12 +853,14 @@ The **Unified Document Workshop** combines the best of both worlds:
 ✅ **Intuitive UI** that adapts to user needs
 
 **Expected Outcomes:**
+
 - 50% faster document creation
 - 80% user satisfaction improvement
 - 2x AI feature adoption
 - Single, powerful tool instead of two confusing options
 
 **Next Steps:**
+
 1. Stakeholder approval
 2. Design review with UX team
 3. Technical feasibility assessment
@@ -845,6 +872,7 @@ The **Unified Document Workshop** combines the best of both worlds:
 ## Appendix: UI Mockup Details
 
 ### Color Palette
+
 ```css
 /* Primary Actions */
 --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -868,6 +896,7 @@ The **Unified Document Workshop** combines the best of both worlds:
 ```
 
 ### Typography
+
 ```css
 /* Headings */
 --font-heading: 'Inter', system-ui, sans-serif;
@@ -885,30 +914,42 @@ The **Unified Document Workshop** combines the best of both worlds:
 ```
 
 ### Spacing System
+
 ```css
---space-1: 0.25rem;  /* 4px */
---space-2: 0.5rem;   /* 8px */
---space-3: 0.75rem;  /* 12px */
---space-4: 1rem;     /* 16px */
---space-6: 1.5rem;   /* 24px */
---space-8: 2rem;     /* 32px */
---space-12: 3rem;    /* 48px */
+--space-1: 0.25rem; /* 4px */
+--space-2: 0.5rem; /* 8px */
+--space-3: 0.75rem; /* 12px */
+--space-4: 1rem; /* 16px */
+--space-6: 1.5rem; /* 24px */
+--space-8: 2rem; /* 32px */
+--space-12: 3rem; /* 48px */
 ```
 
 ### Animations
+
 ```css
 /* Smooth transitions */
 transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
 /* Fade in */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Slide up */
 @keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 ```

@@ -7,6 +7,7 @@
 ## Project Concept
 
 Proflow is designed as a unified productivity platform that combines:
+
 - **Project & Assignment Management** - Organize work into projects and assignments with full lifecycle tracking
 - **Intelligent Document Studio** - Create, edit, and collaborate on documents with AI assistance
 - **Task Management System** - Kanban-style task boards with dependencies and smart suggestions
@@ -18,11 +19,13 @@ Proflow is designed as a unified productivity platform that combines:
 ## Technology Stack
 
 ### Frontend Framework
+
 - **React 18.2** - Modern React with hooks and functional components
 - **Vite 6.1** - Fast build tool and dev server
 - **React Router DOM 7.2** - Client-side routing with nested routes
 
 ### UI Component Library
+
 - **Radix UI** - Headless, accessible component primitives (20+ components)
 - **Tailwind CSS 3.4** - Utility-first CSS framework
 - **Shadcn/ui** - Pre-built components based on Radix UI and Tailwind
@@ -30,23 +33,28 @@ Proflow is designed as a unified productivity platform that combines:
 - **Framer Motion 12.4** - Animation library for smooth transitions
 
 ### Form & Data Handling
+
 - **React Hook Form 7.54** - Performant form validation
 - **Zod 3.24** - TypeScript-first schema validation
 - **React Quill** - Rich text editor for document creation
 
 ### Charting & Visualization
+
 - **Recharts 2.15** - Chart library for analytics and dashboards
 
 ### Backend Integration
+
 - **Supabase** - Backend database and API client
 - Integration with AI services (LLM invocation, RAG, document analysis)
 
 ## Core Architecture
 
 ### Project Structure
+
 The project uses a flat component structure with **172 JSX files** in the root directory, including:
 
 **Main Pages (15 routes):**
+
 1. Dashboard - Overview and quick actions
 2. Documents - Document management and organization
 3. Users - User management
@@ -64,6 +72,7 @@ The project uses a flat component structure with **172 JSX files** in the root d
 15. DocumentStudio - Advanced document editing
 
 **Component Categories:**
+
 - AI Components (25+) - AI assistant, image generation, research, task creation, etc.
 - Document Components (20+) - Creators, uploaders, viewers, templates, versioning
 - Task Components (10+) - Task boards, forms, dependencies, smart suggestions
@@ -72,12 +81,15 @@ The project uses a flat component structure with **172 JSX files** in the root d
 - UI Components (50+) - Reusable Shadcn/ui components
 
 ### State Management
+
 - **React Context API** - WorkspaceContext for global workspace state
 - **Local State** - Component-level state with useState/useEffect
 - **Error Boundaries** - Comprehensive error handling and recovery
 
 ### Data Architecture
+
 The platform uses a **Supabase backend** with entity-based data model:
+
 - **Workspace** - Top-level organization boundary
 - **User** - Authentication and user profiles
 - **Project** - High-level project containers
@@ -91,9 +103,11 @@ The platform uses a **Supabase backend** with entity-based data model:
 ## Key Features & Functionality
 
 ### 1. Dashboard
+
 **Location:** `Dashboard.jsx:31`
 
 Features:
+
 - **Stats Overview** - Active assignments, task completion rates, document counts
 - **Recent Activity Feed** - Cross-workspace activity tracking
 - **Upcoming Tasks** - Priority-sorted task list with due dates
@@ -102,9 +116,11 @@ Features:
 - **Progress Tracking** - Visual indicators for assignment completion
 
 ### 2. Document Management System
+
 **Main Components:** `Documents.jsx`, `DocumentStudio.jsx`, `DocumentCreator.jsx`
 
 Features:
+
 - **Document Studio** - Rich text editor with AI assistance
   - Auto-save every 30 seconds
   - Real-time content editing with ReactQuill
@@ -137,9 +153,11 @@ Features:
   - Quality control dashboard
 
 ### 3. Task Management System
+
 **Main Component:** `Tasks.jsx:45`
 
 Features:
+
 - **Kanban Board** - Visual task organization (`TaskBoard.jsx`)
   - Columns: Not Started, In Progress, Completed, Blocked
   - Drag-and-drop task movement
@@ -167,9 +185,11 @@ Features:
   - Batch task creation
 
 ### 4. Project & Assignment Management
+
 **Main Components:** `Projects.jsx:32`, `Assignments.jsx:36`
 
 Features:
+
 - **Project Management**
   - Create projects with goals and timelines
   - Assign team members
@@ -187,9 +207,11 @@ Features:
   - Team member assignment
 
 ### 5. AI-Powered Research Assistant
+
 **Main Component:** `Research.jsx:44`
 
 Features:
+
 - **AI Research Chat** (`AIResearchAssistant.jsx`)
   - Context-aware AI conversations
   - Document upload and analysis
@@ -211,9 +233,11 @@ Features:
   - Recommended actions generation
 
 ### 6. AskAI - Intelligent Q&A System
+
 **Main Component:** `AskAI.jsx:95`
 
 Features:
+
 - **RAG (Retrieval Augmented Generation)** (`ragHelper`)
   - Upload documents for context
   - Ask questions about uploaded content
@@ -240,9 +264,11 @@ Features:
   - Search across sessions
 
 ### 7. Content Generation Tools
+
 **Main Component:** `Generate.jsx:10`
 
 Features:
+
 - **Document Generator** (`DocumentGenerator.jsx:212`)
   - Template-based generation
   - Custom prompt input
@@ -257,9 +283,11 @@ Features:
   - Grammar Assistant - Improve writing quality
 
 ### 8. Team Communication (Chat)
+
 **Main Component:** `Chat.jsx:1`
 
 Features:
+
 - **Conversation System**
   - Threaded conversations
   - Real-time messaging
@@ -283,9 +311,11 @@ Features:
   - Context-aware suggestions
 
 ### 9. Workspace Management
+
 **Main Components:** `Workspaces.jsx:47`, `WorkspaceContext.jsx`
 
 Features:
+
 - **Multi-Workspace Support**
   - Personal workspaces
   - Team workspaces
@@ -315,6 +345,7 @@ Features:
 The platform has extensive AI capabilities throughout:
 
 **AI Assistant Widget** (`AIAssistantWidget.jsx:44`)
+
 - Context-aware assistance on every page
 - Smart context detection
 - Conversation memory
@@ -322,6 +353,7 @@ The platform has extensive AI capabilities throughout:
 - Message search and history
 
 **AI Conversational Task Maker** (`AIConversationalTaskMaker.jsx:81`)
+
 - Natural language task creation
 - Multi-task generation from conversation
 - Duplicate detection
@@ -329,20 +361,24 @@ The platform has extensive AI capabilities throughout:
 - Batch creation with progress tracking
 
 **AI Document Analyzer** (`AIDocumentAnalyzer.jsx`)
+
 - Document content analysis
 - Key insights extraction
 - Summary generation
 
 **AI Project Expert** (`AIProjectExpert.jsx`)
+
 - Project-specific assistance
 - Contextual recommendations
 
 **AI Writing Assistant** (`AIWritingAssistant.jsx`)
+
 - Real-time writing suggestions
 - Style improvements
 - Tone adjustments
 
 **Workflow Pattern Recognition** (`WorkflowPatternRecognition.jsx`)
+
 - Detect repetitive workflows
 - Suggest automation
 - Pattern-based recommendations
@@ -350,11 +386,13 @@ The platform has extensive AI capabilities throughout:
 ### 11. Additional Features
 
 **Tutorial System**
+
 - Interactive onboarding (`TutorialProvider.jsx`, `tutorialSteps.jsx`)
 - Contextual help
 - Step-by-step guides
 
 **Search Capabilities**
+
 - Global search across all content
 - Document-specific search
 - Task search with filters
@@ -362,6 +400,7 @@ The platform has extensive AI capabilities throughout:
 - Smart suggestions
 
 **Collaboration Features**
+
 - User management
 - Team member assignment
 - File sharing
@@ -370,18 +409,21 @@ The platform has extensive AI capabilities throughout:
 - Activity feeds
 
 **Export & Integration**
+
 - PDF export for documents and sessions
 - DOC to PDF conversion
 - Document packaging
 - File upload/download
 
 **Quality Control**
+
 - Quality control dashboard
 - Completion status tracking
 - Health monitoring
 - Decision capture
 
 **User Preferences**
+
 - Dark mode support
 - Customizable settings
 - Notification preferences
@@ -391,12 +433,14 @@ The platform has extensive AI capabilities throughout:
 The platform implements strict workspace boundaries:
 
 **Security Measures:**
+
 - All entities filtered by `workspace_id`
 - Cross-workspace validation
 - Workspace context enforcement
 - Permission-based access
 
 **Testing Checklist** (from `Documentation.jsx:24`):
+
 - Document access control tests
 - Task isolation verification
 - Assignment/project boundaries
@@ -408,6 +452,7 @@ The platform implements strict workspace boundaries:
 The platform uses a **db client** wrapper for Supabase backend communication:
 
 **Entity Operations:**
+
 - `db.entities.[Entity].list()` - List entities
 - `db.entities.[Entity].filter()` - Filtered queries
 - `db.entities.[Entity].create()` - Create new
@@ -415,9 +460,11 @@ The platform uses a **db client** wrapper for Supabase backend communication:
 - `db.entities.[Entity].delete()` - Remove entity
 
 **Auth Operations:**
+
 - `db.auth.me()` - Get current user
 
 **AI Integrations:**
+
 - `InvokeLLM` - Call language models
 - `UploadFile` - File processing
 - `ExtractDataFromUploadedFile` - Data extraction
@@ -438,6 +485,7 @@ The platform uses a **db client** wrapper for Supabase backend communication:
 ## Development Features
 
 **Configuration Files:**
+
 - `vite.config.js` - Vite build configuration
 - `tailwind.config.js` - Tailwind CSS customization
 - `components.json` - Shadcn/ui configuration
@@ -445,6 +493,7 @@ The platform uses a **db client** wrapper for Supabase backend communication:
 - `postcss.config.js` - PostCSS setup
 
 **Scripts Available:**
+
 ```bash
 npm run dev      # Start development server
 npm run build    # Build for production
@@ -475,26 +524,31 @@ npm run lint     # Run ESLint
 ## Use Cases
 
 **Project Management Teams**
+
 - Track multiple projects simultaneously
 - Manage tasks across team members
 - Document deliverables and decisions
 
 **Research & Analysis**
+
 - Conduct AI-assisted research
 - Organize research documents
 - Generate reports from findings
 
 **Content Creation Teams**
+
 - Collaborative document creation
 - AI-powered content generation
 - Version control and review workflows
 
 **Consulting Firms**
+
 - Separate client workspaces
 - Assignment tracking per client
 - Document packaging and delivery
 
 **Educational Institutions**
+
 - Assignment management for courses
 - Research assistance for students
 - Collaborative project work
@@ -502,6 +556,7 @@ npm run lint     # Run ESLint
 ## Future Enhancement Opportunities
 
 Based on the codebase analysis:
+
 1. Real-time collaboration on documents (Google Docs style)
 2. Mobile application development
 3. Advanced analytics and reporting dashboards

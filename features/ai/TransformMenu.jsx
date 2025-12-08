@@ -45,9 +45,24 @@ import { toast } from 'sonner';
 // Quick transform actions
 const quickTransforms = [
   { id: 'summarize', label: 'Summarize', icon: FileText, description: 'Create a concise summary' },
-  { id: 'simplify', label: 'Simplify', icon: Minimize2, description: 'Make it easier to understand' },
-  { id: 'formal', label: 'Make Formal', icon: Briefcase, description: 'Professional business tone' },
-  { id: 'friendly', label: 'Make Friendly', icon: MessageCircle, description: 'Conversational and approachable' },
+  {
+    id: 'simplify',
+    label: 'Simplify',
+    icon: Minimize2,
+    description: 'Make it easier to understand',
+  },
+  {
+    id: 'formal',
+    label: 'Make Formal',
+    icon: Briefcase,
+    description: 'Professional business tone',
+  },
+  {
+    id: 'friendly',
+    label: 'Make Friendly',
+    icon: MessageCircle,
+    description: 'Conversational and approachable',
+  },
   { id: 'technical', label: 'Make Technical', icon: BookOpen, description: 'Add technical detail' },
 ];
 
@@ -75,7 +90,7 @@ export default function TransformMenu({
   disabled = false,
   variant = 'outline',
   size = 'default',
-  className = ''
+  className = '',
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isCustomDialogOpen, setIsCustomDialogOpen] = useState(false);
@@ -147,8 +162,8 @@ export default function TransformMenu({
     setLastTransformType('custom');
 
     try {
-      const audienceLabel = audiences.find(a => a.id === customAudience)?.label || customAudience;
-      const styleLabel = styles.find(s => s.id === customStyle)?.label || customStyle;
+      const audienceLabel = audiences.find((a) => a.id === customAudience)?.label || customAudience;
+      const styleLabel = styles.find((s) => s.id === customStyle)?.label || customStyle;
 
       let prompt = `Please rewrite the following content for a ${audienceLabel} audience in a ${styleLabel} style.`;
 
@@ -258,9 +273,7 @@ export default function TransformMenu({
               <PenTool className="w-5 h-5 text-purple-600" />
               Custom Transform
             </DialogTitle>
-            <DialogDescription>
-              Customize how you want to transform your content
-            </DialogDescription>
+            <DialogDescription>Customize how you want to transform your content</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
@@ -329,9 +342,7 @@ export default function TransformMenu({
               <Sparkles className="w-5 h-5 text-purple-600" />
               Transformed Content
             </DialogTitle>
-            <DialogDescription>
-              Review the transformed content below
-            </DialogDescription>
+            <DialogDescription>Review the transformed content below</DialogDescription>
           </DialogHeader>
 
           <ScrollArea className="max-h-[400px] mt-4">

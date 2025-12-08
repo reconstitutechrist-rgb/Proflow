@@ -14,7 +14,7 @@ import {
   Lightbulb,
   Link2,
   ArrowRight,
-  Zap
+  Zap,
 } from 'lucide-react';
 
 export default function TutorialOverlay() {
@@ -44,7 +44,7 @@ export default function TutorialOverlay() {
       const element = document.querySelector(stepData.target);
       if (element) {
         setHighlightedElement(element);
-        
+
         // Scroll element into view
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
@@ -87,7 +87,7 @@ export default function TutorialOverlay() {
 
   const getHighlightStyle = () => {
     if (!highlightedElement) return {};
-    
+
     const rect = highlightedElement.getBoundingClientRect();
     return {
       top: rect.top - 4,
@@ -99,11 +99,16 @@ export default function TutorialOverlay() {
 
   const getIntegrationIcon = (type) => {
     switch (type) {
-      case 'ai': return <Sparkles className="w-4 h-4" />;
-      case 'link': return <Link2 className="w-4 h-4" />;
-      case 'flow': return <ArrowRight className="w-4 h-4" />;
-      case 'feature': return <Zap className="w-4 h-4" />;
-      default: return <Lightbulb className="w-4 h-4" />;
+      case 'ai':
+        return <Sparkles className="w-4 h-4" />;
+      case 'link':
+        return <Link2 className="w-4 h-4" />;
+      case 'flow':
+        return <ArrowRight className="w-4 h-4" />;
+      case 'feature':
+        return <Zap className="w-4 h-4" />;
+      default:
+        return <Lightbulb className="w-4 h-4" />;
     }
   };
 
@@ -128,7 +133,7 @@ export default function TutorialOverlay() {
             className="absolute w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-white dark:border-t-gray-800 transition-all duration-300"
             style={{
               top: tooltipPosition.top - 8,
-              left: getHighlightStyle().left + (getHighlightStyle().width / 2) - 8,
+              left: getHighlightStyle().left + getHighlightStyle().width / 2 - 8,
             }}
           />
         </>
@@ -149,7 +154,10 @@ export default function TutorialOverlay() {
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                <Badge
+                  variant="outline"
+                  className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+                >
                   Module {currentModule + 1} of {tutorialData.modules.length}
                 </Badge>
                 <Badge variant="outline">
@@ -160,12 +168,7 @@ export default function TutorialOverlay() {
                 {moduleData.title}
               </h3>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={endTutorial}
-              className="ml-2"
-            >
+            <Button variant="ghost" size="icon" onClick={endTutorial} className="ml-2">
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -216,9 +219,7 @@ export default function TutorialOverlay() {
                     <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
                       Try it yourself:
                     </h4>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                      {stepData.action}
-                    </p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">{stepData.action}</p>
                   </div>
                 </div>
               </div>
@@ -262,10 +263,7 @@ export default function TutorialOverlay() {
               >
                 Skip Tutorial
               </Button>
-              <Button
-                onClick={nextStep}
-                className="gap-2 bg-blue-600 hover:bg-blue-700"
-              >
+              <Button onClick={nextStep} className="gap-2 bg-blue-600 hover:bg-blue-700">
                 {getCurrentStepNumber() === getTotalSteps() ? 'Complete' : 'Next'}
                 <ChevronRight className="w-4 h-4" />
               </Button>

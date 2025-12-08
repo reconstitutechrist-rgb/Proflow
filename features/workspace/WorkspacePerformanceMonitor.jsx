@@ -11,7 +11,7 @@ export default function WorkspacePerformanceMonitor() {
   const metricsRef = useRef({
     workspaceSwitches: 0,
     averageSwitchTime: 0,
-    totalSwitchTime: 0
+    totalSwitchTime: 0,
   });
 
   useEffect(() => {
@@ -19,11 +19,11 @@ export default function WorkspacePerformanceMonitor() {
       startTimeRef.current = performance.now();
     } else if (startTimeRef.current && currentWorkspaceId) {
       const duration = performance.now() - startTimeRef.current;
-      
+
       // Update metrics
       metricsRef.current.workspaceSwitches++;
       metricsRef.current.totalSwitchTime += duration;
-      metricsRef.current.averageSwitchTime = 
+      metricsRef.current.averageSwitchTime =
         metricsRef.current.totalSwitchTime / metricsRef.current.workspaceSwitches;
 
       // Log if performance is degrading
@@ -38,7 +38,7 @@ export default function WorkspacePerformanceMonitor() {
         console.log('📊 Workspace Performance Summary:', {
           totalSwitches: metricsRef.current.workspaceSwitches,
           averageTime: `${metricsRef.current.averageSwitchTime.toFixed(2)}ms`,
-          currentWorkspace: currentWorkspaceId
+          currentWorkspace: currentWorkspaceId,
         });
       }
 

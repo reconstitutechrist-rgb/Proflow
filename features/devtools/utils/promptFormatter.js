@@ -11,7 +11,7 @@ export function formatBugReportPrompt({
   viewportSize,
   requestedChange,
   hasAnnotatedScreenshot,
-  annotationCount = 0
+  annotationCount = 0,
 }) {
   // Extract page name from route
   const pageName = getPageNameFromRoute(route);
@@ -83,8 +83,8 @@ function getPageNameFromRoute(route) {
   // Convert to title case and handle common patterns
   return firstPart
     .replace(/([A-Z])/g, ' $1') // Add space before capital letters
-    .replace(/[-_]/g, ' ')      // Replace dashes and underscores with spaces
-    .replace(/\b\w/g, c => c.toUpperCase()) // Capitalize first letter of each word
+    .replace(/[-_]/g, ' ') // Replace dashes and underscores with spaces
+    .replace(/\b\w/g, (c) => c.toUpperCase()) // Capitalize first letter of each word
     .trim();
 }
 
@@ -96,7 +96,7 @@ export function formatPromptSummary({
   componentName,
   selector,
   hasDescription,
-  hasRequestedChange
+  hasRequestedChange,
 }) {
   const parts = [];
 

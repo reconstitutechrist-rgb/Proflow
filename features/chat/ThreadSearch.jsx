@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import { toast } from "sonner";
-import { db } from "@/api/db";
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Search } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { toast } from 'sonner';
+import { db } from '@/api/db';
 
 export default function ThreadSearch({ assignmentId, onThreadSelect }) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [recentThreads, setRecentThreads] = useState([]);
@@ -22,38 +22,37 @@ export default function ThreadSearch({ assignmentId, onThreadSelect }) {
   const currentList = searchQuery.trim() ? searchResults : recentThreads;
 
   // Handle keyboard navigation
-  const handleKeyDown = useCallback((e) => {
-    if (currentList.length === 0) return;
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (currentList.length === 0) return;
 
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setSelectedIndex(prev =>
-          prev < currentList.length - 1 ? prev + 1 : 0
-        );
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setSelectedIndex(prev =>
-          prev > 0 ? prev - 1 : currentList.length - 1
-        );
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < currentList.length) {
-          handleThreadClick(currentList[selectedIndex]);
-        }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        setSearchQuery("");
-        setSelectedIndex(-1);
-        inputRef.current?.blur();
-        break;
-      default:
-        break;
-    }
-  }, [currentList, selectedIndex]);
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev < currentList.length - 1 ? prev + 1 : 0));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : currentList.length - 1));
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (selectedIndex >= 0 && selectedIndex < currentList.length) {
+            handleThreadClick(currentList[selectedIndex]);
+          }
+          break;
+        case 'Escape':
+          e.preventDefault();
+          setSearchQuery('');
+          setSelectedIndex(-1);
+          inputRef.current?.blur();
+          break;
+        default:
+          break;
+      }
+    },
+    [currentList, selectedIndex]
+  );
 
   // Reset selection when results change
   useEffect(() => {
@@ -89,15 +88,19 @@ export default function ThreadSearch({ assignmentId, onThreadSelect }) {
   const loadRecentThreads = async () => {
     try {
       // CRITICAL: Only load threads from current workspace
-      const threads = await db.entities.ConversationThread.filter({
-        workspace_id: currentWorkspaceId,
-        ...(assignmentId && { assignment_id: assignmentId })
-      }, "-last_activity", 10);
+      const threads = await db.entities.ConversationThread.filter(
+        {
+          workspace_id: currentWorkspaceId,
+          ...(assignmentId && { assignment_id: assignmentId }),
+        },
+        '-last_activity',
+        10
+      );
 
       setRecentThreads(threads);
     } catch (error) {
-      console.error("Error loading recent threads:", error);
-      toast.error("Failed to load recent threads");
+      console.error('Error loading recent threads:', error);
+      toast.error('Failed to load recent threads');
     }
   };
 
@@ -109,50 +112,57 @@ export default function ThreadSearch({ assignmentId, onThreadSelect }) {
 
       // CRITICAL: Search only in current workspace
       const [threads, messages] = await Promise.all([
-        db.entities.ConversationThread.filter({
-          workspace_id: currentWorkspaceId,
-          ...(assignmentId && { assignment_id: assignmentId })
-        }, "-last_activity", 50),
-        db.entities.Message.filter({
-          workspace_id: currentWorkspaceId,
-          ...(assignmentId && { assignment_id: assignmentId })
-        }, "-created_date", 100)
+        db.entities.ConversationThread.filter(
+          {
+            workspace_id: currentWorkspaceId,
+            ...(assignmentId && { assignment_id: assignmentId }),
+          },
+          '-last_activity',
+          50
+        ),
+        db.entities.Message.filter(
+          {
+            workspace_id: currentWorkspaceId,
+            ...(assignmentId && { assignment_id: assignmentId }),
+          },
+          '-created_date',
+          100
+        ),
       ]);
 
       const searchLower = searchQuery.toLowerCase();
 
       // Search in threads
-      const threadMatches = threads.filter(thread =>
-        thread.topic?.toLowerCase().includes(searchLower) ||
-        thread.description?.toLowerCase().includes(searchLower) ||
-        thread.tags?.some(tag => tag.toLowerCase().includes(searchLower))
+      const threadMatches = threads.filter(
+        (thread) =>
+          thread.topic?.toLowerCase().includes(searchLower) ||
+          thread.description?.toLowerCase().includes(searchLower) ||
+          thread.tags?.some((tag) => tag.toLowerCase().includes(searchLower))
       );
 
       // Search in messages and get their threads
-      const messageMatches = messages.filter(msg =>
+      const messageMatches = messages.filter((msg) =>
         msg.content?.toLowerCase().includes(searchLower)
       );
 
-      const threadIdsFromMessages = [...new Set(messageMatches.map(m => m.thread_id))];
-      const threadsFromMessages = threads.filter(t => threadIdsFromMessages.includes(t.id));
+      const threadIdsFromMessages = [...new Set(messageMatches.map((m) => m.thread_id))];
+      const threadsFromMessages = threads.filter((t) => threadIdsFromMessages.includes(t.id));
 
       // Combine and deduplicate
       const allMatchingThreads = [...threadMatches];
-      threadsFromMessages.forEach(thread => {
-        if (!allMatchingThreads.find(t => t.id === thread.id)) {
+      threadsFromMessages.forEach((thread) => {
+        if (!allMatchingThreads.find((t) => t.id === thread.id)) {
           allMatchingThreads.push(thread);
         }
       });
 
       // Sort by last activity
-      allMatchingThreads.sort((a, b) => 
-        new Date(b.last_activity) - new Date(a.last_activity)
-      );
+      allMatchingThreads.sort((a, b) => new Date(b.last_activity) - new Date(a.last_activity));
 
       setSearchResults(allMatchingThreads);
     } catch (error) {
-      console.error("Error searching threads:", error);
-      toast.error("Failed to search threads");
+      console.error('Error searching threads:', error);
+      toast.error('Failed to search threads');
     } finally {
       setLoading(false);
     }
@@ -161,10 +171,10 @@ export default function ThreadSearch({ assignmentId, onThreadSelect }) {
   const handleThreadClick = (thread) => {
     // CRITICAL: Validate thread is in current workspace before selecting
     if (thread.workspace_id !== currentWorkspaceId) {
-      toast.error("Cannot access threads from other workspaces");
-      console.error("Security violation: Cross-workspace thread access attempt", {
+      toast.error('Cannot access threads from other workspaces');
+      console.error('Security violation: Cross-workspace thread access attempt', {
         threadWorkspace: thread.workspace_id,
-        currentWorkspace: currentWorkspaceId
+        currentWorkspace: currentWorkspaceId,
       });
       return;
     }
@@ -172,7 +182,7 @@ export default function ThreadSearch({ assignmentId, onThreadSelect }) {
     if (onThreadSelect) {
       onThreadSelect(thread);
     }
-    setSearchQuery("");
+    setSearchQuery('');
     setSearchResults([]);
   };
 
@@ -193,7 +203,9 @@ export default function ThreadSearch({ assignmentId, onThreadSelect }) {
             aria-describedby="search-hint"
             role="combobox"
             aria-expanded={currentList.length > 0}
-            aria-activedescendant={selectedIndex >= 0 ? `thread-${currentList[selectedIndex]?.id}` : undefined}
+            aria-activedescendant={
+              selectedIndex >= 0 ? `thread-${currentList[selectedIndex]?.id}` : undefined
+            }
           />
           <span id="search-hint" className="sr-only">
             Use arrow keys to navigate, Enter to select, Escape to clear
@@ -239,7 +251,7 @@ export default function ThreadSearch({ assignmentId, onThreadSelect }) {
                   </span>
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
-                  {thread.description || "No description available."}
+                  {thread.description || 'No description available.'}
                 </p>
               </button>
             ))}
@@ -249,48 +261,46 @@ export default function ThreadSearch({ assignmentId, onThreadSelect }) {
             No threads found.
           </div>
         )
+      ) : recentThreads.length > 0 ? (
+        <div
+          ref={listRef}
+          className="space-y-2 max-h-64 overflow-y-auto"
+          role="listbox"
+          aria-label="Recent threads"
+        >
+          <div className="text-xs text-gray-500 mb-2">Recent Threads</div>
+          {recentThreads.map((thread, index) => (
+            <button
+              key={thread.id}
+              id={`thread-${thread.id}`}
+              onClick={() => handleThreadClick(thread)}
+              onMouseEnter={() => setSelectedIndex(index)}
+              className={`w-full text-left p-3 rounded-lg transition-colors border ${
+                selectedIndex === index
+                  ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-300 dark:border-indigo-600'
+                  : 'hover:bg-white dark:hover:bg-gray-700 border-gray-200 dark:border-gray-600'
+              }`}
+              role="option"
+              aria-selected={selectedIndex === index}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  {thread.topic}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {new Date(thread.last_activity).toLocaleDateString()}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+                {thread.description || 'No description available.'}
+              </p>
+            </button>
+          ))}
+        </div>
       ) : (
-        recentThreads.length > 0 ? (
-          <div
-            ref={listRef}
-            className="space-y-2 max-h-64 overflow-y-auto"
-            role="listbox"
-            aria-label="Recent threads"
-          >
-            <div className="text-xs text-gray-500 mb-2">Recent Threads</div>
-            {recentThreads.map((thread, index) => (
-              <button
-                key={thread.id}
-                id={`thread-${thread.id}`}
-                onClick={() => handleThreadClick(thread)}
-                onMouseEnter={() => setSelectedIndex(index)}
-                className={`w-full text-left p-3 rounded-lg transition-colors border ${
-                  selectedIndex === index
-                    ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-300 dark:border-indigo-600'
-                    : 'hover:bg-white dark:hover:bg-gray-700 border-gray-200 dark:border-gray-600'
-                }`}
-                role="option"
-                aria-selected={selectedIndex === index}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {thread.topic}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {new Date(thread.last_activity).toLocaleDateString()}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
-                  {thread.description || "No description available."}
-                </p>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-4 text-sm text-gray-500" role="status">
-            No recent threads found.
-          </div>
-        )
+        <div className="text-center py-4 text-sm text-gray-500" role="status">
+          No recent threads found.
+        </div>
       )}
     </div>
   );

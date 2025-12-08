@@ -1,8 +1,7 @@
-
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ChevronRight } from "lucide-react";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ChevronRight } from 'lucide-react';
 
 // Helper function to lighten a hex color by a given percentage
 const lightenColor = (hex, percent) => {
@@ -31,7 +30,7 @@ export default function ProjectGrid({ projects, onProjectClick }) {
           <div
             className="h-3"
             style={{
-              background: `linear-gradient(to right, ${project.color || '#3B82F6'}, ${lightenColor(project.color || '#3B82F6', 40)})`
+              background: `linear-gradient(to right, ${project.color || '#3B82F6'}, ${lightenColor(project.color || '#3B82F6', 40)})`,
             }}
           />
           <CardHeader className="pb-3">

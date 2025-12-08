@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import React, { useState, useEffect } from 'react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Reply,
   Edit,
@@ -19,12 +19,12 @@ import {
   File,
   Paperclip,
   Clock,
-  MoreHorizontal
-} from "lucide-react";
-import { format } from "date-fns";
-import MessageReactions from "@/features/chat/MessageReactions";
-import ReactMarkdown from "react-markdown";
-import rehypeSanitize from "rehype-sanitize";
+  MoreHorizontal,
+} from 'lucide-react';
+import { format } from 'date-fns';
+import MessageReactions from '@/features/chat/MessageReactions';
+import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 
 // Detect touch device
 const isTouchDevice = () => {
@@ -43,7 +43,7 @@ export default function EnhancedMessage({
   onBookmark,
   onAddReaction,
   onRemoveReaction,
-  viewMode = "comfortable"
+  viewMode = 'comfortable',
 }) {
   const [showActions, setShowActions] = useState(false);
   const [isTouch, setIsTouch] = useState(false);
@@ -53,12 +53,13 @@ export default function EnhancedMessage({
   }, []);
 
   // Check if this message should be grouped with the previous one
-  const shouldGroup = previousMessage &&
+  const shouldGroup =
+    previousMessage &&
     previousMessage.author_email === message.author_email &&
     previousMessage.message_type === message.message_type &&
     !previousMessage.is_pinned &&
     !message.is_pinned &&
-    (new Date(message.created_date) - new Date(previousMessage.created_date)) < 5 * 60 * 1000; // Within 5 minutes
+    new Date(message.created_date) - new Date(previousMessage.created_date) < 5 * 60 * 1000; // Within 5 minutes
 
   const isOwnMessage = currentUser && message.author_email === currentUser.email;
   const isBookmarked = message.is_bookmarked_by?.includes(currentUser?.email);
@@ -79,7 +80,11 @@ export default function EnhancedMessage({
         {!shouldGroup && (
           <Avatar className="w-8 h-8 flex-shrink-0">
             <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-500 text-white">
-              {message.author_name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?'}
+              {message.author_name
+                ?.split(' ')
+                .map((n) => n[0])
+                .join('')
+                .toUpperCase() || '?'}
             </AvatarFallback>
           </Avatar>
         )}
@@ -103,12 +108,8 @@ export default function EnhancedMessage({
                   edited
                 </Badge>
               )}
-              {message.is_pinned && (
-                <Pin className="w-3 h-3 text-yellow-600" />
-              )}
-              {isBookmarked && (
-                <Bookmark className="w-3 h-3 text-blue-600 fill-current" />
-              )}
+              {message.is_pinned && <Pin className="w-3 h-3 text-yellow-600" />}
+              {isBookmarked && <Bookmark className="w-3 h-3 text-blue-600 fill-current" />}
             </div>
           )}
 
@@ -150,7 +151,12 @@ export default function EnhancedMessage({
                     strong: ({ children }) => <strong className="font-bold">{children}</strong>,
                     em: ({ children }) => <em className="italic">{children}</em>,
                     a: ({ href, children }) => (
-                      <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
                         {children}
                       </a>
                     ),
@@ -182,12 +188,8 @@ export default function EnhancedMessage({
               <div className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
                 <Clock className="w-5 h-5 text-purple-600" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    Voice Message
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {message.voice_duration}s
-                  </p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">Voice Message</p>
+                  <p className="text-xs text-gray-500">{message.voice_duration}s</p>
                 </div>
               </div>
             ) : null}
@@ -230,11 +232,15 @@ export default function EnhancedMessage({
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem onClick={() => onBookmark?.(message.id)}>
-                      <Bookmark className={`w-4 h-4 mr-2 ${isBookmarked ? 'fill-current text-blue-600' : ''}`} />
+                      <Bookmark
+                        className={`w-4 h-4 mr-2 ${isBookmarked ? 'fill-current text-blue-600' : ''}`}
+                      />
                       {isBookmarked ? 'Remove Bookmark' : 'Bookmark'}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onPin?.(message.id)}>
-                      <Pin className={`w-4 h-4 mr-2 ${message.is_pinned ? 'text-yellow-600' : ''}`} />
+                      <Pin
+                        className={`w-4 h-4 mr-2 ${message.is_pinned ? 'text-yellow-600' : ''}`}
+                      />
                       {message.is_pinned ? 'Unpin' : 'Pin'}
                     </DropdownMenuItem>
                     {isOwnMessage && (
@@ -281,23 +287,30 @@ export default function EnhancedMessage({
                     size="sm"
                     className="h-7 px-2"
                     onClick={() => onBookmark?.(message.id)}
-                    aria-label={isBookmarked ? "Remove bookmark" : "Bookmark message"}
+                    aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark message'}
                   >
-                    <Bookmark className={`w-3 h-3 ${isBookmarked ? 'fill-current text-blue-600' : ''}`} />
+                    <Bookmark
+                      className={`w-3 h-3 ${isBookmarked ? 'fill-current text-blue-600' : ''}`}
+                    />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-7 px-2"
                     onClick={() => onPin?.(message.id)}
-                    aria-label={message.is_pinned ? "Unpin message" : "Pin message"}
+                    aria-label={message.is_pinned ? 'Unpin message' : 'Pin message'}
                   >
                     <Pin className={`w-3 h-3 ${message.is_pinned ? 'text-yellow-600' : ''}`} />
                   </Button>
                   {isOwnMessage && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-7 px-2" aria-label="More actions">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2"
+                          aria-label="More actions"
+                        >
                           <MoreVertical className="w-3 h-3" />
                         </Button>
                       </DropdownMenuTrigger>

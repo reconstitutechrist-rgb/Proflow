@@ -1,14 +1,13 @@
-
-import React, { useState, useEffect } from "react";
-import { DocumentPackage } from "@/api/entities";
-import { Document } from "@/api/entities";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Package, 
-  Eye, 
-  Download, 
+import React, { useState, useEffect } from 'react';
+import { DocumentPackage } from '@/api/entities';
+import { Document } from '@/api/entities';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Package,
+  Eye,
+  Download,
   Trash2,
   Calendar,
   Users,
@@ -16,9 +15,9 @@ import {
   Presentation,
   Settings,
   TrendingUp, // Added TrendingUp import
-  Shield // Added Shield import
-} from "lucide-react";
-import PresentationMode from "@/features/documents/PresentationMode";
+  Shield, // Added Shield import
+} from 'lucide-react';
+import PresentationMode from '@/features/documents/PresentationMode';
 
 export default function PackageViewer() {
   const [packages, setPackages] = useState([]);
@@ -37,7 +36,7 @@ export default function PackageViewer() {
       const packagesData = await DocumentPackage.list();
       setPackages(packagesData);
     } catch (error) {
-      console.error("Error loading packages:", error);
+      console.error('Error loading packages:', error);
     } finally {
       setLoading(false);
     }
@@ -45,23 +44,21 @@ export default function PackageViewer() {
 
   const loadPackageDocuments = async (pkg) => {
     try {
-      const documentIds = pkg.included_documents.map(doc => doc.document_id);
-      const documents = await Promise.all(
-        documentIds.map(id => Document.filter({ id }))
-      );
-      
+      const documentIds = pkg.included_documents.map((doc) => doc.document_id);
+      const documents = await Promise.all(documentIds.map((id) => Document.filter({ id })));
+
       // Flatten and sort by order
       const sortedDocs = documents
         .flat()
-        .map(doc => {
-          const packageDoc = pkg.included_documents.find(pd => pd.document_id === doc.id);
+        .map((doc) => {
+          const packageDoc = pkg.included_documents.find((pd) => pd.document_id === doc.id);
           return { ...doc, order: packageDoc?.order || 0 };
         })
         .sort((a, b) => a.order - b.order);
-      
+
       setPackageDocuments(sortedDocs);
     } catch (error) {
-      console.error("Error loading package documents:", error);
+      console.error('Error loading package documents:', error);
       setPackageDocuments([]);
     }
   };
@@ -79,29 +76,40 @@ export default function PackageViewer() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'ready': return 'bg-green-100 text-green-800';
-      case 'generating': return 'bg-blue-100 text-blue-800';
-      case 'draft': return 'bg-gray-100 text-gray-800';
-      case 'expired': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'ready':
+        return 'bg-green-100 text-green-800';
+      case 'generating':
+        return 'bg-blue-100 text-blue-800';
+      case 'draft':
+        return 'bg-gray-100 text-gray-800';
+      case 'expired':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getPackageTypeIcon = (type) => {
     switch (type) {
-      case 'developer': return <FileText className="w-4 h-4" />;
-      case 'investor': return <TrendingUp className="w-4 h-4" />;
-      case 'partner': return <Users className="w-4 h-4" />;
-      case 'client': return <Eye className="w-4 h-4" />;
-      case 'compliance': return <Shield className="w-4 h-4" />;
-      default: return <Package className="w-4 h-4" />;
+      case 'developer':
+        return <FileText className="w-4 h-4" />;
+      case 'investor':
+        return <TrendingUp className="w-4 h-4" />;
+      case 'partner':
+        return <Users className="w-4 h-4" />;
+      case 'client':
+        return <Eye className="w-4 h-4" />;
+      case 'compliance':
+        return <Shield className="w-4 h-4" />;
+      default:
+        return <Package className="w-4 h-4" />;
     }
   };
 
   if (loading) {
     return (
       <div className="space-y-4">
-        {[1, 2, 3].map(i => (
+        {[1, 2, 3].map((i) => (
           <div key={i} className="h-32 bg-gray-100 rounded-lg animate-pulse"></div>
         ))}
       </div>
@@ -113,12 +121,10 @@ export default function PackageViewer() {
       {/* Package List */}
       <div className="grid gap-4">
         {packages.map((pkg) => (
-          <Card 
-            key={pkg.id} 
+          <Card
+            key={pkg.id}
             className={`border-0 shadow-sm cursor-pointer transition-all ${
-              selectedPackage?.id === pkg.id 
-                ? 'border-blue-500 bg-blue-50' 
-                : 'hover:shadow-md'
+              selectedPackage?.id === pkg.id ? 'border-blue-500 bg-blue-50' : 'hover:shadow-md'
             }`}
             onClick={() => handlePackageSelect(pkg)}
           >
@@ -129,12 +135,8 @@ export default function PackageViewer() {
                   {pkg.name}
                 </CardTitle>
                 <div className="flex items-center gap-2">
-                  <Badge className={getStatusColor(pkg.status)}>
-                    {pkg.status}
-                  </Badge>
-                  <Badge variant="outline">
-                    {pkg.included_documents?.length || 0} documents
-                  </Badge>
+                  <Badge className={getStatusColor(pkg.status)}>{pkg.status}</Badge>
+                  <Badge variant="outline">{pkg.included_documents?.length || 0} documents</Badge>
                 </div>
               </div>
             </CardHeader>
@@ -166,11 +168,7 @@ export default function PackageViewer() {
                         <Presentation className="w-4 h-4 mr-1" />
                         Present
                       </Button>
-                      <Button
-                        size="sm"
-                        asChild
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <Button size="sm" asChild onClick={(e) => e.stopPropagation()}>
                         <a href={pkg.package_url} download>
                           <Download className="w-4 h-4 mr-1" />
                           Download
@@ -188,12 +186,8 @@ export default function PackageViewer() {
           <Card className="border-0 shadow-sm">
             <CardContent className="text-center py-12">
               <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No document packages found
-              </h3>
-              <p className="text-gray-500">
-                Create your first document package to get started
-              </p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No document packages found</h3>
+              <p className="text-gray-500">Create your first document package to get started</p>
             </CardContent>
           </Card>
         )}
@@ -230,7 +224,10 @@ export default function PackageViewer() {
               <div className="space-y-2">
                 <h4 className="font-semibold text-gray-900">Included Documents</h4>
                 {packageDocuments.map((doc, index) => (
-                  <div key={doc.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                  >
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold">
                         {index + 1}
@@ -249,7 +246,7 @@ export default function PackageViewer() {
               {/* Action Buttons */}
               {selectedPackage.status === 'ready' && packageDocuments.length > 0 && (
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                  <Button 
+                  <Button
                     variant="outline"
                     onClick={handlePresentPackage}
                     className="flex items-center gap-2"
@@ -257,10 +254,7 @@ export default function PackageViewer() {
                     <Presentation className="w-4 h-4" />
                     Present Package
                   </Button>
-                  <Button 
-                    asChild
-                    className="flex items-center gap-2"
-                  >
+                  <Button asChild className="flex items-center gap-2">
                     <a href={selectedPackage.package_url} download>
                       <Download className="w-4 h-4" />
                       Download Package

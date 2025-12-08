@@ -1,11 +1,6 @@
-import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  FolderOpen,
-  FileText,
-  CheckCircle,
-  Users
-} from "lucide-react";
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { FolderOpen, FileText, CheckCircle, Users } from 'lucide-react';
 
 export default function StatsOverview({ statistics, createPageUrl }) {
   // Safely access statistics with fallback
@@ -13,7 +8,7 @@ export default function StatsOverview({ statistics, createPageUrl }) {
     assignments: { total: 0 },
     tasks: { total: 0, pending: 0, inProgress: 0 },
     documents: { total: 0 },
-    messages: { total: 0 }
+    messages: { total: 0 },
   };
 
   return (
@@ -40,9 +35,7 @@ export default function StatsOverview({ statistics, createPageUrl }) {
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Active Tasks
-              </p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Tasks</p>
               <h3 className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                 {(stats.tasks?.pending || 0) + (stats.tasks?.inProgress || 0)}
               </h3>
@@ -58,9 +51,7 @@ export default function StatsOverview({ statistics, createPageUrl }) {
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Documents
-              </p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Documents</p>
               <h3 className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                 {stats.documents?.total || 0}
               </h3>
@@ -76,9 +67,7 @@ export default function StatsOverview({ statistics, createPageUrl }) {
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Team Messages
-              </p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Team Messages</p>
               <h3 className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                 {stats.messages?.total || 0}
               </h3>

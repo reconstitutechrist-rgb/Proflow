@@ -1,8 +1,7 @@
-
-import React, { useState, useEffect, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import {
   Shield,
   FileText,
@@ -12,11 +11,11 @@ import {
   CheckCircle,
   TrendingUp,
   Clock,
-  Loader2
-} from "lucide-react";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import { toast } from "sonner"; // Changed toast import
-import { db } from "@/api/db";
+  Loader2,
+} from 'lucide-react';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { toast } from 'sonner'; // Changed toast import
+import { db } from '@/api/db';
 
 export default function ProjectHealthOverview({ projectId }) {
   const [loading, setLoading] = useState(true);
@@ -36,17 +35,27 @@ export default function ProjectHealthOverview({ projectId }) {
       // CRITICAL: Load only data from current workspace
       // Assuming db.entities.Project, Assignment, Task are available
       const [projectResult, assignmentsResult, tasksResult] = await Promise.all([
-        db.entities.Project.filter({
-          workspace_id: currentWorkspaceId,
-          id: projectId
-        }, "-updated_date", 1), // Limiting to 1 project
-        db.entities.Assignment.filter({
-          workspace_id: currentWorkspaceId,
-          project_id: projectId
-        }, "-updated_date"),
-        db.entities.Task.filter({
-          workspace_id: currentWorkspaceId
-        }, "-updated_date")
+        db.entities.Project.filter(
+          {
+            workspace_id: currentWorkspaceId,
+            id: projectId,
+          },
+          '-updated_date',
+          1
+        ), // Limiting to 1 project
+        db.entities.Assignment.filter(
+          {
+            workspace_id: currentWorkspaceId,
+            project_id: projectId,
+          },
+          '-updated_date'
+        ),
+        db.entities.Task.filter(
+          {
+            workspace_id: currentWorkspaceId,
+          },
+          '-updated_date'
+        ),
       ]);
 
       const project = projectResult.length > 0 ? projectResult[0] : null;
@@ -55,29 +64,30 @@ export default function ProjectHealthOverview({ projectId }) {
 
       // CRITICAL: Validate project belongs to current workspace
       if (!project || project.workspace_id !== currentWorkspaceId) {
-        console.error("Security violation: Project not in current workspace or not found");
-        toast.error("Cannot access project from other workspaces or project not found.");
+        console.error('Security violation: Project not in current workspace or not found');
+        toast.error('Cannot access project from other workspaces or project not found.');
         setHealthData(null);
         setLoading(false);
         return;
       }
 
       // Filter tasks that belong to this project's assignments
-      const assignmentIds = assignments.map(a => a.id);
-      const projectTasks = tasks.filter(t => assignmentIds.includes(t.assignment_id));
+      const assignmentIds = assignments.map((a) => a.id);
+      const projectTasks = tasks.filter((t) => assignmentIds.includes(t.assignment_id));
 
       // Calculate health metrics
       const totalTasks = projectTasks.length;
-      const completedTasks = projectTasks.filter(t => t.status === 'completed').length;
-      const overdueTasks = projectTasks.filter(t => {
+      const completedTasks = projectTasks.filter((t) => t.status === 'completed').length;
+      const overdueTasks = projectTasks.filter((t) => {
         if (t.status === 'completed' || !t.due_date) return false;
         return new Date(t.due_date) < new Date();
       }).length;
 
-      const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      const progressPercentage =
+        totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-      const activeAssignments = assignments.filter(a =>
-        a.status === 'in_progress' || a.status === 'planning'
+      const activeAssignments = assignments.filter(
+        (a) => a.status === 'in_progress' || a.status === 'planning'
       ).length;
 
       // Calculate health score (0-100)
@@ -96,11 +106,11 @@ export default function ProjectHealthOverview({ projectId }) {
         progressPercentage: progressPercentage,
         healthScore: Math.max(0, Math.round(healthScore)),
         assignments: assignments,
-        tasks: projectTasks
+        tasks: projectTasks,
       });
     } catch (error) {
-      console.error("Error loading health data:", error);
-      toast.error("Failed to load project health data");
+      console.error('Error loading health data:', error);
+      toast.error('Failed to load project health data');
       setHealthData(null);
     } finally {
       setLoading(false);
@@ -153,13 +163,18 @@ export default function ProjectHealthOverview({ projectId }) {
                 <div className="flex items-center gap-3">
                   {React.createElement(getStatusIcon(healthData.healthScore), {
                     className: `w-5 h-5 ${
-                      healthData.healthScore >= 80 ? 'text-green-500' :
-                      healthData.healthScore >= 60 ? 'text-yellow-500' : 'text-red-500'
-                    }`
+                      healthData.healthScore >= 80
+                        ? 'text-green-500'
+                        : healthData.healthScore >= 60
+                          ? 'text-yellow-500'
+                          : 'text-red-500'
+                    }`,
                   })}
                   <div>
                     <h4 className="font-semibold text-gray-900">{healthData.project.name}</h4>
-                    <p className="text-sm text-gray-500">{healthData.project.status?.replace('_', ' ') || 'Unknown Status'}</p>
+                    <p className="text-sm text-gray-500">
+                      {healthData.project.status?.replace('_', ' ') || 'Unknown Status'}
+                    </p>
                   </div>
                 </div>
                 <Badge className={`${getHealthColor(healthData.healthScore)} border`}>
@@ -177,7 +192,9 @@ export default function ProjectHealthOverview({ projectId }) {
                   <div className="text-gray-500">Active Assignments</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-semibold text-purple-600">{healthData.progressPercentage}%</div>
+                  <div className="font-semibold text-purple-600">
+                    {healthData.progressPercentage}%
+                  </div>
                   <div className="text-gray-500">Task Progress</div>
                 </div>
                 <div className="text-center">
@@ -190,7 +207,10 @@ export default function ProjectHealthOverview({ projectId }) {
         ) : (
           <div className="text-center py-8 text-gray-500">
             <Shield className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <p>No project data available for health analysis. Please ensure a valid project ID is provided.</p>
+            <p>
+              No project data available for health analysis. Please ensure a valid project ID is
+              provided.
+            </p>
           </div>
         )}
       </CardContent>

@@ -1,19 +1,29 @@
-
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, CheckCircle, AlertTriangle, Lightbulb, FileText, Sparkles, RefreshCw } from "lucide-react";
-import { InvokeLLM } from "@/api/integrations";
-import { toast } from "sonner";
-import DOMPurify from "dompurify";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Loader2,
+  CheckCircle,
+  AlertTriangle,
+  Lightbulb,
+  FileText,
+  Sparkles,
+  RefreshCw,
+} from 'lucide-react';
+import { InvokeLLM } from '@/api/integrations';
+import { toast } from 'sonner';
+import DOMPurify from 'dompurify';
 
 // Estimate token count (rough approximation)
 const estimateTokens = (text) => {
   if (!text) return 0;
   // Strip HTML tags for more accurate count
-  const plainText = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const plainText = text
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   // Rough approximation: 1 token ≈ 4 characters
   return Math.ceil(plainText.length / 4);
 };
@@ -32,49 +42,52 @@ export default function AIReviewPanel({
   selectedTask,
   assignments,
   tasks,
-  referenceDocumentUrls = []
+  referenceDocumentUrls = [],
 }) {
   const [review, setReview] = useState(null);
   const [isReviewing, setIsReviewing] = useState(false);
-  const [reviewType, setReviewType] = useState("comprehensive");
+  const [reviewType, setReviewType] = useState('comprehensive');
 
   const reviewTypes = [
     {
-      value: "comprehensive",
-      label: "Comprehensive Review",
-      description: "Full analysis of clarity, grammar, tone, and completeness",
-      estimatedTokens: "~2000-3000"
+      value: 'comprehensive',
+      label: 'Comprehensive Review',
+      description: 'Full analysis of clarity, grammar, tone, and completeness',
+      estimatedTokens: '~2000-3000',
     },
     {
-      value: "quick",
-      label: "Quick Check",
-      description: "Fast review focusing on major issues only",
-      estimatedTokens: "~500-1000"
+      value: 'quick',
+      label: 'Quick Check',
+      description: 'Fast review focusing on major issues only',
+      estimatedTokens: '~500-1000',
     },
     {
-      value: "grammar",
-      label: "Grammar & Spelling",
-      description: "Focus only on language errors",
-      estimatedTokens: "~500-1000"
+      value: 'grammar',
+      label: 'Grammar & Spelling',
+      description: 'Focus only on language errors',
+      estimatedTokens: '~500-1000',
     },
     {
-      value: "tone",
-      label: "Tone & Style",
-      description: "Check if tone matches intended audience",
-      estimatedTokens: "~500-1000"
-    }
+      value: 'tone',
+      label: 'Tone & Style',
+      description: 'Check if tone matches intended audience',
+      estimatedTokens: '~500-1000',
+    },
   ];
 
-  const currentReviewType = reviewTypes.find(t => t.value === reviewType);
+  const currentReviewType = reviewTypes.find((t) => t.value === reviewType);
 
   const handleReview = async () => {
     if (!content || content.trim().length < 50) {
-      toast.error("Please add more content before requesting a review (minimum 50 characters)");
+      toast.error('Please add more content before requesting a review (minimum 50 characters)');
       return;
     }
 
     // Estimate cost and warn user
-    const strippedContent = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const strippedContent = content
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
     const contentLength = strippedContent.length;
     const estimatedTokenCount = estimateTokens(content);
     const estimatedCostUSD = estimateCost(estimatedTokenCount);
@@ -83,8 +96,8 @@ export default function AIReviewPanel({
     if (contentLength > 10000) {
       const confirm = window.confirm(
         `This document is quite large (${contentLength} characters, ~${estimatedTokenCount} tokens).\n\n` +
-        `Estimated cost: $${estimatedCostUSD.toFixed(4)}\n\n` +
-        `Continue with AI review?`
+          `Estimated cost: $${estimatedCostUSD.toFixed(4)}\n\n` +
+          `Continue with AI review?`
       );
       if (!confirm) return;
     }
@@ -92,21 +105,20 @@ export default function AIReviewPanel({
     try {
       setIsReviewing(true);
 
-      const assignmentContext = selectedAssignment 
-        ? assignments.find(a => a.id === selectedAssignment)
+      const assignmentContext = selectedAssignment
+        ? assignments.find((a) => a.id === selectedAssignment)
         : null;
 
-      const taskContext = selectedTask
-        ? tasks.find(t => t.id === selectedTask)
-        : null;
+      const taskContext = selectedTask ? tasks.find((t) => t.id === selectedTask) : null;
 
-      let systemPrompt = "";
-      
-      const hasReferenceDocsContext = referenceDocumentUrls.length > 0
-        ? `\n\nYou have access to ${referenceDocumentUrls.length} reference document(s) that provide additional context for this review. Use them to evaluate accuracy and completeness.`
-        : '';
+      let systemPrompt = '';
 
-      if (reviewType === "comprehensive") {
+      const hasReferenceDocsContext =
+        referenceDocumentUrls.length > 0
+          ? `\n\nYou have access to ${referenceDocumentUrls.length} reference document(s) that provide additional context for this review. Use them to evaluate accuracy and completeness.`
+          : '';
+
+      if (reviewType === 'comprehensive') {
         systemPrompt = `You are an expert editor and writing coach. Provide a comprehensive review of this document.${hasReferenceDocsContext}
 
 Analyze:
@@ -115,23 +127,21 @@ Analyze:
 3. **Tone & Style**: Is the tone appropriate for the intended audience?
 4. **Completeness**: Are there any missing sections or gaps in information?
 5. **Consistency**: Is terminology and formatting consistent throughout?
-${taskContext ? `6. **Task Alignment**: Does the content effectively address the task: ${taskContext.title}?` : ""}
-${referenceDocumentUrls.length > 0 ? `${taskContext ? '7' : '6'}. **Reference Alignment**: Does the content align with the provided reference documents?` : ""}
+${taskContext ? `6. **Task Alignment**: Does the content effectively address the task: ${taskContext.title}?` : ''}
+${referenceDocumentUrls.length > 0 ? `${taskContext ? '7' : '6'}. **Reference Alignment**: Does the content align with the provided reference documents?` : ''}
 
 Provide actionable feedback in a friendly, constructive tone.`;
-
-      } else if (reviewType === "quick") {
+      } else if (reviewType === 'quick') {
         systemPrompt = `You are an expert editor. Provide a quick review focusing on the most critical issues only.
 
 Focus on:
 1. Major structural problems
 2. Critical grammar or clarity issues
 3. Missing essential information
-${taskContext ? `4. Whether content addresses the task: ${taskContext.title}` : ""}
+${taskContext ? `4. Whether content addresses the task: ${taskContext.title}` : ''}
 
 Keep it brief and actionable.`;
-
-      } else if (reviewType === "grammar") {
+      } else if (reviewType === 'grammar') {
         systemPrompt = `You are a grammar and spelling expert. Review this document for language errors only.
 
 Focus on:
@@ -141,8 +151,7 @@ Focus on:
 4. Sentence structure problems
 
 List specific issues with suggestions for correction.`;
-
-      } else if (reviewType === "tone") {
+      } else if (reviewType === 'tone') {
         systemPrompt = `You are a tone and style expert. Review this document's tone and writing style.
 
 Analyze:
@@ -157,10 +166,10 @@ Provide specific suggestions for improvement.`;
       const fullPrompt = `${systemPrompt}
 
 Document Context:
-- Title: ${title || "Untitled"}
-- Description: ${description || "No description"}
-${assignmentContext ? `- Assignment: ${assignmentContext.name} (${assignmentContext.description})` : ""}
-${taskContext ? `- Specific Task: ${taskContext.title} (Status: ${taskContext.status}, Priority: ${taskContext.priority})${taskContext.description ? ` - ${taskContext.description}` : ''}` : ""}
+- Title: ${title || 'Untitled'}
+- Description: ${description || 'No description'}
+${assignmentContext ? `- Assignment: ${assignmentContext.name} (${assignmentContext.description})` : ''}
+${taskContext ? `- Specific Task: ${taskContext.title} (Status: ${taskContext.status}, Priority: ${taskContext.priority})${taskContext.description ? ` - ${taskContext.description}` : ''}` : ''}
 
 Document Content (${contentLength} characters):
 ${strippedContent.substring(0, 8000)}${contentLength > 8000 ? '\n\n[Content truncated for analysis...]' : ''}
@@ -170,7 +179,7 @@ Provide your review in a structured format with clear sections and actionable re
       const response = await InvokeLLM({
         prompt: fullPrompt,
         add_context_from_internet: false,
-        file_urls: referenceDocumentUrls.length > 0 ? referenceDocumentUrls : undefined
+        file_urls: referenceDocumentUrls.length > 0 ? referenceDocumentUrls : undefined,
       });
 
       setReview({
@@ -178,20 +187,23 @@ Provide your review in a structured format with clear sections and actionable re
         type: reviewType,
         timestamp: new Date().toISOString(),
         documentLength: contentLength,
-        tokensUsed: estimatedTokenCount
+        tokensUsed: estimatedTokenCount,
       });
 
-      toast.success("Review completed successfully");
-
+      toast.success('Review completed successfully');
     } catch (error) {
-      console.error("Error generating review:", error);
-      toast.error("Failed to generate review");
+      console.error('Error generating review:', error);
+      toast.error('Failed to generate review');
     } finally {
       setIsReviewing(false);
     }
   };
 
-  const contentLength = content?.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length || 0;
+  const contentLength =
+    content
+      ?.replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim().length || 0;
   const estimatedTokenCount = estimateTokens(content);
   const estimatedCostUSD = estimateCost(estimatedTokenCount);
 
@@ -210,7 +222,9 @@ Provide your review in a structured format with clear sections and actionable re
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600 dark:text-gray-400">Est. Review Cost</span>
-            <Badge variant="outline" className="font-mono">${estimatedCostUSD.toFixed(4)}</Badge>
+            <Badge variant="outline" className="font-mono">
+              ${estimatedCostUSD.toFixed(4)}
+            </Badge>
           </div>
         </CardContent>
       </Card>
@@ -219,7 +233,7 @@ Provide your review in a structured format with clear sections and actionable re
       <div>
         <label className="text-sm font-medium mb-2 block">Review Type</label>
         <div className="space-y-2">
-          {reviewTypes.map(type => (
+          {reviewTypes.map((type) => (
             <button
               key={type.value}
               onClick={() => setReviewType(type.value)}
@@ -230,7 +244,9 @@ Provide your review in a structured format with clear sections and actionable re
               }`}
             >
               <div className="font-medium text-sm">{type.label}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{type.description}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {type.description}
+              </div>
               <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                 {type.estimatedTokens} tokens
               </div>
@@ -277,11 +293,7 @@ Provide your review in a structured format with clear sections and actionable re
                 <CheckCircle className="w-5 h-5 text-green-600" />
                 <span className="font-semibold">Review Complete</span>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleReview}
-              >
+              <Button variant="ghost" size="sm" onClick={handleReview}>
                 <RefreshCw className="w-3 h-3 mr-1" />
                 Re-analyze
               </Button>
@@ -289,7 +301,7 @@ Provide your review in a structured format with clear sections and actionable re
 
             <div className="flex flex-wrap gap-2">
               <Badge variant="outline" className="text-xs">
-                {reviewTypes.find(t => t.value === review.type)?.label}
+                {reviewTypes.find((t) => t.value === review.type)?.label}
               </Badge>
               <Badge variant="outline" className="text-xs">
                 {new Date(review.timestamp).toLocaleTimeString()}
@@ -307,7 +319,8 @@ Provide your review in a structured format with clear sections and actionable re
             <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
               <Lightbulb className="w-4 h-4 text-blue-600" />
               <AlertDescription className="text-xs text-blue-900 dark:text-blue-100">
-                <strong>Tip:</strong> Use the AI Writing Assistant to implement suggested improvements.
+                <strong>Tip:</strong> Use the AI Writing Assistant to implement suggested
+                improvements.
               </AlertDescription>
             </Alert>
           </CardContent>

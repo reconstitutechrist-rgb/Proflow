@@ -1,22 +1,14 @@
-
-import React, { useState, useMemo } from "react"; // Removed useEffect, useCallback as they are no longer used
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Folder,
-  FolderOpen,
-  ChevronRight,
-  ChevronDown,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import React, { useState, useMemo } from 'react'; // Removed useEffect, useCallback as they are no longer used
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Folder, FolderOpen, ChevronRight, ChevronDown, Plus, Trash2 } from 'lucide-react';
 
 // New imports
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import { toast } from "sonner";
-import { db } from "@/api/db";
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { toast } from 'sonner';
+import { db } from '@/api/db';
 
-import CreateFolderDialog from "@/components/dialogs/CreateFolderDialog";
+import CreateFolderDialog from '@/components/dialogs/CreateFolderDialog';
 
 export default function FolderStructure({
   documents,
@@ -25,9 +17,9 @@ export default function FolderStructure({
   onRefresh, // New prop
 }) {
   // Initial state for expanded folders - starts with root expanded
-  const [expandedFolders, setExpandedFolders] = useState(new Set(["/"]));
+  const [expandedFolders, setExpandedFolders] = useState(new Set(['/']));
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [selectedPath, setSelectedPath] = useState("/");
+  const [selectedPath, setSelectedPath] = useState('/');
 
   // Hook to get current workspace ID
   const { currentWorkspaceId } = useWorkspace();
@@ -38,20 +30,20 @@ export default function FolderStructure({
     const folderCounts = {}; // Stores count of direct items (documents + placeholder) for each folder
 
     // CRITICAL: Only process documents from current workspace for security
-    const workspaceDocuments = documents.filter(doc => {
+    const workspaceDocuments = documents.filter((doc) => {
       if (doc.workspace_id !== currentWorkspaceId) {
-        console.warn("Document in different workspace, filtering from folder structure", {
+        console.warn('Document in different workspace, filtering from folder structure', {
           documentId: doc.id,
           documentWorkspace: doc.workspace_id,
-          currentWorkspace: currentWorkspaceId
+          currentWorkspace: currentWorkspaceId,
         });
         return false;
       }
       return true;
     });
 
-    workspaceDocuments.forEach(doc => {
-      const path = doc.folder_path || "/";
+    workspaceDocuments.forEach((doc) => {
+      const path = doc.folder_path || '/';
 
       // Initialize folder entry if it doesn't exist
       if (!tree[path]) {
@@ -59,7 +51,7 @@ export default function FolderStructure({
       }
 
       // Assign folder_placeholder document to folderDoc
-      if (doc.document_type === "folder_placeholder") {
+      if (doc.document_type === 'folder_placeholder') {
         tree[path].folderDoc = doc;
       } else {
         tree[path].documents.push(doc);
@@ -69,11 +61,11 @@ export default function FolderStructure({
       folderCounts[path] = (folderCounts[path] || 0) + 1;
 
       // Build parent-child relationships
-      const parts = path.split("/").filter(Boolean);
-      let currentSegmentPath = "";
+      const parts = path.split('/').filter(Boolean);
+      let currentSegmentPath = '';
       parts.forEach((part) => {
-        const parentPath = currentSegmentPath || "/";
-        currentSegmentPath += (currentSegmentPath === "/" ? "" : "/") + part;
+        const parentPath = currentSegmentPath || '/';
+        currentSegmentPath += (currentSegmentPath === '/' ? '' : '/') + part;
 
         // Ensure parent folder entry exists
         if (!tree[parentPath]) {
@@ -88,12 +80,12 @@ export default function FolderStructure({
     });
 
     // Ensure root folder always exists, even if empty
-    if (!tree["/"]) {
-        tree["/"] = { folders: [], documents: [], folderDoc: null };
+    if (!tree['/']) {
+      tree['/'] = { folders: [], documents: [], folderDoc: null };
     }
 
     // Sort subfolders alphabetically for consistent display
-    Object.keys(tree).forEach(folderPath => {
+    Object.keys(tree).forEach((folderPath) => {
       tree[folderPath].folders.sort((a, b) => {
         const nameA = a.split('/').pop();
         const nameB = b.split('/').pop();
@@ -106,7 +98,7 @@ export default function FolderStructure({
 
   // Toggles expansion state of a folder
   const toggleFolder = (path) => {
-    setExpandedFolders(prev => {
+    setExpandedFolders((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(path)) {
         newSet.delete(path);
@@ -145,7 +137,7 @@ export default function FolderStructure({
 
     // Prevent deletion if folder contains items
     if (documentsInFolder.length > 0 || subfolders.length > 0) {
-      toast.error("Cannot delete folder with contents. Please move or delete all items first.");
+      toast.error('Cannot delete folder with contents. Please move or delete all items first.');
       return;
     }
 
@@ -157,10 +149,10 @@ export default function FolderStructure({
     try {
       // CRITICAL: Validate folder is in current workspace before deletion
       if (folderDoc && folderDoc.workspace_id !== currentWorkspaceId) {
-        toast.error("Cannot delete folders from other workspaces");
-        console.error("Security violation: Attempted to delete folder from different workspace", {
+        toast.error('Cannot delete folders from other workspaces');
+        console.error('Security violation: Attempted to delete folder from different workspace', {
           folderWorkspace: folderDoc.workspace_id,
-          currentWorkspace: currentWorkspaceId
+          currentWorkspace: currentWorkspaceId,
         });
         return;
       }
@@ -168,16 +160,16 @@ export default function FolderStructure({
       // Only delete if a placeholder document exists for the folder
       if (folderDoc) {
         await db.entities.Document.delete(folderDoc.id);
-        toast.success("Folder deleted successfully");
+        toast.success('Folder deleted successfully');
         if (onRefresh) {
           onRefresh();
         }
       } else {
-        toast.error("No folder placeholder found to delete. Implicit folders cannot be deleted.");
+        toast.error('No folder placeholder found to delete. Implicit folders cannot be deleted.');
       }
     } catch (error) {
-      console.error("Error deleting folder:", error);
-      toast.error(`Failed to delete folder: ${error.message || "An unknown error occurred."}`);
+      console.error('Error deleting folder:', error);
+      toast.error(`Failed to delete folder: ${error.message || 'An unknown error occurred.'}`);
     }
   };
 
@@ -185,13 +177,13 @@ export default function FolderStructure({
   const renderFolder = (path, level = 0) => {
     const isExpanded = expandedFolders.has(path);
     const folderData = folderTree.tree[path] || { folders: [], documents: [], folderDoc: null };
-    const folderName = path === "/" ? "Root" : path.split("/").pop(); // Display "Root" for the base path
+    const folderName = path === '/' ? 'Root' : path.split('/').pop(); // Display "Root" for the base path
 
     return (
       <div key={path}>
         <div
           className={`flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer group ${
-            level > 0 ? `ml-${level * 4}` : "" // Dynamic left margin for indentation
+            level > 0 ? `ml-${level * 4}` : '' // Dynamic left margin for indentation
           }`}
           onClick={() => handleFolderClick(path)}
         >
@@ -202,7 +194,7 @@ export default function FolderStructure({
                 toggleFolder(path);
               }}
               className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-              title={isExpanded ? "Collapse Folder" : "Expand Folder"}
+              title={isExpanded ? 'Collapse Folder' : 'Expand Folder'}
             >
               {isExpanded ? (
                 <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -246,7 +238,7 @@ export default function FolderStructure({
               <Plus className="w-4 h-4" />
             </Button>
 
-            {path !== "/" && ( // Root folder cannot be deleted
+            {path !== '/' && ( // Root folder cannot be deleted
               <Button
                 variant="ghost"
                 size="icon"
@@ -264,8 +256,10 @@ export default function FolderStructure({
         </div>
 
         {isExpanded && folderData.folders.length > 0 && (
-          <div className="pl-4"> {/* Indent subfolders */}
-            {folderData.folders.map(subPath => renderFolder(subPath, level + 1))}
+          <div className="pl-4">
+            {' '}
+            {/* Indent subfolders */}
+            {folderData.folders.map((subPath) => renderFolder(subPath, level + 1))}
           </div>
         )}
       </div>
@@ -275,14 +269,8 @@ export default function FolderStructure({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between mb-4 px-3">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-          Folders
-        </h3>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleCreateFolder("/")}
-        >
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Folders</h3>
+        <Button variant="outline" size="sm" onClick={() => handleCreateFolder('/')}>
           <Plus className="w-4 h-4 mr-2" />
           New Folder
         </Button>
@@ -290,7 +278,7 @@ export default function FolderStructure({
 
       <div className="space-y-1">
         {/* Render the folder structure starting from the root */}
-        {renderFolder("/")}
+        {renderFolder('/')}
       </div>
 
       {/* Security Notice */}

@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Send,
   Bot,
@@ -33,11 +33,11 @@ import {
   Sparkles,
   Globe,
   Target,
-  FolderOpen
-} from "lucide-react";
-import { useNavigate } from "react-router";
-import { createPageUrl } from "@/lib/utils";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+  FolderOpen,
+} from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { createPageUrl } from '@/lib/utils';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 import { db } from '@/api/db';
 
 export default function AIResearchAssistant({
@@ -49,16 +49,16 @@ export default function AIResearchAssistant({
   allAssignments,
   allProjects,
   pendingQuestion,
-  onPendingQuestionUsed
+  onPendingQuestionUsed,
 }) {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState(assignment?.id || null);
   const [selectedProjectId, setSelectedProjectId] = useState(project?.id || null);
   const [contextType, setContextType] = useState(
-    project?.id ? "project" : assignment?.id ? "assignment" : "none"
+    project?.id ? 'project' : assignment?.id ? 'assignment' : 'none'
   );
   const [webSearchEnabled, setWebSearchEnabled] = useState(true);
 
@@ -77,15 +77,15 @@ export default function AIResearchAssistant({
     if (project?.id) {
       setSelectedProjectId(project.id);
       setSelectedAssignmentId(null);
-      setContextType("project");
+      setContextType('project');
     } else if (assignment?.id) {
       setSelectedAssignmentId(assignment.id);
       setSelectedProjectId(null);
-      setContextType("assignment");
+      setContextType('assignment');
     } else {
       setSelectedAssignmentId(null);
       setSelectedProjectId(null);
-      setContextType("none");
+      setContextType('none');
     }
   }, [assignment, project, documents, currentUser]);
 
@@ -96,20 +96,20 @@ export default function AIResearchAssistant({
       id: Date.now().toString(),
       type: 'user',
       content: input,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInput("");
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
     setIsLoading(true);
 
     try {
       // Find the selected assignment or project from allAssignments/allProjects
       const linkedAssignment = selectedAssignmentId
-        ? allAssignments?.find(a => a.id === selectedAssignmentId)
+        ? allAssignments?.find((a) => a.id === selectedAssignmentId)
         : null;
       const linkedProject = selectedProjectId
-        ? allProjects?.find(p => p.id === selectedProjectId)
+        ? allProjects?.find((p) => p.id === selectedProjectId)
         : null;
 
       // Call our custom Anthropic backend function with web search parameter
@@ -118,7 +118,7 @@ export default function AIResearchAssistant({
         assignment: linkedAssignment || null,
         project: linkedProject || null,
         documents: linkedAssignment ? documents : [],
-        useWebSearch: webSearchEnabled
+        useWebSearch: webSearchEnabled,
       });
 
       if (!response.success) {
@@ -135,15 +135,15 @@ export default function AIResearchAssistant({
           confidence_score: response.data.confidence_score,
           recommended_actions: response.data.recommended_actions || [],
           suggested_documents: response.data.suggested_documents || [],
-          web_sources_used: response.data.web_sources_used || false
+          web_sources_used: response.data.web_sources_used || false,
         },
         model_info: {
-          provider: "Anthropic Claude",
-          model: response.model_used || "claude-sonnet-4-20250514"
-        }
+          provider: 'Anthropic Claude',
+          model: response.model_used || 'claude-sonnet-4-20250514',
+        },
       };
 
-      setMessages(prev => [...prev, aiMessage]);
+      setMessages((prev) => [...prev, aiMessage]);
 
       // Save research to database
       if (currentUser && currentWorkspaceId) {
@@ -156,7 +156,7 @@ export default function AIResearchAssistant({
             research_type: response.data.research_type || 'general',
             confidence_score: response.data.confidence_score || 85,
             recommended_actions: response.data.recommended_actions || [],
-            suggested_documents: response.data.suggested_documents || []
+            suggested_documents: response.data.suggested_documents || [],
           };
 
           // Add assignment_id or project_id if one is selected
@@ -168,23 +168,24 @@ export default function AIResearchAssistant({
           }
 
           await db.entities.AIResearchChat.create(researchData);
-          
+
           if (onResearchComplete) {
             onResearchComplete();
           }
         } catch (error) {
-          console.error("Error saving research:", error);
+          console.error('Error saving research:', error);
         }
       }
     } catch (error) {
-      console.error("Error getting AI response:", error);
+      console.error('Error getting AI response:', error);
       const errorMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: "Sorry about that! I ran into a technical hiccup. Could you try asking your question again?",
-        timestamp: new Date()
+        content:
+          'Sorry about that! I ran into a technical hiccup. Could you try asking your question again?',
+        timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -193,68 +194,80 @@ export default function AIResearchAssistant({
   const handleGenerateDocumentFromResearch = (message) => {
     // Build context to pass to DocumentCreator
     const researchContext = {
-      fromResearch: "true",
-      assignmentId: selectedAssignmentId || "",
-      assignmentName: selectedAssignmentId 
-        ? (allAssignments?.find(a => a.id === selectedAssignmentId)?.name || assignment?.name || "")
-        : "",
-      researchQuestion: message.content || "",
-      researchType: message.research_data?.research_type || "general",
-      suggestedDocTitle: message.research_data?.suggested_documents?.[0]?.title || 
-                         message.research_data?.suggested_documents?.[0]?.document_type || 
-                         "Research Document",
+      fromResearch: 'true',
+      assignmentId: selectedAssignmentId || '',
+      assignmentName: selectedAssignmentId
+        ? allAssignments?.find((a) => a.id === selectedAssignmentId)?.name || assignment?.name || ''
+        : '',
+      researchQuestion: message.content || '',
+      researchType: message.research_data?.research_type || 'general',
+      suggestedDocTitle:
+        message.research_data?.suggested_documents?.[0]?.title ||
+        message.research_data?.suggested_documents?.[0]?.document_type ||
+        'Research Document',
       recommendedActions: JSON.stringify(message.research_data?.recommended_actions || []),
-      researchSummary: message.content.substring(0, 500) // First 500 chars as summary
+      researchSummary: message.content.substring(0, 500), // First 500 chars as summary
     };
 
     // Build URL with parameters
     const params = new URLSearchParams(researchContext);
-    navigate(createPageUrl("DocumentCreator") + "?" + params.toString());
+    navigate(createPageUrl('DocumentCreator') + '?' + params.toString());
   };
 
   const getResearchTypeIcon = (type) => {
     switch (type) {
-      case 'compliance': return <Shield className="w-4 h-4" />;
-      case 'licenses': return <FileSearch className="w-4 h-4" />;
-      case 'permits': return <FileSearch className="w-4 h-4" />;
-      case 'legal': return <BookOpen className="w-4 h-4" />;
-      case 'industry_standards': return <CheckCircle className="w-4 h-4" />;
-      case 'requirements': return <ListCheck className="w-4 h-4" />;
-      default: return <Lightbulb className="w-4 h-4" />;
+      case 'compliance':
+        return <Shield className="w-4 h-4" />;
+      case 'licenses':
+        return <FileSearch className="w-4 h-4" />;
+      case 'permits':
+        return <FileSearch className="w-4 h-4" />;
+      case 'legal':
+        return <BookOpen className="w-4 h-4" />;
+      case 'industry_standards':
+        return <CheckCircle className="w-4 h-4" />;
+      case 'requirements':
+        return <ListCheck className="w-4 h-4" />;
+      default:
+        return <Lightbulb className="w-4 h-4" />;
     }
   };
 
   // Friendly starter suggestions based on context
   const starterQuestions = selectedProjectId
     ? [
-        "What are the key objectives for this project?",
-        "What milestones should we track?",
-        "What resources do we need for this project?",
-        "What are the potential risks to consider?",
-        "How should we measure project success?"
+        'What are the key objectives for this project?',
+        'What milestones should we track?',
+        'What resources do we need for this project?',
+        'What are the potential risks to consider?',
+        'How should we measure project success?',
       ]
     : selectedAssignmentId
-    ? [
-        "What permits or licenses might I need for this assignment?",
-        "Are there any compliance requirements I should know about?",
-        "What industry standards should I follow?",
-        "What documents am I missing?",
-        "How can I make sure I'm doing this right?"
-      ]
-    : [
-        "What are the latest trends in [your industry]?",
-        "What legal requirements should I consider for [your project type]?",
-        "How do I get started with [your topic]?",
-        "What best practices should I follow for [your goal]?",
-        "What documentation do I need for [your business type]?"
-      ];
+      ? [
+          'What permits or licenses might I need for this assignment?',
+          'Are there any compliance requirements I should know about?',
+          'What industry standards should I follow?',
+          'What documents am I missing?',
+          "How can I make sure I'm doing this right?",
+        ]
+      : [
+          'What are the latest trends in [your industry]?',
+          'What legal requirements should I consider for [your project type]?',
+          'How do I get started with [your topic]?',
+          'What best practices should I follow for [your goal]?',
+          'What documentation do I need for [your business type]?',
+        ];
 
   // Get display name for current context
   const displayContextName = selectedProjectId
-    ? (allProjects?.find(p => p.id === selectedProjectId)?.name || project?.name || "Selected Project")
+    ? allProjects?.find((p) => p.id === selectedProjectId)?.name ||
+      project?.name ||
+      'Selected Project'
     : selectedAssignmentId
-    ? (allAssignments?.find(a => a.id === selectedAssignmentId)?.name || assignment?.name || "Selected Assignment")
-    : null;
+      ? allAssignments?.find((a) => a.id === selectedAssignmentId)?.name ||
+        assignment?.name ||
+        'Selected Assignment'
+      : null;
 
   return (
     <Card className="border-0 shadow-md h-[700px] flex flex-col">
@@ -265,12 +278,18 @@ export default function AIResearchAssistant({
           </div>
           Research Assistant
           {selectedProjectId ? (
-            <Badge variant="outline" className="ml-auto bg-indigo-50 text-indigo-700 border-indigo-200">
+            <Badge
+              variant="outline"
+              className="ml-auto bg-indigo-50 text-indigo-700 border-indigo-200"
+            >
               <Target className="w-3 h-3 mr-1" />
               Project Context
             </Badge>
           ) : selectedAssignmentId ? (
-            <Badge variant="outline" className="ml-auto bg-purple-50 text-purple-700 border-purple-200">
+            <Badge
+              variant="outline"
+              className="ml-auto bg-purple-50 text-purple-700 border-purple-200"
+            >
               <FolderOpen className="w-3 h-3 mr-1" />
               Assignment Context
             </Badge>
@@ -280,7 +299,10 @@ export default function AIResearchAssistant({
               General Research
             </Badge>
           )}
-          <Badge variant="secondary" className="ml-2 bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border-0">
+          <Badge
+            variant="secondary"
+            className="ml-2 bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border-0"
+          >
             <Brain className="w-3 h-3 mr-1" />
             Claude Sonnet 4
           </Badge>
@@ -290,9 +312,8 @@ export default function AIResearchAssistant({
             {selectedProjectId
               ? `Researching for project: ${displayContextName}. Powered by your Anthropic API.`
               : selectedAssignmentId
-              ? `Researching for: ${displayContextName}. I've got ${documents.length} documents to work with. Powered by your Anthropic API.`
-              : "Ask me anything! Powered by Anthropic's Claude Sonnet 4 via your API key."
-            }
+                ? `Researching for: ${displayContextName}. I've got ${documents.length} documents to work with. Powered by your Anthropic API.`
+                : "Ask me anything! Powered by Anthropic's Claude Sonnet 4 via your API key."}
           </p>
           {/* Web Search Toggle */}
           <div className="flex items-center gap-2">
@@ -326,9 +347,8 @@ export default function AIResearchAssistant({
                   {selectedProjectId
                     ? "I'm here to help you with project planning, strategy, milestones, risks, and anything else you need for your project."
                     : selectedAssignmentId
-                    ? "I'm here to help you figure out compliance requirements, industry standards, legal considerations, and anything else you need to know about your assignment."
-                    : "I can help you research any topic - industry trends, compliance requirements, best practices, and more. Ask away!"
-                  }
+                      ? "I'm here to help you figure out compliance requirements, industry standards, legal considerations, and anything else you need to know about your assignment."
+                      : 'I can help you research any topic - industry trends, compliance requirements, best practices, and more. Ask away!'}
                 </p>
                 <div className="space-y-2 text-left">
                   <p className="text-sm font-medium text-gray-700 mb-3">Try asking me:</p>
@@ -349,8 +369,13 @@ export default function AIResearchAssistant({
             </div>
           ) : (
             messages.map((message) => (
-              <div key={message.id} className={`flex gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`flex gap-3 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+              <div
+                key={message.id}
+                className={`flex gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`flex gap-3 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+                >
                   <div className="flex-shrink-0">
                     {message.type === 'user' ? (
                       <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -362,25 +387,35 @@ export default function AIResearchAssistant({
                       </div>
                     )}
                   </div>
-                  <div className={`rounded-lg p-4 break-words overflow-wrap-anywhere ${
-                    message.type === 'user' 
-                      ? 'bg-blue-500 text-white' 
-                      : 'bg-gray-50 text-gray-900'
-                  }`}>
+                  <div
+                    className={`rounded-lg p-4 break-words overflow-wrap-anywhere ${
+                      message.type === 'user'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-50 text-gray-900'
+                    }`}
+                  >
                     <div className="prose prose-sm max-w-none break-words">
-                      <p className="whitespace-pre-wrap mb-0 break-words overflow-wrap-anywhere">{message.content}</p>
+                      <p className="whitespace-pre-wrap mb-0 break-words overflow-wrap-anywhere">
+                        {message.content}
+                      </p>
                     </div>
-                    
+
                     {message.type === 'assistant' && message.model_info && (
                       <div className="mt-2 pt-2 border-t border-gray-200">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant="secondary" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                          <Badge
+                            variant="secondary"
+                            className="text-xs bg-purple-50 text-purple-700 border-purple-200"
+                          >
                             <Brain className="w-3 h-3 mr-1" />
                             {message.model_info.provider} • {message.model_info.model}
                           </Badge>
                           {/* Show web search indicator */}
                           {message.research_data?.web_sources_used && (
-                            <Badge variant="secondary" className="text-xs bg-green-50 text-green-700 border-green-200">
+                            <Badge
+                              variant="secondary"
+                              className="text-xs bg-green-50 text-green-700 border-green-200"
+                            >
                               <Globe className="w-3 h-3 mr-1" />
                               Web Search Used
                             </Badge>
@@ -388,7 +423,7 @@ export default function AIResearchAssistant({
                         </div>
                       </div>
                     )}
-                    
+
                     {message.type === 'assistant' && message.research_data && (
                       <div className="mt-4 pt-4 border-t border-gray-200">
                         <div className="flex flex-wrap gap-2 mb-3">
@@ -404,46 +439,63 @@ export default function AIResearchAssistant({
                             </Badge>
                           )}
                         </div>
-                        
-                        {message.research_data.recommended_actions && message.research_data.recommended_actions.length > 0 && (
-                          <div className="mb-3">
-                            <p className="font-semibold text-gray-900 mb-2">Here's what I'd suggest doing:</p>
-                            <div className="space-y-2">
-                              {message.research_data.recommended_actions.map((action, index) => (
-                                <div key={index} className="bg-white p-3 rounded border border-gray-200">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="font-medium text-gray-900">{action.action}</span>
-                                    <Badge variant="outline" className="text-xs">
-                                      {action.priority} priority
-                                    </Badge>
-                                  </div>
-                                  <p className="text-sm text-gray-600">{action.description}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {message.research_data.suggested_documents && message.research_data.suggested_documents.length > 0 && (
-                          <div>
-                            <p className="font-semibold text-gray-900 mb-2">Documents you might want to create:</p>
-                            <div className="space-y-2">
-                              {message.research_data.suggested_documents.map((doc, index) => (
-                                <div key={index} className="bg-white p-3 rounded border border-gray-200">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="font-medium text-gray-900">{doc.title || doc.document_type}</span>
-                                    <Badge variant="outline" className="text-xs">
-                                      {doc.urgency} urgency
-                                    </Badge>
-                                  </div>
-                                  <p className="text-sm text-gray-600">{doc.description}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
 
-                        {(message.research_data.suggested_documents?.length > 0 || message.research_data.recommended_actions?.length > 0) && (
+                        {message.research_data.recommended_actions &&
+                          message.research_data.recommended_actions.length > 0 && (
+                            <div className="mb-3">
+                              <p className="font-semibold text-gray-900 mb-2">
+                                Here's what I'd suggest doing:
+                              </p>
+                              <div className="space-y-2">
+                                {message.research_data.recommended_actions.map((action, index) => (
+                                  <div
+                                    key={index}
+                                    className="bg-white p-3 rounded border border-gray-200"
+                                  >
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="font-medium text-gray-900">
+                                        {action.action}
+                                      </span>
+                                      <Badge variant="outline" className="text-xs">
+                                        {action.priority} priority
+                                      </Badge>
+                                    </div>
+                                    <p className="text-sm text-gray-600">{action.description}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                        {message.research_data.suggested_documents &&
+                          message.research_data.suggested_documents.length > 0 && (
+                            <div>
+                              <p className="font-semibold text-gray-900 mb-2">
+                                Documents you might want to create:
+                              </p>
+                              <div className="space-y-2">
+                                {message.research_data.suggested_documents.map((doc, index) => (
+                                  <div
+                                    key={index}
+                                    className="bg-white p-3 rounded border border-gray-200"
+                                  >
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="font-medium text-gray-900">
+                                        {doc.title || doc.document_type}
+                                      </span>
+                                      <Badge variant="outline" className="text-xs">
+                                        {doc.urgency} urgency
+                                      </Badge>
+                                    </div>
+                                    <p className="text-sm text-gray-600">{doc.description}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                        {(message.research_data.suggested_documents?.length > 0 ||
+                          message.research_data.recommended_actions?.length > 0) && (
                           <div className="mt-4 pt-4 border-t border-gray-200">
                             <Button
                               onClick={() => handleGenerateDocumentFromResearch(message)}
@@ -464,7 +516,7 @@ export default function AIResearchAssistant({
               </div>
             ))
           )}
-          
+
           {isLoading && (
             <div className="flex gap-3 justify-start">
               <div className="w-8 h-8 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full flex items-center justify-center">
@@ -484,39 +536,44 @@ export default function AIResearchAssistant({
           <div className="flex items-center gap-3 mb-2">
             <Select
               value={
-                contextType === "project" && selectedProjectId
+                contextType === 'project' && selectedProjectId
                   ? `project:${selectedProjectId}`
-                  : contextType === "assignment" && selectedAssignmentId
+                  : contextType === 'assignment' && selectedAssignmentId
                     ? `assignment:${selectedAssignmentId}`
-                    : "none"
+                    : 'none'
               }
               onValueChange={(value) => {
-                if (value === "none") {
+                if (value === 'none') {
                   setSelectedAssignmentId(null);
                   setSelectedProjectId(null);
-                  setContextType("none");
-                } else if (value.startsWith("project:")) {
-                  setSelectedProjectId(value.replace("project:", ""));
+                  setContextType('none');
+                } else if (value.startsWith('project:')) {
+                  setSelectedProjectId(value.replace('project:', ''));
                   setSelectedAssignmentId(null);
-                  setContextType("project");
-                } else if (value.startsWith("assignment:")) {
-                  setSelectedAssignmentId(value.replace("assignment:", ""));
+                  setContextType('project');
+                } else if (value.startsWith('assignment:')) {
+                  setSelectedAssignmentId(value.replace('assignment:', ''));
                   setSelectedProjectId(null);
-                  setContextType("assignment");
+                  setContextType('assignment');
                 }
               }}
             >
               <SelectTrigger className="w-72">
                 <SelectValue>
-                  {contextType === "project" && selectedProjectId ? (
+                  {contextType === 'project' && selectedProjectId ? (
                     <div className="flex items-center gap-2">
                       <Target className="w-4 h-4 text-indigo-600" />
-                      <span>{allProjects?.find(p => p.id === selectedProjectId)?.name || "Project"}</span>
+                      <span>
+                        {allProjects?.find((p) => p.id === selectedProjectId)?.name || 'Project'}
+                      </span>
                     </div>
-                  ) : contextType === "assignment" && selectedAssignmentId ? (
+                  ) : contextType === 'assignment' && selectedAssignmentId ? (
                     <div className="flex items-center gap-2">
                       <FolderOpen className="w-4 h-4 text-purple-600" />
-                      <span>{allAssignments?.find(a => a.id === selectedAssignmentId)?.name || "Assignment"}</span>
+                      <span>
+                        {allAssignments?.find((a) => a.id === selectedAssignmentId)?.name ||
+                          'Assignment'}
+                      </span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
@@ -535,7 +592,9 @@ export default function AIResearchAssistant({
                 </SelectItem>
                 {allProjects && allProjects.length > 0 && (
                   <>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">Link to Project:</div>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">
+                      Link to Project:
+                    </div>
                     {allProjects.map((proj) => (
                       <SelectItem key={`project:${proj.id}`} value={`project:${proj.id}`}>
                         <div className="flex items-center gap-2">
@@ -548,7 +607,9 @@ export default function AIResearchAssistant({
                 )}
                 {allAssignments && allAssignments.length > 0 && (
                   <>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">Link to Assignment:</div>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">
+                      Link to Assignment:
+                    </div>
                     {allAssignments.map((assign) => (
                       <SelectItem key={`assignment:${assign.id}`} value={`assignment:${assign.id}`}>
                         <div className="flex items-center gap-2">
@@ -569,11 +630,11 @@ export default function AIResearchAssistant({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={
-                contextType === "project"
-                  ? "Ask about project goals, strategy, requirements..."
-                  : contextType === "assignment"
-                    ? "Ask about compliance, requirements, best practices..."
-                    : "Ask me anything - industry trends, requirements, best practices..."
+                contextType === 'project'
+                  ? 'Ask about project goals, strategy, requirements...'
+                  : contextType === 'assignment'
+                    ? 'Ask about compliance, requirements, best practices...'
+                    : 'Ask me anything - industry trends, requirements, best practices...'
               }
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -595,9 +656,9 @@ export default function AIResearchAssistant({
             </Button>
           </div>
           <p className="text-xs text-gray-500 mt-2 text-center">
-            {contextType === "project"
+            {contextType === 'project'
               ? `Asking with project context - ${webSearchEnabled ? 'Live web search enabled' : 'Using AI knowledge only'}`
-              : contextType === "assignment"
+              : contextType === 'assignment'
                 ? `Asking with assignment context - ${webSearchEnabled ? 'Live web search enabled' : 'Using AI knowledge only'}`
                 : `General research mode - ${webSearchEnabled ? 'Live web search enabled' : 'Using AI knowledge only'}`}
           </p>

@@ -1,34 +1,21 @@
-
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import {
-  CheckCircle2,
-  Plus,
-  X,
-  Users,
-  Calendar,
-  AlertTriangle
-} from "lucide-react";
+} from '@/components/ui/select';
+import { CheckCircle2, Plus, X, Users, Calendar, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-hot-toast'; // Assuming react-hot-toast is used for notifications
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
-import { db } from "@/api/db"; 
+import { db } from '@/api/db';
 
 export default function DecisionCapture({
   isOpen,
@@ -39,27 +26,27 @@ export default function DecisionCapture({
   currentUser, // New prop: user object with email and full_name
   availableParticipants = [], // New prop: list of all possible participants (emails)
 }) {
-  const [decisionTitle, setDecisionTitle] = useState("");
-  const [decisionSummary, setDecisionSummary] = useState("");
+  const [decisionTitle, setDecisionTitle] = useState('');
+  const [decisionSummary, setDecisionSummary] = useState('');
   const [selectedParticipants, setSelectedParticipants] = useState([]); // This state holds participants for *this* decision
-  const [dueDate, setDueDate] = useState("");
+  const [dueDate, setDueDate] = useState('');
   const [actionItems, setActionItems] = useState([]);
   const [newActionItem, setNewActionItem] = useState({
-    task: "",
-    assignee: "",
-    due_date: ""
+    task: '',
+    assignee: '',
+    due_date: '',
   });
   const [loading, setLoading] = useState(false);
 
   const { currentWorkspaceId } = useWorkspace();
 
   const resetForm = () => {
-    setDecisionTitle("");
-    setDecisionSummary("");
+    setDecisionTitle('');
+    setDecisionSummary('');
     setSelectedParticipants([]);
-    setDueDate("");
+    setDueDate('');
     setActionItems([]);
-    setNewActionItem({ task: "", assignee: "", due_date: "" });
+    setNewActionItem({ task: '', assignee: '', due_date: '' });
   };
 
   // Reset form whenever the dialog is opened (when isOpen changes to true)
@@ -72,16 +59,16 @@ export default function DecisionCapture({
 
   const handleCaptureDecision = async () => {
     if (!decisionTitle.trim() || !decisionSummary.trim()) {
-      toast.error("Please provide a decision title and summary.");
+      toast.error('Please provide a decision title and summary.');
       return;
     }
     if (!currentUser || !currentUser.email || !currentUser.full_name) {
-      toast.error("User information is missing. Cannot capture decision.");
+      toast.error('User information is missing. Cannot capture decision.');
       return;
     }
     if (!currentWorkspaceId) {
-        toast.error("Workspace ID is missing. Cannot capture decision.");
-        return;
+      toast.error('Workspace ID is missing. Cannot capture decision.');
+      return;
     }
 
     try {
@@ -101,8 +88,8 @@ export default function DecisionCapture({
           decision_summary: decisionSummary,
           participants: selectedParticipants, // Using the new state variable
           due_date: dueDate,
-          action_items: actionItems
-        }
+          action_items: actionItems,
+        },
       });
 
       if (threadId) {
@@ -111,11 +98,11 @@ export default function DecisionCapture({
         const currentDecisions = thread.decisions || [];
         await db.entities.ConversationThread.update(threadId, {
           decisions: [...currentDecisions, decisionMessage.id],
-          last_activity: new Date().toISOString()
+          last_activity: new Date().toISOString(),
         });
       }
 
-      toast.success("Decision captured successfully");
+      toast.success('Decision captured successfully');
 
       if (onDecisionCreated) {
         onDecisionCreated(decisionMessage);
@@ -124,8 +111,8 @@ export default function DecisionCapture({
       onClose(); // Use the onClose prop to close the dialog
       // The form will be reset by the useEffect when isOpen changes from true to false and then true again for a new capture.
     } catch (error) {
-      console.error("Error capturing decision:", error);
-      toast.error("Failed to capture decision");
+      console.error('Error capturing decision:', error);
+      toast.error('Failed to capture decision');
     } finally {
       setLoading(false);
     }
@@ -134,7 +121,7 @@ export default function DecisionCapture({
   const addActionItem = () => {
     if (newActionItem.task.trim()) {
       setActionItems([...actionItems, { ...newActionItem }]);
-      setNewActionItem({ task: "", assignee: "", due_date: "" });
+      setNewActionItem({ task: '', assignee: '', due_date: '' });
     }
   };
 
@@ -144,7 +131,7 @@ export default function DecisionCapture({
 
   const toggleParticipant = (email) => {
     if (selectedParticipants.includes(email)) {
-      setSelectedParticipants(selectedParticipants.filter(p => p !== email));
+      setSelectedParticipants(selectedParticipants.filter((p) => p !== email));
     } else {
       setSelectedParticipants([...selectedParticipants, email]);
     }
@@ -164,9 +151,7 @@ export default function DecisionCapture({
         <div className="space-y-6">
           {/* Decision Title */}
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
-              Decision Title *
-            </label>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">Decision Title *</label>
             <Input
               value={decisionTitle}
               onChange={(e) => setDecisionTitle(e.target.value)}
@@ -197,7 +182,7 @@ export default function DecisionCapture({
             <div className="space-y-2">
               {availableParticipants.length > 0 ? (
                 <div className="grid grid-cols-2 gap-2">
-                  {availableParticipants.map(email => (
+                  {availableParticipants.map((email) => (
                     <div
                       key={email}
                       onClick={() => toggleParticipant(email)}
@@ -230,18 +215,12 @@ export default function DecisionCapture({
               <Calendar className="w-4 h-4" />
               Implementation Due Date (Optional)
             </label>
-            <Input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
+            <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
           </div>
 
           {/* Action Items */}
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
-              Action Items
-            </label>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">Action Items</label>
 
             {/* Existing Action Items */}
             {actionItems.length > 0 && (
@@ -251,9 +230,7 @@ export default function DecisionCapture({
                     <div className="flex-1">
                       <p className="font-medium text-sm">{item.task}</p>
                       <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
-                        {item.assignee && (
-                          <span>Assigned to: {item.assignee}</span>
-                        )}
+                        {item.assignee && <span>Assigned to: {item.assignee}</span>}
                         {item.due_date && (
                           <span>Due: {new Date(item.due_date).toLocaleDateString()}</span>
                         )}
@@ -276,38 +253,48 @@ export default function DecisionCapture({
             <div className="border border-gray-200 rounded-lg p-3 space-y-3">
               <Input
                 value={newActionItem.task}
-                onChange={(e) => setNewActionItem({
-                  ...newActionItem,
-                  task: e.target.value
-                })}
+                onChange={(e) =>
+                  setNewActionItem({
+                    ...newActionItem,
+                    task: e.target.value,
+                  })
+                }
                 placeholder="What needs to be done?"
               />
               <div className="grid grid-cols-2 gap-3">
                 <Select
                   value={newActionItem.assignee}
-                  onValueChange={(value) => setNewActionItem({
-                    ...newActionItem,
-                    assignee: value
-                  })}
+                  onValueChange={(value) =>
+                    setNewActionItem({
+                      ...newActionItem,
+                      assignee: value,
+                    })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Assign to..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableParticipants.map(email => ( // Use availableParticipants for assignee options
-                      <SelectItem key={email} value={email}>
-                        {email}
-                      </SelectItem>
-                    ))}
+                    {availableParticipants.map(
+                      (
+                        email // Use availableParticipants for assignee options
+                      ) => (
+                        <SelectItem key={email} value={email}>
+                          {email}
+                        </SelectItem>
+                      )
+                    )}
                   </SelectContent>
                 </Select>
                 <Input
                   type="date"
                   value={newActionItem.due_date}
-                  onChange={(e) => setNewActionItem({
-                    ...newActionItem,
-                    due_date: e.target.value
-                  })}
+                  onChange={(e) =>
+                    setNewActionItem({
+                      ...newActionItem,
+                      due_date: e.target.value,
+                    })
+                  }
                 />
               </div>
               <Button
@@ -329,7 +316,10 @@ export default function DecisionCapture({
               <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5" />
               <div className="text-sm text-yellow-800">
                 <p className="font-medium">Important Note</p>
-                <p>This decision will be permanently recorded in the project conversation history and can be referenced by all team members.</p>
+                <p>
+                  This decision will be permanently recorded in the project conversation history and
+                  can be referenced by all team members.
+                </p>
               </div>
             </div>
           </div>
@@ -344,7 +334,13 @@ export default function DecisionCapture({
               disabled={!decisionTitle.trim() || !decisionSummary.trim() || loading}
               className="bg-green-600 hover:bg-green-700"
             >
-              {loading ? "Saving..." : <><CheckCircle2 className="w-4 h-4 mr-2" /> Save Decision</>}
+              {loading ? (
+                'Saving...'
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4 mr-2" /> Save Decision
+                </>
+              )}
             </Button>
           </div>
         </div>

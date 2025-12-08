@@ -1,9 +1,9 @@
-import React from "react";
-import { Draggable } from "@hello-pangea/dnd";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import React from 'react';
+import { Draggable } from '@hello-pangea/dnd';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   FileText,
   MoreHorizontal,
@@ -13,45 +13,44 @@ import {
   Brain,
   Link2,
   Calendar,
-  GripVertical
-} from "lucide-react";
+  GripVertical,
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 
-export default function DraggableDocument({ 
-  document: doc, 
-  index, 
-  viewMode = "grid", 
+export default function DraggableDocument({
+  document: doc,
+  index,
+  viewMode = 'grid',
   selectedDocuments = [],
   onDocumentSelect,
   onView,
   onDelete,
   getAssignmentNames,
-  canDeleteDocument 
+  canDeleteDocument,
 }) {
   const isSelected = selectedDocuments.includes(doc.id);
 
   const DocumentCard = ({ provided, snapshot, children }) => {
-    const Component = viewMode === "grid" ? Card : "div";
-    const baseClass = viewMode === "grid" 
-      ? "group hover:shadow-lg transition-all duration-200 cursor-move border-0 shadow-md"
-      : "hover:bg-gray-50 transition-colors border-0 shadow-md";
-    
-    const dragClass = snapshot.isDragging 
-      ? "shadow-xl transform rotate-1 opacity-90 scale-105" 
-      : "";
-    
-    const selectedClass = isSelected 
-      ? "ring-2 ring-blue-500 bg-blue-50" 
-      : "";
+    const Component = viewMode === 'grid' ? Card : 'div';
+    const baseClass =
+      viewMode === 'grid'
+        ? 'group hover:shadow-lg transition-all duration-200 cursor-move border-0 shadow-md'
+        : 'hover:bg-gray-50 transition-colors border-0 shadow-md';
+
+    const dragClass = snapshot.isDragging
+      ? 'shadow-xl transform rotate-1 opacity-90 scale-105'
+      : '';
+
+    const selectedClass = isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : '';
 
     return (
-      <Component 
+      <Component
         className={`${baseClass} ${dragClass} ${selectedClass}`}
         {...provided.draggableProps}
         ref={provided.innerRef}
@@ -61,7 +60,7 @@ export default function DraggableDocument({
     );
   };
 
-  if (viewMode === "grid") {
+  if (viewMode === 'grid') {
     return (
       <Draggable draggableId={`doc-${doc.id}`} index={index}>
         {(provided, snapshot) => (
@@ -80,9 +79,9 @@ export default function DraggableDocument({
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       className="opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -95,7 +94,12 @@ export default function DraggableDocument({
                       View Details
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <a href={doc.file_url} download={doc.file_name} target="_blank" rel="noopener noreferrer">
+                      <a
+                        href={doc.file_url}
+                        download={doc.file_name}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         <Download className="w-4 h-4 mr-2" />
                         Download
                       </a>
@@ -132,7 +136,9 @@ export default function DraggableDocument({
 
               <div className="flex items-center gap-2 flex-wrap">
                 {doc.version && (
-                  <Badge variant="outline" className="text-xs">v{doc.version}</Badge>
+                  <Badge variant="outline" className="text-xs">
+                    v{doc.version}
+                  </Badge>
                 )}
                 {doc.ai_analysis?.analysis_status === 'completed' && (
                   <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
@@ -177,7 +183,9 @@ export default function DraggableDocument({
                   <div className="flex items-center gap-4 mb-2">
                     <h4 className="font-semibold text-gray-900 truncate">{doc.title}</h4>
                     {doc.version && (
-                      <Badge variant="outline" className="text-xs">v{doc.version}</Badge>
+                      <Badge variant="outline" className="text-xs">
+                        v{doc.version}
+                      </Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-6 text-sm text-gray-500">
@@ -196,15 +204,16 @@ export default function DraggableDocument({
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onView(doc)}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => onView(doc)}>
                     <Eye className="w-4 h-4" />
                   </Button>
                   <Button variant="ghost" size="sm" asChild>
-                    <a href={doc.file_url} download={doc.file_name} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={doc.file_url}
+                      download={doc.file_name}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <Download className="w-4 h-4" />
                     </a>
                   </Button>

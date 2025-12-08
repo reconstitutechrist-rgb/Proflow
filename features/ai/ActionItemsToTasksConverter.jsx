@@ -1,14 +1,20 @@
-import React, { useState, useCallback } from "react";
-import { Task } from "@/api/entities";
-import { User } from "@/api/entities";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import React, { useState, useCallback } from 'react';
+import { Task } from '@/api/entities';
+import { User } from '@/api/entities';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -16,18 +22,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { 
-  Target, 
-  CheckCircle, 
-  Loader2, 
+} from '@/components/ui/dialog';
+import {
+  Target,
+  CheckCircle,
+  Loader2,
   Plus,
   Edit,
   User as UserIcon,
   Calendar,
-  AlertCircle
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+  AlertCircle,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Helper functions moved outside component to avoid dependency issues
 const mapPriority = (aiPriority) => {
@@ -48,17 +54,17 @@ const parseDueDate = (deadline) => {
 
   try {
     const lowerDeadline = deadline.toLowerCase();
-    
+
     if (lowerDeadline.includes('today')) {
       return new Date().toISOString().split('T')[0];
     }
-    
+
     if (lowerDeadline.includes('tomorrow')) {
       const date = new Date();
       date.setDate(date.getDate() + 1);
       return date.toISOString().split('T')[0];
     }
-    
+
     if (lowerDeadline.includes('week')) {
       const date = new Date();
       date.setDate(date.getDate() + 7);
@@ -83,7 +89,7 @@ export default function ActionItemsToTasksConverter({
   assignmentId,
   currentUser,
   teamMembers = [],
-  onTasksCreated
+  onTasksCreated,
 }) {
   const { currentWorkspaceId } = useWorkspace();
   const [isOpen, setIsOpen] = useState(false);
@@ -94,16 +100,20 @@ export default function ActionItemsToTasksConverter({
   const [createdCount, setCreatedCount] = useState(0);
 
   // Memoized function to find assignee email
-  const findAssigneeEmail = useCallback((assigneeName) => {
-    if (!assigneeName) return currentUser?.email || '';
-    
-    const member = teamMembers.find(m => 
-      m.full_name?.toLowerCase().includes(assigneeName.toLowerCase()) ||
-      m.email?.toLowerCase().includes(assigneeName.toLowerCase())
-    );
-    
-    return member?.email || currentUser?.email || '';
-  }, [currentUser, teamMembers]);
+  const findAssigneeEmail = useCallback(
+    (assigneeName) => {
+      if (!assigneeName) return currentUser?.email || '';
+
+      const member = teamMembers.find(
+        (m) =>
+          m.full_name?.toLowerCase().includes(assigneeName.toLowerCase()) ||
+          m.email?.toLowerCase().includes(assigneeName.toLowerCase())
+      );
+
+      return member?.email || currentUser?.email || '';
+    },
+    [currentUser, teamMembers]
+  );
 
   // Initialize task forms from action items
   React.useEffect(() => {
@@ -116,7 +126,7 @@ export default function ActionItemsToTasksConverter({
           priority: mapPriority(item.priority),
           assigned_to: findAssigneeEmail(item.assignee),
           due_date: parseDueDate(item.deadline),
-          estimated_effort: 2
+          estimated_effort: 2,
         };
       });
       setTaskForms(forms);
@@ -125,18 +135,18 @@ export default function ActionItemsToTasksConverter({
   }, [actionItems, taskForms, findAssigneeEmail]);
 
   const toggleItemSelection = (idx) => {
-    setSelectedItems(prev => 
-      prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
+    setSelectedItems((prev) =>
+      prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
     );
   };
 
   const updateTaskForm = (idx, field, value) => {
-    setTaskForms(prev => ({
+    setTaskForms((prev) => ({
       ...prev,
       [idx]: {
         ...prev[idx],
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
@@ -170,8 +180,8 @@ export default function ActionItemsToTasksConverter({
             source_type: 'chat_summary',
             confidence: 0.85,
             reasoning: `Created from AI-extracted action item in chat conversation`,
-            original_context: originalItem.context
-          }
+            original_context: originalItem.context,
+          },
         };
 
         await Task.create(taskData);
@@ -180,7 +190,7 @@ export default function ActionItemsToTasksConverter({
 
       await Promise.all(taskCreationPromises);
       setCreatedCount(successCount);
-      
+
       if (onTasksCreated) {
         onTasksCreated(successCount);
       }
@@ -189,7 +199,6 @@ export default function ActionItemsToTasksConverter({
         setIsOpen(false);
         setCreatedCount(0);
       }, 2000);
-
     } catch (error) {
       console.error('Error creating tasks:', error);
       alert('Failed to create some tasks. Please try again.');
@@ -200,11 +209,16 @@ export default function ActionItemsToTasksConverter({
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'urgent': return 'bg-red-100 text-red-800 border-red-200';
-      case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'urgent':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'high':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'low':
+        return 'bg-green-100 text-green-800 border-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -233,8 +247,8 @@ export default function ActionItemsToTasksConverter({
               Convert Action Items to Tasks
             </DialogTitle>
             <DialogDescription>
-              Review and customize the extracted action items before creating tasks. 
-              Select which items to create and adjust details as needed.
+              Review and customize the extracted action items before creating tasks. Select which
+              items to create and adjust details as needed.
             </DialogDescription>
           </DialogHeader>
 
@@ -255,11 +269,11 @@ export default function ActionItemsToTasksConverter({
           ) : (
             <div className="space-y-4 mt-4">
               {actionItems.map((item, idx) => (
-                <Card 
-                  key={idx} 
+                <Card
+                  key={idx}
                   className={`border-2 transition-all ${
-                    selectedItems.includes(idx) 
-                      ? 'border-orange-300 bg-orange-50' 
+                    selectedItems.includes(idx)
+                      ? 'border-orange-300 bg-orange-50'
                       : 'border-gray-200'
                   }`}
                 >
@@ -329,7 +343,7 @@ export default function ActionItemsToTasksConverter({
                                 <SelectValue placeholder="Select user" />
                               </SelectTrigger>
                               <SelectContent>
-                                {teamMembers.map(member => (
+                                {teamMembers.map((member) => (
                                   <SelectItem key={member.email} value={member.email}>
                                     {member.full_name || member.email}
                                   </SelectItem>
@@ -358,7 +372,9 @@ export default function ActionItemsToTasksConverter({
                               min="0.5"
                               step="0.5"
                               value={taskForms[idx]?.estimated_effort || 2}
-                              onChange={(e) => updateTaskForm(idx, 'estimated_effort', parseFloat(e.target.value))}
+                              onChange={(e) =>
+                                updateTaskForm(idx, 'estimated_effort', parseFloat(e.target.value))
+                              }
                             />
                           </div>
                         </div>
@@ -399,11 +415,7 @@ export default function ActionItemsToTasksConverter({
           )}
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsOpen(false)}
-              disabled={isCreating}
-            >
+            <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isCreating}>
               Cancel
             </Button>
             <Button

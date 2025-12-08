@@ -1,9 +1,8 @@
-
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import {
   TrendingUp,
   AlertTriangle,
@@ -18,23 +17,25 @@ import {
   AlertCircle,
   Clock,
   FlaskConical, // Added for AI analysis badge
-  BarChart2,    // Added for success probability
-  ShieldAlert,  // Added for risks
-  UserCog,      // Added for resource suggestions
-  ListChecks    // Added for recommended actions
-} from "lucide-react";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext"; // New import
+  BarChart2, // Added for success probability
+  ShieldAlert, // Added for risks
+  UserCog, // Added for resource suggestions
+  ListChecks, // Added for recommended actions
+} from 'lucide-react';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext'; // New import
 import { db } from '@/api/db';
 import { toast } from 'sonner'; // Assuming sonner is used for toasts
 
-export default function ProjectInsights({ projectId }) { // Changed component signature
+export default function ProjectInsights({ projectId }) {
+  // Changed component signature
   const [insights, setInsights] = useState(null);
   // smartSuggestions state removed as it's no longer part of the new LLM output
   const [loading, setLoading] = useState(true);
 
   const { currentWorkspaceId } = useWorkspace(); // New hook usage
 
-  const loadInsights = async () => { // Renamed from generateInsights, removed useCallback
+  const loadInsights = async () => {
+    // Renamed from generateInsights, removed useCallback
     setLoading(true);
     try {
       if (!projectId || !currentWorkspaceId) {
@@ -44,32 +45,42 @@ export default function ProjectInsights({ projectId }) { // Changed component si
 
       // CRITICAL: Load only data from current workspace
       const [projectData, assignmentsData, tasksData] = await Promise.all([
-        db.entities.Project.filter({
-          workspace_id: currentWorkspaceId,
-          id: projectId
-        }, "-updated_date", 1),
-        db.entities.Assignment.filter({
-          workspace_id: currentWorkspaceId,
-          project_id: projectId
-        }, "-updated_date"),
-        db.entities.Task.filter({
-          workspace_id: currentWorkspaceId
-        }, "-updated_date")
+        db.entities.Project.filter(
+          {
+            workspace_id: currentWorkspaceId,
+            id: projectId,
+          },
+          '-updated_date',
+          1
+        ),
+        db.entities.Assignment.filter(
+          {
+            workspace_id: currentWorkspaceId,
+            project_id: projectId,
+          },
+          '-updated_date'
+        ),
+        db.entities.Task.filter(
+          {
+            workspace_id: currentWorkspaceId,
+          },
+          '-updated_date'
+        ),
       ]);
 
       const project = projectData[0]; // Get the single project object from the array
 
       // CRITICAL: Validate project belongs to current workspace
       if (!project || project.workspace_id !== currentWorkspaceId) {
-        console.error("Security violation: Project not in current workspace or not found");
-        toast.error("Cannot access project from other workspaces or project not found.");
+        console.error('Security violation: Project not in current workspace or not found');
+        toast.error('Cannot access project from other workspaces or project not found.');
         setLoading(false);
         return;
       }
 
       // Filter tasks that belong to this project's assignments
-      const assignmentIds = assignmentsData.map(a => a.id);
-      const projectTasks = tasksData.filter(t => assignmentIds.includes(t.assignment_id));
+      const assignmentIds = assignmentsData.map((a) => a.id);
+      const projectTasks = tasksData.filter((t) => assignmentIds.includes(t.assignment_id));
 
       const contextText = `
 Project Name: ${project.name}
@@ -79,12 +90,12 @@ Number of Assignments: ${assignmentsData.length}
 Total Project Tasks: ${projectTasks.length}
 
 Assignments Breakdown:
-${assignmentsData.map(a => `- Assignment: ${a.name}, Status: ${a.status}`).join('\n')}
+${assignmentsData.map((a) => `- Assignment: ${a.name}, Status: ${a.status}`).join('\n')}
 
 Task Status Summary:
-- Completed Tasks: ${projectTasks.filter(t => t.status === 'completed').length}
-- In Progress Tasks: ${projectTasks.filter(t => t.status === 'in_progress').length}
-- To Do Tasks: ${projectTasks.filter(t => t.status === 'todo').length}
+- Completed Tasks: ${projectTasks.filter((t) => t.status === 'completed').length}
+- In Progress Tasks: ${projectTasks.filter((t) => t.status === 'in_progress').length}
+- To Do Tasks: ${projectTasks.filter((t) => t.status === 'todo').length}
 `;
 
       const prompt = `You are an expert project manager AI. Analyze the following project data and provide actionable insights in a concise, professional manner:
@@ -100,31 +111,57 @@ Provide:
 
 Return as JSON.`;
 
-      const response = await db.integrations.Core.InvokeLLM({ // Changed LLM invocation structure
+      const response = await db.integrations.Core.InvokeLLM({
+        // Changed LLM invocation structure
         prompt: prompt,
         response_json_schema: {
-          type: "object",
+          type: 'object',
           properties: {
-            risks: { type: "array", items: { type: "string" }, description: "List of key risks or blockers." },
-            progress_assessment: { type: "string", description: "Brief paragraph summarizing project progress." },
-            resource_suggestions: { type: "array", items: { type: "string" }, description: "List of suggestions for resource allocation." },
-            recommended_actions: { type: "array", items: { type: "string" }, description: "List of 3-5 next recommended actions." },
-            success_probability: { type: "number", minimum: 0, maximum: 100, description: "Estimated success probability from 0 to 100." }
+            risks: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'List of key risks or blockers.',
+            },
+            progress_assessment: {
+              type: 'string',
+              description: 'Brief paragraph summarizing project progress.',
+            },
+            resource_suggestions: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'List of suggestions for resource allocation.',
+            },
+            recommended_actions: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'List of 3-5 next recommended actions.',
+            },
+            success_probability: {
+              type: 'number',
+              minimum: 0,
+              maximum: 100,
+              description: 'Estimated success probability from 0 to 100.',
+            },
           },
-          required: ["risks", "progress_assessment", "resource_suggestions", "recommended_actions", "success_probability"]
-        }
+          required: [
+            'risks',
+            'progress_assessment',
+            'resource_suggestions',
+            'recommended_actions',
+            'success_probability',
+          ],
+        },
       });
 
       setInsights({
         project: project, // Storing the fetched project object
         assignments: assignmentsData,
         tasks: projectTasks,
-        analysis: response // Storing the AI analysis response
+        analysis: response, // Storing the AI analysis response
       });
-
     } catch (error) {
-      console.error("Error loading insights:", error);
-      toast.error("Failed to load project insights. Please try again.");
+      console.error('Error loading insights:', error);
+      toast.error('Failed to load project insights. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -156,7 +193,9 @@ Return as JSON.`;
         <CardContent className="flex items-center justify-center py-12">
           <div className="text-center">
             <TrendingUp className="w-12 h-12 mx-auto mb-4 text-purple-300 animate-pulse" />
-            <p className="text-gray-500">Analyzing project data and generating intelligent suggestions...</p>
+            <p className="text-gray-500">
+              Analyzing project data and generating intelligent suggestions...
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -171,7 +210,9 @@ Return as JSON.`;
           <div className="text-center">
             <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-300" />
             <p className="text-red-600">Failed to generate insights or no data available.</p>
-            <Button variant="outline" className="mt-4" onClick={loadInsights}>Retry Analysis</Button>
+            <Button variant="outline" className="mt-4" onClick={loadInsights}>
+              Retry Analysis
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -197,7 +238,8 @@ Return as JSON.`;
             <Brain className="w-5 h-5 text-purple-600" />
             AI Project Overview for "{project.name}"
             <Badge className="bg-purple-100 text-purple-700">
-              <FlaskConical className="w-3 h-3 mr-1" />AI Analysis
+              <FlaskConical className="w-3 h-3 mr-1" />
+              AI Analysis
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -209,7 +251,9 @@ Return as JSON.`;
               <BarChart2 className="w-5 h-5 text-blue-600" />
               <h4 className="font-semibold text-blue-900">Success Probability:</h4>
             </div>
-            <div className={`inline-flex items-center px-3 py-1 rounded-lg font-bold text-lg ${getSuccessProbabilityColor(analysis.success_probability)}`}>
+            <div
+              className={`inline-flex items-center px-3 py-1 rounded-lg font-bold text-lg ${getSuccessProbabilityColor(analysis.success_probability)}`}
+            >
               {analysis.success_probability}%
             </div>
           </div>

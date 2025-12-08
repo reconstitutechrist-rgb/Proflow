@@ -1,39 +1,29 @@
-
-import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router";
-import { db } from "@/api/db";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router';
+import { db } from '@/api/db';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
-import {
-  Plus,
-  Search,
-  Loader2,
-  FolderOpen,
-  ChevronRight
-} from "lucide-react";
-import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+} from '@/components/ui/select';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Plus, Search, Loader2, FolderOpen, ChevronRight } from 'lucide-react';
+import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
-import AssignmentForm from "@/features/assignments/AssignmentForm";
-import AssignmentDetails from "@/features/assignments/AssignmentDetails";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+import AssignmentForm from '@/features/assignments/AssignmentForm';
+import AssignmentDetails from '@/features/assignments/AssignmentDetails';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
 export default function AssignmentsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const assignmentId = searchParams.get("assignment");
+  const assignmentId = searchParams.get('assignment');
 
   const [assignments, setAssignments] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -41,15 +31,15 @@ export default function AssignmentsPage() {
   const [tasks, setTasks] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-  
-  const [selectedProject, setSelectedProject] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  
+
+  const [selectedProject, setSelectedProject] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState(null);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
-  
+
   const [loading, setLoading] = useState(true);
 
   const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
@@ -62,7 +52,7 @@ export default function AssignmentsPage() {
 
   useEffect(() => {
     if (assignmentId && assignments.length > 0) {
-      const assignment = assignments.find(a => a.id === assignmentId);
+      const assignment = assignments.find((a) => a.id === assignmentId);
       if (assignment) {
         setSelectedAssignment(assignment);
       }
@@ -72,15 +62,16 @@ export default function AssignmentsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [assignmentsData, tasksData, documentsData, usersData, projectsData, user] = await Promise.all([
-        db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        db.entities.Task.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        db.entities.Document.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        db.entities.User.list(),
-        db.entities.Project.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        db.auth.me()
-      ]);
-      
+      const [assignmentsData, tasksData, documentsData, usersData, projectsData, user] =
+        await Promise.all([
+          db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, '-updated_date'),
+          db.entities.Task.filter({ workspace_id: currentWorkspaceId }, '-updated_date'),
+          db.entities.Document.filter({ workspace_id: currentWorkspaceId }, '-updated_date'),
+          db.entities.User.list(),
+          db.entities.Project.filter({ workspace_id: currentWorkspaceId }, '-updated_date'),
+          db.auth.me(),
+        ]);
+
       setAssignments(assignmentsData);
       setTasks(tasksData);
       setDocuments(documentsData);
@@ -88,8 +79,8 @@ export default function AssignmentsPage() {
       setCurrentUser(user);
       setProjects(projectsData);
     } catch (error) {
-      console.error("Error loading assignments:", error);
-      toast.error("Failed to load assignments");
+      console.error('Error loading assignments:', error);
+      toast.error('Failed to load assignments');
     } finally {
       setLoading(false);
     }
@@ -99,20 +90,20 @@ export default function AssignmentsPage() {
     try {
       if (editingAssignment) {
         await db.entities.Assignment.update(editingAssignment.id, assignmentData);
-        toast.success("Assignment updated successfully");
+        toast.success('Assignment updated successfully');
       } else {
         await db.entities.Assignment.create({
           ...assignmentData,
-          workspace_id: currentWorkspaceId
+          workspace_id: currentWorkspaceId,
         });
-        toast.success("Assignment created successfully");
+        toast.success('Assignment created successfully');
       }
       setIsFormOpen(false);
       setEditingAssignment(null);
       loadData();
     } catch (error) {
-      console.error("Error saving assignment:", error);
-      toast.error("Failed to save assignment");
+      console.error('Error saving assignment:', error);
+      toast.error('Failed to save assignment');
     }
   };
 
@@ -122,24 +113,25 @@ export default function AssignmentsPage() {
   };
 
   const handleDelete = async (assignmentId) => {
-    if (!window.confirm("Delete this assignment?")) return;
-    
+    if (!window.confirm('Delete this assignment?')) return;
+
     try {
       await db.entities.Assignment.delete(assignmentId);
-      toast.success("Assignment deleted");
+      toast.success('Assignment deleted');
       setSelectedAssignment(null);
       setSearchParams({});
       loadData();
     } catch (error) {
-      console.error("Error deleting assignment:", error);
-      toast.error("Failed to delete assignment");
+      console.error('Error deleting assignment:', error);
+      toast.error('Failed to delete assignment');
     }
   };
 
-  const filteredAssignments = assignments.filter(assignment => {
-    const matchesProject = selectedProject === "all" || assignment.project_id === selectedProject;
-    const matchesStatus = statusFilter === "all" || assignment.status === statusFilter;
-    const matchesSearch = !searchQuery ||
+  const filteredAssignments = assignments.filter((assignment) => {
+    const matchesProject = selectedProject === 'all' || assignment.project_id === selectedProject;
+    const matchesStatus = statusFilter === 'all' || assignment.status === statusFilter;
+    const matchesSearch =
+      !searchQuery ||
       assignment.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       assignment.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -148,21 +140,21 @@ export default function AssignmentsPage() {
 
   const getStatusColor = (status) => {
     const colors = {
-      planning: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-      in_progress: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-      on_hold: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
-      completed: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-      cancelled: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+      planning: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+      in_progress: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+      on_hold: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+      completed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+      cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
     };
     return colors[status] || colors.planning;
   };
 
   const getPriorityColor = (priority) => {
     const colors = {
-      low: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-      medium: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
-      high: "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400",
-      urgent: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+      low: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+      medium: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+      high: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
+      urgent: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
     };
     return colors[priority] || colors.medium;
   };
@@ -177,7 +169,8 @@ export default function AssignmentsPage() {
               Assignments
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {filteredAssignments.length} {filteredAssignments.length === 1 ? 'assignment' : 'assignments'}
+              {filteredAssignments.length}{' '}
+              {filteredAssignments.length === 1 ? 'assignment' : 'assignments'}
             </p>
           </div>
           <Button
@@ -210,7 +203,7 @@ export default function AssignmentsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Projects</SelectItem>
-              {projects.map(project => (
+              {projects.map((project) => (
                 <SelectItem key={project.id} value={project.id}>
                   {project.name}
                 </SelectItem>
@@ -298,10 +291,16 @@ export default function AssignmentsPage() {
                       )}
 
                       <div className="flex flex-wrap gap-2">
-                        <Badge variant="secondary" className={`${getStatusColor(assignment.status)} text-xs font-normal`}>
+                        <Badge
+                          variant="secondary"
+                          className={`${getStatusColor(assignment.status)} text-xs font-normal`}
+                        >
                           {assignment.status?.replace('_', ' ')}
                         </Badge>
-                        <Badge variant="secondary" className={`${getPriorityColor(assignment.priority)} text-xs font-normal`}>
+                        <Badge
+                          variant="secondary"
+                          className={`${getPriorityColor(assignment.priority)} text-xs font-normal`}
+                        >
                           {assignment.priority}
                         </Badge>
                       </div>
@@ -330,8 +329,8 @@ export default function AssignmentsPage() {
       </Dialog>
 
       {/* Details Dialog */}
-      <Dialog 
-        open={!!selectedAssignment} 
+      <Dialog
+        open={!!selectedAssignment}
         onOpenChange={(open) => {
           if (!open) {
             setSelectedAssignment(null);

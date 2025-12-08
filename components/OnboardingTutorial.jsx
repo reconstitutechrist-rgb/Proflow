@@ -6,47 +6,53 @@ const OnboardingTutorial = ({ onClose, onComplete }) => {
 
   const steps = [
     {
-      title: "Welcome to Ask AI!",
-      content: "Let's take a quick tour of the features that will help you get the most out of your document analysis.",
+      title: 'Welcome to Ask AI!',
+      content:
+        "Let's take a quick tour of the features that will help you get the most out of your document analysis.",
       target: null,
-      position: "center"
+      position: 'center',
     },
     {
-      title: "Upload Documents",
-      content: "Start by uploading your PDF documents here. You can drag and drop or click to browse.",
-      target: "upload-zone",
-      position: "bottom"
+      title: 'Upload Documents',
+      content:
+        'Start by uploading your PDF documents here. You can drag and drop or click to browse.',
+      target: 'upload-zone',
+      position: 'bottom',
     },
     {
-      title: "RAG Toggle",
-      content: "Enable Retrieval-Augmented Generation (RAG) to search through your documents for relevant context before answering questions.",
-      target: "rag-toggle",
-      position: "left"
+      title: 'RAG Toggle',
+      content:
+        'Enable Retrieval-Augmented Generation (RAG) to search through your documents for relevant context before answering questions.',
+      target: 'rag-toggle',
+      position: 'left',
     },
     {
-      title: "Context Controls",
-      content: "Adjust the number of context chunks and token limits to control how much information is used to answer your questions.",
-      target: "context-controls",
-      position: "left"
+      title: 'Context Controls',
+      content:
+        'Adjust the number of context chunks and token limits to control how much information is used to answer your questions.',
+      target: 'context-controls',
+      position: 'left',
     },
     {
-      title: "Ask Questions",
-      content: "Type your questions about the documents. The AI will analyze them and provide detailed answers.",
-      target: "message-input",
-      position: "top"
+      title: 'Ask Questions',
+      content:
+        'Type your questions about the documents. The AI will analyze them and provide detailed answers.',
+      target: 'message-input',
+      position: 'top',
     },
     {
-      title: "Save Sessions",
-      content: "Your conversations are automatically saved. You can load previous sessions anytime from the session list.",
-      target: "session-list",
-      position: "right"
+      title: 'Save Sessions',
+      content:
+        'Your conversations are automatically saved. You can load previous sessions anytime from the session list.',
+      target: 'session-list',
+      position: 'right',
     },
     {
       title: "You're All Set!",
       content: "You're ready to start analyzing your documents. Happy exploring!",
       target: null,
-      position: "center"
-    }
+      position: 'center',
+    },
   ];
 
   const handleNext = () => {

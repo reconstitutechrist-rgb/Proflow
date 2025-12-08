@@ -123,7 +123,7 @@
 }
 
 .document-card.selected {
-  border-color: #4CAF50;
+  border-color: #4caf50;
   background: #f0f8f0;
 }
 
@@ -268,13 +268,13 @@
 
 .relevance-fill {
   height: 100%;
-  background: linear-gradient(90deg, #4CAF50, #8BC34A);
+  background: linear-gradient(90deg, #4caf50, #8bc34a);
   transition: width 0.3s ease;
 }
 
 .relevance-score {
   font-size: 11px;
-  color: #4CAF50;
+  color: #4caf50;
   font-weight: 600;
   text-align: right;
 }

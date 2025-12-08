@@ -99,22 +99,22 @@ export function EmptyState({
   // Merge custom props with preset (custom takes precedence)
   const Icon = CustomIcon || presetConfig.icon || Inbox;
   const title = customTitle || presetConfig.title || 'Nothing here yet';
-  const description = customDescription || presetConfig.description || 'Get started by creating something new.';
-  const actionLabel = customActionLabel !== undefined ? customActionLabel : presetConfig.actionLabel;
+  const description =
+    customDescription || presetConfig.description || 'Get started by creating something new.';
+  const actionLabel =
+    customActionLabel !== undefined ? customActionLabel : presetConfig.actionLabel;
 
   return (
-    <div className={`flex flex-col items-center justify-center py-12 px-4 text-center ${className}`}>
+    <div
+      className={`flex flex-col items-center justify-center py-12 px-4 text-center ${className}`}
+    >
       <div className="rounded-full bg-muted p-4 mb-4">
         <Icon className="h-8 w-8 text-muted-foreground" />
       </div>
 
-      <h3 className="text-lg font-semibold text-foreground mb-2">
-        {title}
-      </h3>
+      <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
 
-      <p className="text-sm text-muted-foreground max-w-sm mb-6">
-        {description}
-      </p>
+      <p className="text-sm text-muted-foreground max-w-sm mb-6">{description}</p>
 
       {action ? (
         action
@@ -194,13 +194,9 @@ export function ErrorState({
         </svg>
       </div>
 
-      <h3 className="text-lg font-semibold text-foreground mb-2">
-        {title}
-      </h3>
+      <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
 
-      <p className="text-sm text-muted-foreground max-w-sm mb-6">
-        {description}
-      </p>
+      <p className="text-sm text-muted-foreground max-w-sm mb-6">{description}</p>
 
       {onRetry && (
         <Button onClick={onRetry} variant="outline">

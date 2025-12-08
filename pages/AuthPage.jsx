@@ -1,28 +1,35 @@
-import React, { useState } from "react";
-import { supabase } from "@/api/supabaseClient";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Mail, Lock, User, FolderOpen, AlertCircle, CheckCircle2 } from "lucide-react";
+import React, { useState } from 'react';
+import { supabase } from '@/api/supabaseClient';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Mail, Lock, User, FolderOpen, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function AuthPage({ onAuthSuccess }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [activeTab, setActiveTab] = useState("login");
+  const [activeTab, setActiveTab] = useState('login');
 
   // Login form state
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
 
   // Signup form state
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupPassword, setSignupPassword] = useState("");
-  const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
-  const [signupFullName, setSignupFullName] = useState("");
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+  const [signupFullName, setSignupFullName] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -30,7 +37,7 @@ export default function AuthPage({ onAuthSuccess }) {
     setSuccess(null);
 
     if (!loginEmail || !loginPassword) {
-      setError("Please enter both email and password");
+      setError('Please enter both email and password');
       return;
     }
 
@@ -51,21 +58,21 @@ export default function AuthPage({ onAuthSuccess }) {
         const userInfo = {
           id: data.user.id,
           email: data.user.email,
-          full_name: data.user.user_metadata?.full_name || data.user.email.split("@")[0],
+          full_name: data.user.user_metadata?.full_name || data.user.email.split('@')[0],
           active_workspace_id: data.user.user_metadata?.active_workspace_id || null,
         };
-        localStorage.setItem("proflow_current_user", JSON.stringify(userInfo));
+        localStorage.setItem('proflow_current_user', JSON.stringify(userInfo));
       }
 
-      setSuccess("Login successful! Redirecting...");
+      setSuccess('Login successful! Redirecting...');
 
       // Notify parent of successful auth
       if (onAuthSuccess) {
         setTimeout(() => onAuthSuccess(data.user), 500);
       }
     } catch (err) {
-      console.error("Login error:", err);
-      setError(err.message || "Failed to log in. Please check your credentials.");
+      console.error('Login error:', err);
+      setError(err.message || 'Failed to log in. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }
@@ -77,17 +84,17 @@ export default function AuthPage({ onAuthSuccess }) {
     setSuccess(null);
 
     if (!signupEmail || !signupPassword || !signupFullName) {
-      setError("Please fill in all required fields");
+      setError('Please fill in all required fields');
       return;
     }
 
     if (signupPassword !== signupConfirmPassword) {
-      setError("Passwords do not match");
+      setError('Passwords do not match');
       return;
     }
 
     if (signupPassword.length < 6) {
-      setError("Password must be at least 6 characters long");
+      setError('Password must be at least 6 characters long');
       return;
     }
 
@@ -110,8 +117,8 @@ export default function AuthPage({ onAuthSuccess }) {
 
       // Check if email confirmation is required
       if (data.user && !data.session) {
-        setSuccess("Account created! Please check your email to confirm your account.");
-        setActiveTab("login");
+        setSuccess('Account created! Please check your email to confirm your account.');
+        setActiveTab('login');
       } else if (data.user && data.session) {
         // Auto-confirmed (email confirmation disabled in Supabase)
         const userInfo = {
@@ -120,17 +127,17 @@ export default function AuthPage({ onAuthSuccess }) {
           full_name: signupFullName,
           active_workspace_id: null,
         };
-        localStorage.setItem("proflow_current_user", JSON.stringify(userInfo));
+        localStorage.setItem('proflow_current_user', JSON.stringify(userInfo));
 
-        setSuccess("Account created successfully! Redirecting...");
+        setSuccess('Account created successfully! Redirecting...');
 
         if (onAuthSuccess) {
           setTimeout(() => onAuthSuccess(data.user), 500);
         }
       }
     } catch (err) {
-      console.error("Signup error:", err);
-      setError(err.message || "Failed to create account. Please try again.");
+      console.error('Signup error:', err);
+      setError(err.message || 'Failed to create account. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -138,7 +145,7 @@ export default function AuthPage({ onAuthSuccess }) {
 
   const handleForgotPassword = async () => {
     if (!loginEmail) {
-      setError("Please enter your email address first");
+      setError('Please enter your email address first');
       return;
     }
 
@@ -154,10 +161,10 @@ export default function AuthPage({ onAuthSuccess }) {
         throw resetError;
       }
 
-      setSuccess("Password reset email sent! Check your inbox.");
+      setSuccess('Password reset email sent! Check your inbox.');
     } catch (err) {
-      console.error("Password reset error:", err);
-      setError(err.message || "Failed to send password reset email");
+      console.error('Password reset error:', err);
+      setError(err.message || 'Failed to send password reset email');
     } finally {
       setIsLoading(false);
     }
@@ -264,7 +271,7 @@ export default function AuthPage({ onAuthSuccess }) {
                         Signing in...
                       </>
                     ) : (
-                      "Sign In"
+                      'Sign In'
                     )}
                   </Button>
                 </form>
@@ -348,7 +355,7 @@ export default function AuthPage({ onAuthSuccess }) {
                         Creating account...
                       </>
                     ) : (
-                      "Create Account"
+                      'Create Account'
                     )}
                   </Button>
                 </form>
@@ -375,14 +382,14 @@ export default function AuthPage({ onAuthSuccess }) {
                   try {
                     setIsLoading(true);
                     const { error } = await supabase.auth.signInWithOAuth({
-                      provider: "google",
+                      provider: 'google',
                       options: {
                         redirectTo: window.location.origin,
                       },
                     });
                     if (error) throw error;
                   } catch (err) {
-                    setError(err.message || "Failed to sign in with Google");
+                    setError(err.message || 'Failed to sign in with Google');
                     setIsLoading(false);
                   }
                 }}

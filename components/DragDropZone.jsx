@@ -32,9 +32,9 @@ const DragDropZone = ({ onFilesSelected, accept = '.pdf', multiple = true, disab
 
   const validateFiles = (files) => {
     const fileArray = Array.from(files);
-    const acceptedExtensions = accept.split(',').map(ext => ext.trim());
+    const acceptedExtensions = accept.split(',').map((ext) => ext.trim());
 
-    const invalidFiles = fileArray.filter(file => {
+    const invalidFiles = fileArray.filter((file) => {
       const extension = '.' + file.name.split('.').pop().toLowerCase();
       return !acceptedExtensions.includes(extension);
     });

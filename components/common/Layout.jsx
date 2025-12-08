@@ -1,30 +1,22 @@
-
-
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Link, useLocation, useNavigate } from "react-router";
-import { createPageUrl } from "@/lib/utils";
-import { User } from "@/api/entities";
-import { Task } from "@/api/entities";
-import { Assignment } from "@/api/entities";
-import { db } from "@/api/db";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router';
+import { createPageUrl } from '@/lib/utils';
+import { User } from '@/api/entities';
+import { Task } from '@/api/entities';
+import { Assignment } from '@/api/entities';
+import { db } from '@/api/db';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuContent,
-} from "@/components/ui/dropdown-menu";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+} from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import {
   CommandDialog,
   CommandEmpty,
@@ -32,13 +24,8 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from '@/components/ui/command';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   LayoutDashboard,
   FolderOpen,
@@ -68,13 +55,13 @@ import {
   Eye,
   GraduationCap,
   FileText,
-  Target // Added Target icon
-} from "lucide-react";
+  Target, // Added Target icon
+} from 'lucide-react';
 
-import { TutorialProvider } from "@/features/tutorial/TutorialProvider";
-import TutorialOverlay from "@/features/tutorial/TutorialOverlay";
-import TutorialButton from "@/features/tutorial/TutorialButton";
-import UnifiedAIAssistant from "@/features/ai/UnifiedAIAssistant";
+import { TutorialProvider } from '@/features/tutorial/TutorialProvider';
+import TutorialOverlay from '@/features/tutorial/TutorialOverlay';
+import TutorialButton from '@/features/tutorial/TutorialButton';
+import UnifiedAIAssistant from '@/features/ai/UnifiedAIAssistant';
 import WorkspaceSwitcher from '@/features/workspace/WorkspaceSwitcher';
 import { WorkspaceProvider, useWorkspace } from '@/features/workspace/WorkspaceContext'; // Fixed import path
 import WorkspaceErrorBoundary from '@/features/workspace/WorkspaceErrorBoundary'; // Added WorkspaceErrorBoundary import
@@ -87,15 +74,17 @@ import BugReporter from '@/features/devtools/BugReporter'; // Visual Bug Reporte
 import TeamChatBubble from '@/features/teamchat/TeamChatBubble'; // Team Chat Bubble
 
 const GlobalSearch = React.lazy(() =>
-  import("@/components/search/GlobalSearch").catch(() => ({
+  import('@/components/search/GlobalSearch').catch(() => ({
     default: ({ isOpen, onClose }) => (
       <CommandDialog open={isOpen} onOpenChange={onClose}>
         <div className="p-8 text-center">
           <p>Global search is not available</p>
-          <Button onClick={() => onClose()} className="mt-4">Close</Button>
+          <Button onClick={() => onClose()} className="mt-4">
+            Close
+          </Button>
         </div>
       </CommandDialog>
-    )
+    ),
   }))
 );
 
@@ -107,9 +96,9 @@ function LayoutContent({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
-  
+
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('theme');
@@ -117,7 +106,7 @@ function LayoutContent({ children, currentPageName }) {
     }
     return false;
   });
-  
+
   const [isKeyboardShortcutsOpen, setIsKeyboardShortcutsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
@@ -130,69 +119,73 @@ function LayoutContent({ children, currentPageName }) {
     try {
       // Get tasks assigned to user and recent assignments from user's workspace
       const [tasks, recentAssignments] = await Promise.all([
-        Task.filter({ assigned_to: user.email }, "-updated_date", 10),
-        Assignment.filter({}, "-updated_date", 10) // Get recent assignments
+        Task.filter({ assigned_to: user.email }, '-updated_date', 10),
+        Assignment.filter({}, '-updated_date', 10), // Get recent assignments
       ]);
 
       // Filter assignments to only those the user has tasks in
-      const userTaskAssignmentIds = new Set(tasks.map(t => t.assignment_id).filter(Boolean));
+      const userTaskAssignmentIds = new Set(tasks.map((t) => t.assignment_id).filter(Boolean));
       const assignments = recentAssignments
-        .filter(a => userTaskAssignmentIds.has(a.id))
+        .filter((a) => userTaskAssignmentIds.has(a.id))
         .slice(0, 5);
 
       const essentialNotifs = [];
       const now = new Date();
-      
-      tasks.forEach(task => {
+
+      tasks.forEach((task) => {
         if (task.status && task.status !== 'completed' && task.due_date) {
           const dueDate = new Date(task.due_date);
           const daysDiff = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          
+
           if (daysDiff < 0) {
             essentialNotifs.push({
               id: `overdue-task-${task.id}`,
-              title: "Task Overdue",
+              title: 'Task Overdue',
               message: `"${task.title}" was due ${Math.abs(daysDiff)} days ago.`,
-              type: "urgent",
-              actionUrl: createPageUrl("Tasks") + `?task=${task.id}`,
+              type: 'urgent',
+              actionUrl: createPageUrl('Tasks') + `?task=${task.id}`,
               timestamp: task.due_date,
-              priority: "high"
+              priority: 'high',
             });
           } else if (daysDiff <= 1 && daysDiff >= 0) {
             essentialNotifs.push({
               id: `due-soon-task-${task.id}`,
-              title: "Task Due Soon", 
+              title: 'Task Due Soon',
               message: `"${task.title}" is due ${daysDiff === 0 ? 'today' : 'tomorrow'}.`,
-              type: "warning",
-              actionUrl: createPageUrl("Tasks") + `?task=${task.id}`,
+              type: 'warning',
+              actionUrl: createPageUrl('Tasks') + `?task=${task.id}`,
               timestamp: task.due_date,
-              priority: "medium"
+              priority: 'medium',
             });
           }
         }
       });
 
-      tasks.forEach(task => {
+      tasks.forEach((task) => {
         const createdDate = new Date(task.created_date);
         const hoursSinceCreated = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60);
-        
-        if (hoursSinceCreated <= 24 && task.assigned_to === user.email && task.created_by !== user.email) {
+
+        if (
+          hoursSinceCreated <= 24 &&
+          task.assigned_to === user.email &&
+          task.created_by !== user.email
+        ) {
           essentialNotifs.push({
             id: `new-task-assigned-${task.id}`,
-            title: "New Task Assigned",
+            title: 'New Task Assigned',
             message: `"${task.title}" was assigned to you by ${task.created_by || 'an administrator'}.`,
-            type: "info",
-            actionUrl: createPageUrl("Tasks") + `?task=${task.id}`,
+            type: 'info',
+            actionUrl: createPageUrl('Tasks') + `?task=${task.id}`,
             timestamp: task.created_date,
-            priority: "medium"
+            priority: 'medium',
           });
         }
       });
 
-      assignments.forEach(assignment => {
+      assignments.forEach((assignment) => {
         const updatedDate = new Date(assignment.updated_date);
         const hoursSinceUpdate = (now.getTime() - updatedDate.getTime()) / (1000 * 60 * 60);
-        
+
         if (hoursSinceUpdate <= 24 && assignment.status && assignment.status !== 'in_progress') {
           let notificationType = 'info';
           let notificationMessage = `"${assignment.name}" status changed to ${assignment.status.replace('_', ' ')}.`;
@@ -205,12 +198,12 @@ function LayoutContent({ children, currentPageName }) {
 
           essentialNotifs.push({
             id: `assignment-status-${assignment.id}`,
-            title: "Assignment Status Update",
+            title: 'Assignment Status Update',
             message: notificationMessage,
             type: notificationType,
-            actionUrl: createPageUrl("Assignments") + `?assignment=${assignment.id}`,
+            actionUrl: createPageUrl('Assignments') + `?assignment=${assignment.id}`,
             timestamp: assignment.updated_date,
-            priority: assignment.status === 'completed' ? "low" : "medium"
+            priority: assignment.status === 'completed' ? 'low' : 'medium',
           });
         }
       });
@@ -223,9 +216,9 @@ function LayoutContent({ children, currentPageName }) {
         return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
       });
 
-      setNotifications(essentialNotifs.slice(0, 5)); 
+      setNotifications(essentialNotifs.slice(0, 5));
     } catch (error) {
-      console.error("Error loading essential notifications:", error);
+      console.error('Error loading essential notifications:', error);
       setNotifications([]);
     }
   }, [user]);
@@ -242,7 +235,10 @@ function LayoutContent({ children, currentPageName }) {
 
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (['INPUT', 'TEXTAREA'].includes(event.target.tagName) || event.target.contentEditable === 'true') {
+      if (
+        ['INPUT', 'TEXTAREA'].includes(event.target.tagName) ||
+        event.target.contentEditable === 'true'
+      ) {
         return;
       }
 
@@ -258,66 +254,66 @@ function LayoutContent({ children, currentPageName }) {
             break;
           case 'd':
             event.preventDefault();
-            if (location.pathname !== createPageUrl("Dashboard")) {
-              navigate(createPageUrl("Dashboard"));
+            if (location.pathname !== createPageUrl('Dashboard')) {
+              navigate(createPageUrl('Dashboard'));
             }
             break;
           case 'p': // Added shortcut for Projects
             event.preventDefault();
-            if (location.pathname !== createPageUrl("Projects")) {
-              navigate(createPageUrl("Projects"));
+            if (location.pathname !== createPageUrl('Projects')) {
+              navigate(createPageUrl('Projects'));
             }
             break;
           case 'a':
             event.preventDefault();
-            if (location.pathname !== createPageUrl("Assignments")) {
-              navigate(createPageUrl("Assignments"));
+            if (location.pathname !== createPageUrl('Assignments')) {
+              navigate(createPageUrl('Assignments'));
             }
             break;
           case 't':
             event.preventDefault();
-            if (location.pathname !== createPageUrl("Tasks")) {
-              navigate(createPageUrl("Tasks"));
+            if (location.pathname !== createPageUrl('Tasks')) {
+              navigate(createPageUrl('Tasks'));
             }
             break;
           case 'o':
             event.preventDefault();
-            if (location.pathname !== createPageUrl("Documents")) {
-              navigate(createPageUrl("Documents"));
+            if (location.pathname !== createPageUrl('Documents')) {
+              navigate(createPageUrl('Documents'));
             }
             break;
           case 'w':
             event.preventDefault();
             // Navigate to Documents with Studio tab
-            navigate(createPageUrl("Documents") + "?tab=studio");
+            navigate(createPageUrl('Documents') + '?tab=studio');
             break;
           case 'q':
             event.preventDefault();
-            if (location.pathname !== createPageUrl("AIHub")) {
-              navigate(createPageUrl("AIHub"));
+            if (location.pathname !== createPageUrl('AIHub')) {
+              navigate(createPageUrl('AIHub'));
             }
             break;
           case 'c':
             event.preventDefault();
-            if (location.pathname !== createPageUrl("Chat")) {
-              navigate(createPageUrl("Chat"));
+            if (location.pathname !== createPageUrl('Chat')) {
+              navigate(createPageUrl('Chat'));
             }
             break;
           case 'r':
             event.preventDefault();
             // Redirect to AI Hub research tab (Research page is deprecated)
-            navigate(createPageUrl("AIHub") + "?tab=research");
+            navigate(createPageUrl('AIHub') + '?tab=research');
             break;
           case 'g':
             event.preventDefault();
-            if (location.pathname !== createPageUrl("Generate")) {
-              navigate(createPageUrl("Generate"));
+            if (location.pathname !== createPageUrl('Generate')) {
+              navigate(createPageUrl('Generate'));
             }
             break;
           case 'u':
             event.preventDefault();
-            if (location.pathname !== createPageUrl("Users")) {
-              navigate(createPageUrl("Users"));
+            if (location.pathname !== createPageUrl('Users')) {
+              navigate(createPageUrl('Users'));
             }
             break;
         }
@@ -335,9 +331,9 @@ function LayoutContent({ children, currentPageName }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    
+
     root.classList.remove('dark');
-    
+
     if (isDarkMode) {
       root.classList.add('dark');
       root.style.setProperty('--background', '222.2% 84% 4.9%');
@@ -356,11 +352,10 @@ function LayoutContent({ children, currentPageName }) {
       root.style.setProperty('--card', '0 0% 100%');
       root.style.setProperty('--card-foreground', '222.2% 84% 4.9%');
     }
-    
+
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
     document.body.style.backgroundColor = isDarkMode ? 'hsl(222.2% 84% 4.9%)' : 'hsl(0 0% 100%)';
     document.body.style.color = isDarkMode ? 'hsl(210% 40% 98%)' : 'hsl(222.2% 84% 4.9%)';
-    
   }, [isDarkMode]);
 
   useEffect(() => {
@@ -369,10 +364,10 @@ function LayoutContent({ children, currentPageName }) {
 
   const loadUser = async () => {
     try {
-      const currentUser = await db.auth.me(); 
+      const currentUser = await db.auth.me();
       setUser(currentUser);
     } catch (error) {
-      console.log("User not authenticated");
+      console.log('User not authenticated');
     }
   };
 
@@ -381,7 +376,7 @@ function LayoutContent({ children, currentPageName }) {
       await signOut();
       window.location.reload();
     } catch (error) {
-        console.error("Logout failed:", error);
+      console.error('Logout failed:', error);
     }
   };
 
@@ -389,31 +384,34 @@ function LayoutContent({ children, currentPageName }) {
     setIsGlobalSearchOpen(true);
   }, []);
 
-  const handleSearchResult = useCallback((result) => {
-    setIsGlobalSearchOpen(false);
-    switch (result.type) {
-      case 'project': // Handle project search results
-        navigate(createPageUrl("Projects") + `?project=${result.id}`);
-        break;
-      case 'assignment':
-        navigate(createPageUrl("Assignments") + `?assignment=${result.id}`);
-        break;
-      case 'document':
-        navigate(createPageUrl("Documents") + `?doc=${result.id}`);
-        break;
-      case 'message':
-        navigate(createPageUrl("Chat") + `?message=${result.id}`);
-        break;
-      case 'task':
-        navigate(createPageUrl("Tasks") + `?task=${result.id}`);
-        break;
-      default:
-        break;
-    }
-  }, [navigate]);
+  const handleSearchResult = useCallback(
+    (result) => {
+      setIsGlobalSearchOpen(false);
+      switch (result.type) {
+        case 'project': // Handle project search results
+          navigate(createPageUrl('Projects') + `?project=${result.id}`);
+          break;
+        case 'assignment':
+          navigate(createPageUrl('Assignments') + `?assignment=${result.id}`);
+          break;
+        case 'document':
+          navigate(createPageUrl('Documents') + `?doc=${result.id}`);
+          break;
+        case 'message':
+          navigate(createPageUrl('Chat') + `?message=${result.id}`);
+          break;
+        case 'task':
+          navigate(createPageUrl('Tasks') + `?task=${result.id}`);
+          break;
+        default:
+          break;
+      }
+    },
+    [navigate]
+  );
 
   const toggleTheme = useCallback(() => {
-    setIsDarkMode(prev => {
+    setIsDarkMode((prev) => {
       const newTheme = !prev;
       console.log(`Theme toggled to: ${newTheme ? 'dark' : 'light'}`);
       return newTheme;
@@ -421,132 +419,145 @@ function LayoutContent({ children, currentPageName }) {
   }, []);
 
   const markNotificationAsRead = useCallback((notificationId) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+    setNotifications((prev) => prev.filter((notif) => notif.id !== notificationId));
   }, []);
 
   const clearAllNotifications = useCallback(() => {
     setNotifications([]);
   }, []);
 
-  const handleNotificationClick = useCallback((notification) => {
-    markNotificationAsRead(notification.id);
-    if (notification.actionUrl) {
-      navigate(notification.actionUrl);
-    }
-  }, [markNotificationAsRead, navigate]);
+  const handleNotificationClick = useCallback(
+    (notification) => {
+      markNotificationAsRead(notification.id);
+      if (notification.actionUrl) {
+        navigate(notification.actionUrl);
+      }
+    },
+    [markNotificationAsRead, navigate]
+  );
 
   const unreadNotifications = notifications.length;
 
   const getNotificationIcon = (type) => {
     switch (type) {
-      case 'urgent': return <AlertTriangle className="w-4 h-4 text-red-600" />;
-      case 'warning': return <Clock className="w-4 h-4 text-yellow-600" />;
-      case 'success': return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case 'info': return <Bell className="w-4 h-4 text-blue-600" />;
-      default: return <Bell className="w-4 h-4 text-gray-600" />;
+      case 'urgent':
+        return <AlertTriangle className="w-4 h-4 text-red-600" />;
+      case 'warning':
+        return <Clock className="w-4 h-4 text-yellow-600" />;
+      case 'success':
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case 'info':
+        return <Bell className="w-4 h-4 text-blue-600" />;
+      default:
+        return <Bell className="w-4 h-4 text-gray-600" />;
     }
   };
 
   const getNotificationStyle = (type) => {
     switch (type) {
-      case 'urgent': return 'border-l-4 border-red-500 bg-red-50 dark:bg-red-950';
-      case 'warning': return 'border-l-4 border-yellow-500 bg-yellow-50 dark:bg-yellow-950'; 
-      case 'success': return 'border-l-4 border-green-500 bg-green-50 dark:bg-green-950';
-      case 'info': return 'border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950';
-      default: return 'border-l-4 border-gray-300 bg-gray-50 dark:bg-gray-800';
+      case 'urgent':
+        return 'border-l-4 border-red-500 bg-red-50 dark:bg-red-950';
+      case 'warning':
+        return 'border-l-4 border-yellow-500 bg-yellow-50 dark:bg-yellow-950';
+      case 'success':
+        return 'border-l-4 border-green-500 bg-green-50 dark:bg-green-950';
+      case 'info':
+        return 'border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950';
+      default:
+        return 'border-l-4 border-gray-300 bg-gray-50 dark:bg-gray-800';
     }
   };
 
   const navigationGroups = [
     {
-      title: "Home",
+      title: 'Home',
       items: [
         {
-          title: "Dashboard",
-          url: createPageUrl("Dashboard"),
+          title: 'Dashboard',
+          url: createPageUrl('Dashboard'),
           icon: LayoutDashboard,
-          description: "Overview and analytics",
-          shortcut: "D",
-          badge: null
-        }
-      ]
+          description: 'Overview and analytics',
+          shortcut: 'D',
+          badge: null,
+        },
+      ],
     },
     {
-      title: "Work",
+      title: 'Work',
       items: [
         {
-          title: "Projects",
-          url: createPageUrl("Projects"),
+          title: 'Projects',
+          url: createPageUrl('Projects'),
           icon: Target,
-          description: "Manage projects and roadmaps",
-          shortcut: "P",
-          badge: null
+          description: 'Manage projects and roadmaps',
+          shortcut: 'P',
+          badge: null,
         },
         {
-          title: "Assignments",
-          url: createPageUrl("Assignments"),
+          title: 'Assignments',
+          url: createPageUrl('Assignments'),
           icon: FolderOpen,
-          description: "Manage team assignments",
-          shortcut: "A",
-          badge: null
+          description: 'Manage team assignments',
+          shortcut: 'A',
+          badge: null,
         },
         {
-          title: "Tasks",
-          url: createPageUrl("Tasks"),
+          title: 'Tasks',
+          url: createPageUrl('Tasks'),
           icon: FileEdit,
-          description: "Task tracking and management",
-          shortcut: "T",
-          badge: null
-        }
-      ]
+          description: 'Task tracking and management',
+          shortcut: 'T',
+          badge: null,
+        },
+      ],
     },
     {
-      title: "Documents",
+      title: 'Documents',
       items: [
         {
-          title: "Documents",
-          url: createPageUrl("Documents"),
+          title: 'Documents',
+          url: createPageUrl('Documents'),
           icon: FileText,
-          description: "Library, Studio & Templates",
-          shortcut: "O",
-          badge: null
-        }
-      ]
+          description: 'Library, Studio & Templates',
+          shortcut: 'O',
+          badge: null,
+        },
+      ],
     },
     {
-      title: "AI",
+      title: 'AI',
       items: [
         {
-          title: "AI Hub",
-          url: createPageUrl("AIHub"),
+          title: 'AI Hub',
+          url: createPageUrl('AIHub'),
           icon: Brain,
-          description: "Chat, Research & Generate",
-          shortcut: "Q",
-          badge: "New"
-        }
-      ]
+          description: 'Chat, Research & Generate',
+          shortcut: 'Q',
+          badge: 'New',
+        },
+      ],
     },
     {
-      title: "Team",
+      title: 'Team',
       items: [
         {
-          title: "Chat",
-          url: createPageUrl("Chat"),
+          title: 'Chat',
+          url: createPageUrl('Chat'),
           icon: MessageSquare,
-          description: "Team communication",
-          shortcut: "C",
-          badge: null
+          description: 'Team communication',
+          shortcut: 'C',
+          badge: null,
         },
         {
-          title: "Members",
-          url: createPageUrl("Users"),
+          title: 'Members',
+          url: createPageUrl('Users'),
           icon: Users,
-          description: "Team management",
-          shortcut: "U",
-          badge: null
-        }
-      ]
-    }
+          description: 'Team management',
+          shortcut: 'U',
+          badge: null,
+        },
+      ],
+    },
   ];
 
   const SidebarContent = ({ isMobile = false }) => (
@@ -568,7 +579,11 @@ function LayoutContent({ children, currentPageName }) {
         </div>
       </div>
 
-      <nav className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700" role="navigation" aria-label="Main navigation">
+      <nav
+        className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700"
+        role="navigation"
+        aria-label="Main navigation"
+      >
         <div className="space-y-6">
           {navigationGroups.map((group) => (
             <div key={group.title} className="space-y-1">
@@ -594,13 +609,20 @@ function LayoutContent({ children, currentPageName }) {
                       {isActive && (
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-blue-500 via-indigo-500 to-purple-500 rounded-r-full"></div>
                       )}
-                      <item.icon className={`w-5 h-5 flex-shrink-0 ${
-                        isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
-                      } group-hover:scale-110 transition-transform`} />
+                      <item.icon
+                        className={`w-5 h-5 flex-shrink-0 ${
+                          isActive
+                            ? 'text-blue-600 dark:text-blue-400'
+                            : 'text-gray-500 dark:text-gray-400'
+                        } group-hover:scale-110 transition-transform`}
+                      />
                       <span className="flex-1 truncate">{item.title}</span>
                       <div className="flex items-center gap-2">
                         {item.badge && (
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 h-4 bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 text-blue-700 dark:text-blue-300 border-0 font-semibold">
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] px-1.5 py-0.5 h-4 bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 text-blue-700 dark:text-blue-300 border-0 font-semibold"
+                          >
                             {item.badge}
                           </Badge>
                         )}
@@ -622,16 +644,24 @@ function LayoutContent({ children, currentPageName }) {
               <UserIcon className="w-4 h-4 text-white relative z-10" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user.full_name}</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                {user.full_name}
+              </p>
               <div className="flex items-center gap-2 mt-0.5">
-                <Badge variant="secondary" className="text-[10px] px-2 py-0 h-4 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-0 font-semibold">
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] px-2 py-0 h-4 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-0 font-semibold"
+                >
                   {user.user_role?.replace('_', ' ') || 'team member'}
                 </Badge>
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full shadow-lg shadow-green-500/50 animate-pulse" title="Online" />
+                <div
+                  className="w-1.5 h-1.5 bg-green-500 rounded-full shadow-lg shadow-green-500/50 animate-pulse"
+                  title="Online"
+                />
               </div>
             </div>
           </div>
-          
+
           <Button
             variant="ghost"
             size="sm"
@@ -658,7 +688,11 @@ function LayoutContent({ children, currentPageName }) {
             <div className="flex items-center gap-4">
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl"
+                  >
                     <Menu className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>
@@ -673,12 +707,12 @@ function LayoutContent({ children, currentPageName }) {
                       </span>
                     </SheetTitle>
                   </SheetHeader>
-                  
+
                   {/* Add WorkspaceSwitcher to mobile menu */}
                   <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800">
                     <WorkspaceSwitcher />
                   </div>
-                  
+
                   <SidebarContent isMobile={true} />
                 </SheetContent>
               </Sheet>
@@ -724,7 +758,11 @@ function LayoutContent({ children, currentPageName }) {
 
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl"
+                  >
                     <Bell className="w-5 h-5" />
                     {unreadNotifications > 0 && (
                       <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-gradient-to-br from-red-500 to-red-600 text-white text-[10px] rounded-full font-bold shadow-lg shadow-red-500/50 animate-pulse">
@@ -733,16 +771,23 @@ function LayoutContent({ children, currentPageName }) {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-96 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-2xl rounded-xl">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-96 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-2xl rounded-xl"
+                >
                   <div className="px-4 py-3 border-b flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">Essential Notifications</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Only urgent and actionable items</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">
+                        Essential Notifications
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Only urgent and actionable items
+                      </p>
                     </div>
                     {notifications.length > 0 && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={clearAllNotifications}
                         className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
                       >
@@ -756,7 +801,9 @@ function LayoutContent({ children, currentPageName }) {
                       <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 flex items-center justify-center">
                         <CheckCircle className="w-8 h-8 text-green-500" />
                       </div>
-                      <p className="font-medium text-gray-900 dark:text-white mb-1">All caught up!</p>
+                      <p className="font-medium text-gray-900 dark:text-white mb-1">
+                        All caught up!
+                      </p>
                       <p className="text-sm">No essential notifications right now.</p>
                     </div>
                   ) : (
@@ -780,9 +827,9 @@ function LayoutContent({ children, currentPageName }) {
                               </p>
                               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                                 {new Date(notif.timestamp).toLocaleDateString()} at{' '}
-                                {new Date(notif.timestamp).toLocaleTimeString([], { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit' 
+                                {new Date(notif.timestamp).toLocaleTimeString([], {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
                                 })}
                               </p>
                             </div>
@@ -815,11 +862,17 @@ function LayoutContent({ children, currentPageName }) {
 
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all">
+                  <Button
+                    variant="ghost"
+                    className="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all"
+                  >
                     <div className="relative w-8 h-8 rounded-full overflow-hidden shadow-md">
                       <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-indigo-600"></div>
                       <div className="absolute inset-0 flex items-center justify-center text-white font-semibold text-sm">
-                        {user?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                        {user?.full_name
+                          ?.split(' ')
+                          .map((n) => n[0])
+                          .join('') || 'U'}
                       </div>
                     </div>
                     <div className="hidden md:block text-left">
@@ -833,7 +886,10 @@ function LayoutContent({ children, currentPageName }) {
                     <ChevronDown className="w-4 h-4 text-gray-400 hidden md:block" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-2xl rounded-xl">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-2xl rounded-xl"
+                >
                   <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-800">
                     <p className="text-sm font-medium dark:text-white">{user?.full_name}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
@@ -843,7 +899,7 @@ function LayoutContent({ children, currentPageName }) {
                     Profile Settings
                   </DropdownMenuItem>
                   <DropdownMenuItem className="rounded-lg mx-1 my-1">
-                    <Link to={createPageUrl("Preferences")} className="flex items-center w-full">
+                    <Link to={createPageUrl('Preferences')} className="flex items-center w-full">
                       <Settings className="w-4 h-4 mr-3" />
                       Preferences
                     </Link>
@@ -880,38 +936,52 @@ function LayoutContent({ children, currentPageName }) {
               {navigationGroups.map((group) => (
                 <DropdownMenu key={group.title} modal={false}>
                   <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-4 py-2 transition-colors"
                     >
                       {group.title}
                       <ChevronDown className="ml-1 w-3 h-3 opacity-50" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-64 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-xl rounded-xl">
+                  <DropdownMenuContent
+                    align="start"
+                    className="w-64 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-xl rounded-xl"
+                  >
                     {group.items.map((item) => {
                       const isActive = location.pathname === item.url;
                       return (
-                        <DropdownMenuItem key={item.title} asChild className="rounded-lg mx-1 my-0.5">
+                        <DropdownMenuItem
+                          key={item.title}
+                          asChild
+                          className="rounded-lg mx-1 my-0.5"
+                        >
                           <Link
                             to={item.url}
                             className={`flex items-center gap-3 px-3 py-2 cursor-pointer ${
-                              isActive 
-                                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-medium' 
+                              isActive
+                                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-medium'
                                 : 'text-gray-700 dark:text-gray-300'
                             }`}
                           >
-                            <item.icon className={`w-4 h-4 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`} />
+                            <item.icon
+                              className={`w-4 h-4 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}
+                            />
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm">{item.title}</span>
                                 {item.badge && (
-                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-0">
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px] px-1.5 py-0 h-4 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-0"
+                                  >
                                     {item.badge}
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.description}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                {item.description}
+                              </p>
                             </div>
                           </Link>
                         </DropdownMenuItem>
@@ -927,17 +997,12 @@ function LayoutContent({ children, currentPageName }) {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto p-8 pb-24 md:pb-8 bg-gray-50 dark:bg-gray-900 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
-        <ErrorBoundary>
-          {children}
-        </ErrorBoundary>
+        <ErrorBoundary>{children}</ErrorBoundary>
       </main>
 
       {/* Global Search Dialog */}
       <React.Suspense fallback={null}>
-        <GlobalSearch
-          isOpen={isGlobalSearchOpen}
-          onClose={() => setIsGlobalSearchOpen(false)}
-        />
+        <GlobalSearch isOpen={isGlobalSearchOpen} onClose={() => setIsGlobalSearchOpen(false)} />
       </React.Suspense>
 
       {/* Unified AI Assistant */}
@@ -969,11 +1034,10 @@ export default function Layout({ children, currentPageName }) {
       <WorkspaceProvider>
         <WorkspaceErrorBoundary>
           <TutorialProvider>
-            <LayoutContent children={children} currentPageName={currentPageName} />
+            <LayoutContent currentPageName={currentPageName}>{children}</LayoutContent>
           </TutorialProvider>
         </WorkspaceErrorBoundary>
       </WorkspaceProvider>
-
     </ErrorBoundary>
   );
 }

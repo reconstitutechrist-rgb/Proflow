@@ -14,7 +14,7 @@ export default function LivePreview({
   className = '',
   showTitle = true,
   showDescription = true,
-  maxHeight = 'none'
+  maxHeight = 'none',
 }) {
   // Sanitize content for safe rendering
   const sanitizedContent = useMemo(() => {
@@ -22,16 +22,42 @@ export default function LivePreview({
       USE_PROFILES: { html: true },
       ADD_ATTR: ['target'], // Allow target attribute for links
       ALLOWED_TAGS: [
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        'p', 'br', 'hr',
-        'ul', 'ol', 'li',
-        'strong', 'b', 'em', 'i', 'u', 's', 'del',
-        'a', 'img',
-        'blockquote', 'pre', 'code',
-        'table', 'thead', 'tbody', 'tr', 'th', 'td',
-        'div', 'span',
-        'sup', 'sub', 'mark'
-      ]
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+        'p',
+        'br',
+        'hr',
+        'ul',
+        'ol',
+        'li',
+        'strong',
+        'b',
+        'em',
+        'i',
+        'u',
+        's',
+        'del',
+        'a',
+        'img',
+        'blockquote',
+        'pre',
+        'code',
+        'table',
+        'thead',
+        'tbody',
+        'tr',
+        'th',
+        'td',
+        'div',
+        'span',
+        'sup',
+        'sub',
+        'mark',
+      ],
     });
   }, [content]);
 
@@ -40,9 +66,7 @@ export default function LivePreview({
   const PreviewContent = () => (
     <div className="p-6">
       {showTitle && title && (
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-          {title}
-        </h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{title}</h1>
       )}
 
       {showDescription && description && (

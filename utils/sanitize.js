@@ -4,30 +4,64 @@ import DOMPurify from 'dompurify';
  * Default allowed HTML tags for rich text content
  */
 const DEFAULT_ALLOWED_TAGS = [
-  'b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li',
-  'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-  'blockquote', 'pre', 'code',
-  'span', 'div',
-  'table', 'thead', 'tbody', 'tr', 'th', 'td',
-  'img', 'figure', 'figcaption',
-  'hr', 'sub', 'sup', 'mark',
+  'b',
+  'i',
+  'em',
+  'strong',
+  'a',
+  'p',
+  'br',
+  'ul',
+  'ol',
+  'li',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'blockquote',
+  'pre',
+  'code',
+  'span',
+  'div',
+  'table',
+  'thead',
+  'tbody',
+  'tr',
+  'th',
+  'td',
+  'img',
+  'figure',
+  'figcaption',
+  'hr',
+  'sub',
+  'sup',
+  'mark',
 ];
 
 /**
  * Default allowed attributes
  */
 const DEFAULT_ALLOWED_ATTR = [
-  'href', 'target', 'rel', 'class', 'id',
-  'src', 'alt', 'title', 'width', 'height',
-  'style', 'data-*',
+  'href',
+  'target',
+  'rel',
+  'class',
+  'id',
+  'src',
+  'alt',
+  'title',
+  'width',
+  'height',
+  'style',
+  'data-*',
 ];
 
 /**
  * Strict allowed tags for user-generated content (comments, messages)
  */
-const STRICT_ALLOWED_TAGS = [
-  'b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'code',
-];
+const STRICT_ALLOWED_TAGS = ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'code'];
 
 /**
  * Strict allowed attributes
@@ -132,7 +166,7 @@ export function sanitizeWithSecureLinks(html) {
   tempDiv.innerHTML = sanitized;
 
   const links = tempDiv.querySelectorAll('a');
-  links.forEach(link => {
+  links.forEach((link) => {
     if (link.getAttribute('target') === '_blank') {
       link.setAttribute('rel', 'noopener noreferrer');
     }

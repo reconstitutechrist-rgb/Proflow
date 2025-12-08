@@ -1,10 +1,9 @@
-
-import React, { useState, useEffect, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import React, { useState, useEffect, useMemo } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   FolderOpen,
   MessageSquare,
@@ -19,8 +18,8 @@ import {
   MoreVertical,
   Globe,
   Target,
-} from "lucide-react";
-import { format } from "date-fns";
+} from 'lucide-react';
+import { format } from 'date-fns';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,17 +27,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import { toast } from "sonner";
-import { db } from "@/api/db";
+} from '@/components/ui/select';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { toast } from 'sonner';
+import { db } from '@/api/db';
 
 export default function ConversationSidebar({
   currentUser,
@@ -55,7 +54,7 @@ export default function ConversationSidebar({
   onPinThread,
   onArchiveThread,
 }) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [filterTags, setFilterTags] = useState([]);
   const [showArchived, setShowArchived] = useState(false);
   const [teamMembers, setTeamMembers] = useState([]);
@@ -71,7 +70,7 @@ export default function ConversationSidebar({
         const users = await db.entities.User.list();
         setTeamMembers(users);
       } catch (error) {
-        console.error("Error loading team members:", error);
+        console.error('Error loading team members:', error);
       }
     };
     loadTeamMembers();
@@ -84,62 +83,61 @@ export default function ConversationSidebar({
 
   const allTags = useMemo(() => {
     const tagSet = new Set();
-    threads.forEach(thread => { // Using props.threads
-      thread.tags?.forEach(tag => tagSet.add(tag));
+    threads.forEach((thread) => {
+      // Using props.threads
+      thread.tags?.forEach((tag) => tagSet.add(tag));
     });
     return Array.from(tagSet);
   }, [threads]);
 
   // Filter threads based on selected context (general, project, or assignment)
   const filteredContextThreads = useMemo(() => {
-    if (selectedContextId === "general") {
+    if (selectedContextId === 'general') {
       // Show only general workspace threads (no assignment_id and no project_id)
-      return threads.filter(t => !t.assignment_id && !t.project_id);
-    } else if (selectedContextId?.startsWith("project:")) {
-      const projectId = selectedContextId.replace("project:", "");
-      return threads.filter(t => t.project_id === projectId);
-    } else if (selectedContextId?.startsWith("assignment:")) {
-      const assignmentId = selectedContextId.replace("assignment:", "");
-      return threads.filter(t => t.assignment_id === assignmentId);
+      return threads.filter((t) => !t.assignment_id && !t.project_id);
+    } else if (selectedContextId?.startsWith('project:')) {
+      const projectId = selectedContextId.replace('project:', '');
+      return threads.filter((t) => t.project_id === projectId);
+    } else if (selectedContextId?.startsWith('assignment:')) {
+      const assignmentId = selectedContextId.replace('assignment:', '');
+      return threads.filter((t) => t.assignment_id === assignmentId);
     }
-    return threads.filter(t => !t.assignment_id && !t.project_id);
+    return threads.filter((t) => !t.assignment_id && !t.project_id);
   }, [threads, selectedContextId]);
-
 
   // Apply additional filters (search, tags, archive)
   const filteredThreads = useMemo(() => {
     let filtered = filteredContextThreads; // Source is now filteredContextThreads
 
     if (!showArchived) {
-      filtered = filtered.filter(thread => thread.status !== 'archived');
+      filtered = filtered.filter((thread) => thread.status !== 'archived');
     }
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(thread =>
-        thread.name?.toLowerCase().includes(query) ||
-        thread.topic?.toLowerCase().includes(query) ||
-        thread.description?.toLowerCase().includes(query) ||
-        thread.context_summary?.toLowerCase().includes(query)
+      filtered = filtered.filter(
+        (thread) =>
+          thread.name?.toLowerCase().includes(query) ||
+          thread.topic?.toLowerCase().includes(query) ||
+          thread.description?.toLowerCase().includes(query) ||
+          thread.context_summary?.toLowerCase().includes(query)
       );
     }
 
     if (filterTags.length > 0) {
-      filtered = filtered.filter(thread =>
-        thread.tags?.some(tag => filterTags.includes(tag))
-      );
+      filtered = filtered.filter((thread) => thread.tags?.some((tag) => filterTags.includes(tag)));
     }
 
     return filtered;
   }, [filteredContextThreads, searchQuery, filterTags, showArchived]); // Dependency on filteredContextThreads
 
-  const pinnedThreads = filteredThreads.filter(t => t.is_pinned);
-  const unpinnedThreads = filteredThreads.filter(t => !t.is_pinned);
+  const pinnedThreads = filteredThreads.filter((t) => t.is_pinned);
+  const unpinnedThreads = filteredThreads.filter((t) => !t.is_pinned);
 
   const getUnreadCount = (thread) => {
     // const user = db.auth.currentUser; // Using currentUser prop
     if (!currentUser || !thread.unread_counts) return 0;
-    const userUnread = thread.unread_counts.find(uc => uc.user_email === currentUser.email);
+    const userUnread = thread.unread_counts.find((uc) => uc.user_email === currentUser.email);
     return userUnread?.unread_count || 0;
   };
 
@@ -147,17 +145,22 @@ export default function ConversationSidebar({
     if (!thread.participants || !teamMembers.length) return [];
     return thread.participants
       .slice(0, 3)
-      .map(participantEmail => teamMembers.find(m => m.email === participantEmail))
+      .map((participantEmail) => teamMembers.find((m) => m.email === participantEmail))
       .filter(Boolean);
   };
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'urgent': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
-      case 'high': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
-      case 'medium': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
-      case 'low': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
+      case 'urgent':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+      case 'high':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
+      case 'medium':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+      case 'low':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
     }
   };
 
@@ -179,12 +182,14 @@ export default function ConversationSidebar({
             onClick={() => onThreadSelect(thread)} // Changed to onThreadSelect
             className="flex items-center gap-2 flex-1 min-w-0"
           >
-            {thread.is_pinned && (
-              <Pin className="w-3 h-3 text-yellow-600 flex-shrink-0" />
-            )}
-            <h4 className={`font-medium text-sm truncate ${
-              isSelected ? 'text-indigo-900 dark:text-indigo-100' : 'text-gray-900 dark:text-white'
-            }`}>
+            {thread.is_pinned && <Pin className="w-3 h-3 text-yellow-600 flex-shrink-0" />}
+            <h4
+              className={`font-medium text-sm truncate ${
+                isSelected
+                  ? 'text-indigo-900 dark:text-indigo-100'
+                  : 'text-gray-900 dark:text-white'
+              }`}
+            >
               {thread.name || thread.topic}
             </h4>
           </div>
@@ -201,14 +206,20 @@ export default function ConversationSidebar({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onThreadSelect(thread)}> {/* Changed to onThreadSelect */}
+                <DropdownMenuItem onClick={() => onThreadSelect(thread)}>
+                  {' '}
+                  {/* Changed to onThreadSelect */}
                   Open Thread
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onPinThread(thread)}> {/* Changed to onPinThread */}
-                  {thread.is_pinned ? "Unpin Thread" : "Pin Thread"}
+                <DropdownMenuItem onClick={() => onPinThread(thread)}>
+                  {' '}
+                  {/* Changed to onPinThread */}
+                  {thread.is_pinned ? 'Unpin Thread' : 'Pin Thread'}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onArchiveThread(thread)}> {/* Changed to onArchiveThread */}
-                  {thread.status === 'archived' ? "Restore Thread" : "Archive Thread"}
+                <DropdownMenuItem onClick={() => onArchiveThread(thread)}>
+                  {' '}
+                  {/* Changed to onArchiveThread */}
+                  {thread.status === 'archived' ? 'Restore Thread' : 'Archive Thread'}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -228,7 +239,10 @@ export default function ConversationSidebar({
                 {participants.map((member, idx) => (
                   <Avatar key={idx} className="w-5 h-5 border-2 border-white dark:border-gray-800">
                     <AvatarFallback className="text-[10px] bg-gradient-to-br from-blue-500 to-purple-500 text-white">
-                      {member?.full_name?.split(' ').map(n => n[0]).join('') || '?'}
+                      {member?.full_name
+                        ?.split(' ')
+                        .map((n) => n[0])
+                        .join('') || '?'}
                     </AvatarFallback>
                   </Avatar>
                 ))}
@@ -243,7 +257,10 @@ export default function ConversationSidebar({
             )}
 
             {thread.priority && thread.priority !== 'medium' && (
-              <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${getPriorityColor(thread.priority)}`}>
+              <Badge
+                variant="outline"
+                className={`text-[10px] px-1.5 py-0 ${getPriorityColor(thread.priority)}`}
+              >
                 {thread.priority}
               </Badge>
             )}
@@ -279,18 +296,18 @@ export default function ConversationSidebar({
       {/* Context Selector - Projects and Assignments */}
       <div className="p-4 border-b">
         <Select
-          value={selectedContextId || "general"}
+          value={selectedContextId || 'general'}
           onValueChange={(value) => {
-            if (value === "general") {
-              onContextSelect("general");
-            } else if (value.startsWith("project:")) {
-              const projectId = value.replace("project:", "");
-              const project = projects?.find(p => p.id === projectId);
-              if (project) onContextSelect({ ...project, type: "project" });
-            } else if (value.startsWith("assignment:")) {
-              const assignmentId = value.replace("assignment:", "");
-              const assignment = assignments?.find(a => a.id === assignmentId);
-              if (assignment) onContextSelect({ ...assignment, type: "assignment" });
+            if (value === 'general') {
+              onContextSelect('general');
+            } else if (value.startsWith('project:')) {
+              const projectId = value.replace('project:', '');
+              const project = projects?.find((p) => p.id === projectId);
+              if (project) onContextSelect({ ...project, type: 'project' });
+            } else if (value.startsWith('assignment:')) {
+              const assignmentId = value.replace('assignment:', '');
+              const assignment = assignments?.find((a) => a.id === assignmentId);
+              if (assignment) onContextSelect({ ...assignment, type: 'assignment' });
             }
           }}
         >
@@ -342,7 +359,10 @@ export default function ConversationSidebar({
                   Assignments
                 </div>
                 {assignments.map((assignment) => (
-                  <SelectItem key={`assignment:${assignment.id}`} value={`assignment:${assignment.id}`}>
+                  <SelectItem
+                    key={`assignment:${assignment.id}`}
+                    value={`assignment:${assignment.id}`}
+                  >
                     <div className="flex items-center gap-2">
                       <FolderOpen className="w-4 h-4 text-purple-600" />
                       <span>{assignment.title || assignment.name}</span>
@@ -391,7 +411,7 @@ export default function ConversationSidebar({
                       if (checked) {
                         setFilterTags([...filterTags, tag]);
                       } else {
-                        setFilterTags(filterTags.filter(t => t !== tag));
+                        setFilterTags(filterTags.filter((t) => t !== tag));
                       }
                     }}
                   >
@@ -403,13 +423,13 @@ export default function ConversationSidebar({
           )}
 
           <Button
-            variant={showArchived ? "default" : "outline"}
+            variant={showArchived ? 'default' : 'outline'}
             size="sm"
             className="h-8"
             onClick={() => setShowArchived(!showArchived)}
           >
             <Archive className="w-3 h-3 mr-1" />
-            {showArchived ? "Hide" : "Show"} Archived
+            {showArchived ? 'Hide' : 'Show'} Archived
           </Button>
         </div>
 
@@ -420,7 +440,7 @@ export default function ConversationSidebar({
             className="w-full h-8"
             onClick={() => {
               setFilterTags([]);
-              setSearchQuery("");
+              setSearchQuery('');
             }}
           >
             <X className="w-3 h-3 mr-1" />
@@ -445,62 +465,62 @@ export default function ConversationSidebar({
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4">
           {/* Removed 'loading' check as threads are passed as prop and parent handles loading */}
-            <>
-              {pinnedThreads.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Pin className="w-4 h-4 text-yellow-600" />
-                    <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
-                      Pinned
-                    </h3>
-                  </div>
-                  <div className="space-y-2">
-                    {pinnedThreads.map((thread) => (
-                      <ThreadItem key={thread.id} thread={thread} />
-                    ))}
-                  </div>
+          <>
+            {pinnedThreads.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Pin className="w-4 h-4 text-yellow-600" />
+                  <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                    Pinned
+                  </h3>
                 </div>
-              )}
+                <div className="space-y-2">
+                  {pinnedThreads.map((thread) => (
+                    <ThreadItem key={thread.id} thread={thread} />
+                  ))}
+                </div>
+              </div>
+            )}
 
-              {unpinnedThreads.length > 0 && (
-                <div className={pinnedThreads.length > 0 ? "mt-6" : ""}>
-                  {pinnedThreads.length > 0 && (
-                    <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-3">
-                      All Threads
-                    </h3>
-                  )}
-                  <div className="space-y-2">
-                    {unpinnedThreads.map((thread) => (
-                      <ThreadItem key={thread.id} thread={thread} />
-                    ))}
-                  </div>
+            {unpinnedThreads.length > 0 && (
+              <div className={pinnedThreads.length > 0 ? 'mt-6' : ''}>
+                {pinnedThreads.length > 0 && (
+                  <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-3">
+                    All Threads
+                  </h3>
+                )}
+                <div className="space-y-2">
+                  {unpinnedThreads.map((thread) => (
+                    <ThreadItem key={thread.id} thread={thread} />
+                  ))}
                 </div>
-              )}
+              </div>
+            )}
 
-              {filteredThreads.length === 0 && (
-                <div className="text-center py-12">
-                  <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {searchQuery || filterTags.length > 0
-                      ? "No threads match your filters"
-                      : selectedContextId === "general"
-                        ? "No general threads yet"
-                        : selectedContextId?.startsWith("project:")
-                          ? "No threads for this project yet"
-                          : "No threads for this assignment yet"}
-                  </p>
-                  <Button
-                    onClick={onNewThread} // Changed to onNewThread
-                    variant="outline"
-                    size="sm"
-                    className="mt-4"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create First Thread
-                  </Button>
-                </div>
-              )}
-            </>
+            {filteredThreads.length === 0 && (
+              <div className="text-center py-12">
+                <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {searchQuery || filterTags.length > 0
+                    ? 'No threads match your filters'
+                    : selectedContextId === 'general'
+                      ? 'No general threads yet'
+                      : selectedContextId?.startsWith('project:')
+                        ? 'No threads for this project yet'
+                        : 'No threads for this assignment yet'}
+                </p>
+                <Button
+                  onClick={onNewThread} // Changed to onNewThread
+                  variant="outline"
+                  size="sm"
+                  className="mt-4"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create First Thread
+                </Button>
+              </div>
+            )}
+          </>
         </div>
       </ScrollArea>
     </div>

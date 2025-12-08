@@ -1,8 +1,8 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 
 export function ChatNewThreadDialog({
   isThreadFormOpen,
@@ -33,11 +33,11 @@ export function ChatNewThreadDialog({
             Start New Thread
           </DialogTitle>
           <DialogDescription className="text-gray-600 dark:text-gray-400">
-            {selectedContextId === "general"
-              ? "Create a new general workspace conversation thread."
+            {selectedContextId === 'general'
+              ? 'Create a new general workspace conversation thread.'
               : currentProject
-                ? "Create a new conversation thread for the selected project."
-                : "Create a new conversation thread for the selected assignment."}
+                ? 'Create a new conversation thread for the selected project.'
+                : 'Create a new conversation thread for the selected assignment.'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleNewThreadSubmit}>
@@ -56,7 +56,10 @@ export function ChatNewThreadDialog({
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="threadDescription" className="text-right text-gray-700 dark:text-gray-300">
+              <Label
+                htmlFor="threadDescription"
+                className="text-right text-gray-700 dark:text-gray-300"
+              >
                 Description
               </Label>
               <Textarea
@@ -84,12 +87,12 @@ export function ChatNewThreadDialog({
               className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label={
                 !newThreadTopic.trim()
-                  ? "Enter a topic to create thread"
+                  ? 'Enter a topic to create thread'
                   : !currentUser
-                    ? "Log in to create thread"
+                    ? 'Log in to create thread'
                     : !currentWorkspaceId
-                      ? "Select a workspace to create thread"
-                      : "Create thread"
+                      ? 'Select a workspace to create thread'
+                      : 'Create thread'
               }
             >
               Create Thread

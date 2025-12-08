@@ -1,23 +1,24 @@
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Smile, Plus } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Smile, Plus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const QUICK_REACTIONS = ["👍", "❤️", "😊", "🎉", "🚀", "👏", "🔥", "💯"];
+const QUICK_REACTIONS = ['👍', '❤️', '😊', '🎉', '🚀', '👏', '🔥', '💯'];
 
-export default function MessageReactions({ message, currentUser, onAddReaction, onRemoveReaction }) {
+export default function MessageReactions({
+  message,
+  currentUser,
+  onAddReaction,
+  onRemoveReaction,
+}) {
   const [showPicker, setShowPicker] = useState(false);
 
   const reactionCounts = {};
   const userReactions = [];
 
   if (message.reactions) {
-    message.reactions.forEach(reaction => {
+    message.reactions.forEach((reaction) => {
       reactionCounts[reaction.emoji] = (reactionCounts[reaction.emoji] || 0) + 1;
       if (reaction.user_email === currentUser?.email) {
         userReactions.push(reaction.emoji);
@@ -74,7 +75,7 @@ export default function MessageReactions({ message, currentUser, onAddReaction, 
         </PopoverTrigger>
         <PopoverContent className="w-auto p-2" align="start">
           <div className="grid grid-cols-4 gap-1">
-            {QUICK_REACTIONS.map(emoji => (
+            {QUICK_REACTIONS.map((emoji) => (
               <button
                 key={emoji}
                 onClick={() => handleReactionClick(emoji)}

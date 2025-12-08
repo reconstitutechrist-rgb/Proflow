@@ -11,8 +11,8 @@ const KeyboardShortcuts = ({ isOpen, onClose }) => {
         { keys: ['↑', '↓'], description: 'Navigate messages' },
         { keys: ['Ctrl', 'Enter'], description: 'Send message' },
         { keys: ['Esc'], description: 'Close dialogs' },
-        { keys: ['?'], description: 'Show shortcuts' }
-      ]
+        { keys: ['?'], description: 'Show shortcuts' },
+      ],
     },
     {
       category: 'Actions',
@@ -20,8 +20,8 @@ const KeyboardShortcuts = ({ isOpen, onClose }) => {
         { keys: ['Ctrl', 'U'], description: 'Upload documents' },
         { keys: ['Ctrl', 'N'], description: 'New session' },
         { keys: ['Ctrl', 'S'], description: 'Save session' },
-        { keys: ['Ctrl', 'K'], description: 'Focus search' }
-      ]
+        { keys: ['Ctrl', 'K'], description: 'Focus search' },
+      ],
     },
     {
       category: 'Editing',
@@ -29,9 +29,9 @@ const KeyboardShortcuts = ({ isOpen, onClose }) => {
         { keys: ['Ctrl', 'C'], description: 'Copy message' },
         { keys: ['Ctrl', 'E'], description: 'Edit message' },
         { keys: ['Ctrl', 'R'], description: 'Regenerate response' },
-        { keys: ['Ctrl', 'D'], description: 'Delete message' }
-      ]
-    }
+        { keys: ['Ctrl', 'D'], description: 'Delete message' },
+      ],
+    },
   ];
 
   return (
@@ -70,7 +70,9 @@ const KeyboardShortcuts = ({ isOpen, onClose }) => {
         </div>
 
         <div className="shortcuts-footer">
-          <p>Press <kbd className="key">?</kbd> anytime to show this panel</p>
+          <p>
+            Press <kbd className="key">?</kbd> anytime to show this panel
+          </p>
         </div>
       </div>
     </div>

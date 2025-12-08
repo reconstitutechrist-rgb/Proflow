@@ -19,16 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  ListTodo,
-  Loader2,
-  Sparkles,
-  Check,
-  X,
-  User,
-  FolderOpen,
-  AlertCircle,
-} from 'lucide-react';
+import { ListTodo, Loader2, Sparkles, Check, X, User, FolderOpen, AlertCircle } from 'lucide-react';
 import { useTeamChatAI } from './useTeamChatAI';
 import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
@@ -52,13 +43,8 @@ export default function TaskExtractionPanel({
   const [creating, setCreating] = useState(false);
 
   const { currentWorkspaceId } = useWorkspace();
-  const {
-    extractingTasks,
-    extractedTasks,
-    extractTasks,
-    createTasks,
-    clearExtractedTasks,
-  } = useTeamChatAI();
+  const { extractingTasks, extractedTasks, extractTasks, createTasks, clearExtractedTasks } =
+    useTeamChatAI();
 
   // Extract tasks when panel opens
   useEffect(() => {
@@ -101,7 +87,7 @@ export default function TaskExtractionPanel({
    * Update a task field
    */
   const updateTask = (index, field, value) => {
-    setEditedTasks(prev => {
+    setEditedTasks((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
       return updated;
@@ -112,10 +98,10 @@ export default function TaskExtractionPanel({
    * Remove a task from the list
    */
   const removeTask = (index) => {
-    setEditedTasks(prev => prev.filter((_, i) => i !== index));
-    setSelectedTasks(prev => {
+    setEditedTasks((prev) => prev.filter((_, i) => i !== index));
+    setSelectedTasks((prev) => {
       const newSelection = new Set();
-      prev.forEach(i => {
+      prev.forEach((i) => {
         if (i < index) newSelection.add(i);
         else if (i > index) newSelection.add(i - 1);
       });
@@ -181,7 +167,8 @@ export default function TaskExtractionPanel({
               <AlertCircle className="w-8 h-8 mb-3" />
               <p className="text-sm font-medium">No tasks found</p>
               <p className="text-xs mt-1 text-center px-4">
-                No action items were detected in this conversation. Try phrases like "we need to" or "let's" to create tasks.
+                No action items were detected in this conversation. Try phrases like "we need to" or
+                "let's" to create tasks.
               </p>
               <Button variant="outline" size="sm" className="mt-4" onClick={handleReExtract}>
                 <Sparkles className="w-4 h-4 mr-2" />
@@ -242,9 +229,7 @@ export default function TaskExtractionPanel({
                       <div className="pl-6 space-y-2">
                         {/* Description */}
                         {task.description && (
-                          <p className="text-xs text-gray-500 line-clamp-2">
-                            {task.description}
-                          </p>
+                          <p className="text-xs text-gray-500 line-clamp-2">{task.description}</p>
                         )}
 
                         {/* Selectors Row */}
@@ -255,7 +240,9 @@ export default function TaskExtractionPanel({
                             onValueChange={(v) => updateTask(index, 'priority', v)}
                           >
                             <SelectTrigger className="h-7 text-xs w-auto">
-                              <Badge className={PRIORITY_COLORS[task.priority] || PRIORITY_COLORS.medium}>
+                              <Badge
+                                className={PRIORITY_COLORS[task.priority] || PRIORITY_COLORS.medium}
+                              >
                                 {task.priority}
                               </Badge>
                             </SelectTrigger>
@@ -340,4 +327,3 @@ export default function TaskExtractionPanel({
     </Sheet>
   );
 }
-

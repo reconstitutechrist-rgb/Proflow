@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Loader2,
   CheckCircle,
@@ -13,16 +13,19 @@ import {
   List,
   RefreshCw,
   Edit3,
-  ArrowUpDown
-} from "lucide-react";
-import { InvokeLLM } from "@/api/integrations";
-import { toast } from "sonner";
-import { parseAIChanges, getChangeTypeBadgeColor } from "@/utils/diffUtils";
+  ArrowUpDown,
+} from 'lucide-react';
+import { InvokeLLM } from '@/api/integrations';
+import { toast } from 'sonner';
+import { parseAIChanges, getChangeTypeBadgeColor } from '@/utils/diffUtils';
 
 // Strip HTML to get plain text
 const stripHtml = (html) => {
   if (!html) return '';
-  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 };
 
 /**
@@ -33,45 +36,45 @@ export default function AIDocumentStructurer({
   content,
   title,
   description,
-  onChangesGenerated // Callback when changes are ready for review
+  onChangesGenerated, // Callback when changes are ready for review
 }) {
   const [analysis, setAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [structureType, setStructureType] = useState("full");
+  const [structureType, setStructureType] = useState('full');
 
   const structureTypes = [
     {
-      value: "full",
-      label: "Full Restructure",
-      description: "Complete structural analysis with headings, lists, and organization",
-      icon: LayoutList
+      value: 'full',
+      label: 'Full Restructure',
+      description: 'Complete structural analysis with headings, lists, and organization',
+      icon: LayoutList,
     },
     {
-      value: "headings",
-      label: "Headings Only",
-      description: "Add and organize section headings",
-      icon: Heading
+      value: 'headings',
+      label: 'Headings Only',
+      description: 'Add and organize section headings',
+      icon: Heading,
     },
     {
-      value: "lists",
-      label: "Lists & Bullets",
-      description: "Convert appropriate text to lists and bullet points",
-      icon: List
+      value: 'lists',
+      label: 'Lists & Bullets',
+      description: 'Convert appropriate text to lists and bullet points',
+      icon: List,
     },
     {
-      value: "flow",
-      label: "Improve Flow",
-      description: "Reorganize content for better logical flow",
-      icon: ArrowUpDown
-    }
+      value: 'flow',
+      label: 'Improve Flow',
+      description: 'Reorganize content for better logical flow',
+      icon: ArrowUpDown,
+    },
   ];
 
-  const currentType = structureTypes.find(t => t.value === structureType);
+  const currentType = structureTypes.find((t) => t.value === structureType);
 
   const buildPrompt = (strippedContent) => {
-    let focusInstructions = "";
+    let focusInstructions = '';
 
-    if (structureType === "full") {
+    if (structureType === 'full') {
       focusInstructions = `Analyze the document structure and suggest improvements for:
 1. Adding or improving headings and subheadings
 2. Converting sequential items into bullet or numbered lists
@@ -79,19 +82,19 @@ export default function AIDocumentStructurer({
 4. Adding emphasis (bold) for key terms or concepts
 5. Breaking up long paragraphs
 6. Adding section transitions where needed`;
-    } else if (structureType === "headings") {
+    } else if (structureType === 'headings') {
       focusInstructions = `Focus ONLY on headings and sections:
 1. Identify where headings should be added
 2. Suggest better heading text for existing sections
 3. Recommend heading hierarchy (H1, H2, H3)
 4. Note where sections should be split or combined`;
-    } else if (structureType === "lists") {
+    } else if (structureType === 'lists') {
       focusInstructions = `Focus ONLY on lists and bullet points:
 1. Find sequences that would work better as bullet lists
 2. Identify numbered steps that should be a numbered list
 3. Convert comma-separated items to lists
 4. Find parallel structures that should be formatted as lists`;
-    } else if (structureType === "flow") {
+    } else if (structureType === 'flow') {
       focusInstructions = `Focus ONLY on content flow and organization:
 1. Identify sections that should be reordered
 2. Find content that should be grouped together
@@ -104,8 +107,8 @@ export default function AIDocumentStructurer({
 ${focusInstructions}
 
 Document Context:
-- Title: ${title || "Untitled"}
-${description ? `- Description: ${description}` : ""}
+- Title: ${title || 'Untitled'}
+${description ? `- Description: ${description}` : ''}
 
 Document Content:
 """
@@ -143,7 +146,7 @@ IMPORTANT RULES:
     const strippedContent = stripHtml(content);
 
     if (!content || strippedContent.length < 50) {
-      toast.error("Please add more content before analyzing structure");
+      toast.error('Please add more content before analyzing structure');
       return;
     }
 
@@ -156,26 +159,26 @@ IMPORTANT RULES:
         prompt,
         add_context_from_internet: false,
         response_json_schema: {
-          type: "object",
+          type: 'object',
           properties: {
-            structureScore: { type: "number" },
-            summary: { type: "string" },
+            structureScore: { type: 'number' },
+            summary: { type: 'string' },
             improvements: {
-              type: "array",
+              type: 'array',
               items: {
-                type: "object",
+                type: 'object',
                 properties: {
-                  type: { type: "string" },
-                  originalText: { type: "string" },
-                  suggestedText: { type: "string" },
-                  reason: { type: "string" }
+                  type: { type: 'string' },
+                  originalText: { type: 'string' },
+                  suggestedText: { type: 'string' },
+                  reason: { type: 'string' },
                 },
-                required: ["type", "originalText", "suggestedText", "reason"]
-              }
-            }
+                required: ['type', 'originalText', 'suggestedText', 'reason'],
+              },
+            },
           },
-          required: ["structureScore", "summary", "improvements"]
-        }
+          required: ['structureScore', 'summary', 'improvements'],
+        },
       });
 
       // Parse the response
@@ -196,30 +199,37 @@ IMPORTANT RULES:
           parsedResponse = response;
         }
       } catch (parseError) {
-        console.error("Failed to parse AI response:", parseError, response);
-        toast.error("AI response was not in the expected format. Please try again.");
+        console.error('Failed to parse AI response:', parseError, response);
+        toast.error('AI response was not in the expected format. Please try again.');
         return;
       }
 
       // Convert improvements to standard change format
-      const changes = (parsedResponse.improvements || []).map(imp => ({
+      const changes = (parsedResponse.improvements || []).map((imp) => ({
         ...imp,
         // Map structure types to change types for consistent display
-        type: imp.type === 'heading' ? 'structure' :
-              imp.type === 'list' ? 'structure' :
-              imp.type === 'paragraph' ? 'clarity' :
-              imp.type === 'emphasis' ? 'style' :
-              imp.type === 'flow' ? 'structure' :
-              imp.type === 'section' ? 'structure' :
-              imp.type,
-        structureType: imp.type // Keep original type for display
+        type:
+          imp.type === 'heading'
+            ? 'structure'
+            : imp.type === 'list'
+              ? 'structure'
+              : imp.type === 'paragraph'
+                ? 'clarity'
+                : imp.type === 'emphasis'
+                  ? 'style'
+                  : imp.type === 'flow'
+                    ? 'structure'
+                    : imp.type === 'section'
+                      ? 'structure'
+                      : imp.type,
+        structureType: imp.type, // Keep original type for display
       }));
 
       // Process with unique IDs
       const processedChanges = parseAIChanges(changes);
 
       // Validate against content
-      const validatedChanges = processedChanges.filter(change => {
+      const validatedChanges = processedChanges.filter((change) => {
         const found = strippedContent.includes(change.originalText);
         if (!found) {
           console.warn(`Structure change not found: "${change.originalText.substring(0, 50)}..."`);
@@ -229,12 +239,12 @@ IMPORTANT RULES:
 
       const analysisResult = {
         structureScore: parsedResponse.structureScore || 0,
-        summary: parsedResponse.summary || "Analysis complete",
+        summary: parsedResponse.summary || 'Analysis complete',
         changes: validatedChanges,
         type: structureType,
         timestamp: new Date().toISOString(),
         originalCount: processedChanges.length,
-        validatedCount: validatedChanges.length
+        validatedCount: validatedChanges.length,
       };
 
       setAnalysis(analysisResult);
@@ -242,12 +252,11 @@ IMPORTANT RULES:
       if (validatedChanges.length > 0) {
         toast.success(`Found ${validatedChanges.length} structure improvements`);
       } else {
-        toast.success("Document structure looks good!");
+        toast.success('Document structure looks good!');
       }
-
     } catch (error) {
-      console.error("Error analyzing structure:", error);
-      toast.error("Failed to analyze structure. Please try again.");
+      console.error('Error analyzing structure:', error);
+      toast.error('Failed to analyze structure. Please try again.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -262,17 +271,21 @@ IMPORTANT RULES:
   const contentLength = stripHtml(content).length;
 
   const getScoreColor = (score) => {
-    if (score >= 80) return "text-green-600 dark:text-green-400";
-    if (score >= 60) return "text-yellow-600 dark:text-yellow-400";
-    return "text-red-600 dark:text-red-400";
+    if (score >= 80) return 'text-green-600 dark:text-green-400';
+    if (score >= 60) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
   const getTypeIcon = (type) => {
     switch (type) {
-      case 'heading': return <Heading className="w-3 h-3" />;
-      case 'list': return <List className="w-3 h-3" />;
-      case 'flow': return <ArrowUpDown className="w-3 h-3" />;
-      default: return <LayoutList className="w-3 h-3" />;
+      case 'heading':
+        return <Heading className="w-3 h-3" />;
+      case 'list':
+        return <List className="w-3 h-3" />;
+      case 'flow':
+        return <ArrowUpDown className="w-3 h-3" />;
+      default:
+        return <LayoutList className="w-3 h-3" />;
     }
   };
 
@@ -282,7 +295,7 @@ IMPORTANT RULES:
       <div>
         <label className="text-sm font-medium mb-2 block">Analysis Type</label>
         <div className="grid grid-cols-2 gap-2">
-          {structureTypes.map(type => {
+          {structureTypes.map((type) => {
             const Icon = type.icon;
             return (
               <button
@@ -298,7 +311,9 @@ IMPORTANT RULES:
                   <Icon className="w-4 h-4" />
                   <span className="font-medium text-sm">{type.label}</span>
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{type.description}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {type.description}
+                </div>
               </button>
             );
           })}
@@ -339,12 +354,7 @@ IMPORTANT RULES:
                   <div className="text-xs text-gray-500">out of 100</div>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleAnalyze}
-                disabled={isAnalyzing}
-              >
+              <Button variant="ghost" size="sm" onClick={handleAnalyze} disabled={isAnalyzing}>
                 <RefreshCw className={`w-3 h-3 mr-1 ${isAnalyzing ? 'animate-spin' : ''}`} />
                 Re-analyze
               </Button>
@@ -358,7 +368,7 @@ IMPORTANT RULES:
             {/* Changes Count */}
             <div className="flex flex-wrap gap-2">
               <Badge variant="outline" className="text-xs">
-                {structureTypes.find(t => t.value === analysis.type)?.label}
+                {structureTypes.find((t) => t.value === analysis.type)?.label}
               </Badge>
               <Badge
                 variant="outline"
@@ -405,11 +415,7 @@ IMPORTANT RULES:
                 </div>
 
                 {/* Apply Changes Button */}
-                <Button
-                  onClick={handleApplyChanges}
-                  className="w-full mt-2"
-                  variant="outline"
-                >
+                <Button onClick={handleApplyChanges} className="w-full mt-2" variant="outline">
                   <Edit3 className="w-4 h-4 mr-2" />
                   Review & Apply Changes
                 </Button>

@@ -1,10 +1,9 @@
-
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -12,41 +11,41 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Wand2, ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
-import { toast } from "sonner";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import { db } from "@/api/db";
+} from '@/components/ui/select';
+import { Wand2, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { db } from '@/api/db';
 
 export default function PromptBuilderWizard({ isOpen, assignmentId, onDocumentCreated, onClose }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [generating, setGenerating] = useState(false);
 
-  const [documentType, setDocumentType] = useState("report");
-  const [title, setTitle] = useState("");
-  const [audience, setAudience] = useState("");
-  const [tone, setTone] = useState("professional");
-  const [length, setLength] = useState("medium");
-  const [sectionsInput, setSectionsInput] = useState("");
-  const [additionalContext, setAdditionalContext] = useState("");
-  const [keywordsInput, setKeywordsInput] = useState("");
+  const [documentType, setDocumentType] = useState('report');
+  const [title, setTitle] = useState('');
+  const [audience, setAudience] = useState('');
+  const [tone, setTone] = useState('professional');
+  const [length, setLength] = useState('medium');
+  const [sectionsInput, setSectionsInput] = useState('');
+  const [additionalContext, setAdditionalContext] = useState('');
+  const [keywordsInput, setKeywordsInput] = useState('');
   const [includeResearch, setIncludeResearch] = useState(false);
 
   const { currentWorkspaceId } = useWorkspace();
 
   const steps = [
-    "Document Type & Title",
-    "Target Audience & Tone/Length",
-    "Key Sections",
-    "Keywords & Additional Context",
-    "Include Research & Review"
+    'Document Type & Title',
+    'Target Audience & Tone/Length',
+    'Key Sections',
+    'Keywords & Additional Context',
+    'Include Research & Review',
   ];
   const totalSteps = steps.length;
 
@@ -58,7 +57,7 @@ export default function PromptBuilderWizard({ isOpen, assignmentId, onDocumentCr
 
   const handleStepSubmit = async () => {
     if (!isCurrentStepValid()) {
-      toast.error("Please fill in all required fields to proceed.");
+      toast.error('Please fill in all required fields to proceed.');
       return;
     }
 
@@ -71,15 +70,21 @@ export default function PromptBuilderWizard({ isOpen, assignmentId, onDocumentCr
 
   const handleGenerate = async () => {
     if (!currentWorkspaceId) {
-      toast.error("No workspace selected. Please select a workspace to generate documents.");
+      toast.error('No workspace selected. Please select a workspace to generate documents.');
       return;
     }
 
     setGenerating(true);
 
     try {
-      const sectionsArray = sectionsInput.split('\n').map(s => s.trim()).filter(s => s.length > 0);
-      const keywordsArray = keywordsInput.split(',').map(k => k.trim()).filter(k => k.length > 0);
+      const sectionsArray = sectionsInput
+        .split('\n')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      const keywordsArray = keywordsInput
+        .split(',')
+        .map((k) => k.trim())
+        .filter((k) => k.length > 0);
 
       const prompt = `Generate a professional ${documentType} document with the following requirements:
 
@@ -88,62 +93,77 @@ Audience: ${audience}
 Tone: ${tone}
 Length: ${length}
 
-${sectionsArray.length > 0 ? `
+${
+  sectionsArray.length > 0
+    ? `
 Required Sections:
-${sectionsArray.map(s => `- ${s}`).join('\n')}
-` : ''}
+${sectionsArray.map((s) => `- ${s}`).join('\n')}
+`
+    : ''
+}
 
-${additionalContext ? `
+${
+  additionalContext
+    ? `
 Additional Context:
 ${additionalContext}
-` : ''}
+`
+    : ''
+}
 
-${keywordsArray.length > 0 ? `
+${
+  keywordsArray.length > 0
+    ? `
 Keywords to include: ${keywordsArray.join(', ')}
-` : ''}
+`
+    : ''
+}
 
 Format the document with proper headings, paragraphs, and structure. Make it professional and ready for use.`;
 
       const response = await db.integrations.Core.InvokeLLM({
         prompt: prompt,
-        add_context_from_internet: includeResearch
+        add_context_from_internet: includeResearch,
       });
 
       const documentData = {
         workspace_id: currentWorkspaceId,
         title: title,
         description: `Generated ${documentType} document for ${audience}`,
-        content: response || "", // Ensure content is always a string, even if response is null/undefined
-        document_type: documentType === 'report' ? 'report' :
-                       documentType === 'proposal' ? 'contract' : 'other',
+        content: response || '', // Ensure content is always a string, even if response is null/undefined
+        document_type:
+          documentType === 'report' ? 'report' : documentType === 'proposal' ? 'contract' : 'other',
         assigned_to_assignments: assignmentId ? [assignmentId] : [],
         tags: keywordsArray,
-        version: "1.0"
+        version: '1.0',
       };
 
       const newDocument = await db.entities.Document.create(documentData);
 
-      toast.success("Document generated successfully!");
+      toast.success('Document generated successfully!');
 
       if (onDocumentCreated) {
         onDocumentCreated(newDocument);
       }
 
-      setDocumentType("report");
-      setTitle("");
-      setAudience("");
-      setTone("professional");
-      setLength("medium");
-      setSectionsInput("");
-      setAdditionalContext("");
-      setKeywordsInput("");
+      setDocumentType('report');
+      setTitle('');
+      setAudience('');
+      setTone('professional');
+      setLength('medium');
+      setSectionsInput('');
+      setAdditionalContext('');
+      setKeywordsInput('');
       setIncludeResearch(false);
       setCurrentStep(0);
       onClose();
     } catch (error) {
-      console.error("Error generating document:", error);
-      toast.error("Failed to generate document", {
-        description: error instanceof Error ? error.message : "An unexpected error occurred while generating the document."
+      console.error('Error generating document:', error);
+      toast.error('Failed to generate document', {
+        description:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred while generating the document.',
       });
     } finally {
       setGenerating(false);
@@ -185,10 +205,7 @@ Format the document with proper headings, paragraphs, and structure. Make it pro
             <div className="space-y-4">
               <div>
                 <Label htmlFor="documentType">What type of document are you creating?</Label>
-                <Select
-                  value={documentType}
-                  onValueChange={(value) => setDocumentType(value)}
-                >
+                <Select value={documentType} onValueChange={(value) => setDocumentType(value)}>
                   <SelectTrigger className="mt-2">
                     <SelectValue placeholder="Select document type" />
                   </SelectTrigger>
@@ -233,10 +250,7 @@ Format the document with proper headings, paragraphs, and structure. Make it pro
               </div>
               <div>
                 <Label htmlFor="tone">What tone should the document have?</Label>
-                <Select
-                  value={tone}
-                  onValueChange={(value) => setTone(value)}
-                >
+                <Select value={tone} onValueChange={(value) => setTone(value)}>
                   <SelectTrigger className="mt-2">
                     <SelectValue />
                   </SelectTrigger>
@@ -252,10 +266,7 @@ Format the document with proper headings, paragraphs, and structure. Make it pro
               </div>
               <div>
                 <Label htmlFor="length">How long should it be?</Label>
-                <Select
-                  value={length}
-                  onValueChange={(value) => setLength(value)}
-                >
+                <Select value={length} onValueChange={(value) => setLength(value)}>
                   <SelectTrigger className="mt-2">
                     <SelectValue />
                   </SelectTrigger>
@@ -282,7 +293,8 @@ Format the document with proper headings, paragraphs, and structure. Make it pro
                 />
               </div>
               <p className="text-sm text-gray-500">
-                💡 Each line will guide the AI to create a distinct section or cover a specific topic.
+                💡 Each line will guide the AI to create a distinct section or cover a specific
+                topic.
               </p>
             </div>
           )}
@@ -290,7 +302,9 @@ Format the document with proper headings, paragraphs, and structure. Make it pro
           {currentStep === 3 && (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="keywordsInput">Are there specific keywords or phrases to include?</Label>
+                <Label htmlFor="keywordsInput">
+                  Are there specific keywords or phrases to include?
+                </Label>
                 <Input
                   id="keywordsInput"
                   value={keywordsInput}
@@ -300,7 +314,9 @@ Format the document with proper headings, paragraphs, and structure. Make it pro
                 />
               </div>
               <div>
-                <Label htmlFor="additionalContext">Any other specific instructions or context?</Label>
+                <Label htmlFor="additionalContext">
+                  Any other specific instructions or context?
+                </Label>
                 <Textarea
                   id="additionalContext"
                   value={additionalContext}
@@ -310,7 +326,8 @@ Format the document with proper headings, paragraphs, and structure. Make it pro
                 />
               </div>
               <p className="text-sm text-gray-500">
-                💡 Optional but helpful! Any style preferences, required sections, or special instructions.
+                💡 Optional but helpful! Any style preferences, required sections, or special
+                instructions.
               </p>
             </div>
           )}
@@ -327,7 +344,8 @@ Format the document with proper headings, paragraphs, and structure. Make it pro
                   htmlFor="includeResearch"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                  Allow AI to research additional context from the internet (may increase generation time)
+                  Allow AI to research additional context from the internet (may increase generation
+                  time)
                 </label>
               </div>
               <p className="text-sm text-gray-500">
@@ -336,15 +354,43 @@ Format the document with proper headings, paragraphs, and structure. Make it pro
 
               <div className="mt-8 p-4 border rounded-md bg-gray-50 dark:bg-gray-800">
                 <h4 className="font-semibold mb-2">Review your document settings:</h4>
-                <p><strong>Document Type:</strong> {documentType}</p>
-                <p><strong>Title:</strong> {title}</p>
-                <p><strong>Audience:</strong> {audience}</p>
-                <p><strong>Tone:</strong> {tone}</p>
-                <p><strong>Length:</strong> {length}</p>
-                {sectionsInput && <p><strong>Key Sections:</strong> {sectionsInput.split('\n').filter(s => s.trim().length > 0).join(', ')}</p>}
-                {keywordsInput && <p><strong>Keywords:</strong> {keywordsInput}</p>}
-                {additionalContext && <p><strong>Additional Context:</strong> {additionalContext}</p>}
-                <p><strong>Include Internet Research:</strong> {includeResearch ? "Yes" : "No"}</p>
+                <p>
+                  <strong>Document Type:</strong> {documentType}
+                </p>
+                <p>
+                  <strong>Title:</strong> {title}
+                </p>
+                <p>
+                  <strong>Audience:</strong> {audience}
+                </p>
+                <p>
+                  <strong>Tone:</strong> {tone}
+                </p>
+                <p>
+                  <strong>Length:</strong> {length}
+                </p>
+                {sectionsInput && (
+                  <p>
+                    <strong>Key Sections:</strong>{' '}
+                    {sectionsInput
+                      .split('\n')
+                      .filter((s) => s.trim().length > 0)
+                      .join(', ')}
+                  </p>
+                )}
+                {keywordsInput && (
+                  <p>
+                    <strong>Keywords:</strong> {keywordsInput}
+                  </p>
+                )}
+                {additionalContext && (
+                  <p>
+                    <strong>Additional Context:</strong> {additionalContext}
+                  </p>
+                )}
+                <p>
+                  <strong>Include Internet Research:</strong> {includeResearch ? 'Yes' : 'No'}
+                </p>
               </div>
             </div>
           )}
@@ -364,11 +410,7 @@ Format the document with proper headings, paragraphs, and structure. Make it pro
         </div>
 
         <DialogFooter className="flex justify-between">
-          <Button
-            variant="outline"
-            onClick={handleBack}
-            disabled={currentStep === 0 || generating}
-          >
+          <Button variant="outline" onClick={handleBack} disabled={currentStep === 0 || generating}>
             <ChevronLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
@@ -376,7 +418,7 @@ Format the document with proper headings, paragraphs, and structure. Make it pro
           <Button
             onClick={handleStepSubmit}
             disabled={generating || !isCurrentStepValid()}
-            className={currentStep === totalSteps - 1 ? "bg-purple-600 hover:bg-purple-700" : ""}
+            className={currentStep === totalSteps - 1 ? 'bg-purple-600 hover:bg-purple-700' : ''}
           >
             {generating ? (
               <>

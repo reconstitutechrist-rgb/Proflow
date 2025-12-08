@@ -1,16 +1,16 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { 
-      hasError: false, 
-      error: null, 
+    this.state = {
+      hasError: false,
+      error: null,
       errorInfo: null,
-      errorCount: 0 
+      errorCount: 0,
     };
   }
 
@@ -19,27 +19,27 @@ export class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("ErrorBoundary caught an error:", error, errorInfo);
-    
-    this.setState(prevState => ({
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+
+    this.setState((prevState) => ({
       error,
       errorInfo,
-      errorCount: prevState.errorCount + 1
+      errorCount: prevState.errorCount + 1,
     }));
 
     // Report to error tracking service if available
     if (window.errorTracker) {
       window.errorTracker.captureException(error, {
-        componentStack: errorInfo.componentStack
+        componentStack: errorInfo.componentStack,
       });
     }
   }
 
   handleReset = () => {
-    this.setState({ 
-      hasError: false, 
-      error: null, 
-      errorInfo: null 
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null,
     });
   };
 
@@ -76,11 +76,11 @@ export class ErrorBoundary extends React.Component {
               <div className="w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mb-4">
                 <AlertTriangle className="w-8 h-8 text-red-600 dark:text-red-400" />
               </div>
-              
+
               <h3 className="text-lg font-semibold text-red-900 dark:text-red-100 mb-2">
                 Something went wrong
               </h3>
-              
+
               <p className="text-red-700 dark:text-red-300 mb-6 max-w-md">
                 We encountered an unexpected error. This has been logged and we'll look into it.
               </p>
@@ -88,7 +88,8 @@ export class ErrorBoundary extends React.Component {
               {/* Error count warning */}
               {this.state.errorCount > 2 && (
                 <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg text-sm text-red-800 dark:text-red-200">
-                  ⚠️ This component has crashed {this.state.errorCount} times. There may be a persistent issue.
+                  ⚠️ This component has crashed {this.state.errorCount} times. There may be a
+                  persistent issue.
                 </div>
               )}
 
@@ -101,9 +102,9 @@ export class ErrorBoundary extends React.Component {
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Try Again
                 </Button>
-                
+
                 <Button
-                  onClick={() => window.location.href = '/'}
+                  onClick={() => (window.location.href = '/')}
                   className="bg-red-600 hover:bg-red-700 text-white"
                 >
                   <Home className="w-4 h-4 mr-2" />
@@ -119,14 +120,18 @@ export class ErrorBoundary extends React.Component {
                   </summary>
                   <div className="mt-3 space-y-3">
                     <div>
-                      <p className="text-xs font-semibold text-red-800 dark:text-red-200 mb-1">Error Message:</p>
+                      <p className="text-xs font-semibold text-red-800 dark:text-red-200 mb-1">
+                        Error Message:
+                      </p>
                       <pre className="text-xs text-red-700 dark:text-red-300 whitespace-pre-wrap break-all p-2 bg-red-50 dark:bg-red-950 rounded">
                         {this.state.error.toString()}
                       </pre>
                     </div>
                     {this.state.errorInfo && (
                       <div>
-                        <p className="text-xs font-semibold text-red-800 dark:text-red-200 mb-1">Component Stack:</p>
+                        <p className="text-xs font-semibold text-red-800 dark:text-red-200 mb-1">
+                          Component Stack:
+                        </p>
                         <pre className="text-xs text-red-700 dark:text-red-300 whitespace-pre-wrap break-all p-2 bg-red-50 dark:bg-red-950 rounded max-h-48 overflow-auto">
                           {this.state.errorInfo.componentStack}
                         </pre>

@@ -1,18 +1,7 @@
-import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Check,
-  X,
-  ArrowRight,
-  Info
-} from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Check, X, ArrowRight, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getChangeTypeBadgeColor } from '@/utils/diffUtils';
 
 /**
@@ -26,7 +15,7 @@ export default function ChangeItem({
   onAccept,
   onReject,
   showControls = true,
-  compact = false
+  compact = false,
 }) {
   const { type, originalText, suggestedText, reason } = change;
 
@@ -39,8 +28,8 @@ export default function ChangeItem({
   const statusClass = isAccepted
     ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20'
     : isRejected
-    ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 opacity-60'
-    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900';
+      ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 opacity-60'
+      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900';
 
   if (compact) {
     return (
@@ -48,9 +37,7 @@ export default function ChangeItem({
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
-              <Badge className={`text-xs ${getChangeTypeBadgeColor(type)}`}>
-                {type}
-              </Badge>
+              <Badge className={`text-xs ${getChangeTypeBadgeColor(type)}`}>{type}</Badge>
               {isAccepted && (
                 <Badge className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
                   <Check className="w-3 h-3 mr-1" />

@@ -8,27 +8,20 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Square,
-  ArrowRight,
-  Pencil,
-  Type,
-  Undo2,
-  Trash2
-} from 'lucide-react';
+import { Square, ArrowRight, Pencil, Type, Undo2, Trash2 } from 'lucide-react';
 
 const TOOLS = {
   RECTANGLE: 'rectangle',
   ARROW: 'arrow',
   FREEHAND: 'freehand',
-  TEXT: 'text'
+  TEXT: 'text',
 };
 
 const COLORS = {
   RED: '#ef4444',
   BLUE: '#3b82f6',
   GREEN: '#22c55e',
-  YELLOW: '#eab308'
+  YELLOW: '#eab308',
 };
 
 /**
@@ -38,7 +31,7 @@ export function ScreenshotAnnotator({
   screenshotDataUrl,
   annotations,
   onAnnotationsChange,
-  onClose
+  onClose,
 }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -76,7 +69,7 @@ export function ScreenshotAnnotator({
 
       setCanvasSize({
         width: img.width * scale,
-        height: img.height * scale
+        height: img.height * scale,
       });
       setImageLoaded(true);
     };
@@ -96,7 +89,7 @@ export function ScreenshotAnnotator({
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
     // Draw all saved annotations
-    annotations.forEach(ann => drawAnnotation(ctx, ann));
+    annotations.forEach((ann) => drawAnnotation(ctx, ann));
 
     // Draw current annotation being drawn
     if (currentAnnotation) {
@@ -132,26 +125,22 @@ export function ScreenshotAnnotator({
         if (ann.points && ann.points.length > 1) {
           ctx.beginPath();
           ctx.moveTo(ann.points[0].x, ann.points[0].y);
-          ann.points.forEach(point => ctx.lineTo(point.x, point.y));
+          ann.points.forEach((point) => ctx.lineTo(point.x, point.y));
           ctx.stroke();
         }
         break;
 
-      case TOOLS.TEXT:
+      case TOOLS.TEXT: {
         ctx.font = 'bold 16px system-ui, sans-serif';
         ctx.fillStyle = ann.color;
         // Draw text background
         const textMetrics = ctx.measureText(ann.text || 'Text');
         ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.fillRect(
-          ann.startX - 4,
-          ann.startY - 16,
-          textMetrics.width + 8,
-          22
-        );
+        ctx.fillRect(ann.startX - 4, ann.startY - 16, textMetrics.width + 8, 22);
         ctx.fillStyle = ann.color;
         ctx.fillText(ann.text || 'Text', ann.startX, ann.startY);
         break;
+      }
     }
   };
 
@@ -187,7 +176,7 @@ export function ScreenshotAnnotator({
     const rect = canvas.getBoundingClientRect();
     return {
       x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      y: e.clientY - rect.top,
     };
   };
 
@@ -211,7 +200,7 @@ export function ScreenshotAnnotator({
       endX: pos.x,
       endY: pos.y,
       points: tool === TOOLS.FREEHAND ? [pos] : undefined,
-      color
+      color,
     });
   };
 
@@ -222,7 +211,7 @@ export function ScreenshotAnnotator({
         startX: textInputPosition.x,
         startY: textInputPosition.y,
         text: textInputValue.trim(),
-        color
+        color,
       };
       onAnnotationsChange([...annotations, newAnnotation]);
     }
@@ -237,15 +226,15 @@ export function ScreenshotAnnotator({
     const pos = getMousePos(e);
 
     if (tool === TOOLS.FREEHAND) {
-      setCurrentAnnotation(prev => ({
+      setCurrentAnnotation((prev) => ({
         ...prev,
-        points: [...prev.points, pos]
+        points: [...prev.points, pos],
       }));
     } else {
-      setCurrentAnnotation(prev => ({
+      setCurrentAnnotation((prev) => ({
         ...prev,
         endX: pos.x,
-        endY: pos.y
+        endY: pos.y,
       }));
     }
   };
@@ -319,7 +308,11 @@ export function ScreenshotAnnotator({
         </div>
 
         {/* Color selection */}
-        <div className="flex items-center gap-1 ml-2" role="radiogroup" aria-label="Annotation color">
+        <div
+          className="flex items-center gap-1 ml-2"
+          role="radiogroup"
+          aria-label="Annotation color"
+        >
           {Object.entries(COLORS).map(([name, hex]) => (
             <button
               key={name}
@@ -358,12 +351,7 @@ export function ScreenshotAnnotator({
             <Trash2 className="w-4 h-4 mr-1" />
             Clear
           </Button>
-          <Button
-            variant="default"
-            size="sm"
-            onClick={onClose}
-            className="ml-2"
-          >
+          <Button variant="default" size="sm" onClick={onClose} className="ml-2">
             Done
           </Button>
         </div>
@@ -383,7 +371,7 @@ export function ScreenshotAnnotator({
             className="rounded-lg shadow-xl cursor-crosshair"
             style={{
               maxWidth: '100%',
-              maxHeight: '100%'
+              maxHeight: '100%',
             }}
             aria-label="Screenshot annotation canvas"
           />

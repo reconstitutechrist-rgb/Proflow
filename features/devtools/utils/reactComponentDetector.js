@@ -7,8 +7,7 @@ export function getComponentInfo(element) {
 
   // Find the React fiber key
   const fiberKey = Object.keys(element).find(
-    key => key.startsWith('__reactFiber$') ||
-           key.startsWith('__reactInternalInstance$')
+    (key) => key.startsWith('__reactFiber$') || key.startsWith('__reactInternalInstance$')
   );
 
   if (!fiberKey) {
@@ -24,9 +23,7 @@ export function getComponentInfo(element) {
     while (componentFiber) {
       if (typeof componentFiber.type === 'function') {
         const componentName =
-          componentFiber.type.displayName ||
-          componentFiber.type.name ||
-          'Anonymous';
+          componentFiber.type.displayName || componentFiber.type.name || 'Anonymous';
 
         // Get source file if available (dev mode with source maps)
         const source = componentFiber._debugSource;
@@ -55,7 +52,7 @@ export function getComponentInfo(element) {
           name: componentName,
           filePath,
           // Get a subset of props (avoid circular refs and functions)
-          props: getSerializableProps(componentFiber.memoizedProps)
+          props: getSerializableProps(componentFiber.memoizedProps),
         });
 
         // Stop after finding 3 components (enough context)
@@ -73,8 +70,8 @@ export function getComponentInfo(element) {
     return {
       componentName: components[0].name,
       filePath: components[0].filePath,
-      componentHierarchy: components.map(c => c.name),
-      props: components[0].props
+      componentHierarchy: components.map((c) => c.name),
+      props: components[0].props,
     };
   } catch (error) {
     console.warn('Error detecting React component:', error);

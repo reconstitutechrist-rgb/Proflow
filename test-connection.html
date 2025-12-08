@@ -1,59 +1,61 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
+  <head>
     <title>Supabase Connection Test</title>
     <script type="module">
-        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+      import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-        const supabaseUrl = 'https://rwkwmmigbkucayonhkyz.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3a3dtbWlnYmt1Y2F5b25oa3l6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5Mzk4NDEsImV4cCI6MjA3NzUxNTg0MX0.ht8nD4D5UNRNgccyxXSw3JSrOS-enEfzT4U6kb436QQ';
+      const supabaseUrl = 'https://rwkwmmigbkucayonhkyz.supabase.co';
+      const supabaseKey =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3a3dtbWlnYmt1Y2F5b25oa3l6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5Mzk4NDEsImV4cCI6MjA3NzUxNTg0MX0.ht8nD4D5UNRNgccyxXSw3JSrOS-enEfzT4U6kb436QQ';
 
-        const supabase = createClient(supabaseUrl, supabaseKey);
+      const supabase = createClient(supabaseUrl, supabaseKey);
 
-        async function testConnection() {
-            const results = document.getElementById('results');
-            results.innerHTML = '<p>Testing connection...</p>';
+      async function testConnection() {
+        const results = document.getElementById('results');
+        results.innerHTML = '<p>Testing connection...</p>';
 
-            try {
-                // Test 1: Check session
-                results.innerHTML += '<p>✓ Supabase client initialized</p>';
+        try {
+          // Test 1: Check session
+          results.innerHTML += '<p>✓ Supabase client initialized</p>';
 
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-                if (sessionError) {
-                    results.innerHTML += `<p>⚠ Session check: ${sessionError.message}</p>`;
-                } else {
-                    results.innerHTML += `<p>✓ Auth working (Session: ${session ? 'Active' : 'None'})</p>`;
-                }
+          const {
+            data: { session },
+            error: sessionError,
+          } = await supabase.auth.getSession();
+          if (sessionError) {
+            results.innerHTML += `<p>⚠ Session check: ${sessionError.message}</p>`;
+          } else {
+            results.innerHTML += `<p>✓ Auth working (Session: ${session ? 'Active' : 'None'})</p>`;
+          }
 
-                // Test 2: Try to query a table (will show if tables exist)
-                const { data, error } = await supabase
-                    .from('workspaces')
-                    .select('*')
-                    .limit(1);
+          // Test 2: Try to query a table (will show if tables exist)
+          const { data, error } = await supabase.from('workspaces').select('*').limit(1);
 
-                if (error) {
-                    if (error.code === '42P01') {
-                        results.innerHTML += '<p style="color: orange;">⚠ Connected! But table "workspaces" does not exist yet</p>';
-                    } else {
-                        results.innerHTML += `<p style="color: orange;">⚠ Connected! Error: ${error.message} (Code: ${error.code})</p>`;
-                    }
-                } else {
-                    results.innerHTML += '<p style="color: green;">✓ Database query successful!</p>';
-                    results.innerHTML += `<p>Found ${data?.length || 0} workspace(s)</p>`;
-                }
-
-                results.innerHTML += '<p style="color: green; font-weight: bold;">✓ SUPABASE CONNECTION SUCCESSFUL!</p>';
-
-            } catch (err) {
-                results.innerHTML += `<p style="color: red;">✗ Error: ${err.message}</p>`;
+          if (error) {
+            if (error.code === '42P01') {
+              results.innerHTML +=
+                '<p style="color: orange;">⚠ Connected! But table "workspaces" does not exist yet</p>';
+            } else {
+              results.innerHTML += `<p style="color: orange;">⚠ Connected! Error: ${error.message} (Code: ${error.code})</p>`;
             }
-        }
+          } else {
+            results.innerHTML += '<p style="color: green;">✓ Database query successful!</p>';
+            results.innerHTML += `<p>Found ${data?.length || 0} workspace(s)</p>`;
+          }
 
-        testConnection();
+          results.innerHTML +=
+            '<p style="color: green; font-weight: bold;">✓ SUPABASE CONNECTION SUCCESSFUL!</p>';
+        } catch (err) {
+          results.innerHTML += `<p style="color: red;">✗ Error: ${err.message}</p>`;
+        }
+      }
+
+      testConnection();
     </script>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Supabase Connection Test</h1>
     <div id="results"></div>
-</body>
+  </body>
 </html>

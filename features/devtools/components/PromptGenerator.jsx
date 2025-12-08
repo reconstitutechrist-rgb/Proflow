@@ -19,7 +19,7 @@ export function PromptGenerator({
   viewportSize,
   onDescriptionChange,
   onRequestedChangeChange,
-  onReset
+  onReset,
 }) {
   const [copied, setCopied] = React.useState(false);
 
@@ -35,16 +35,9 @@ export function PromptGenerator({
       viewportSize,
       requestedChange,
       hasAnnotatedScreenshot: !!screenshot.dataUrl,
-      annotationCount: screenshot.annotations?.length || 0
+      annotationCount: screenshot.annotations?.length || 0,
     });
-  }, [
-    issueDescription,
-    route,
-    selectedElement,
-    viewportSize,
-    requestedChange,
-    screenshot
-  ]);
+  }, [issueDescription, route, selectedElement, viewportSize, requestedChange, screenshot]);
 
   // Copy prompt to clipboard
   const handleCopy = async () => {
@@ -114,19 +107,17 @@ export function PromptGenerator({
               )}
               {selectedElement.componentName && (
                 <p>
-                  <span className="font-medium">Component:</span>{' '}
-                  {selectedElement.componentName}
+                  <span className="font-medium">Component:</span> {selectedElement.componentName}
                 </p>
               )}
               {selectedElement.componentPath && (
                 <p>
-                  <span className="font-medium">File:</span>{' '}
-                  {selectedElement.componentPath}
+                  <span className="font-medium">File:</span> {selectedElement.componentPath}
                 </p>
               )}
               <p>
-                <span className="font-medium">Viewport:</span>{' '}
-                {viewportSize.width}x{viewportSize.height}
+                <span className="font-medium">Viewport:</span> {viewportSize.width}x
+                {viewportSize.height}
               </p>
               {screenshot.dataUrl && (
                 <p>
@@ -151,11 +142,7 @@ export function PromptGenerator({
 
       {/* Action buttons */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-        <Button
-          onClick={handleCopy}
-          className="w-full"
-          disabled={!hasContent}
-        >
+        <Button onClick={handleCopy} className="w-full" disabled={!hasContent}>
           {copied ? (
             <>
               <Check className="w-4 h-4 mr-2" />
@@ -168,11 +155,7 @@ export function PromptGenerator({
             </>
           )}
         </Button>
-        <Button
-          variant="outline"
-          onClick={onReset}
-          className="w-full"
-        >
+        <Button variant="outline" onClick={onReset} className="w-full">
           <RefreshCw className="w-4 h-4 mr-2" />
           New Issue
         </Button>

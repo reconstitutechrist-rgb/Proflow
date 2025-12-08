@@ -32,7 +32,7 @@
 
 .spotlight-highlight {
   position: absolute;
-  border: 3px solid #4CAF50;
+  border: 3px solid #4caf50;
   border-radius: 8px;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
   pointer-events: none;
@@ -40,11 +40,16 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 20px #4CAF50;
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 9999px rgba(0, 0, 0, 0.7),
+      0 0 20px #4caf50;
   }
   50% {
-    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 30px #4CAF50;
+    box-shadow:
+      0 0 0 9999px rgba(0, 0, 0, 0.7),
+      0 0 30px #4caf50;
   }
 }
 
@@ -140,13 +145,13 @@
 }
 
 .progress-dot.active {
-  background: #4CAF50;
+  background: #4caf50;
   width: 24px;
   border-radius: 4px;
 }
 
 .progress-dot.completed {
-  background: #4CAF50;
+  background: #4caf50;
 }
 
 .tutorial-actions {
@@ -167,7 +172,7 @@
 }
 
 .tutorial-btn-primary {
-  background: #4CAF50;
+  background: #4caf50;
   color: white;
 }
 

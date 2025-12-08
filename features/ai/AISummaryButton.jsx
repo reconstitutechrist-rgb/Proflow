@@ -1,8 +1,7 @@
-
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
   Brain,
   Loader2,
@@ -18,8 +17,8 @@ import {
   ChevronUp,
   Sparkles,
   Calendar,
-  FolderOpen
-} from "lucide-react";
+  FolderOpen,
+} from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -27,31 +26,27 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Label } from "@/components/ui/label";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import { db } from "@/api/db";
+} from '@/components/ui/dialog';
+import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { db } from '@/api/db';
 
 export default function AISummaryButton({
-  contentType = "document", // Changed from 'type' to 'contentType'
+  contentType = 'document', // Changed from 'type' to 'contentType'
   contentId = null, // Changed from 'assignment_id' to 'contentId'
   content,
-  title = "Summary",
-  className = "",
-  variant = "default",
-  size = "default",
+  title = 'Summary',
+  className = '',
+  variant = 'default',
+  size = 'default',
   disabled = false,
   disabledMessage = null,
   onSummaryGenerated = null, // CRITICAL: New prop
   assignmentId = null, // For linking saved documents to assignments
-  projectId = null // For linking saved documents to projects
+  projectId = null, // For linking saved documents to projects
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -74,10 +69,10 @@ export default function AISummaryButton({
   // CRITICAL: Updated generateHash function
   const generateHash = (text) => {
     let hash = 0;
-    const str = text?.substring(0, 5000) || ""; // First 5000 chars for hash
+    const str = text?.substring(0, 5000) || ''; // First 5000 chars for hash
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
     return hash.toString(36); // Using base 36 for shorter hash
@@ -95,7 +90,8 @@ export default function AISummaryButton({
     const cutPoint = Math.max(lastPeriod, lastNewline);
 
     // Ensure the cut point is not too far back, aiming to cut near MAX_CONTENT_LENGTH
-    if (cutPoint > MAX_CONTENT_LENGTH * 0.9) { // If a natural break is within the last 10%
+    if (cutPoint > MAX_CONTENT_LENGTH * 0.9) {
+      // If a natural break is within the last 10%
       return truncated.substring(0, cutPoint + 1);
     }
     return truncated; // Fallback to hard truncation
@@ -109,12 +105,16 @@ export default function AISummaryButton({
       const contentHash = generateHash(content);
       // db already imported at top level
 
-      const existingSummaries = await db.entities.AISummary.filter({
-        workspace_id: currentWorkspaceId,
-        content_type: contentType,
-        content_id: contentId,
-        content_hash: contentHash
-      }, "-created_date", 1); // Filter by most recent
+      const existingSummaries = await db.entities.AISummary.filter(
+        {
+          workspace_id: currentWorkspaceId,
+          content_type: contentType,
+          content_id: contentId,
+          content_hash: contentHash,
+        },
+        '-created_date',
+        1
+      ); // Filter by most recent
 
       if (existingSummaries.length > 0) {
         const existingSummary = existingSummaries[0];
@@ -124,26 +124,25 @@ export default function AISummaryButton({
           const expiryDate = new Date(existingSummary.expires_at);
           if (expiryDate > new Date()) {
             setSummary(existingSummary);
-            toast.success("Loaded cached summary");
+            toast.success('Loaded cached summary');
             return;
           }
         } else {
           // If no expiry, consider it valid
           setSummary(existingSummary);
-          toast.success("Loaded cached summary");
+          toast.success('Loaded cached summary');
           return;
         }
       }
     } catch (error) {
-      console.error("Error checking existing summary:", error);
+      console.error('Error checking existing summary:', error);
       // Don't toast an error here, it's a background check
     }
   };
 
-
   const handleGenerateSummary = async () => {
     if (!content || !currentWorkspaceId) {
-      toast.error("No content to summarize or workspace not selected");
+      toast.error('No content to summarize or workspace not selected');
       return;
     }
 
@@ -164,11 +163,16 @@ export default function AISummaryButton({
       const contentHash = generateHash(content);
 
       // CRITICAL: Strip HTML tags if present
-      const strippedContent = content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      const strippedContent = content
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
       const processedContent = truncateContent(strippedContent);
 
       if (strippedContent.length > MAX_CONTENT_LENGTH) {
-        toast.warning("Content was truncated due to length. Summary will be based on the first ~12,500 words.");
+        toast.warning(
+          'Content was truncated due to length. Summary will be based on the first ~12,500 words.'
+        );
       }
 
       // CRITICAL: Updated prompt
@@ -190,27 +194,27 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
       const response = await db.integrations.Core.InvokeLLM({
         prompt: prompt,
         response_json_schema: {
-          type: "object",
+          type: 'object',
           properties: {
-            executive_summary: { type: "string" },
-            key_points: { type: "array", items: { type: "string" } },
+            executive_summary: { type: 'string' },
+            key_points: { type: 'array', items: { type: 'string' } },
             action_items: {
-              type: "array",
+              type: 'array',
               items: {
-                type: "object",
+                type: 'object',
                 properties: {
-                  task: { type: "string" },
-                  assignee: { type: "string" },
-                  priority: { type: "string" }
+                  task: { type: 'string' },
+                  assignee: { type: 'string' },
+                  priority: { type: 'string' },
                 },
-                required: ["task"] // Task is required for an action item
-              }
+                required: ['task'], // Task is required for an action item
+              },
             },
-            decisions: { type: "array", items: { type: "string" } },
-            dates: { type: "array", items: { type: "string" } }
+            decisions: { type: 'array', items: { type: 'string' } },
+            dates: { type: 'array', items: { type: 'string' } },
           },
-          required: ["executive_summary", "key_points"]
-        }
+          required: ['executive_summary', 'key_points'],
+        },
       });
 
       // CRITICAL: Fetch user for requested_by
@@ -232,7 +236,7 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
         word_count: processedContent.split(/\s+/).length,
         cached_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days cache
-        requested_by: user ? user.email : "system" // CRITICAL: User's email
+        requested_by: user ? user.email : 'system', // CRITICAL: User's email
       };
 
       const newSummary = await db.entities.AISummary.create(summaryData);
@@ -244,17 +248,21 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
         onSummaryGenerated(newSummary);
       }
 
-      toast.success("Summary generated successfully");
+      toast.success('Summary generated successfully');
     } catch (error) {
-      console.error("Error generating summary:", error);
+      console.error('Error generating summary:', error);
 
-      let errorMessage = "Failed to generate summary";
-      if (error.message?.includes("timeout")) {
-        errorMessage = "Request timed out. The content might be too large or the server is busy. Try again.";
-      } else if (error.message?.includes("rate limit")) {
-        errorMessage = "API rate limit reached. Please wait a moment and try again.";
-      } else if (error.message?.includes("token limit") || error.message?.includes("context length")) {
-        errorMessage = "Content exceeds token limits. Try with shorter content.";
+      let errorMessage = 'Failed to generate summary';
+      if (error.message?.includes('timeout')) {
+        errorMessage =
+          'Request timed out. The content might be too large or the server is busy. Try again.';
+      } else if (error.message?.includes('rate limit')) {
+        errorMessage = 'API rate limit reached. Please wait a moment and try again.';
+      } else if (
+        error.message?.includes('token limit') ||
+        error.message?.includes('context length')
+      ) {
+        errorMessage = 'Content exceeds token limits. Try with shorter content.';
       } else if (error.message) {
         errorMessage = `Error: ${error.message}`;
       }
@@ -269,7 +277,12 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
   const handleOpen = () => {
     setIsOpen(true);
     // Only generate if no summary is already loaded for the current content/workspace
-    if (!summary || summary.content_id !== contentId || summary.workspace_id !== currentWorkspaceId || summary.content_hash !== generateHash(content)) {
+    if (
+      !summary ||
+      summary.content_id !== contentId ||
+      summary.workspace_id !== currentWorkspaceId ||
+      summary.content_hash !== generateHash(content)
+    ) {
       handleGenerateSummary();
     }
   };
@@ -277,11 +290,16 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
   // CRITICAL: getPriorityColor logic adapted for simpler schema
   const getPriorityColor = (priority) => {
     switch (priority?.toLowerCase()) {
-      case 'urgent': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
-      case 'high': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
-      case 'medium': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
-      case 'low': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
+      case 'urgent':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+      case 'high':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
+      case 'medium':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+      case 'low':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
     }
   };
 
@@ -301,20 +319,20 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
     formattedSummary += `\n## Executive Summary\n${summary.executive_summary}\n`;
 
     if (summary.key_points && summary.key_points.length > 0) {
-      formattedSummary += `\n## Key Points\n${summary.key_points.map(point => `• ${point}`).join('\n')}\n`;
+      formattedSummary += `\n## Key Points\n${summary.key_points.map((point) => `• ${point}`).join('\n')}\n`;
     }
 
     if (summary.action_items && summary.action_items.length > 0) {
-      formattedSummary += `\n## Action Items\n${summary.action_items.map(item => formatActionItem(item)).join('\n')}\n`;
+      formattedSummary += `\n## Action Items\n${summary.action_items.map((item) => formatActionItem(item)).join('\n')}\n`;
     }
 
     if (summary.decisions && summary.decisions.length > 0) {
-      formattedSummary += `\n## Decisions Made\n${summary.decisions.map(decision => `• ${decision}`).join('\n')}\n`;
+      formattedSummary += `\n## Decisions Made\n${summary.decisions.map((decision) => `• ${decision}`).join('\n')}\n`;
     }
 
     // CRITICAL: New Dates section
     if (summary.dates && summary.dates.length > 0) {
-      formattedSummary += `\n## Important Dates/Deadlines\n${summary.dates.map(date => `• ${date}`).join('\n')}\n`;
+      formattedSummary += `\n## Important Dates/Deadlines\n${summary.dates.map((date) => `• ${date}`).join('\n')}\n`;
     }
 
     formattedSummary += `\n---\nGenerated: ${new Date().toLocaleString()}\n`;
@@ -324,7 +342,7 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
 
     navigator.clipboard.writeText(formattedSummary);
     setIsCopied(true);
-    toast.success("Summary copied to clipboard");
+    toast.success('Summary copied to clipboard');
     setTimeout(() => setIsCopied(false), 2000);
   };
 
@@ -336,20 +354,20 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
     formattedSummary += `\n## Executive Summary\n${summary.executive_summary}\n`;
 
     if (summary.key_points && summary.key_points.length > 0) {
-      formattedSummary += `\n## Key Points\n${summary.key_points.map(point => `• ${point}`).join('\n')}\n`;
+      formattedSummary += `\n## Key Points\n${summary.key_points.map((point) => `• ${point}`).join('\n')}\n`;
     }
 
     if (summary.action_items && summary.action_items.length > 0) {
-      formattedSummary += `\n## Action Items\n${summary.action_items.map(item => formatActionItem(item)).join('\n')}\n`;
+      formattedSummary += `\n## Action Items\n${summary.action_items.map((item) => formatActionItem(item)).join('\n')}\n`;
     }
 
     if (summary.decisions && summary.decisions.length > 0) {
-      formattedSummary += `\n## Decisions Made\n${summary.decisions.map(decision => `• ${decision}`).join('\n')}\n`;
+      formattedSummary += `\n## Decisions Made\n${summary.decisions.map((decision) => `• ${decision}`).join('\n')}\n`;
     }
 
     // CRITICAL: New Dates section
     if (summary.dates && summary.dates.length > 0) {
-      formattedSummary += `\n## Important Dates/Deadlines\n${summary.dates.map(date => `• ${date}`).join('\n')}\n`;
+      formattedSummary += `\n## Important Dates/Deadlines\n${summary.dates.map((date) => `• ${date}`).join('\n')}\n`;
     }
 
     formattedSummary += `\n---\nGenerated: ${new Date().toLocaleString()}\n`;
@@ -366,7 +384,7 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success("Summary downloaded");
+    toast.success('Summary downloaded');
   };
 
   const handleSaveAsDocument = async () => {
@@ -379,23 +397,23 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
       formattedContent += `\n## Executive Summary\n${summary.executive_summary}\n`;
 
       if (summary.key_points && summary.key_points.length > 0) {
-        formattedContent += `\n## Key Points\n${summary.key_points.map(point => `• ${point}`).join('\n')}\n`;
+        formattedContent += `\n## Key Points\n${summary.key_points.map((point) => `• ${point}`).join('\n')}\n`;
       }
 
       if (summary.action_items && summary.action_items.length > 0) {
         formattedContent += `\n## Action Items\n`;
-        summary.action_items.forEach(item => {
+        summary.action_items.forEach((item) => {
           formattedContent += `${formatActionItem(item)}\n`;
         });
       }
 
       if (summary.decisions && summary.decisions.length > 0) {
-        formattedContent += `\n## Decisions Made\n${summary.decisions.map(decision => `• ${decision}`).join('\n')}\n`;
+        formattedContent += `\n## Decisions Made\n${summary.decisions.map((decision) => `• ${decision}`).join('\n')}\n`;
       }
 
       // CRITICAL: New Dates section
       if (summary.dates && summary.dates.length > 0) {
-        formattedContent += `\n## Important Dates/Deadlines\n${summary.dates.map(date => `• ${date}`).join('\n')}\n`;
+        formattedContent += `\n## Important Dates/Deadlines\n${summary.dates.map((date) => `• ${date}`).join('\n')}\n`;
       }
 
       formattedContent += `\n---\nGenerated: ${new Date().toLocaleString()}\n`;
@@ -404,7 +422,11 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
       }
 
       const blob = new Blob([formattedContent], { type: 'text/plain' });
-      const file = new File([blob], `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_summary.txt`, { type: 'text/plain' });
+      const file = new File(
+        [blob],
+        `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_summary.txt`,
+        { type: 'text/plain' }
+      );
 
       // CRITICAL: Use db.integrations.Core.UploadFile
       // db already imported at top level
@@ -429,19 +451,19 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
         // AI analysis metadata
         ai_analysis: {
           summary: summary.executive_summary,
-          analysis_status: 'completed'
+          analysis_status: 'completed',
         },
         auto_generated: true,
-        folder_path: '/chat-summaries'
+        folder_path: '/chat-summaries',
       };
 
       await db.entities.Document.create(documentData);
 
-      toast.success("Summary saved as document");
+      toast.success('Summary saved as document');
       setIsOpen(false);
     } catch (error) {
-      console.error("Error saving summary as document:", error);
-      toast.error("Failed to save summary as document");
+      console.error('Error saving summary as document:', error);
+      toast.error('Failed to save summary as document');
     } finally {
       setIsSaving(false);
     }
@@ -455,7 +477,7 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
         onClick={handleOpen}
         className={className}
         disabled={disabled}
-        title={disabledMessage || "Generate AI Summary"}
+        title={disabledMessage || 'Generate AI Summary'}
       >
         <Brain className="w-4 h-4 mr-2" />
         AI Summary
@@ -468,7 +490,10 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
               <Brain className="w-6 h-6 text-purple-600" />
               {title}
               {summary && ( // Show badge if summary exists (implies it's a generated one)
-                <Badge variant="secondary" className="ml-2 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800">
+                <Badge
+                  variant="secondary"
+                  className="ml-2 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800"
+                >
                   <Sparkles className="w-3 h-3 mr-1" />
                   AI Generated
                 </Badge>
@@ -511,9 +536,7 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
                 <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                   Generation Failed
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  {generationError}
-                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{generationError}</p>
                 <Button
                   onClick={() => handleGenerateSummary()}
                   className="bg-purple-600 hover:bg-purple-700"
@@ -573,9 +596,7 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
                       {summary.key_points?.map((point, idx) => (
                         <li key={idx} className="flex items-start gap-2">
                           <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                          <span className="text-gray-900 dark:text-white">
-                            {point}
-                          </span>
+                          <span className="text-gray-900 dark:text-white">{point}</span>
                         </li>
                       ))}
                     </ul>
@@ -584,10 +605,8 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
                   {summary.confidence_score && (
                     <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">
-                          Confidence Score
-                        </span>
-                        <Badge variant={summary.confidence_score >= 80 ? "default" : "secondary"}>
+                        <span className="text-gray-600 dark:text-gray-400">Confidence Score</span>
+                        <Badge variant={summary.confidence_score >= 80 ? 'default' : 'secondary'}>
                           {summary.confidence_score}%
                         </Badge>
                       </div>
@@ -624,9 +643,7 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      No action items identified
-                    </div>
+                    <div className="text-center py-8 text-gray-500">No action items identified</div>
                   )}
                 </TabsContent>
 
@@ -641,17 +658,13 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
                         >
                           <div className="flex items-start gap-2">
                             <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                            <p className="text-gray-900 dark:text-white">
-                              {decision}
-                            </p>
+                            <p className="text-gray-900 dark:text-white">{decision}</p>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      No decisions recorded
-                    </div>
+                    <div className="text-center py-8 text-gray-500">No decisions recorded</div>
                   )}
                 </TabsContent>
 
@@ -666,9 +679,7 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
                         >
                           <div className="flex items-start gap-2">
                             <Calendar className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                            <p className="text-gray-900 dark:text-white">
-                              {date}
-                            </p>
+                            <p className="text-gray-900 dark:text-white">{date}</p>
                           </div>
                         </div>
                       ))}
@@ -685,11 +696,7 @@ Format as JSON with the following keys: executive_summary, key_points, action_it
 
           <DialogFooter className="border-t pt-4 flex justify-between">
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleCopy}
-                disabled={!summary || isGenerating}
-              >
+              <Button variant="outline" onClick={handleCopy} disabled={!summary || isGenerating}>
                 {isCopied ? (
                   <>
                     <CheckCircle className="w-4 h-4 mr-2" />

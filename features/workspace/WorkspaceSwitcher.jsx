@@ -18,7 +18,7 @@ import {
   Building2,
   Plus,
   Settings,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import WorkspaceModal from './WorkspaceModal';
@@ -61,7 +61,7 @@ export default function WorkspaceSwitcher() {
       setSwitching(true);
       await switchWorkspace(workspaceId);
     } catch (err) {
-      console.error("Error switching workspace:", err);
+      console.error('Error switching workspace:', err);
     } finally {
       setSwitching(false);
     }
@@ -111,7 +111,7 @@ export default function WorkspaceSwitcher() {
         <DropdownMenuLabel className="text-xs text-gray-500 uppercase tracking-wide">
           Your Workspaces
         </DropdownMenuLabel>
-        
+
         {availableWorkspaces.map((workspace) => {
           const isActive = workspace.id === currentWorkspace.id;
           return (
@@ -128,7 +128,10 @@ export default function WorkspaceSwitcher() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate" title={workspace.name}>
+                  <p
+                    className="text-sm font-medium text-gray-900 dark:text-white truncate"
+                    title={workspace.name}
+                  >
                     {workspace.name}
                   </p>
                   {isActive && (

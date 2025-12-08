@@ -1,8 +1,7 @@
-
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -10,14 +9,14 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import { toast } from "sonner";
-import { Loader2, Copy } from "lucide-react";
-import { db } from "@/api/db";
+} from '@/components/ui/dialog';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { toast } from 'sonner';
+import { Loader2, Copy } from 'lucide-react';
+import { db } from '@/api/db';
 
 export default function DocumentDuplicateDialog({ document, isOpen, onClose, onSuccess }) {
-  const [duplicateName, setDuplicateName] = useState("");
+  const [duplicateName, setDuplicateName] = useState('');
   const [duplicating, setDuplicating] = useState(false);
 
   const { currentWorkspaceId } = useWorkspace();
@@ -30,21 +29,21 @@ export default function DocumentDuplicateDialog({ document, isOpen, onClose, onS
 
   const handleDuplicate = async () => {
     if (!duplicateName.trim()) {
-      toast.error("Please enter a name for the duplicate");
+      toast.error('Please enter a name for the duplicate');
       return;
     }
 
     if (!currentWorkspaceId) {
-      toast.error("No workspace selected");
+      toast.error('No workspace selected');
       return;
     }
 
     // CRITICAL SECURITY CHECK: Validate original document is in current workspace
     if (document.workspace_id !== currentWorkspaceId) {
-      toast.error("Cannot duplicate documents from other workspaces");
-      console.error("Security violation: Attempted cross-workspace duplication", {
+      toast.error('Cannot duplicate documents from other workspaces');
+      console.error('Security violation: Attempted cross-workspace duplication', {
         documentWorkspace: document.workspace_id,
-        currentWorkspace: currentWorkspaceId
+        currentWorkspace: currentWorkspaceId,
       });
       return;
     }
@@ -60,21 +59,21 @@ export default function DocumentDuplicateDialog({ document, isOpen, onClose, onS
         created_date: undefined,
         updated_date: undefined,
         created_by: undefined,
-        
+
         // Set new values
         title: duplicateName,
-        workspace_id: currentWorkspaceId,  // CRITICAL: Explicitly set workspace_id
-        
+        workspace_id: currentWorkspaceId, // CRITICAL: Explicitly set workspace_id
+
         // Clear version history and analysis for fresh start
-        version: "1.0",
+        version: '1.0',
         version_history: [],
         ai_analysis: {
           ...document.ai_analysis,
-          analysis_status: "pending"
+          analysis_status: 'pending',
         },
-        
+
         // Clear embedding cache to force regeneration
-        embedding_cache: undefined
+        embedding_cache: undefined,
       };
 
       const newDocument = await db.entities.Document.create(duplicateData);
@@ -83,8 +82,8 @@ export default function DocumentDuplicateDialog({ document, isOpen, onClose, onS
       onClose();
       if (onSuccess) onSuccess(newDocument);
     } catch (error) {
-      console.error("Error duplicating document:", error);
-      toast.error("Failed to duplicate document");
+      console.error('Error duplicating document:', error);
+      toast.error('Failed to duplicate document');
     } finally {
       setDuplicating(false);
     }

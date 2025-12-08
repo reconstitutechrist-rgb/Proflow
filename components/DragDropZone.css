@@ -15,17 +15,17 @@
 }
 
 .drag-drop-zone:hover:not(.disabled) {
-  border-color: #4CAF50;
+  border-color: #4caf50;
   background: #f0f8f0;
 }
 
 .drag-drop-zone:focus {
-  outline: 2px solid #4CAF50;
+  outline: 2px solid #4caf50;
   outline-offset: 2px;
 }
 
 .drag-drop-zone.dragging {
-  border-color: #4CAF50;
+  border-color: #4caf50;
   background: #e8f5e9;
   border-style: solid;
   transform: scale(1.02);
@@ -51,7 +51,8 @@
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -64,7 +65,8 @@
 }
 
 @keyframes bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -79,7 +81,7 @@
 }
 
 .drop-text strong {
-  color: #4CAF50;
+  color: #4caf50;
   font-weight: 600;
 }
 

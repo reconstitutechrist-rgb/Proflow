@@ -1,7 +1,7 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import ChatSummaryButton from "@/features/chat/ChatSummaryButton";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import ChatSummaryButton from '@/features/chat/ChatSummaryButton';
 
 export function ChatHeader({
   currentThread,

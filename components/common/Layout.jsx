@@ -944,7 +944,7 @@ function LayoutContent({ children, currentPageName }) {
       <UnifiedAIAssistant />
 
       {/* Team Chat Bubble - wrapped in ErrorBoundary to prevent crashes */}
-      <ErrorBoundary minimal>
+      <ErrorBoundary showDetails>
         <TeamChatBubble />
       </ErrorBoundary>
 

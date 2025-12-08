@@ -256,8 +256,8 @@ export default function TaskExtractionPanel({
 
                           {/* Project */}
                           <Select
-                            value={task.project_id || ''}
-                            onValueChange={(v) => updateTask(index, 'project_id', v || null)}
+                            value={task.project_id || '__none__'}
+                            onValueChange={(v) => updateTask(index, 'project_id', v === '__none__' ? null : v)}
                           >
                             <SelectTrigger className="h-7 text-xs w-auto max-w-[140px]">
                               <div className="flex items-center gap-1">
@@ -266,7 +266,7 @@ export default function TaskExtractionPanel({
                               </div>
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">No project</SelectItem>
+                              <SelectItem value="__none__">No project</SelectItem>
                               {projects?.map((p) => (
                                 <SelectItem key={p.id} value={p.id}>
                                   {p.name}
@@ -277,8 +277,8 @@ export default function TaskExtractionPanel({
 
                           {/* Assignee */}
                           <Select
-                            value={task.assigned_to || ''}
-                            onValueChange={(v) => updateTask(index, 'assigned_to', v || null)}
+                            value={task.assigned_to || '__none__'}
+                            onValueChange={(v) => updateTask(index, 'assigned_to', v === '__none__' ? null : v)}
                           >
                             <SelectTrigger className="h-7 text-xs w-auto max-w-[140px]">
                               <div className="flex items-center gap-1">
@@ -287,7 +287,7 @@ export default function TaskExtractionPanel({
                               </div>
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">Unassigned</SelectItem>
+                              <SelectItem value="__none__">Unassigned</SelectItem>
                               {users?.map((u) => (
                                 <SelectItem key={u.email} value={u.email}>
                                   {u.full_name || u.email}

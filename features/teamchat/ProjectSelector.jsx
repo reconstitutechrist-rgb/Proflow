@@ -11,7 +11,7 @@ export default function ProjectSelector({ projects, selectedProjectId, onSelect 
   const selectedProject = projects?.find((p) => p.id === selectedProjectId);
 
   return (
-    <Select value={selectedProjectId || ''} onValueChange={(value) => onSelect(value || null)}>
+    <Select value={selectedProjectId || '__none__'} onValueChange={(value) => onSelect(value === '__none__' ? null : value)}>
       <SelectTrigger className="h-6 text-[10px] w-auto min-w-[100px] max-w-[180px] border-0 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 px-1">
         <div className="flex items-center gap-1 truncate">
           <FolderOpen className="w-3 h-3 text-gray-400 flex-shrink-0" />
@@ -27,7 +27,7 @@ export default function ProjectSelector({ projects, selectedProjectId, onSelect 
         </div>
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="">
+        <SelectItem value="__none__">
           <span className="text-gray-500">No project</span>
         </SelectItem>
         {projects?.map((project) => (

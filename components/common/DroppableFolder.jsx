@@ -1,16 +1,16 @@
-import React from "react";
-import { Droppable } from "@hello-pangea/dnd";
-import { Folder, FolderOpen, ChevronRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import React from 'react';
+import { Droppable } from '@hello-pangea/dnd';
+import { Folder, FolderOpen, ChevronRight } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
-export default function DroppableFolder({ 
-  folder, 
-  isExpanded, 
-  onToggle, 
+export default function DroppableFolder({
+  folder,
+  isExpanded,
+  onToggle,
   onNavigate,
   documentCount = 0,
   level = 0,
-  isDragOver = false
+  isDragOver = false,
 }) {
   const handleClick = (e) => {
     e.stopPropagation();
@@ -22,15 +22,12 @@ export default function DroppableFolder({
   return (
     <Droppable droppableId={`folder-${folder.path}`} type="DOCUMENT">
       {(provided, snapshot) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.droppableProps}
-        >
+        <div ref={provided.innerRef} {...provided.droppableProps}>
           <div
             onClick={handleClick}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all group ${
-              snapshot.isDraggingOver 
-                ? 'bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 border-2 border-blue-400 dark:border-blue-600 shadow-lg scale-105 transform' 
+              snapshot.isDraggingOver
+                ? 'bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 border-2 border-blue-400 dark:border-blue-600 shadow-lg scale-105 transform'
                 : 'hover:bg-gray-100 dark:hover:bg-gray-800 border-2 border-transparent'
             }`}
             style={{ paddingLeft: `${level * 16 + 12}px` }}
@@ -45,17 +42,19 @@ export default function DroppableFolder({
                 }}
                 className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
               >
-                <ChevronRight 
+                <ChevronRight
                   className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
                 />
               </button>
             )}
 
-            <div className={`transition-all ${
-              snapshot.isDraggingOver 
-                ? 'scale-110 text-blue-600 dark:text-blue-400' 
-                : 'text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400'
-            }`}>
+            <div
+              className={`transition-all ${
+                snapshot.isDraggingOver
+                  ? 'scale-110 text-blue-600 dark:text-blue-400'
+                  : 'text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400'
+              }`}
+            >
               {snapshot.isDraggingOver ? (
                 <FolderOpen className="w-5 h-5" />
               ) : isExpanded ? (
@@ -65,20 +64,22 @@ export default function DroppableFolder({
               )}
             </div>
 
-            <span className={`flex-1 text-sm font-medium transition-colors ${
-              snapshot.isDraggingOver 
-                ? 'text-blue-900 dark:text-blue-100 font-semibold' 
-                : 'text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400'
-            }`}>
+            <span
+              className={`flex-1 text-sm font-medium transition-colors ${
+                snapshot.isDraggingOver
+                  ? 'text-blue-900 dark:text-blue-100 font-semibold'
+                  : 'text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400'
+              }`}
+            >
               {folder.name}
             </span>
 
             {documentCount > 0 && (
-              <Badge 
-                variant="secondary" 
+              <Badge
+                variant="secondary"
                 className={`text-xs transition-all ${
-                  snapshot.isDraggingOver 
-                    ? 'bg-blue-200 text-blue-900 dark:bg-blue-800 dark:text-blue-100 scale-110' 
+                  snapshot.isDraggingOver
+                    ? 'bg-blue-200 text-blue-900 dark:bg-blue-800 dark:text-blue-100 scale-110'
                     : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                 }`}
               >

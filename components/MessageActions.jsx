@@ -1,7 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './MessageActions.css';
 
-const MessageActions = ({ message, onEdit, onCopy, onRegenerate, onDelete, position = 'right' }) => {
+const MessageActions = ({
+  message,
+  onEdit,
+  onCopy,
+  onRegenerate,
+  onDelete,
+  position = 'right',
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const menuRef = useRef(null);
@@ -57,9 +64,9 @@ const MessageActions = ({ message, onEdit, onCopy, onRegenerate, onDelete, posit
         aria-expanded={isOpen}
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-          <circle cx="8" cy="3" r="1.5"/>
-          <circle cx="8" cy="8" r="1.5"/>
-          <circle cx="8" cy="13" r="1.5"/>
+          <circle cx="8" cy="3" r="1.5" />
+          <circle cx="8" cy="8" r="1.5" />
+          <circle cx="8" cy="13" r="1.5" />
         </svg>
       </button>
 

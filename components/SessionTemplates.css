@@ -24,8 +24,12 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
@@ -98,13 +102,13 @@
 }
 
 .template-card:hover {
-  border-color: #4CAF50;
+  border-color: #4caf50;
   box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
   transform: translateY(-2px);
 }
 
 .template-card:focus {
-  outline: 2px solid #4CAF50;
+  outline: 2px solid #4caf50;
   outline-offset: 2px;
 }
 
@@ -138,7 +142,7 @@
 .setting-badge {
   padding: 4px 10px;
   background: #f0f8f0;
-  color: #4CAF50;
+  color: #4caf50;
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
@@ -168,7 +172,7 @@
 .template-select-btn {
   width: 100%;
   padding: 12px;
-  background: #4CAF50;
+  background: #4caf50;
   color: white;
   border: none;
   border-radius: 8px;

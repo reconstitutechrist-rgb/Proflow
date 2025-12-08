@@ -1,9 +1,8 @@
-
-import React, { useState, useEffect } from "react";
-import { db } from "@/api/db";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import React, { useState, useEffect } from 'react';
+import { db } from '@/api/db';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -11,22 +10,22 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Loader2, Share2 } from "lucide-react"; // Removed Upload, File, X; Added Share2
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import { toast } from "sonner";
+} from '@/components/ui/select';
+import { Loader2, Share2 } from 'lucide-react'; // Removed Upload, File, X; Added Share2
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { toast } from 'sonner';
 
 export default function FileShareDialog({ file, isOpen, onClose, onShared }) {
-  const [selectedThread, setSelectedThread] = useState("");
+  const [selectedThread, setSelectedThread] = useState('');
   const [threads, setThreads] = useState([]);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('');
   const [sharing, setSharing] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -45,15 +44,15 @@ export default function FileShareDialog({ file, isOpen, onClose, onShared }) {
       const threadsData = await db.entities.ConversationThread.filter(
         {
           workspace_id: currentWorkspaceId,
-          status: "active"
+          status: 'active',
         },
-        "-last_activity",
+        '-last_activity',
         50
       );
       setThreads(threadsData);
     } catch (error) {
-      console.error("Error loading threads:", error);
-      toast.error("Failed to load conversation threads");
+      console.error('Error loading threads:', error);
+      toast.error('Failed to load conversation threads');
     } finally {
       setLoading(false);
     }
@@ -61,12 +60,12 @@ export default function FileShareDialog({ file, isOpen, onClose, onShared }) {
 
   const handleShare = async () => {
     if (!selectedThread) {
-      toast.error("Please select a conversation thread");
+      toast.error('Please select a conversation thread');
       return;
     }
 
     if (!currentWorkspaceId) {
-      toast.error("No workspace selected");
+      toast.error('No workspace selected');
       return;
     }
 
@@ -76,26 +75,26 @@ export default function FileShareDialog({ file, isOpen, onClose, onShared }) {
       // CRITICAL SECURITY CHECK: Validate file is in current workspace
       // Assuming 'file' prop has a 'workspace_id' property for an existing file
       if (file?.workspace_id && file.workspace_id !== currentWorkspaceId) {
-        toast.error("Cannot share files from other workspaces");
-        console.error("Security violation: Attempted cross-workspace file share", {
+        toast.error('Cannot share files from other workspaces');
+        console.error('Security violation: Attempted cross-workspace file share', {
           fileWorkspace: file.workspace_id,
-          currentWorkspace: currentWorkspaceId
+          currentWorkspace: currentWorkspaceId,
         });
         return;
       }
 
       // CRITICAL SECURITY CHECK: Validate thread is in current workspace
-      const thread = threads.find(t => t.id === selectedThread);
+      const thread = threads.find((t) => t.id === selectedThread);
       if (!thread) {
-        toast.error("Selected thread not found");
+        toast.error('Selected thread not found');
         return;
       }
 
       if (thread.workspace_id !== currentWorkspaceId) {
-        toast.error("Cannot share to threads in other workspaces");
-        console.error("Security violation: Attempted cross-workspace thread share", {
+        toast.error('Cannot share to threads in other workspaces');
+        console.error('Security violation: Attempted cross-workspace thread share', {
           threadWorkspace: thread.workspace_id,
-          currentWorkspace: currentWorkspaceId
+          currentWorkspace: currentWorkspaceId,
         });
         return;
       }
@@ -104,16 +103,16 @@ export default function FileShareDialog({ file, isOpen, onClose, onShared }) {
 
       // Create message with file attachment in current workspace
       const messageData = {
-        workspace_id: currentWorkspaceId,  // CRITICAL: Explicit workspace_id
+        workspace_id: currentWorkspaceId, // CRITICAL: Explicit workspace_id
         content: message || `Shared file: ${file?.title || file?.file_name}`,
         assignment_id: thread.assignment_id,
         thread_id: selectedThread,
         author_email: user.email,
         author_name: user.full_name,
-        message_type: "file",
+        message_type: 'file',
         file_url: file?.file_url || file?.url,
         file_name: file?.title || file?.file_name,
-        linked_documents: file?.id ? [file.id] : []
+        linked_documents: file?.id ? [file.id] : [],
       };
 
       await db.entities.Message.create(messageData);
@@ -121,15 +120,15 @@ export default function FileShareDialog({ file, isOpen, onClose, onShared }) {
       // Update thread activity
       await db.entities.ConversationThread.update(selectedThread, {
         last_activity: new Date().toISOString(),
-        message_count: (thread.message_count || 0) + 1
+        message_count: (thread.message_count || 0) + 1,
       });
 
-      toast.success("File shared successfully");
+      toast.success('File shared successfully');
       onClose();
       if (onShared) onShared();
     } catch (error) {
-      console.error("Error sharing file:", error);
-      toast.error("Failed to share file");
+      console.error('Error sharing file:', error);
+      toast.error('Failed to share file');
     } finally {
       setSharing(false);
     }

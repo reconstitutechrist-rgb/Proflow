@@ -1,30 +1,29 @@
-
-import React, { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Bot,
   Send,
@@ -44,11 +43,11 @@ import {
   X,
   RefreshCw,
   Save,
-  Copy
-} from "lucide-react";
-import { InvokeLLM } from "@/api/integrations";
-import { Task } from "@/api/entities";
-import { toast } from "sonner";
+  Copy,
+} from 'lucide-react';
+import { InvokeLLM } from '@/api/integrations';
+import { Task } from '@/api/entities';
+import { toast } from 'sonner';
 import {
   format,
   parse,
@@ -70,12 +69,12 @@ import {
   nextSaturday,
   nextSunday,
   getDay,
-  setDay
-} from "date-fns";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+  setDay,
+} from 'date-fns';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
 const MAX_CONVERSATION_MESSAGES = 50;
-const DRAFT_STORAGE_KEY = "ai_task_maker_draft";
+const DRAFT_STORAGE_KEY = 'ai_task_maker_draft';
 const SIMILARITY_THRESHOLD = 0.7; // For duplicate detection
 
 export default function AIConversationalTaskMaker({
@@ -85,15 +84,19 @@ export default function AIConversationalTaskMaker({
   assignments = [], // KEPT: for display and dropdowns, but tasks will use assignmentId prop
   users = [],
   currentUser,
-  onTaskCreated // CHANGED: Singular callback for created tasks
+  onTaskCreated, // CHANGED: Singular callback for created tasks
 }) {
   const [messages, setMessages] = useState([]);
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [proposedTasks, setProposedTasks] = useState([]);
   const [editingTaskIndex, setEditingTaskIndex] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [creationProgress, setCreationProgress] = useState({ current: 0, total: 0, currentTask: "" });
+  const [creationProgress, setCreationProgress] = useState({
+    current: 0,
+    total: 0,
+    currentTask: '',
+  });
   const [failedTasks, setFailedTasks] = useState([]); // NEW: Track failed tasks
   const [existingTasks, setExistingTasks] = useState([]); // NEW: For duplicate detection
   const [duplicateWarnings, setDuplicateWarnings] = useState([]); // NEW: Track potential duplicates
@@ -112,7 +115,7 @@ export default function AIConversationalTaskMaker({
   }, [isOpen]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   useEffect(() => {
@@ -148,7 +151,7 @@ export default function AIConversationalTaskMaker({
       const tasks = await Task.list(filters);
       setExistingTasks(tasks);
     } catch (error) {
-      console.error("Error loading existing tasks:", error);
+      console.error('Error loading existing tasks:', error);
     }
   };
 
@@ -158,11 +161,11 @@ export default function AIConversationalTaskMaker({
       const draft = {
         messages: messages.slice(-20), // Save last 20 messages only
         proposedTasks,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
       localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
     } catch (error) {
-      console.error("Error saving draft:", error);
+      console.error('Error saving draft:', error);
     }
   };
 
@@ -183,14 +186,14 @@ export default function AIConversationalTaskMaker({
         // Ask user if they want to resume
         const resume = window.confirm(
           `You have an unsaved draft from ${new Date(draft.timestamp).toLocaleTimeString()}.\n\n` +
-          `${draft.proposedTasks.length} proposed task(s) found.\n\n` +
-          `Would you like to resume?`
+            `${draft.proposedTasks.length} proposed task(s) found.\n\n` +
+            `Would you like to resume?`
         );
 
         if (resume) {
           setMessages(draft.messages || []);
           setProposedTasks(draft.proposedTasks || []);
-          toast.success("Draft restored");
+          toast.success('Draft restored');
           return;
         }
       }
@@ -199,7 +202,7 @@ export default function AIConversationalTaskMaker({
       localStorage.removeItem(DRAFT_STORAGE_KEY);
       initializeConversation();
     } catch (error) {
-      console.error("Error loading draft:", error);
+      console.error('Error loading draft:', error);
       initializeConversation();
     }
   };
@@ -209,7 +212,7 @@ export default function AIConversationalTaskMaker({
     try {
       localStorage.removeItem(DRAFT_STORAGE_KEY);
     } catch (error) {
-      console.error("Error clearing draft:", error);
+      console.error('Error clearing draft:', error);
     }
   };
 
@@ -229,7 +232,7 @@ export default function AIConversationalTaskMaker({
 I'll extract all the details, suggest subtasks, identify dependencies, and let you review before creating anything.
 
 **What would you like to work on?**`,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     setMessages([welcomeMessage]);
@@ -245,7 +248,7 @@ I'll extract all the details, suggest subtasks, identify dependencies, and let y
 
   const validateUserEmail = (email) => {
     if (!email) return null;
-    const user = users.find(u => u.email === email);
+    const user = users.find((u) => u.email === email);
     return user ? email : null;
   };
 
@@ -302,17 +305,19 @@ I'll extract all the details, suggest subtasks, identify dependencies, and let y
       }
 
       // Next specific day of week
-      const dayMatch = lowerDate.match(/next\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/);
+      const dayMatch = lowerDate.match(
+        /next\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/
+      );
       if (dayMatch) {
         const dayName = dayMatch[1];
         const dayFunctions = {
-          'monday': nextMonday,
-          'tuesday': nextTuesday,
-          'wednesday': nextWednesday,
-          'thursday': nextThursday,
-          'friday': nextFriday,
-          'saturday': nextSaturday,
-          'sunday': nextSunday
+          monday: nextMonday,
+          tuesday: nextTuesday,
+          wednesday: nextWednesday,
+          thursday: nextThursday,
+          friday: nextFriday,
+          saturday: nextSaturday,
+          sunday: nextSunday,
         };
 
         if (dayFunctions[dayName]) {
@@ -321,10 +326,20 @@ I'll extract all the details, suggest subtasks, identify dependencies, and let y
       }
 
       // This/This coming [day]
-      const thisDayMatch = lowerDate.match(/(?:this|this coming)\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/);
+      const thisDayMatch = lowerDate.match(
+        /(?:this|this coming)\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/
+      );
       if (thisDayMatch) {
         const dayName = thisDayMatch[1];
-        const targetDay = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].indexOf(dayName);
+        const targetDay = [
+          'sunday',
+          'monday',
+          'tuesday',
+          'wednesday',
+          'thursday',
+          'friday',
+          'saturday',
+        ].indexOf(dayName);
         const currentDay = getDay(today);
 
         if (targetDay >= currentDay) {
@@ -368,19 +383,21 @@ I'll extract all the details, suggest subtasks, identify dependencies, and let y
 
       return null;
     } catch (error) {
-      console.error("Date parsing error:", error);
+      console.error('Date parsing error:', error);
       return null;
     }
   };
 
   const validateRecurrencePattern = (pattern) => {
-    if (!pattern) return { isValid: false, errors: ["Recurrence pattern is missing"] };
+    if (!pattern) return { isValid: false, errors: ['Recurrence pattern is missing'] };
 
     const errors = [];
 
     const validFrequencies = ['daily', 'weekly', 'monthly', 'yearly'];
     if (!pattern.frequency || !validFrequencies.includes(pattern.frequency)) {
-      errors.push(`Invalid frequency: "${pattern.frequency}". Must be one of: ${validFrequencies.join(', ')}`);
+      errors.push(
+        `Invalid frequency: "${pattern.frequency}". Must be one of: ${validFrequencies.join(', ')}`
+      );
     }
 
     if (pattern.interval !== undefined) {
@@ -391,19 +408,25 @@ I'll extract all the details, suggest subtasks, identify dependencies, and let y
 
     if (pattern.frequency === 'weekly' && pattern.days_of_week) {
       if (!Array.isArray(pattern.days_of_week)) {
-        errors.push("days_of_week must be an array");
+        errors.push('days_of_week must be an array');
       } else {
-        const invalidDays = pattern.days_of_week.filter(day =>
-          typeof day !== 'number' || day < 0 || day > 6
+        const invalidDays = pattern.days_of_week.filter(
+          (day) => typeof day !== 'number' || day < 0 || day > 6
         );
         if (invalidDays.length > 0) {
-          errors.push(`Invalid days_of_week: ${invalidDays.join(', ')}. Must be numbers 0-6 (0=Sunday)`);
+          errors.push(
+            `Invalid days_of_week: ${invalidDays.join(', ')}. Must be numbers 0-6 (0=Sunday)`
+          );
         }
       }
     }
 
     if (pattern.frequency === 'monthly' && pattern.day_of_month !== undefined) {
-      if (typeof pattern.day_of_month !== 'number' || pattern.day_of_month < 1 || pattern.day_of_month > 31) {
+      if (
+        typeof pattern.day_of_month !== 'number' ||
+        pattern.day_of_month < 1 ||
+        pattern.day_of_month > 31
+      ) {
         errors.push(`Invalid day_of_month: ${pattern.day_of_month}. Must be between 1 and 31`);
       }
     }
@@ -416,14 +439,18 @@ I'll extract all the details, suggest subtasks, identify dependencies, and let y
     }
 
     if (pattern.occurrences !== undefined) {
-      if (typeof pattern.occurrences !== 'number' || pattern.occurrences < 1 || pattern.occurrences > 1000) {
+      if (
+        typeof pattern.occurrences !== 'number' ||
+        pattern.occurrences < 1 ||
+        pattern.occurrences > 1000
+      ) {
         errors.push(`Invalid occurrences: ${pattern.occurrences}. Must be between 1 and 1000`);
       }
     }
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   };
 
@@ -450,7 +477,7 @@ I'll extract all the details, suggest subtasks, identify dependencies, and let y
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   };
 
@@ -466,7 +493,7 @@ I'll extract all the details, suggest subtasks, identify dependencies, and let y
     const words1 = new Set(s1.split(/\s+/));
     const words2 = new Set(s2.split(/\s+/));
 
-    const intersection = new Set([...words1].filter(word => words2.has(word)));
+    const intersection = new Set([...words1].filter((word) => words2.has(word)));
     const union = new Set([...words1, ...words2]);
 
     return intersection.size / union.size;
@@ -493,9 +520,9 @@ I'll extract all the details, suggest subtasks, identify dependencies, and let y
           similarity: titleSimilarity,
           reasons: [
             `${Math.round(titleSimilarity * 100)}% title match`,
-            sameAssignment && "Same assignment",
-            sameAssignee && "Same assignee"
-          ].filter(Boolean)
+            sameAssignment && 'Same assignment',
+            sameAssignee && 'Same assignee',
+          ].filter(Boolean),
         });
       }
     }
@@ -507,25 +534,30 @@ I'll extract all the details, suggest subtasks, identify dependencies, and let y
     const errors = [];
 
     if (!task.title || typeof task.title !== 'string' || !task.title.trim()) {
-      errors.push("Task must have a title");
+      errors.push('Task must have a title');
     }
 
     // Workspace ID validation
     if (!currentWorkspaceId) {
-        errors.push("Current workspace ID is missing. Cannot create task.");
+      errors.push('Current workspace ID is missing. Cannot create task.');
     }
 
     // Assignment ID validation (enforce the prop value)
     if (!assignmentId) {
-        errors.push("Target assignment ID is missing from component props. Cannot create task.");
+      errors.push('Target assignment ID is missing from component props. Cannot create task.');
     } else if (task.assignment_id && task.assignment_id !== assignmentId) {
-        // AI suggested a different assignment, warn but enforce the prop
-        errors.push(`AI suggested assignment "${task.assignment_id}" but tasks must be created for "${assignmentId}". Overriding.`);
+      // AI suggested a different assignment, warn but enforce the prop
+      errors.push(
+        `AI suggested assignment "${task.assignment_id}" but tasks must be created for "${assignmentId}". Overriding.`
+      );
     }
 
     const validatedUser = validateUserEmail(task.assigned_to);
-    if (!validatedUser && task.assigned_to) { // Only add error if an assignee was specified but invalid
-      errors.push(`Invalid user: ${task.assigned_to}. Please use an email from the available team members.`);
+    if (!validatedUser && task.assigned_to) {
+      // Only add error if an assignee was specified but invalid
+      errors.push(
+        `Invalid user: ${task.assigned_to}. Please use an email from the available team members.`
+      );
     }
 
     if (task.priority && !['low', 'medium', 'high', 'urgent'].includes(task.priority)) {
@@ -539,7 +571,7 @@ I'll extract all the details, suggest subtasks, identify dependencies, and let y
     if (task.is_recurring && task.recurrence_pattern) {
       const recurrenceValidation = validateRecurrencePattern(task.recurrence_pattern);
       if (!recurrenceValidation.isValid) {
-        errors.push(...recurrenceValidation.errors.map(e => `Recurrence: ${e}`));
+        errors.push(...recurrenceValidation.errors.map((e) => `Recurrence: ${e}`));
       }
     }
 
@@ -552,7 +584,7 @@ I'll extract all the details, suggest subtasks, identify dependencies, and let y
 
     // ADDED: Skill requirements validation (basic array check)
     if (task.skill_requirements && !Array.isArray(task.skill_requirements)) {
-      errors.push("Skill requirements must be an array of strings.");
+      errors.push('Skill requirements must be an array of strings.');
     }
 
     return {
@@ -562,10 +594,10 @@ I'll extract all the details, suggest subtasks, identify dependencies, and let y
         ...task,
         workspace_id: currentWorkspaceId, // Ensure workspace_id is always set
         assignment_id: assignmentId, // Ensure assignment_id is always set from prop
-        assigned_to: validatedUser || (currentUser?.email || ""), // Default to current user if invalid or not specified
+        assigned_to: validatedUser || currentUser?.email || '', // Default to current user if invalid or not specified
         due_date: task.due_date ? parseDateString(task.due_date) : null,
         skill_requirements: Array.isArray(task.skill_requirements) ? task.skill_requirements : [], // Ensure it's an array
-      }
+      },
     };
   };
 
@@ -574,25 +606,25 @@ I'll extract all the details, suggest subtasks, identify dependencies, and let y
     if (!text || isProcessing) return;
 
     if (!assignmentId || !currentWorkspaceId) {
-      toast.error("Component is not properly configured (missing assignment ID or workspace ID).");
+      toast.error('Component is not properly configured (missing assignment ID or workspace ID).');
       return;
     }
 
     if (users.length === 0) {
-      toast.error("No users available. Please check your team setup.");
+      toast.error('No users available. Please check your team setup.');
       return;
     }
 
-    setInputValue("");
+    setInputValue('');
 
     const userMessage = {
       id: 'msg_' + Date.now(),
       role: 'user',
       content: text,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
-    setMessages(prev => {
+    setMessages((prev) => {
       const updated = [...prev, userMessage];
       if (updated.length > MAX_CONVERSATION_MESSAGES) {
         return updated.slice(-MAX_CONVERSATION_MESSAGES);
@@ -605,14 +637,15 @@ I'll extract all the details, suggest subtasks, identify dependencies, and let y
 
     try {
       // The AI should not select assignments, it should use the provided assignmentId
-      const targetAssignment = assignments.find(a => a.id === assignmentId);
+      const targetAssignment = assignments.find((a) => a.id === assignmentId);
       const targetAssignmentInfo = targetAssignment
         ? `- Current Target Assignment: ${targetAssignment.name} (ID: ${targetAssignment.id})`
         : `- Current Target Assignment ID: ${assignmentId} (Name Unknown)`;
 
-      const usersList = users.slice(0, 20).map(u =>
-        `- ${u.full_name || u.email} (${u.email})`
-      ).join('\n');
+      const usersList = users
+        .slice(0, 20)
+        .map((u) => `- ${u.full_name || u.email} (${u.email})`)
+        .join('\n');
 
       const systemPrompt = `You are an intelligent task creation assistant for ProjectFlow. Your job is to parse natural language task descriptions and create structured task objects.
 
@@ -698,80 +731,81 @@ ${usersList}
       const response = await InvokeLLM({
         prompt: systemPrompt,
         response_json_schema: {
-          type: "object",
+          type: 'object',
           properties: {
-            analysis: { type: "string" },
+            analysis: { type: 'string' },
             tasks: {
-              type: "array",
+              type: 'array',
               items: {
-                type: "object",
+                type: 'object',
                 properties: {
-                  title: { type: "string" },
-                  description: { type: "string" },
-                  assignment_id: { type: "string" },
-                  assigned_to: { type: "string" },
-                  status: { type: "string" },
-                  priority: { type: "string" },
-                  due_date: { type: "string" },
-                  estimated_effort: { type: "number" },
-                  skill_requirements: { // ADDED: skill_requirements to schema
-                    type: "array",
-                    items: { type: "string" }
+                  title: { type: 'string' },
+                  description: { type: 'string' },
+                  assignment_id: { type: 'string' },
+                  assigned_to: { type: 'string' },
+                  status: { type: 'string' },
+                  priority: { type: 'string' },
+                  due_date: { type: 'string' },
+                  estimated_effort: { type: 'number' },
+                  skill_requirements: {
+                    // ADDED: skill_requirements to schema
+                    type: 'array',
+                    items: { type: 'string' },
                   },
                   subtasks: {
-                    type: "array",
+                    type: 'array',
                     items: {
-                      type: "object",
+                      type: 'object',
                       properties: {
-                        title: { type: "string" },
-                        description: { type: "string" }
-                      }
-                    }
+                        title: { type: 'string' },
+                        description: { type: 'string' },
+                      },
+                    },
                   },
-                  is_recurring: { type: "boolean" },
+                  is_recurring: { type: 'boolean' },
                   recurrence_pattern: {
-                    type: "object",
+                    type: 'object',
                     properties: {
-                      frequency: { type: "string" },
-                      interval: { type: "number" },
+                      frequency: { type: 'string' },
+                      interval: { type: 'number' },
                       days_of_week: {
-                        type: "array",
-                        items: { type: "number" }
-                      }
-                    }
+                        type: 'array',
+                        items: { type: 'number' },
+                      },
+                    },
                   },
                   checklist_items: {
-                    type: "array",
-                    items: { type: "string" }
+                    type: 'array',
+                    items: { type: 'string' },
                   },
                   dependencies: {
-                    type: "array",
-                    items: { type: "string" }
+                    type: 'array',
+                    items: { type: 'string' },
                   },
-                  reasoning: { type: "string" }
+                  reasoning: { type: 'string' },
                 },
-                required: ["title"]
-              }
+                required: ['title'],
+              },
             },
             suggestions: {
-              type: "array",
-              items: { type: "string" }
+              type: 'array',
+              items: { type: 'string' },
             },
             warnings: {
-              type: "array",
-              items: { type: "string" }
-            }
+              type: 'array',
+              items: { type: 'string' },
+            },
           },
-          required: ["analysis", "tasks"]
-        }
+          required: ['analysis', 'tasks'],
+        },
       });
 
       if (!response || typeof response !== 'object') {
-        throw new Error("Invalid AI response: not an object");
+        throw new Error('Invalid AI response: not an object');
       }
 
       if (!Array.isArray(response.tasks)) {
-        throw new Error("Invalid AI response: tasks is not an array");
+        throw new Error('Invalid AI response: tasks is not an array');
       }
 
       const validatedTasks = [];
@@ -790,13 +824,15 @@ ${usersList}
           if (duplicates.length > 0) {
             detectedDuplicates.push({
               task: validatedTask,
-              duplicates
+              duplicates,
             });
           }
 
           validatedTasks.push(validatedTask);
         } else {
-          validationErrors.push(`Task ${i + 1} ("${task.title || 'untitled'}"): ${validation.errors.join(', ')}`);
+          validationErrors.push(
+            `Task ${i + 1} ("${task.title || 'untitled'}"): ${validation.errors.join(', ')}`
+          );
           if (task.title) {
             // Push even invalid tasks to proposedTasks for user to review/edit
             // The validatedTask will contain the enforced assignment_id and workspace_id
@@ -806,13 +842,15 @@ ${usersList}
       }
 
       if (validatedTasks.length === 0) {
-        throw new Error("No valid tasks could be extracted from your request. Please try being more specific.");
+        throw new Error(
+          'No valid tasks could be extracted from your request. Please try being more specific.'
+        );
       }
 
       // NEW: Add duplicate warnings
       if (detectedDuplicates.length > 0) {
         detectedDuplicates.forEach(({ task, duplicates }) => {
-          duplicates.forEach(dup => {
+          duplicates.forEach((dup) => {
             validationErrors.push(
               `⚠️ "${task.title}" might be a duplicate of "${dup.existingTask.title}" (${dup.reasons.join(', ')})`
             );
@@ -825,14 +863,15 @@ ${usersList}
       const aiMessage = {
         id: 'msg_' + (Date.now() + 1),
         role: 'assistant',
-        content: response.analysis || "I've analyzed your request and prepared the following tasks:",
+        content:
+          response.analysis || "I've analyzed your request and prepared the following tasks:",
         timestamp: new Date().toISOString(),
         tasks: validatedTasks,
         suggestions: response.suggestions || [],
-        warnings: [...(response.warnings || []), ...validationErrors].filter(Boolean)
+        warnings: [...(response.warnings || []), ...validationErrors].filter(Boolean),
       };
 
-      setMessages(prev => {
+      setMessages((prev) => {
         const updated = [...prev, aiMessage];
         if (updated.length > MAX_CONVERSATION_MESSAGES) {
           return updated.slice(-MAX_CONVERSATION_MESSAGES);
@@ -843,28 +882,29 @@ ${usersList}
       setProposedTasks(validatedTasks);
 
       if (validationErrors.length > 0) {
-        toast.warning("Some tasks had validation issues. Please review.");
+        toast.warning('Some tasks had validation issues. Please review.');
       }
-
     } catch (error) {
-      console.error("Error processing request:", error);
+      console.error('Error processing request:', error);
 
       const errorMessage = {
         id: 'msg_' + (Date.now() + 1),
         role: 'assistant',
-        content: error.message || "I apologize, but I encountered an error processing your request. Please try rephrasing or simplifying your request.",
+        content:
+          error.message ||
+          'I apologize, but I encountered an error processing your request. Please try rephrasing or simplifying your request.',
         timestamp: new Date().toISOString(),
-        error: true
+        error: true,
       };
 
-      setMessages(prev => {
+      setMessages((prev) => {
         const updated = [...prev, errorMessage];
         if (updated.length > MAX_CONVERSATION_MESSAGES) {
           return updated.slice(-MAX_CONVERSATION_MESSAGES);
         }
         return updated;
       });
-      toast.error("Failed to process request");
+      toast.error('Failed to process request');
     } finally {
       setIsProcessing(false);
       abortControllerRef.current = null;
@@ -883,54 +923,56 @@ ${usersList}
       return;
     }
 
-    setProposedTasks(prev => {
+    setProposedTasks((prev) => {
       const updated = [...prev];
       updated[index] = validation.validatedTask;
       return updated;
     });
     setEditingTaskIndex(null);
-    toast.success("Task updated");
+    toast.success('Task updated');
   };
 
   const handleDeleteTask = (index) => {
-    setProposedTasks(prev => prev.filter((_, i) => i !== index));
-    toast.success("Task removed");
+    setProposedTasks((prev) => prev.filter((_, i) => i !== index));
+    toast.success('Task removed');
   };
 
   const handleCreateTasks = async () => {
     if (proposedTasks.length === 0) {
-      toast.error("No tasks to create");
+      toast.error('No tasks to create');
       return;
     }
 
     // Pre-validate all tasks before starting creation
-    const invalidTasks = proposedTasks.filter(task => {
+    const invalidTasks = proposedTasks.filter((task) => {
       const validation = validateTaskStructure(task);
       return !validation.isValid;
     });
 
     if (invalidTasks.length > 0) {
-      toast.error(`${invalidTasks.length} task(s) have validation errors. Please review and fix them.`);
+      toast.error(
+        `${invalidTasks.length} task(s) have validation errors. Please review and fix them.`
+      );
       return;
     }
 
     // Ensure we have workspaceId before proceeding
     if (!currentWorkspaceId) {
-      toast.error("Cannot create tasks: Workspace ID is not available.");
+      toast.error('Cannot create tasks: Workspace ID is not available.');
       return;
     }
     if (!assignmentId) {
-      toast.error("Cannot create tasks: Target Assignment ID is not available.");
+      toast.error('Cannot create tasks: Target Assignment ID is not available.');
       return;
     }
 
     setIsCreating(true);
-    setCreationProgress({ current: 0, total: proposedTasks.length, currentTask: "" });
+    setCreationProgress({ current: 0, total: proposedTasks.length, currentTask: '' });
     setFailedTasks([]); // NEW: Reset failed tasks
 
     const results = {
       successful: [],
-      failed: []
+      failed: [],
     };
 
     try {
@@ -940,35 +982,35 @@ ${usersList}
         setCreationProgress({
           current: i + 1,
           total: proposedTasks.length,
-          currentTask: taskData.title
+          currentTask: taskData.title,
         });
 
         try {
           const taskToCreate = {
             workspace_id: currentWorkspaceId, // ADDED: Workspace scoping
             title: taskData.title,
-            description: taskData.description || "",
+            description: taskData.description || '',
             assignment_id: assignmentId, // ENFORCED: Use the prop assignmentId
             assigned_to: taskData.assigned_to,
-            assigned_by: currentUser?.email || "",
-            status: taskData.status || "todo",
-            priority: taskData.priority || "medium",
+            assigned_by: currentUser?.email || '',
+            status: taskData.status || 'todo',
+            priority: taskData.priority || 'medium',
             due_date: taskData.due_date || null,
             estimated_effort: taskData.estimated_effort || null,
             skill_requirements: taskData.skill_requirements || [], // ADDED: Skill requirements
             auto_generated: true,
             generation_source: {
-              source_type: "ai_conversation",
+              source_type: 'ai_conversation',
               confidence: 95,
-              reasoning: taskData.reasoning || "Created via AI Conversational Task Maker"
-            }
+              reasoning: taskData.reasoning || 'Created via AI Conversational Task Maker',
+            },
           };
 
           if (taskData.checklist_items && taskData.checklist_items.length > 0) {
             taskToCreate.checklist = taskData.checklist_items.map((item, idx) => ({
               id: `check_${Date.now()}_${idx}`,
               text: item,
-              completed: false
+              completed: false,
             }));
           }
 
@@ -978,7 +1020,10 @@ ${usersList}
               taskToCreate.is_recurring = true;
               taskToCreate.recurrence_pattern = taskData.recurrence_pattern;
             } else {
-              console.warn(`Skipping invalid recurrence pattern for task "${taskData.title}":`, recurrenceValidation.errors);
+              console.warn(
+                `Skipping invalid recurrence pattern for task "${taskData.title}":`,
+                recurrenceValidation.errors
+              );
             }
           }
 
@@ -998,27 +1043,27 @@ ${usersList}
               results.failed.push({
                 task: taskData,
                 error: `Subtask validation failed: ${subtasksValidation.errors.join(', ')}`,
-                parentCreated: true
+                parentCreated: true,
               });
             } else {
-              const subtaskPromises = taskData.subtasks.map(subtask =>
+              const subtaskPromises = taskData.subtasks.map((subtask) =>
                 Task.create({
                   workspace_id: currentWorkspaceId, // ADDED: Workspace scoping for subtasks
                   title: subtask.title,
-                  description: subtask.description || "",
+                  description: subtask.description || '',
                   assignment_id: assignmentId, // ENFORCED: Use the prop assignmentId for subtasks
                   assigned_to: taskToCreate.assigned_to,
-                  assigned_by: currentUser?.email || "",
-                  status: "todo",
+                  assigned_by: currentUser?.email || '',
+                  status: 'todo',
                   priority: taskToCreate.priority,
                   due_date: taskToCreate.due_date,
                   parent_task_id: createdTask.id,
                   auto_generated: true,
                   generation_source: {
-                    source_type: "ai_conversation",
+                    source_type: 'ai_conversation',
                     confidence: 90,
-                    reasoning: `Subtask of: ${taskData.title}`
-                  }
+                    reasoning: `Subtask of: ${taskData.title}`,
+                  },
                 })
               );
 
@@ -1032,7 +1077,7 @@ ${usersList}
                 } else {
                   failedSubtasks.push({
                     subtask: taskData.subtasks[idx],
-                    error: result.reason?.message || 'Unknown error'
+                    error: result.reason?.message || 'Unknown error',
                   });
                 }
               });
@@ -1040,7 +1085,7 @@ ${usersList}
               // Update parent with successful subtask IDs
               if (createdSubtasks.length > 0) {
                 await Task.update(createdTask.id, {
-                  subtask_ids: createdSubtasks.map(st => st.id)
+                  subtask_ids: createdSubtasks.map((st) => st.id),
                 });
                 results.successful.push(...createdSubtasks);
               }
@@ -1051,24 +1096,23 @@ ${usersList}
                   task: taskData,
                   error: `${failedSubtasks.length} subtask(s) failed to create`,
                   failedSubtasks,
-                  parentCreated: true
+                  parentCreated: true,
                 });
               }
             }
           }
-
         } catch (taskError) {
           console.error(`Error creating task "${taskData.title}":`, taskError);
           results.failed.push({
             task: taskData,
-            error: taskError.message || "Unknown error",
-            parentCreated: false
+            error: taskError.message || 'Unknown error',
+            parentCreated: false,
           });
         }
       }
 
-      const successCount = results.successful.filter(t => !t.parent_task_id).length;
-      const subtaskCount = results.successful.filter(t => t.parent_task_id).length;
+      const successCount = results.successful.filter((t) => !t.parent_task_id).length;
+      const subtaskCount = results.successful.filter((t) => t.parent_task_id).length;
       const failCount = results.failed.length;
 
       if (failCount === 0) {
@@ -1086,14 +1130,12 @@ ${usersList}
         toast.error(`Failed to create all ${failCount} task(s).`);
         setFailedTasks(results.failed); // NEW: Store failed tasks for retry
       }
-
-
     } catch (error) {
-      console.error("Error in task creation process:", error);
-      toast.error("An unexpected error occurred during task creation");
+      console.error('Error in task creation process:', error);
+      toast.error('An unexpected error occurred during task creation');
     } finally {
       setIsCreating(false);
-      setCreationProgress({ current: 0, total: 0, currentTask: "" });
+      setCreationProgress({ current: 0, total: 0, currentTask: '' });
     }
   };
 
@@ -1101,7 +1143,7 @@ ${usersList}
   const handleRetryFailed = async () => {
     if (failedTasks.length === 0) return;
 
-    const tasksToRetry = failedTasks.filter(f => !f.parentCreated).map(f => f.task);
+    const tasksToRetry = failedTasks.filter((f) => !f.parentCreated).map((f) => f.task);
     setProposedTasks(tasksToRetry);
     setFailedTasks([]);
     toast.info(`${tasksToRetry.length} task(s) ready to retry`);
@@ -1124,12 +1166,12 @@ ${usersList}
 
     clearDraftFromStorage(); // NEW: Clear draft on close
     setMessages([]);
-    setInputValue("");
+    setInputValue('');
     setProposedTasks([]);
     setEditingTaskIndex(null);
     setIsProcessing(false);
     setIsCreating(false);
-    setCreationProgress({ current: 0, total: 0, currentTask: "" });
+    setCreationProgress({ current: 0, total: 0, currentTask: '' });
     setFailedTasks([]); // NEW: Clear failed tasks
     setDuplicateWarnings([]); // NEW: Clear duplicate warnings
     onClose();
@@ -1144,10 +1186,10 @@ ${usersList}
 
   const getPriorityColor = (priority) => {
     const colors = {
-      low: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-      medium: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
-      high: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
-      urgent: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+      low: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+      medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+      high: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+      urgent: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
     };
     return colors[priority] || colors.medium;
   };
@@ -1197,8 +1239,8 @@ ${usersList}
                       message.role === 'user'
                         ? 'bg-indigo-600 text-white'
                         : message.error
-                        ? 'bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-100 border border-red-200 dark:border-red-800'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
+                          ? 'bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-100 border border-red-200 dark:border-red-800'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
                     }`}
                   >
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -1211,7 +1253,9 @@ ${usersList}
                         </p>
                         <div className="space-y-1">
                           {message.warnings.map((warning, idx) => (
-                            <p key={idx} className="text-xs text-yellow-600 dark:text-yellow-400">• {warning}</p>
+                            <p key={idx} className="text-xs text-yellow-600 dark:text-yellow-400">
+                              • {warning}
+                            </p>
                           ))}
                         </div>
                       </div>
@@ -1225,7 +1269,9 @@ ${usersList}
                         </p>
                         <div className="space-y-1">
                           {message.suggestions.map((suggestion, idx) => (
-                            <p key={idx} className="text-xs opacity-80">• {suggestion}</p>
+                            <p key={idx} className="text-xs opacity-80">
+                              • {suggestion}
+                            </p>
                           ))}
                         </div>
                       </div>
@@ -1312,12 +1358,7 @@ ${usersList}
                 <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100 mb-2">
                   {failedTasks.length} task(s) failed to create
                 </p>
-                <Button
-                  onClick={handleRetryFailed}
-                  size="sm"
-                  variant="outline"
-                  className="w-full"
-                >
+                <Button onClick={handleRetryFailed} size="sm" variant="outline" className="w-full">
                   <RefreshCw className="w-3 h-3 mr-2" />
                   Retry Failed Tasks
                 </Button>
@@ -1339,7 +1380,9 @@ ${usersList}
                     <div className="w-full bg-blue-200 dark:bg-blue-900 rounded-full h-2 mb-2">
                       <div
                         className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${(creationProgress.current / creationProgress.total) * 100}%` }}
+                        style={{
+                          width: `${(creationProgress.current / creationProgress.total) * 100}%`,
+                        }}
                       />
                     </div>
                     {creationProgress.currentTask && (
@@ -1387,7 +1430,7 @@ function TaskProposalCard({
   onDelete,
   getPriorityColor,
   assignments, // KEPT: for dropdown and display
-  users
+  users,
 }) {
   const [editedTask, setEditedTask] = useState(task);
 
@@ -1401,7 +1444,10 @@ function TaskProposalCard({
   const handleSkillRequirementsChange = (e) => {
     setEditedTask({
       ...editedTask,
-      skill_requirements: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+      skill_requirements: e.target.value
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
     });
   };
 
@@ -1417,7 +1463,7 @@ function TaskProposalCard({
           />
 
           <Textarea
-            value={editedTask.description || ""}
+            value={editedTask.description || ''}
             onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
             placeholder="Description"
             className="min-h-[60px]"
@@ -1425,7 +1471,7 @@ function TaskProposalCard({
 
           <div className="grid grid-cols-2 gap-2">
             <Select
-              value={editedTask.priority || "medium"}
+              value={editedTask.priority || 'medium'}
               onValueChange={(value) => setEditedTask({ ...editedTask, priority: value })}
             >
               <SelectTrigger>
@@ -1441,27 +1487,33 @@ function TaskProposalCard({
 
             <Input
               type="date"
-              value={editedTask.due_date || ""}
+              value={editedTask.due_date || ''}
               onChange={(e) => setEditedTask({ ...editedTask, due_date: e.target.value })}
             />
           </div>
 
           <Input
             type="number"
-            value={editedTask.estimated_effort || ""}
-            onChange={(e) => setEditedTask({ ...editedTask, estimated_effort: parseFloat(e.target.value) || null })}
+            value={editedTask.estimated_effort || ''}
+            onChange={(e) =>
+              setEditedTask({ ...editedTask, estimated_effort: parseFloat(e.target.value) || null })
+            }
             placeholder="Estimated effort (hours)"
           />
 
           {/* ADDED: Skill Requirements Input */}
           <Input
-            value={Array.isArray(editedTask.skill_requirements) ? editedTask.skill_requirements.join(', ') : ''}
+            value={
+              Array.isArray(editedTask.skill_requirements)
+                ? editedTask.skill_requirements.join(', ')
+                : ''
+            }
             onChange={handleSkillRequirementsChange}
             placeholder="Skill requirements (comma-separated)"
           />
 
           <Select
-            value={editedTask.assignment_id || ""}
+            value={editedTask.assignment_id || ''}
             onValueChange={(value) => setEditedTask({ ...editedTask, assignment_id: value })}
             disabled // Assignment ID is now fixed by prop, not editable here
           >
@@ -1469,7 +1521,7 @@ function TaskProposalCard({
               <SelectValue placeholder="Select assignment" />
             </SelectTrigger>
             <SelectContent>
-              {assignments.map(assignment => (
+              {assignments.map((assignment) => (
                 <SelectItem key={assignment.id} value={assignment.id}>
                   {assignment.name}
                 </SelectItem>
@@ -1478,14 +1530,14 @@ function TaskProposalCard({
           </Select>
 
           <Select
-            value={editedTask.assigned_to || ""}
+            value={editedTask.assigned_to || ''}
             onValueChange={(value) => setEditedTask({ ...editedTask, assigned_to: value })}
           >
             <SelectTrigger>
               <SelectValue placeholder="Assign to" />
             </SelectTrigger>
             <SelectContent>
-              {users.map(user => (
+              {users.map((user) => (
                 <SelectItem key={user.email} value={user.email}>
                   {user.full_name || user.email}
                 </SelectItem>
@@ -1494,11 +1546,7 @@ function TaskProposalCard({
           </Select>
 
           <div className="flex gap-2 justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onCancel}
-            >
+            <Button variant="outline" size="sm" onClick={onCancel}>
               Cancel
             </Button>
             <Button
@@ -1576,14 +1624,14 @@ function TaskProposalCard({
             <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
               <UserIcon className="w-3 h-3" />
               <span className="truncate">
-                {users.find(u => u.email === task.assigned_to)?.full_name || task.assigned_to}
+                {users.find((u) => u.email === task.assigned_to)?.full_name || task.assigned_to}
               </span>
             </div>
           )}
 
           {task.assignment_id && (
             <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-              📁 {assignments.find(a => a.id === task.assignment_id)?.name || task.assignment_id}
+              📁 {assignments.find((a) => a.id === task.assignment_id)?.name || task.assignment_id}
             </div>
           )}
 
@@ -1626,7 +1674,9 @@ function TaskProposalCard({
                   </p>
                 ))}
                 {task.checklist.length > 3 && (
-                  <p className="text-xs text-gray-500 dark:text-gray-500">+{task.checklist.length - 3} more</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                    +{task.checklist.length - 3} more
+                  </p>
                 )}
               </div>
             </div>
@@ -1645,7 +1695,9 @@ function TaskProposalCard({
                   </p>
                 ))}
                 {task.checklist_items.length > 3 && (
-                  <p className="text-xs text-gray-500 dark:text-gray-500">+{task.checklist_items.length - 3} more</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                    +{task.checklist_items.length - 3} more
+                  </p>
                 )}
               </div>
             </div>
@@ -1653,9 +1705,7 @@ function TaskProposalCard({
 
           {task.reasoning && (
             <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-              <p className="text-xs text-gray-500 dark:text-gray-400 italic">
-                💡 {task.reasoning}
-              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 italic">💡 {task.reasoning}</p>
             </div>
           )}
         </div>

@@ -62,17 +62,18 @@ After analyzing the Proflow codebase, this document provides comprehensive sugge
 
 export const createRealtimeConnection = (workspaceId, handlers) => {
   const eventSource = new EventSource(`/api/workspaces/${workspaceId}/events`);
-  
+
   eventSource.addEventListener('message:new', handlers.onNewMessage);
   eventSource.addEventListener('document:update', handlers.onDocumentUpdate);
   eventSource.addEventListener('task:update', handlers.onTaskUpdate);
   eventSource.addEventListener('presence:update', handlers.onPresenceUpdate);
-  
+
   return eventSource;
 };
 ```
 
 **Benefits:**
+
 - Instant message delivery instead of 5-second delay
 - Reduced server load (no polling)
 - Better user experience
@@ -89,27 +90,30 @@ export const createRealtimeConnection = (workspaceId, handlers) => {
 ```jsx
 // Create new component: components/collaboration/PresenceIndicator.jsx
 
-export default function PresenceIndicator({ userEmail, size = "sm" }) {
+export default function PresenceIndicator({ userEmail, size = 'sm' }) {
   const { presence } = usePresence(userEmail);
-  
+
   const statusColors = {
-    online: "bg-green-500",
-    away: "bg-yellow-500", 
-    busy: "bg-red-500",
-    offline: "bg-gray-400"
+    online: 'bg-green-500',
+    away: 'bg-yellow-500',
+    busy: 'bg-red-500',
+    offline: 'bg-gray-400',
   };
-  
+
   return (
     <div className={`relative ${sizeClasses[size]}`}>
       <Avatar>...</Avatar>
-      <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full 
-        ${statusColors[presence.status]} border-2 border-white`} />
+      <span
+        className={`absolute bottom-0 right-0 w-3 h-3 rounded-full 
+        ${statusColors[presence.status]} border-2 border-white`}
+      />
     </div>
   );
 }
 ```
 
 **Implementation Areas:**
+
 - Add presence indicator to User cards in team directory
 - Show online status in chat participant list
 - Display activity status in assignment team member lists
@@ -130,11 +134,11 @@ export default function PresenceIndicator({ userEmail, size = "sm" }) {
 export default function MentionInput({ value, onChange, users }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
-  
+
   const handleInputChange = (e) => {
     const text = e.target.value;
     const mentionMatch = text.match(/@(\w*)$/);
-    
+
     if (mentionMatch) {
       setMentionQuery(mentionMatch[1]);
       setShowSuggestions(true);
@@ -143,16 +147,12 @@ export default function MentionInput({ value, onChange, users }) {
     }
     onChange(text);
   };
-  
+
   return (
     <div className="relative">
       <Textarea value={value} onChange={handleInputChange} />
       {showSuggestions && (
-        <MentionSuggestions 
-          query={mentionQuery}
-          users={users}
-          onSelect={handleMentionSelect}
-        />
+        <MentionSuggestions query={mentionQuery} users={users} onSelect={handleMentionSelect} />
       )}
     </div>
   );
@@ -160,6 +160,7 @@ export default function MentionInput({ value, onChange, users }) {
 ```
 
 **Additional Features:**
+
 - Mention groups/teams (e.g., @engineering)
 - Notification bell for mentions
 - Mention history/mentions I was tagged in
@@ -182,27 +183,25 @@ import { useQuillBinding } from 'y-quill';
 
 export default function CollaborativeEditor({ documentId }) {
   const [cursors, setCursors] = useState({});
-  
+
   useEffect(() => {
     const ydoc = new Y.Doc();
-    const provider = new WebsocketProvider(
-      'wss://your-server.com/collab',
-      documentId,
-      ydoc
-    );
-    
+    const provider = new WebsocketProvider('wss://your-server.com/collab', documentId, ydoc);
+
     // Track other users' cursors
     provider.awareness.on('change', () => {
       const states = Array.from(provider.awareness.getStates().entries());
-      setCursors(states.reduce((acc, [clientId, state]) => {
-        if (state.cursor) acc[clientId] = state.cursor;
-        return acc;
-      }, {}));
+      setCursors(
+        states.reduce((acc, [clientId, state]) => {
+          if (state.cursor) acc[clientId] = state.cursor;
+          return acc;
+        }, {})
+      );
     });
-    
+
     return () => provider.destroy();
   }, [documentId]);
-  
+
   return (
     <div className="relative">
       <QuillEditor yDoc={ydoc} />
@@ -215,6 +214,7 @@ export default function CollaborativeEditor({ documentId }) {
 ```
 
 **Features to Add:**
+
 - Multiple users editing simultaneously
 - Colored cursors showing each user's position
 - "Who's viewing" indicator
@@ -234,7 +234,7 @@ export default function CollaborativeEditor({ documentId }) {
 
 export default function NotificationCenter() {
   const { notifications, markAsRead, clearAll } = useNotifications();
-  
+
   const groupedNotifications = useMemo(() => {
     return notifications.reduce((groups, notif) => {
       const date = formatDate(notif.created_at);
@@ -243,28 +243,27 @@ export default function NotificationCenter() {
       return groups;
     }, {});
   }, [notifications]);
-  
+
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="ghost" className="relative">
           <Bell className="w-5 h-5" />
-          {notifications.filter(n => !n.read).length > 0 && (
+          {notifications.filter((n) => !n.read).length > 0 && (
             <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center">
-              {notifications.filter(n => !n.read).length}
+              {notifications.filter((n) => !n.read).length}
             </Badge>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80">
-        {/* Notification list with grouping */}
-      </PopoverContent>
+      <PopoverContent className="w-80">{/* Notification list with grouping */}</PopoverContent>
     </Popover>
   );
 }
 ```
 
 **Notification Types to Support:**
+
 - New mentions
 - Task assignments
 - Document comments
@@ -287,7 +286,7 @@ export default function NotificationCenter() {
 
 export default function TeamActivityFeed({ workspaceId }) {
   const { activities, loading, hasMore, loadMore } = useActivityFeed(workspaceId);
-  
+
   return (
     <Card>
       <CardHeader>
@@ -306,11 +305,7 @@ export default function TeamActivityFeed({ workspaceId }) {
         </div>
       </CardHeader>
       <CardContent>
-        <VirtualizedActivityList 
-          activities={activities}
-          onLoadMore={loadMore}
-          hasMore={hasMore}
-        />
+        <VirtualizedActivityList activities={activities} onLoadMore={loadMore} hasMore={hasMore} />
       </CardContent>
     </Card>
   );
@@ -318,6 +313,7 @@ export default function TeamActivityFeed({ workspaceId }) {
 ```
 
 **Features:**
+
 - Filterable by activity type
 - Virtualized list for performance
 - Rich activity context (links, previews)
@@ -337,40 +333,37 @@ export default function TeamActivityFeed({ workspaceId }) {
 
 export default function InviteDialog({ workspaceId, isOpen, onClose }) {
   const [invites, setInvites] = useState([{ email: '', role: 'team_member' }]);
-  
+
   const handleSendInvites = async () => {
-    const invitePromises = invites.map(invite => 
+    const invitePromises = invites.map((invite) =>
       db.entities.WorkspaceInvite.create({
         workspace_id: workspaceId,
         invited_email: invite.email,
         role: invite.role,
         invited_by: currentUser.email,
         status: 'pending',
-        expires_at: addDays(new Date(), 7).toISOString()
+        expires_at: addDays(new Date(), 7).toISOString(),
       })
     );
-    
+
     await Promise.all(invitePromises);
     // Send email notifications
     toast.success(`Invitations sent to ${invites.length} people`);
     onClose();
   };
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogTitle>Invite Team Members</DialogTitle>
         {invites.map((invite, idx) => (
           <div key={idx} className="flex gap-2">
-            <Input 
+            <Input
               placeholder="Email address"
               value={invite.email}
               onChange={(e) => updateInvite(idx, 'email', e.target.value)}
             />
-            <Select 
-              value={invite.role}
-              onValueChange={(role) => updateInvite(idx, 'role', role)}
-            >
+            <Select value={invite.role} onValueChange={(role) => updateInvite(idx, 'role', role)}>
               <SelectItem value="team_member">Team Member</SelectItem>
               <SelectItem value="project_manager">Project Manager</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
@@ -406,34 +399,34 @@ export default function InviteDialog({ workspaceId, isOpen, onClose }) {
 
 export default function ShareButton({ document, onShare }) {
   const [permissions, setPermissions] = useState([]);
-  
+
   const handleShare = async (email, permission) => {
     await db.entities.DocumentPermission.create({
       document_id: document.id,
       user_email: email,
       permission_level: permission, // 'view', 'comment', 'edit'
       granted_by: currentUser.email,
-      granted_at: new Date().toISOString()
+      granted_at: new Date().toISOString(),
     });
-    
+
     // Send notification to the user
     await db.entities.Notification.create({
       recipient_email: email,
       type: 'document_shared',
       title: `${currentUser.full_name} shared a document with you`,
       content: `You now have ${permission} access to "${document.title}"`,
-      link: `/Documents?id=${document.id}`
+      link: `/Documents?id=${document.id}`,
     });
-    
+
     toast.success(`Document shared with ${email}`);
     onShare?.();
   };
-  
+
   return (
     <Dialog>
       <DialogContent>
         <DialogTitle>Share Document</DialogTitle>
-        
+
         {/* Link sharing section */}
         <div className="border rounded-lg p-4">
           <div className="flex items-center justify-between">
@@ -448,18 +441,18 @@ export default function ShareButton({ document, onShare }) {
             <Copy className="w-4 h-4 mr-2" /> Copy Link
           </Button>
         </div>
-        
+
         {/* Individual sharing */}
         <Separator />
         <div>
           <h4>Share with people</h4>
           <ShareUserInput onShare={handleShare} />
         </div>
-        
+
         {/* Current permissions list */}
         <div>
           <h4>People with access</h4>
-          <PermissionsList 
+          <PermissionsList
             permissions={permissions}
             onRemove={handleRemovePermission}
             onUpdate={handleUpdatePermission}
@@ -486,31 +479,31 @@ const TaskNotificationTypes = {
   DUE_SOON: 'task_due_soon',
   OVERDUE: 'task_overdue',
   STATUS_CHANGED: 'task_status_changed',
-  COMMENT_ADDED: 'task_comment_added'
+  COMMENT_ADDED: 'task_comment_added',
 };
 
 export const sendTaskNotification = async (task, type, recipient) => {
   const templates = {
     [TaskNotificationTypes.ASSIGNED]: {
       title: 'New task assigned to you',
-      content: `"${task.title}" has been assigned to you by ${task.assigned_by}`
+      content: `"${task.title}" has been assigned to you by ${task.assigned_by}`,
     },
     [TaskNotificationTypes.DUE_SOON]: {
       title: 'Task due soon',
-      content: `"${task.title}" is due in ${getTimeUntilDue(task.due_date)}`
+      content: `"${task.title}" is due in ${getTimeUntilDue(task.due_date)}`,
     },
     [TaskNotificationTypes.OVERDUE]: {
       title: 'Overdue task reminder',
-      content: `"${task.title}" is overdue by ${getOverdueTime(task.due_date)}`
-    }
+      content: `"${task.title}" is overdue by ${getOverdueTime(task.due_date)}`,
+    },
   };
-  
+
   await db.entities.Notification.create({
     recipient_email: recipient,
     type,
     ...templates[type],
     link: `/Tasks?task=${task.id}`,
-    workspace_id: task.workspace_id
+    workspace_id: task.workspace_id,
   });
 };
 ```
@@ -526,27 +519,26 @@ export const sendTaskNotification = async (task, type, recipient) => {
 
 export default function WorkloadDashboard() {
   const { users, tasks, assignments } = useWorkloadData();
-  
+
   const workloadByUser = useMemo(() => {
-    return users.map(user => ({
+    return users.map((user) => ({
       user,
-      activeTasks: tasks.filter(t => 
-        t.assigned_to === user.email && t.status !== 'completed'
+      activeTasks: tasks.filter((t) => t.assigned_to === user.email && t.status !== 'completed')
+        .length,
+      completedTasks: tasks.filter((t) => t.assigned_to === user.email && t.status === 'completed')
+        .length,
+      overdueTasks: tasks.filter(
+        (t) =>
+          t.assigned_to === user.email &&
+          new Date(t.due_date) < new Date() &&
+          t.status !== 'completed'
       ).length,
-      completedTasks: tasks.filter(t => 
-        t.assigned_to === user.email && t.status === 'completed'
+      activeAssignments: assignments.filter(
+        (a) => a.team_members?.includes(user.email) && a.status === 'in_progress'
       ).length,
-      overdueTasks: tasks.filter(t => 
-        t.assigned_to === user.email && 
-        new Date(t.due_date) < new Date() && 
-        t.status !== 'completed'
-      ).length,
-      activeAssignments: assignments.filter(a => 
-        a.team_members?.includes(user.email) && a.status === 'in_progress'
-      ).length
     }));
   }, [users, tasks, assignments]);
-  
+
   return (
     <Card>
       <CardHeader>
@@ -563,13 +555,15 @@ export default function WorkloadDashboard() {
             <Bar dataKey="overdueTasks" fill="#EF4444" name="Overdue" />
           </BarChart>
         </ResponsiveContainer>
-        
+
         {/* Workload warnings */}
-        {workloadByUser.filter(w => w.activeTasks > 10).map(w => (
-          <Alert key={w.user.email} variant="warning">
-            {w.user.full_name} has {w.activeTasks} active tasks - consider redistributing
-          </Alert>
-        ))}
+        {workloadByUser
+          .filter((w) => w.activeTasks > 10)
+          .map((w) => (
+            <Alert key={w.user.email} variant="warning">
+              {w.user.full_name} has {w.activeTasks} active tasks - consider redistributing
+            </Alert>
+          ))}
       </CardContent>
     </Card>
   );
@@ -581,18 +575,16 @@ export default function WorkloadDashboard() {
 ## 🔧 Quick Wins (Easy to Implement)
 
 ### 1. Add "Assign to Me" Quick Button
+
 ```jsx
 // In TaskBoard.jsx - add quick self-assignment
-<Button 
-  variant="ghost" 
-  size="sm"
-  onClick={() => handleAssign(task.id, currentUser.email)}
->
+<Button variant="ghost" size="sm" onClick={() => handleAssign(task.id, currentUser.email)}>
   <UserPlus className="w-4 h-4" /> Assign to me
 </Button>
 ```
 
 ### 2. Show Last Activity on Documents
+
 ```jsx
 // In Documents.jsx - display last editor
 <p className="text-xs text-gray-500">
@@ -601,6 +593,7 @@ export default function WorkloadDashboard() {
 ```
 
 ### 3. Add Quick Reply in Document Comments
+
 ```jsx
 // Quick reply button that opens inline input
 <Button variant="ghost" size="sm" onClick={() => setQuickReplyId(comment.id)}>
@@ -609,15 +602,22 @@ export default function WorkloadDashboard() {
 ```
 
 ### 4. Keyboard Shortcuts for Common Actions
+
 ```jsx
 // Add to Layout.jsx
 useEffect(() => {
   const handleKeyDown = (e) => {
     if (e.metaKey || e.ctrlKey) {
       switch (e.key) {
-        case 'k': setSearchOpen(true); break;
-        case 'n': openNewTaskDialog(); break;
-        case 'd': openNewDocDialog(); break;
+        case 'k':
+          setSearchOpen(true);
+          break;
+        case 'n':
+          openNewTaskDialog();
+          break;
+        case 'd':
+          openNewDocDialog();
+          break;
       }
     }
   };
@@ -627,33 +627,34 @@ useEffect(() => {
 ```
 
 ### 5. Add Team Member Avatars to Task Cards
+
 ```jsx
 // In TaskItem.jsx - show assigned user avatar
-{task.assigned_to && (
-  <Avatar className="w-6 h-6">
-    <AvatarFallback className="text-xs">
-      {getUserInitials(task.assigned_to)}
-    </AvatarFallback>
-  </Avatar>
-)}
+{
+  task.assigned_to && (
+    <Avatar className="w-6 h-6">
+      <AvatarFallback className="text-xs">{getUserInitials(task.assigned_to)}</AvatarFallback>
+    </Avatar>
+  );
+}
 ```
 
 ---
 
 ## 📊 Priority Matrix
 
-| Feature | Impact | Effort | Priority |
-|---------|--------|--------|----------|
-| Real-Time Collaboration | High | High | P1 |
-| User Presence | High | Medium | P1 |
-| Notification Center | High | Medium | P1 |
-| Collaborative Editing | High | High | P2 |
-| Enhanced @Mentions | Medium | Low | P2 |
-| Team Activity Feed | Medium | Medium | P2 |
-| Workspace Invitations | Medium | Medium | P3 |
-| Document Permissions | Medium | Medium | P3 |
-| Task Notifications | Medium | Low | P3 |
-| Workload Dashboard | Low | Medium | P4 |
+| Feature                 | Impact | Effort | Priority |
+| ----------------------- | ------ | ------ | -------- |
+| Real-Time Collaboration | High   | High   | P1       |
+| User Presence           | High   | Medium | P1       |
+| Notification Center     | High   | Medium | P1       |
+| Collaborative Editing   | High   | High   | P2       |
+| Enhanced @Mentions      | Medium | Low    | P2       |
+| Team Activity Feed      | Medium | Medium | P2       |
+| Workspace Invitations   | Medium | Medium | P3       |
+| Document Permissions    | Medium | Medium | P3       |
+| Task Notifications      | Medium | Low    | P3       |
+| Workload Dashboard      | Low    | Medium | P4       |
 
 ---
 
@@ -662,9 +663,9 @@ useEffect(() => {
 Before implementing these features, consider:
 
 1. **WebSocket/SSE Infrastructure**: Required for real-time features
-2. **Database Entity Extensions**: 
+2. **Database Entity Extensions**:
    - Add `Notification` entity
-   - Add `WorkspaceInvite` entity  
+   - Add `WorkspaceInvite` entity
    - Add `DocumentPermission` entity
    - Add `UserPresence` entity
 3. **Email Service Integration**: For invitation and notification emails
@@ -675,21 +676,25 @@ Before implementing these features, consider:
 ## 🎯 Implementation Roadmap
 
 ### Phase 1 (1-2 weeks)
+
 - Implement Notification Center
 - Add User Presence indicators
 - Enhance @mention autocomplete
 
 ### Phase 2 (2-4 weeks)
+
 - Set up real-time infrastructure (WebSocket/SSE)
 - Implement real-time message updates
 - Add document permissions system
 
 ### Phase 3 (4-6 weeks)
+
 - Collaborative document editing
 - Enhanced team activity feed
 - Workspace invitation system
 
 ### Phase 4 (6-8 weeks)
+
 - Task notification automation
 - Workload dashboard
 - Advanced collaboration analytics

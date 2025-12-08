@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw } from 'lucide-react';
@@ -19,9 +18,7 @@ export default function WorkspaceErrorBoundary({ children }) {
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 Workspace Error
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                {error}
-              </p>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
               <Button onClick={retryLoad} className="w-full">
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Retry

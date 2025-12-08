@@ -1,30 +1,24 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Switch } from "@/components/ui/switch";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Loader2,
   Brain,
@@ -43,8 +37,8 @@ import {
   FileText,
   Info,
   Layers,
-} from "lucide-react";
-import ContextualTooltip from "@/components/ContextualTooltip";
+} from 'lucide-react';
+import ContextualTooltip from '@/components/ContextualTooltip';
 
 export function AskAIHeader({
   useRAG,
@@ -117,7 +111,10 @@ export function AskAIHeader({
           <Info className="w-4 h-4" />
         </Button>
 
-        <div className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-gray-800 rounded-xl border" id="rag-toggle">
+        <div
+          className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-gray-800 rounded-xl border"
+          id="rag-toggle"
+        >
           <ContextualTooltip
             content="Enable Retrieval-Augmented Generation to search through your documents for relevant context before answering questions"
             position="bottom"
@@ -136,7 +133,10 @@ export function AskAIHeader({
             disabled={isProcessing || isProcessingEmbeddings}
           />
           {useRAG && docsWithRealEmbeddings.length > 0 && (
-            <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+            <Badge
+              variant="secondary"
+              className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+            >
               OpenAI + Semantic
             </Badge>
           )}
@@ -157,11 +157,21 @@ export function AskAIHeader({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => { setExportFormat('markdown'); setIsExportDialogOpen(true); }}>
+              <DropdownMenuItem
+                onClick={() => {
+                  setExportFormat('markdown');
+                  setIsExportDialogOpen(true);
+                }}
+              >
                 <FileDown className="w-4 h-4 mr-2" />
                 Export as Markdown
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { setExportFormat('pdf'); setIsExportDialogOpen(true); }}>
+              <DropdownMenuItem
+                onClick={() => {
+                  setExportFormat('pdf');
+                  setIsExportDialogOpen(true);
+                }}
+              >
                 <FileDown className="w-4 h-4 mr-2" />
                 Export as PDF
               </DropdownMenuItem>
@@ -215,7 +225,7 @@ export function AskAIHeader({
                 <div className="text-center py-12">
                   <FolderOpen className="w-12 h-12 mx-auto text-gray-300 mb-3" />
                   <p className="text-sm text-gray-500">
-                    {sessionSearchQuery ? "No sessions found" : "No saved sessions yet"}
+                    {sessionSearchQuery ? 'No sessions found' : 'No saved sessions yet'}
                   </p>
                 </div>
               ) : (
@@ -232,9 +242,13 @@ export function AskAIHeader({
                     >
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate text-gray-900 dark:text-white">{session.name}</p>
+                          <p className="font-medium text-sm truncate text-gray-900 dark:text-white">
+                            {session.name}
+                          </p>
                           {session.description && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{session.description}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              {session.description}
+                            </p>
                           )}
                         </div>
                         <Button
@@ -261,7 +275,11 @@ export function AskAIHeader({
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          <span>{new Date(session.last_activity || session.updated_date || session.created_date).toLocaleDateString()}</span>
+                          <span>
+                            {new Date(
+                              session.last_activity || session.updated_date || session.created_date
+                            ).toLocaleDateString()}
+                          </span>
                         </div>
                         {session.total_embedding_cost > 0 && (
                           <div className="flex items-center gap-1">
@@ -280,31 +298,26 @@ export function AskAIHeader({
 
         {(messages.length > 0 || uploadedDocuments.length > 0) && (
           <Button
-            variant={sessionModified ? "default" : "outline"}
+            variant={sessionModified ? 'default' : 'outline'}
             size="sm"
             onClick={() => {
               if (currentSession) {
                 setSessionName(currentSession.name);
-                setSessionDescription(currentSession.description || "");
+                setSessionDescription(currentSession.description || '');
               } else {
-                setSessionName("");
-                setSessionDescription("");
+                setSessionName('');
+                setSessionDescription('');
               }
               setIsSaveDialogOpen(true);
             }}
             className="rounded-xl"
           >
             <Save className="w-4 h-4 mr-2" />
-            {currentSession ? "Update" : "Save"}
+            {currentSession ? 'Update' : 'Save'}
           </Button>
         )}
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleNewConversation}
-          className="rounded-xl"
-        >
+        <Button variant="outline" size="sm" onClick={handleNewConversation} className="rounded-xl">
           <Plus className="w-4 h-4 mr-2" />
           New
         </Button>

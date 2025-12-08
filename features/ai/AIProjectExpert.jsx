@@ -1,28 +1,20 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Bot,
-  Send,
-  Loader2,
-  FileText,
-  User,
-  Sparkles,
-  MessageSquare,
-} from "lucide-react";
-import { InvokeLLM } from "@/api/integrations"; // This import is used directly for LLM invocation
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import { toast } from "sonner";
-import { db } from "@/api/db";
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Bot, Send, Loader2, FileText, User, Sparkles, MessageSquare } from 'lucide-react';
+import { InvokeLLM } from '@/api/integrations'; // This import is used directly for LLM invocation
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { toast } from 'sonner';
+import { db } from '@/api/db';
 
 // The db client provides access to entities and authentication functions
 // (e.g., `db.entities.Assignment`, `db.auth.me()`).
 
 export default function AIProjectExpert({ assignmentId }) {
-  const [question, setQuestion] = useState("");
+  const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false); // Indicates if AI is currently generating a response
   const [chatHistory, setChatHistory] = useState([]); // Stores all chat messages
   const [context, setContext] = useState(null); // Stores assignment, tasks, and documents
@@ -40,8 +32,8 @@ export default function AIProjectExpert({ assignmentId }) {
         const user = await db.auth.me(); // Assumes db.auth.me() exists and returns user info
         setCurrentAuthUser(user);
       } catch (error) {
-        console.error("Error fetching current user:", error);
-        toast.error("Failed to load user information.");
+        console.error('Error fetching current user:', error);
+        toast.error('Failed to load user information.');
       }
     };
     fetchUser();
@@ -59,13 +51,7 @@ export default function AIProjectExpert({ assignmentId }) {
       setChatHistory([]);
       setIsContextLoading(false);
     }
-  }, [
-    assignmentId,
-    currentWorkspaceId,
-    currentAuthUser,
-    loadChatHistory,
-    loadContext,
-  ]); // Dependencies for re-fetching
+  }, [assignmentId, currentWorkspaceId, currentAuthUser, loadChatHistory, loadContext]); // Dependencies for re-fetching
 
   // Effect to scroll to the bottom of the chat when new messages arrive
   useEffect(() => {
@@ -73,15 +59,13 @@ export default function AIProjectExpert({ assignmentId }) {
   }, [chatHistory]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   // useCallback for loadContext to prevent unnecessary re-creations
   const loadContext = useCallback(async () => {
     if (!assignmentId || !currentWorkspaceId) {
-      console.warn(
-        "loadContext called without assignmentId or currentWorkspaceId"
-      );
+      console.warn('loadContext called without assignmentId or currentWorkspaceId');
       setIsContextLoading(false);
       return;
     }
@@ -93,7 +77,7 @@ export default function AIProjectExpert({ assignmentId }) {
             workspace_id: currentWorkspaceId,
             id: assignmentId,
           },
-          "-updated_date",
+          '-updated_date',
           1
         ), // Fetching a single assignment
         db.entities.Task.filter(
@@ -101,30 +85,23 @@ export default function AIProjectExpert({ assignmentId }) {
             workspace_id: currentWorkspaceId,
             assignment_id: assignmentId,
           },
-          "-updated_date"
+          '-updated_date'
         ),
         db.entities.Document.filter(
           {
             workspace_id: currentWorkspaceId,
             assigned_to_assignments: { $in: [assignmentId] },
           },
-          "-updated_date"
+          '-updated_date'
         ),
       ]);
 
       const currentAssignment = assignments[0];
 
       // CRITICAL: Validate that the fetched assignment belongs to the current workspace
-      if (
-        !currentAssignment ||
-        currentAssignment.workspace_id !== currentWorkspaceId
-      ) {
-        console.error(
-          "Security violation: Assignment not in current workspace or not found."
-        );
-        toast.error(
-          "Cannot access assignment from other workspaces or assignment not found."
-        );
+      if (!currentAssignment || currentAssignment.workspace_id !== currentWorkspaceId) {
+        console.error('Security violation: Assignment not in current workspace or not found.');
+        toast.error('Cannot access assignment from other workspaces or assignment not found.');
         setContext(null); // Clear context if security violation or not found
         setIsContextLoading(false);
         return;
@@ -137,8 +114,8 @@ export default function AIProjectExpert({ assignmentId }) {
       });
       setIsContextLoading(false);
     } catch (error) {
-      console.error("Error loading context:", error);
-      toast.error("Failed to load assignment context.");
+      console.error('Error loading context:', error);
+      toast.error('Failed to load assignment context.');
       setContext(null);
       setIsContextLoading(false);
     }
@@ -148,7 +125,7 @@ export default function AIProjectExpert({ assignmentId }) {
   const loadChatHistory = useCallback(async () => {
     if (!assignmentId || !currentWorkspaceId || !currentAuthUser) {
       console.warn(
-        "loadChatHistory called without assignmentId, currentWorkspaceId, or currentAuthUser"
+        'loadChatHistory called without assignmentId, currentWorkspaceId, or currentAuthUser'
       );
       return;
     }
@@ -159,7 +136,7 @@ export default function AIProjectExpert({ assignmentId }) {
           workspace_id: currentWorkspaceId,
           assignment_id: assignmentId,
         },
-        "-created_date",
+        '-created_date',
         100
       ); // Fetching up to 100 recent messages
 
@@ -173,21 +150,16 @@ export default function AIProjectExpert({ assignmentId }) {
 
       setChatHistory(formattedHistory);
     } catch (error) {
-      console.error("Error loading chat history:", error);
-      toast.error("Failed to load chat history.");
+      console.error('Error loading chat history:', error);
+      toast.error('Failed to load chat history.');
     }
   }, [assignmentId, currentWorkspaceId, currentAuthUser]); // Dependencies for loadChatHistory
 
   const handleAskQuestion = async () => {
     // Basic validations
-    if (
-      !question.trim() ||
-      !context?.assignment ||
-      !currentWorkspaceId ||
-      !currentAuthUser
-    ) {
+    if (!question.trim() || !context?.assignment || !currentWorkspaceId || !currentAuthUser) {
       toast.error(
-        "Please provide a question, ensure project context is loaded, and you are logged in."
+        'Please provide a question, ensure project context is loaded, and you are logged in.'
       );
       return;
     }
@@ -195,22 +167,22 @@ export default function AIProjectExpert({ assignmentId }) {
 
     // CRITICAL: Validate assignment context for security before proceeding
     if (context.assignment.workspace_id !== currentWorkspaceId) {
-      toast.error("Cannot query assignments from other workspaces.");
+      toast.error('Cannot query assignments from other workspaces.');
       return;
     }
 
     const userQuestion = question.trim();
-    setQuestion(""); // Clear input field
+    setQuestion(''); // Clear input field
     setLoading(true); // Start loading state
 
     // Add a temporary user message to the chat history for immediate UI feedback
     const tempUserMessage = {
       id: `temp-user-${Date.now()}`, // Unique ID for temporary message
       question: userQuestion,
-      response: "", // Will be filled by AI
+      response: '', // Will be filled by AI
       user_email: currentAuthUser.email,
       assignment_id: assignmentId, // Use assignmentId
-      chat_type: "assignment_question",
+      chat_type: 'assignment_question',
       created_date: new Date().toISOString(),
       isUser: true,
       confidence_score: 100, // User messages are 100% confident
@@ -226,9 +198,9 @@ export default function AIProjectExpert({ assignmentId }) {
           (doc) =>
             `Document: ${doc.title}\nSummary: ${
               doc.ai_analysis.summary
-            }\nKey Points: ${doc.ai_analysis.key_points?.join(", ") || "None"}`
+            }\nKey Points: ${doc.ai_analysis.key_points?.join(', ') || 'None'}`
         )
-        .join("\n\n");
+        .join('\n\n');
 
       const projectContext = `Project: ${context.assignment.name}\nDescription: ${context.assignment.description}\nStatus: ${context.assignment.status}\nPriority: ${context.assignment.priority}`;
 
@@ -239,7 +211,7 @@ export default function AIProjectExpert({ assignmentId }) {
           if (msg.isUser) return `User: ${msg.question}`;
           return `AI: ${msg.response}`;
         })
-        .join("\n");
+        .join('\n');
 
       const prompt = `You are an AI project expert assistant helping team members understand their project. Answer the user's question based on the project information and uploaded documents.
 
@@ -262,20 +234,20 @@ If this is a new team member asking basic questions, provide extra context to he
       const aiResponse = await InvokeLLM({
         prompt: prompt,
         response_json_schema: {
-          type: "object",
+          type: 'object',
           properties: {
-            answer: { type: "string" },
-            confidence: { type: "number" },
+            answer: { type: 'string' },
+            confidence: { type: 'number' },
             source_documents: {
-              type: "array",
-              items: { type: "string" },
+              type: 'array',
+              items: { type: 'string' },
             },
             suggestions: {
-              type: "array",
-              items: { type: "string" },
+              type: 'array',
+              items: { type: 'string' },
             },
           },
-          required: ["answer"], // 'answer' is always required
+          required: ['answer'], // 'answer' is always required
         },
       });
 
@@ -288,16 +260,14 @@ If this is a new team member asking basic questions, provide extra context to he
         response: aiResponse.answer, // Use the structured answer from AI
         source_documents: aiResponse.source_documents || [], // Use source documents from AI
         confidence_score: aiResponse.confidence || 85, // Use confidence from AI, or default
-        chat_type: "assignment_question",
+        chat_type: 'assignment_question',
         created_date: new Date().toISOString(), // Record creation date for sorting
       });
 
       // Update chat history: remove the temporary user message and add the final AI response
       // `suggestions` are not persisted in `AIChat` entity, so they are merged for immediate display.
       setChatHistory((prev) => {
-        const updatedHistory = prev.filter(
-          (msg) => msg.id !== tempUserMessage.id
-        );
+        const updatedHistory = prev.filter((msg) => msg.id !== tempUserMessage.id);
         return [
           ...updatedHistory,
           {
@@ -309,14 +279,12 @@ If this is a new team member asking basic questions, provide extra context to he
       });
       scrollToBottom();
     } catch (error) {
-      console.error("Error getting AI response:", error);
-      toast.error("Failed to get AI response. Please try again.");
+      console.error('Error getting AI response:', error);
+      toast.error('Failed to get AI response. Please try again.');
 
       // If an error occurs, update chat history with an error message
       setChatHistory((prev) => {
-        const updatedHistory = prev.filter(
-          (msg) => msg.id !== tempUserMessage.id
-        ); // Remove temporary user message
+        const updatedHistory = prev.filter((msg) => msg.id !== tempUserMessage.id); // Remove temporary user message
         return [
           ...updatedHistory,
           {
@@ -324,7 +292,7 @@ If this is a new team member asking basic questions, provide extra context to he
             question: userQuestion,
             response:
               "I'm sorry, I encountered an error while processing your question. Please try again.",
-            user_email: "ai-error",
+            user_email: 'ai-error',
             assignment_id: assignmentId, // Use assignmentId
             created_date: new Date().toISOString(),
             isUser: false,
@@ -339,12 +307,12 @@ If this is a new team member asking basic questions, provide extra context to he
   };
 
   const suggestedQuestions = [
-    "What are the main goals of this project?",
-    "What are our key deliverables and deadlines?",
-    "Who are the main stakeholders?",
-    "What features are we building?",
-    "What are the technical requirements?",
-    "Tell me about the project timeline",
+    'What are the main goals of this project?',
+    'What are our key deliverables and deadlines?',
+    'Who are the main stakeholders?',
+    'What features are we building?',
+    'What are the technical requirements?',
+    'Tell me about the project timeline',
   ];
 
   // Render loading state while user or workspace information is being fetched
@@ -352,9 +320,7 @@ If this is a new team member asking basic questions, provide extra context to he
     return (
       <Card className="border-0 shadow-lg h-[600px] flex flex-col items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-purple-600 mb-4" />
-        <p className="text-gray-600">
-          Loading user and workspace information...
-        </p>
+        <p className="text-gray-600">Loading user and workspace information...</p>
       </Card>
     );
   }
@@ -374,9 +340,7 @@ If this is a new team member asking basic questions, provide extra context to he
     return (
       <Card className="border-0 shadow-lg h-[600px] flex flex-col items-center justify-center">
         <MessageSquare className="w-16 h-16 text-gray-300 mb-4" />
-        <h3 className="font-semibold text-gray-900 mb-2">
-          No Project Selected or Found
-        </h3>
+        <h3 className="font-semibold text-gray-900 mb-2">No Project Selected or Found</h3>
         <p className="text-gray-600">
           Please select an assignment to start chatting with the AI expert.
         </p>
@@ -396,8 +360,8 @@ If this is a new team member asking basic questions, provide extra context to he
           </Badge>
         </CardTitle>
         <p className="text-sm text-gray-600">
-          Ask me anything about {context.assignment.name}. I've analyzed all
-          project documents to help answer your questions.
+          Ask me anything about {context.assignment.name}. I've analyzed all project documents to
+          help answer your questions.
         </p>
         {/* The 'Analyze Project' button and insights display have been removed as per the new outline. */}
       </CardHeader>
@@ -407,9 +371,7 @@ If this is a new team member asking basic questions, provide extra context to he
         {chatHistory.length === 0 ? (
           <div className="text-center py-8">
             <Bot className="w-16 h-16 mx-auto mb-4 text-purple-300" />
-            <h3 className="font-semibold text-gray-900 mb-2">
-              Welcome to AI Project Expert!
-            </h3>
+            <h3 className="font-semibold text-gray-900 mb-2">Welcome to AI Project Expert!</h3>
             <p className="text-gray-600 mb-6">
               I can help you understand this project. Try asking:
             </p>
@@ -429,10 +391,7 @@ If this is a new team member asking basic questions, provide extra context to he
           </div>
         ) : (
           chatHistory.map((message) => (
-            <div
-              key={message.id}
-              className={`flex gap-3 ${message.isUser ? "justify-end" : ""}`}
-            >
+            <div key={message.id} className={`flex gap-3 ${message.isUser ? 'justify-end' : ''}`}>
               {!message.isUser && (
                 <Avatar className="w-8 h-8">
                   <AvatarFallback className="bg-purple-100">
@@ -443,9 +402,7 @@ If this is a new team member asking basic questions, provide extra context to he
 
               <div
                 className={`max-w-md rounded-lg p-3 ${
-                  message.isUser
-                    ? "bg-blue-600 text-white"
-                    : "bg-white border shadow-sm"
+                  message.isUser ? 'bg-blue-600 text-white' : 'bg-white border shadow-sm'
                 }`}
               >
                 {message.isUser ? (
@@ -470,9 +427,7 @@ If this is a new team member asking basic questions, provide extra context to he
 
                     {message.suggestions?.length > 0 && (
                       <div className="mt-3 pt-2 border-t border-gray-100">
-                        <p className="text-xs text-gray-500 mb-2">
-                          You might also ask:
-                        </p>
+                        <p className="text-xs text-gray-500 mb-2">You might also ask:</p>
                         <div className="space-y-1">
                           {message.suggestions.slice(0, 2).map((suggestion) => (
                             <Button
@@ -499,10 +454,9 @@ If this is a new team member asking basic questions, provide extra context to he
                 <Avatar className="w-8 h-8">
                   <AvatarFallback>
                     {currentAuthUser?.full_name
-                      ?.split(" ")
+                      ?.split(' ')
                       .map((n) => n[0])
-                      .join("") ||
-                      currentAuthUser?.email?.charAt(0).toUpperCase()}
+                      .join('') || currentAuthUser?.email?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               )}
@@ -536,7 +490,7 @@ If this is a new team member asking basic questions, provide extra context to he
             placeholder="Ask about features, requirements, deadlines..."
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleAskQuestion()}
+            onKeyPress={(e) => e.key === 'Enter' && handleAskQuestion()}
             disabled={loading || !context?.assignment} // Disable if loading or no assignment context
             className="flex-1"
           />
@@ -544,11 +498,7 @@ If this is a new team member asking basic questions, provide extra context to he
             onClick={handleAskQuestion}
             disabled={loading || !question.trim() || !context?.assignment}
           >
-            {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
       </div>

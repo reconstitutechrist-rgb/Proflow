@@ -1,14 +1,13 @@
-
-import React, { useState, useEffect, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { 
-  Brain, 
-  FileText, 
-  CheckCircle, 
-  AlertTriangle, 
+import React, { useState, useEffect, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import {
+  Brain,
+  FileText,
+  CheckCircle,
+  AlertTriangle,
   Clock,
   Zap,
   Users,
@@ -18,11 +17,10 @@ import {
   RefreshCw,
   Loader2,
   Lightbulb,
-} from "lucide-react";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import toast from "sonner";
-import { db } from "@/api/db";
-
+} from 'lucide-react';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import toast from 'sonner';
+import { db } from '@/api/db';
 
 export default function AIDocumentAnalyzer({ document, onAnalysisComplete }) {
   const [analyzing, setAnalyzing] = useState(false);
@@ -34,10 +32,10 @@ export default function AIDocumentAnalyzer({ document, onAnalysisComplete }) {
     if (document && currentWorkspaceId) {
       // CRITICAL: Validate document is in current workspace
       if (document.workspace_id !== currentWorkspaceId) {
-        toast.error("Cannot analyze documents from other workspaces");
-        console.error("Security violation: Cross-workspace document analysis attempt", {
+        toast.error('Cannot analyze documents from other workspaces');
+        console.error('Security violation: Cross-workspace document analysis attempt', {
           documentWorkspace: document.workspace_id,
-          currentWorkspace: currentWorkspaceId
+          currentWorkspace: currentWorkspaceId,
         });
         // Clear analysis if document changes to one not in current workspace
         setAnalysis(null);
@@ -45,7 +43,10 @@ export default function AIDocumentAnalyzer({ document, onAnalysisComplete }) {
       }
 
       // Load existing analysis if available and completed
-      if (document.ai_analysis?.analysis_status === 'completed' || document.ai_analysis?.analysis_status === 'failed') {
+      if (
+        document.ai_analysis?.analysis_status === 'completed' ||
+        document.ai_analysis?.analysis_status === 'failed'
+      ) {
         setAnalysis(document.ai_analysis);
       } else {
         // If analysis is pending or processing, or doesn't exist, reset state
@@ -64,22 +65,21 @@ export default function AIDocumentAnalyzer({ document, onAnalysisComplete }) {
     }
     // Fallback to document's ai_analysis status if not yet loaded into local state 'analysis'
     if (document?.ai_analysis?.analysis_status) {
-        return document.ai_analysis.analysis_status;
+      return document.ai_analysis.analysis_status;
     }
     return 'pending';
   }, [analyzing, analysis, document?.ai_analysis]);
 
-
   const handleAnalyze = async () => {
     if (!document || !currentWorkspaceId) {
-      toast.error("Document or workspace context is missing.");
+      toast.error('Document or workspace context is missing.');
       return;
     }
 
     // CRITICAL: Double-check workspace before analysis
     if (document.workspace_id !== currentWorkspaceId) {
-      toast.error("Cannot analyze documents from other workspaces");
-      console.error("Security violation: Cross-workspace document analysis attempt");
+      toast.error('Cannot analyze documents from other workspaces');
+      console.error('Security violation: Cross-workspace document analysis attempt');
       return;
     }
 
@@ -91,12 +91,15 @@ export default function AIDocumentAnalyzer({ document, onAnalysisComplete }) {
       await db.entities.Document.update(document.id, {
         ai_analysis: {
           ...analysis,
-          analysis_status: 'processing'
+          analysis_status: 'processing',
         },
-        workspace_id: currentWorkspaceId // CRITICAL: Maintain workspace_id
+        workspace_id: currentWorkspaceId, // CRITICAL: Maintain workspace_id
       });
 
-      const strippedContent = (document.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      const strippedContent = (document.content || '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 
       const prompt = `Analyze this document and extract the following information:
 
@@ -115,26 +118,26 @@ Return the analysis in JSON format.`;
       const response = await db.integrations.Core.InvokeLLM({
         prompt: prompt,
         response_json_schema: {
-          type: "object",
+          type: 'object',
           properties: {
-            summary: { type: "string" },
-            key_points: { type: "array", items: { type: "string" } },
+            summary: { type: 'string' },
+            key_points: { type: 'array', items: { type: 'string' } },
             entities: {
-              type: "array",
+              type: 'array',
               items: {
-                type: "object",
+                type: 'object',
                 properties: {
-                  name: { type: "string" },
-                  type: { type: "string" },
-                  confidence: { type: "number" }
-                }
-              }
+                  name: { type: 'string' },
+                  type: { type: 'string' },
+                  confidence: { type: 'number' },
+                },
+              },
             },
-            completeness_score: { type: "number" },
-            potential_gaps: { type: "array", items: { type: "string" } }
+            completeness_score: { type: 'number' },
+            potential_gaps: { type: 'array', items: { type: 'string' } },
           },
-          required: ["summary", "key_points", "entities", "completeness_score", "potential_gaps"]
-        }
+          required: ['summary', 'key_points', 'entities', 'completeness_score', 'potential_gaps'],
+        },
       });
 
       const analysisData = {
@@ -144,38 +147,37 @@ Return the analysis in JSON format.`;
         completeness_score: response.completeness_score,
         analysis_status: 'completed',
         potential_gaps: response.potential_gaps,
-        analyzed_date: new Date().toISOString()
+        analyzed_date: new Date().toISOString(),
       };
 
       // CRITICAL: Update document while maintaining workspace_id
       await db.entities.Document.update(document.id, {
         ai_analysis: analysisData,
-        workspace_id: currentWorkspaceId // CRITICAL: Maintain workspace_id
+        workspace_id: currentWorkspaceId, // CRITICAL: Maintain workspace_id
       });
 
       setAnalysis(analysisData);
-      toast.success("Document analysis completed");
+      toast.success('Document analysis completed');
 
       if (onAnalysisComplete) {
         onAnalysisComplete(analysisData);
       }
     } catch (error) {
-      console.error("Error analyzing document:", error);
-      toast.error("Failed to analyze document: " + (error.message || "Unknown error"));
-      
+      console.error('Error analyzing document:', error);
+      toast.error('Failed to analyze document: ' + (error.message || 'Unknown error'));
+
       const failedAnalysis = {
         ...analysis, // Preserve existing analysis data if possible
         analysis_status: 'failed',
-        error_message: error.message || "An unknown error occurred during analysis."
+        error_message: error.message || 'An unknown error occurred during analysis.',
       };
 
       await db.entities.Document.update(document.id, {
         ai_analysis: failedAnalysis,
-        workspace_id: currentWorkspaceId // CRITICAL: Maintain workspace_id
+        workspace_id: currentWorkspaceId, // CRITICAL: Maintain workspace_id
       });
 
       setAnalysis(failedAnalysis);
-
     } finally {
       setAnalyzing(false);
     }
@@ -183,19 +185,27 @@ Return the analysis in JSON format.`;
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'completed': return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'processing': return <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />;
-      case 'failed': return <AlertTriangle className="w-5 h-5 text-red-600" />;
-      default: return <Clock className="w-5 h-5 text-gray-400" />;
+      case 'completed':
+        return <CheckCircle className="w-5 h-5 text-green-600" />;
+      case 'processing':
+        return <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />;
+      case 'failed':
+        return <AlertTriangle className="w-5 h-5 text-red-600" />;
+      default:
+        return <Clock className="w-5 h-5 text-gray-400" />;
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'completed': return 'text-green-700 bg-green-50 border-green-200';
-      case 'processing': return 'text-blue-700 bg-blue-50 border-blue-200';
-      case 'failed': return 'text-red-700 bg-red-50 border-red-200';
-      default: return 'text-gray-700 bg-gray-50 border-gray-200';
+      case 'completed':
+        return 'text-green-700 bg-green-50 border-green-200';
+      case 'processing':
+        return 'text-blue-700 bg-blue-50 border-blue-200';
+      case 'failed':
+        return 'text-red-700 bg-red-50 border-red-200';
+      default:
+        return 'text-gray-700 bg-gray-50 border-gray-200';
     }
   };
 
@@ -225,11 +235,12 @@ Return the analysis in JSON format.`;
                 Unlock AI-Powered Document Insights
               </h3>
               <p className="text-gray-600 max-w-md mx-auto">
-                Get comprehensive analysis including summaries, key points, entity extraction, and completeness scoring.
+                Get comprehensive analysis including summaries, key points, entity extraction, and
+                completeness scoring.
               </p>
             </div>
-            <Button 
-              onClick={handleAnalyze} 
+            <Button
+              onClick={handleAnalyze}
               disabled={analyzing}
               size="lg"
               className="bg-purple-600 hover:bg-purple-700"
@@ -269,9 +280,7 @@ Return the analysis in JSON format.`;
           <div className="text-center py-12">
             <Loader2 className="w-16 h-16 mx-auto mb-6 text-purple-500 animate-spin" />
             <div className="space-y-3">
-              <h3 className="text-xl font-semibold text-gray-900">
-                AI is analyzing your document
-              </h3>
+              <h3 className="text-xl font-semibold text-gray-900">AI is analyzing your document</h3>
               <p className="text-gray-600">
                 This may take a few moments depending on document size and complexity...
               </p>
@@ -307,10 +316,10 @@ Return the analysis in JSON format.`;
                 {analysis?.error_message || 'An error occurred during analysis'}
               </p>
             </div>
-            <Button 
-              onClick={handleAnalyze} 
+            <Button
+              onClick={handleAnalyze}
               disabled={analyzing}
-              variant="outline" 
+              variant="outline"
               className="border-red-200 text-red-700 hover:bg-red-50"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
@@ -337,12 +346,7 @@ Return the analysis in JSON format.`;
                 Completed
               </Badge>
             </div>
-            <Button 
-              onClick={handleAnalyze} 
-              disabled={analyzing}
-              variant="outline" 
-              size="sm"
-            >
+            <Button onClick={handleAnalyze} disabled={analyzing} variant="outline" size="sm">
               <RefreshCw className="w-4 h-4 mr-2" />
               Re-analyze
             </Button>
@@ -371,7 +375,9 @@ Return the analysis in JSON format.`;
               </h4>
               <div className="flex items-center gap-4">
                 <Progress value={analysis.completeness_score || 0} className="flex-1" />
-                <span className={`font-bold text-lg ${getCompletenessColor(analysis.completeness_score || 0)}`}>
+                <span
+                  className={`font-bold text-lg ${getCompletenessColor(analysis.completeness_score || 0)}`}
+                >
                   {analysis.completeness_score || 0}%
                 </span>
               </div>
@@ -392,7 +398,10 @@ Return the analysis in JSON format.`;
           <CardContent>
             <div className="grid gap-3">
               {analysis.key_points.map((point, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                <div
+                  key={index}
+                  className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200"
+                >
                   <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
                     {index + 1}
                   </div>
@@ -416,14 +425,12 @@ Return the analysis in JSON format.`;
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {analysis.entities.map((entity, index) => (
-                <Badge 
-                  key={index} 
-                  variant="outline" 
-                  className="flex items-center gap-2"
-                >
+                <Badge key={index} variant="outline" className="flex items-center gap-2">
                   <span>{entity.name}</span>
                   <span className="text-xs text-gray-500">({entity.type})</span>
-                  {entity.confidence && <span className="text-xs text-blue-600">{entity.confidence}%</span>}
+                  {entity.confidence && (
+                    <span className="text-xs text-blue-600">{entity.confidence}%</span>
+                  )}
                 </Badge>
               ))}
             </div>
@@ -448,7 +455,10 @@ Return the analysis in JSON format.`;
           <CardContent>
             <div className="space-y-3">
               {analysis.relationships.map((rel, index) => (
-                <div key={index} className="flex items-start justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div
+                  key={index}
+                  className="flex items-start justify-between p-4 bg-blue-50 rounded-lg border border-blue-200"
+                >
                   <div className="flex-1">
                     <p className="font-medium text-blue-900">
                       {rel.document_title || `Document #${rel.document_id}`}
@@ -457,14 +467,10 @@ Return the analysis in JSON format.`;
                       <strong>Relationship:</strong> {rel.relationship_type}
                     </p>
                     {rel.relationship_reason && (
-                      <p className="text-sm text-blue-600 mt-1">
-                        {rel.relationship_reason}
-                      </p>
+                      <p className="text-sm text-blue-600 mt-1">{rel.relationship_reason}</p>
                     )}
                   </div>
-                  <Badge className="bg-blue-100 text-blue-800">
-                    {rel.confidence || 0}% match
-                  </Badge>
+                  <Badge className="bg-blue-100 text-blue-800">{rel.confidence || 0}% match</Badge>
                 </div>
               ))}
             </div>
@@ -489,18 +495,25 @@ Return the analysis in JSON format.`;
                     <div className="flex-1">
                       <p className="font-medium text-red-900">{conflict.description}</p>
                       <p className="text-sm text-red-700 mt-1">
-                        Conflicts with: <strong>{conflict.conflicting_document_title || `Document #${conflict.conflicting_document_id}`}</strong>
+                        Conflicts with:{' '}
+                        <strong>
+                          {conflict.conflicting_document_title ||
+                            `Document #${conflict.conflicting_document_id}`}
+                        </strong>
                       </p>
                       {conflict.details && (
-                        <p className="text-sm text-red-600 mt-2">
-                          {conflict.details}
-                        </p>
+                        <p className="text-sm text-red-600 mt-2">{conflict.details}</p>
                       )}
                     </div>
-                    <Badge className={
-                      conflict.severity === 'high' ? 'bg-red-500 text-white' :
-                      conflict.severity === 'medium' ? 'bg-yellow-500 text-white' : 'bg-gray-500 text-white'
-                    }>
+                    <Badge
+                      className={
+                        conflict.severity === 'high'
+                          ? 'bg-red-500 text-white'
+                          : conflict.severity === 'medium'
+                            ? 'bg-yellow-500 text-white'
+                            : 'bg-gray-500 text-white'
+                      }
+                    >
                       {conflict.severity} severity
                     </Badge>
                   </div>
@@ -523,7 +536,10 @@ Return the analysis in JSON format.`;
           <CardContent>
             <div className="space-y-2">
               {analysis.potential_gaps.map((gap, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                <div
+                  key={index}
+                  className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200"
+                >
                   <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0" />
                   <p className="text-orange-800">{gap}</p>
                 </div>

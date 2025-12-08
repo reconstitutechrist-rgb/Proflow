@@ -20,8 +20,8 @@ export function generateSelector(element) {
 
   // Priority 3: Unique class combination (filter out generated classes)
   const classes = Array.from(element.classList)
-    .filter(c => !isGeneratedClassName(c))
-    .map(c => CSS.escape(c));
+    .filter((c) => !isGeneratedClassName(c))
+    .map((c) => CSS.escape(c));
 
   if (classes.length > 0) {
     const classSelector = `.${classes.join('.')}`;
@@ -44,16 +44,16 @@ export function generateSelector(element) {
 function isGeneratedClassName(className) {
   // Common patterns for generated class names
   const generatedPatterns = [
-    /^css-/,           // Emotion
-    /^sc-/,            // Styled Components
-    /^emotion-/,       // Emotion
-    /^_[a-z0-9]+$/i,   // CSS Modules hashes
-    /^[a-z]{6,}$/i,    // Random string hashes
-    /^jsx-/,           // styled-jsx
-    /^svelte-/,        // Svelte
+    /^css-/, // Emotion
+    /^sc-/, // Styled Components
+    /^emotion-/, // Emotion
+    /^_[a-z0-9]+$/i, // CSS Modules hashes
+    /^[a-z]{6,}$/i, // Random string hashes
+    /^jsx-/, // styled-jsx
+    /^svelte-/, // Svelte
   ];
 
-  return generatedPatterns.some(pattern => pattern.test(className));
+  return generatedPatterns.some((pattern) => pattern.test(className));
 }
 
 /**
@@ -75,9 +75,9 @@ function buildSelectorPath(element) {
 
     // Add useful classes if available
     const meaningfulClasses = Array.from(current.classList)
-      .filter(c => !isGeneratedClassName(c))
-      .slice(0, 2)  // Limit to first 2 classes
-      .map(c => CSS.escape(c));
+      .filter((c) => !isGeneratedClassName(c))
+      .slice(0, 2) // Limit to first 2 classes
+      .map((c) => CSS.escape(c));
 
     if (meaningfulClasses.length > 0) {
       selector += `.${meaningfulClasses.join('.')}`;
@@ -87,7 +87,7 @@ function buildSelectorPath(element) {
     const parent = current.parentElement;
     if (parent) {
       const siblings = Array.from(parent.children).filter(
-        child => child.tagName === current.tagName
+        (child) => child.tagName === current.tagName
       );
       if (siblings.length > 1) {
         const index = siblings.indexOf(current) + 1;
@@ -118,7 +118,7 @@ export function getElementDimensions(element) {
     width: Math.round(rect.width),
     height: Math.round(rect.height),
     x: Math.round(rect.left + window.scrollX),
-    y: Math.round(rect.top + window.scrollY)
+    y: Math.round(rect.top + window.scrollY),
   };
 }
 
@@ -139,6 +139,6 @@ export function getElementStyles(element) {
     padding: computed.padding,
     margin: computed.margin,
     border: computed.border,
-    borderRadius: computed.borderRadius
+    borderRadius: computed.borderRadius,
   };
 }

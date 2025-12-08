@@ -1,10 +1,9 @@
-
-import React, { useState, useEffect, useMemo } from "react";
-import { useLocation, useNavigate } from "react-router";
-import { db } from "@/api/db";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import React, { useState, useEffect, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router';
+import { db } from '@/api/db';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Plus,
   Loader2,
@@ -17,16 +16,16 @@ import {
   List,
   Calendar,
   Clock,
-  User
-} from "lucide-react";
-import { AnimatePresence } from "framer-motion";
+  User,
+} from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -34,15 +33,15 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
+} from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
-import TaskForm from "@/features/tasks/TaskForm";
-import TaskBoard from "@/features/tasks/TaskBoard";
-import ShareButton from "@/components/common/ShareButton";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+import TaskForm from '@/features/tasks/TaskForm';
+import TaskBoard from '@/features/tasks/TaskBoard';
+import ShareButton from '@/components/common/ShareButton';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
 export default function TasksPage() {
   const location = useLocation();
@@ -94,7 +93,10 @@ export default function TasksPage() {
 
   // Initialize filters from URL params
   useEffect(() => {
-    if (presetParam && ['all', 'my-tasks', 'overdue', 'due-today', 'this-week'].includes(presetParam)) {
+    if (
+      presetParam &&
+      ['all', 'my-tasks', 'overdue', 'due-today', 'this-week'].includes(presetParam)
+    ) {
       setActivePreset(presetParam);
     }
     if (viewParam && ['kanban', 'list', 'calendar'].includes(viewParam)) {
@@ -126,22 +128,22 @@ export default function TasksPage() {
 
     // Apply preset filters
     if (activePreset === 'my-tasks' && currentUser?.email) {
-      currentTasks = currentTasks.filter(task => task.assigned_to === currentUser.email);
+      currentTasks = currentTasks.filter((task) => task.assigned_to === currentUser.email);
     } else if (activePreset === 'overdue') {
-      currentTasks = currentTasks.filter(task => {
+      currentTasks = currentTasks.filter((task) => {
         if (!task.due_date || task.status === 'completed') return false;
         const dueDate = new Date(task.due_date);
         return dueDate < today;
       });
     } else if (activePreset === 'due-today') {
-      currentTasks = currentTasks.filter(task => {
+      currentTasks = currentTasks.filter((task) => {
         if (!task.due_date) return false;
         const dueDate = new Date(task.due_date);
         dueDate.setHours(0, 0, 0, 0);
         return dueDate.getTime() === today.getTime();
       });
     } else if (activePreset === 'this-week') {
-      currentTasks = currentTasks.filter(task => {
+      currentTasks = currentTasks.filter((task) => {
         if (!task.due_date) return false;
         const dueDate = new Date(task.due_date);
         return dueDate >= today && dueDate <= endOfWeek;
@@ -149,19 +151,20 @@ export default function TasksPage() {
     }
 
     if (selectedAssignment && selectedAssignment !== 'all') {
-      currentTasks = currentTasks.filter(task => task.assignment_id === selectedAssignment);
+      currentTasks = currentTasks.filter((task) => task.assignment_id === selectedAssignment);
     }
 
     if (priorityFilter && priorityFilter !== 'all') {
-      currentTasks = currentTasks.filter(task => task.priority === priorityFilter);
+      currentTasks = currentTasks.filter((task) => task.priority === priorityFilter);
     }
 
     if (searchQuery) {
       const lowerCaseQuery = searchQuery.toLowerCase();
-      currentTasks = currentTasks.filter(task =>
-        task.title.toLowerCase().includes(lowerCaseQuery) ||
-        task.description?.toLowerCase().includes(lowerCaseQuery) ||
-        task.tags?.some(tag => tag.toLowerCase().includes(lowerCaseQuery))
+      currentTasks = currentTasks.filter(
+        (task) =>
+          task.title.toLowerCase().includes(lowerCaseQuery) ||
+          task.description?.toLowerCase().includes(lowerCaseQuery) ||
+          task.tags?.some((tag) => tag.toLowerCase().includes(lowerCaseQuery))
       );
     }
 
@@ -198,11 +201,11 @@ export default function TasksPage() {
     try {
       setLoading(true);
       const [tasksData, assignmentsData, projectsData, usersData, user] = await Promise.all([
-        db.entities.Task.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
-        db.entities.Project.filter({ workspace_id: currentWorkspaceId }, "-updated_date"),
+        db.entities.Task.filter({ workspace_id: currentWorkspaceId }, '-updated_date'),
+        db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, '-updated_date'),
+        db.entities.Project.filter({ workspace_id: currentWorkspaceId }, '-updated_date'),
         db.entities.User.list(),
-        db.auth.me()
+        db.auth.me(),
       ]);
 
       setTasks(tasksData);
@@ -211,8 +214,8 @@ export default function TasksPage() {
       setUsers(usersData);
       setCurrentUser(user);
     } catch (error) {
-      console.error("Error loading data:", error);
-      toast.error("Failed to load tasks");
+      console.error('Error loading data:', error);
+      toast.error('Failed to load tasks');
     } finally {
       setLoading(false);
     }
@@ -222,21 +225,21 @@ export default function TasksPage() {
     try {
       if (editingTask) {
         await db.entities.Task.update(editingTask.id, taskData);
-        toast.success("Task updated successfully");
+        toast.success('Task updated successfully');
       } else {
         await db.entities.Task.create({
           ...taskData,
           workspace_id: currentWorkspaceId,
-          assigned_by: currentUser?.id
+          assigned_by: currentUser?.id,
         });
-        toast.success("Task created successfully");
+        toast.success('Task created successfully');
       }
       setIsTaskFormOpen(false);
       setEditingTask(null);
       loadData();
     } catch (error) {
-      console.error("Error saving task:", error);
-      toast.error("Failed to save task");
+      console.error('Error saving task:', error);
+      toast.error('Failed to save task');
     }
   };
 
@@ -244,13 +247,13 @@ export default function TasksPage() {
     try {
       const updateData = {
         status: newStatus,
-        completed_date: newStatus === 'completed' ? new Date().toISOString().split('T')[0] : null
+        completed_date: newStatus === 'completed' ? new Date().toISOString().split('T')[0] : null,
       };
       await db.entities.Task.update(task.id, updateData);
       loadData();
     } catch (error) {
-      console.error("Error updating task status:", error);
-      toast.error("Failed to update task status");
+      console.error('Error updating task status:', error);
+      toast.error('Failed to update task status');
     }
   };
 
@@ -262,11 +265,11 @@ export default function TasksPage() {
   const handleDeleteTask = async (task) => {
     try {
       await db.entities.Task.delete(task.id);
-      toast.success("Task deleted successfully");
+      toast.success('Task deleted successfully');
       loadData();
     } catch (error) {
-      console.error("Error deleting task:", error);
-      toast.error("Failed to delete task");
+      console.error('Error deleting task:', error);
+      toast.error('Failed to delete task');
     }
   };
 
@@ -280,17 +283,17 @@ export default function TasksPage() {
       await db.entities.Task.update(taskId, updatedFields);
       loadData();
     } catch (error) {
-      console.error("Error updating task from board:", error);
-      toast.error("Failed to update task");
+      console.error('Error updating task from board:', error);
+      toast.error('Failed to update task');
     }
   };
 
   // Bulk selection handlers
   const handleSelectTask = (taskId, checked) => {
     if (checked) {
-      setSelectedTasks(prev => [...prev, taskId]);
+      setSelectedTasks((prev) => [...prev, taskId]);
     } else {
-      setSelectedTasks(prev => prev.filter(id => id !== taskId));
+      setSelectedTasks((prev) => prev.filter((id) => id !== taskId));
     }
   };
 
@@ -298,7 +301,7 @@ export default function TasksPage() {
     if (selectedTasks.length === filteredTasks.length) {
       setSelectedTasks([]);
     } else {
-      setSelectedTasks(filteredTasks.map(task => task.id));
+      setSelectedTasks(filteredTasks.map((task) => task.id));
     }
   };
 
@@ -306,10 +309,10 @@ export default function TasksPage() {
     if (selectedTasks.length === 0) return;
 
     try {
-      const updatePromises = selectedTasks.map(taskId =>
+      const updatePromises = selectedTasks.map((taskId) =>
         db.entities.Task.update(taskId, {
           status: newStatus,
-          completed_date: newStatus === 'completed' ? new Date().toISOString().split('T')[0] : null
+          completed_date: newStatus === 'completed' ? new Date().toISOString().split('T')[0] : null,
         })
       );
 
@@ -318,8 +321,8 @@ export default function TasksPage() {
       setSelectedTasks([]);
       loadData();
     } catch (error) {
-      console.error("Error updating tasks:", error);
-      toast.error("Failed to update some tasks");
+      console.error('Error updating tasks:', error);
+      toast.error('Failed to update some tasks');
     }
   };
 
@@ -327,7 +330,7 @@ export default function TasksPage() {
     if (selectedTasks.length === 0) return;
 
     try {
-      const updatePromises = selectedTasks.map(taskId =>
+      const updatePromises = selectedTasks.map((taskId) =>
         db.entities.Task.update(taskId, { priority: newPriority })
       );
 
@@ -336,8 +339,8 @@ export default function TasksPage() {
       setSelectedTasks([]);
       loadData();
     } catch (error) {
-      console.error("Error updating task priorities:", error);
-      toast.error("Failed to update some tasks");
+      console.error('Error updating task priorities:', error);
+      toast.error('Failed to update some tasks');
     }
   };
 
@@ -346,7 +349,7 @@ export default function TasksPage() {
 
     try {
       setBulkDeleteLoading(true);
-      const deletePromises = selectedTasks.map(taskId => db.entities.Task.delete(taskId));
+      const deletePromises = selectedTasks.map((taskId) => db.entities.Task.delete(taskId));
       await Promise.all(deletePromises);
 
       toast.success(`${selectedTasks.length} tasks deleted successfully`);
@@ -354,8 +357,8 @@ export default function TasksPage() {
       setShowBulkDeleteDialog(false);
       loadData();
     } catch (error) {
-      console.error("Error deleting tasks:", error);
-      toast.error("Failed to delete some tasks");
+      console.error('Error deleting tasks:', error);
+      toast.error('Failed to delete some tasks');
     } finally {
       setBulkDeleteLoading(false);
     }
@@ -367,12 +370,12 @@ export default function TasksPage() {
   const canAssignTask = true;
 
   const getAssignmentName = (assignmentId) => {
-    const assignment = assignments.find(a => a.id === assignmentId);
-    return assignment?.title || "Unknown Assignment";
+    const assignment = assignments.find((a) => a.id === assignmentId);
+    return assignment?.title || 'Unknown Assignment';
   };
 
   const getUserName = (userEmail) => {
-    const user = users.find(u => u.email === userEmail);
+    const user = users.find((u) => u.email === userEmail);
     return user?.full_name || userEmail;
   };
 
@@ -389,7 +392,7 @@ export default function TasksPage() {
               {filteredTasks.length} {filteredTasks.length === 1 ? 'task' : 'tasks'}
               {activePreset !== 'all' && (
                 <span className="ml-2 text-purple-600 dark:text-purple-400">
-                  ({filterPresets.find(p => p.id === activePreset)?.label})
+                  ({filterPresets.find((p) => p.id === activePreset)?.label})
                 </span>
               )}
             </p>
@@ -444,24 +447,28 @@ export default function TasksPage() {
                 variant={isActive ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setActivePreset(preset.id)}
-                className={isActive
-                  ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                  : 'border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+                className={
+                  isActive
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                    : 'border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
                 }
               >
                 <Icon className="w-3.5 h-3.5 mr-1.5" />
                 {preset.label}
-                {preset.id === 'overdue' && tasks.filter(t => {
-                  if (!t.due_date || t.status === 'completed') return false;
-                  return new Date(t.due_date) < new Date();
-                }).length > 0 && (
-                  <Badge variant="destructive" className="ml-1.5 px-1.5 py-0 text-xs">
-                    {tasks.filter(t => {
-                      if (!t.due_date || t.status === 'completed') return false;
-                      return new Date(t.due_date) < new Date();
-                    }).length}
-                  </Badge>
-                )}
+                {preset.id === 'overdue' &&
+                  tasks.filter((t) => {
+                    if (!t.due_date || t.status === 'completed') return false;
+                    return new Date(t.due_date) < new Date();
+                  }).length > 0 && (
+                    <Badge variant="destructive" className="ml-1.5 px-1.5 py-0 text-xs">
+                      {
+                        tasks.filter((t) => {
+                          if (!t.due_date || t.status === 'completed') return false;
+                          return new Date(t.due_date) < new Date();
+                        }).length
+                      }
+                    </Badge>
+                  )}
               </Button>
             );
           })}
@@ -485,7 +492,7 @@ export default function TasksPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Assignments</SelectItem>
-              {assignments.map(assignment => (
+              {assignments.map((assignment) => (
                 <SelectItem key={assignment.id} value={assignment.id}>
                   {assignment.name || assignment.title}
                 </SelectItem>
@@ -506,7 +513,10 @@ export default function TasksPage() {
             </SelectContent>
           </Select>
 
-          {(selectedAssignment !== 'all' || priorityFilter !== 'all' || searchQuery || activePreset !== 'all') && (
+          {(selectedAssignment !== 'all' ||
+            priorityFilter !== 'all' ||
+            searchQuery ||
+            activePreset !== 'all') && (
             <Button
               variant="ghost"
               size="sm"
@@ -671,12 +681,24 @@ export default function TasksPage() {
                 <table className="w-full">
                   <thead className="bg-gray-50 dark:bg-gray-800 border-b">
                     <tr>
-                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">Task</th>
-                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">Status</th>
-                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">Priority</th>
-                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">Assignee</th>
-                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">Due Date</th>
-                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">Actions</th>
+                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">
+                        Task
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">
+                        Status
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">
+                        Priority
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">
+                        Assignee
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">
+                        Due Date
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-600 dark:text-gray-400">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -694,30 +716,45 @@ export default function TasksPage() {
                               onClick={(e) => e.stopPropagation()}
                             />
                             <div>
-                              <p className="font-medium text-gray-900 dark:text-white">{task.title}</p>
+                              <p className="font-medium text-gray-900 dark:text-white">
+                                {task.title}
+                              </p>
                               {task.description && (
-                                <p className="text-sm text-gray-500 line-clamp-1">{task.description}</p>
+                                <p className="text-sm text-gray-500 line-clamp-1">
+                                  {task.description}
+                                </p>
                               )}
                             </div>
                           </div>
                         </td>
                         <td className="p-4">
-                          <Badge variant="outline" className={
-                            task.status === 'completed' ? 'bg-green-100 text-green-700 border-green-300' :
-                            task.status === 'in_progress' ? 'bg-blue-100 text-blue-700 border-blue-300' :
-                            task.status === 'blocked' ? 'bg-red-100 text-red-700 border-red-300' :
-                            'bg-gray-100 text-gray-700 border-gray-300'
-                          }>
+                          <Badge
+                            variant="outline"
+                            className={
+                              task.status === 'completed'
+                                ? 'bg-green-100 text-green-700 border-green-300'
+                                : task.status === 'in_progress'
+                                  ? 'bg-blue-100 text-blue-700 border-blue-300'
+                                  : task.status === 'blocked'
+                                    ? 'bg-red-100 text-red-700 border-red-300'
+                                    : 'bg-gray-100 text-gray-700 border-gray-300'
+                            }
+                          >
                             {task.status?.replace('_', ' ')}
                           </Badge>
                         </td>
                         <td className="p-4">
-                          <Badge className={
-                            task.priority === 'urgent' ? 'bg-red-500' :
-                            task.priority === 'high' ? 'bg-orange-500' :
-                            task.priority === 'medium' ? 'bg-yellow-500' :
-                            'bg-gray-400'
-                          }>
+                          <Badge
+                            className={
+                              task.priority === 'urgent'
+                                ? 'bg-red-500'
+                                : task.priority === 'high'
+                                  ? 'bg-orange-500'
+                                  : task.priority === 'medium'
+                                    ? 'bg-yellow-500'
+                                    : 'bg-gray-400'
+                            }
+                          >
                             {task.priority}
                           </Badge>
                         </td>
@@ -728,7 +765,10 @@ export default function TasksPage() {
                           {task.due_date ? new Date(task.due_date).toLocaleDateString() : '-'}
                         </td>
                         <td className="p-4">
-                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          <div
+                            className="flex items-center gap-2"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <Button
                               variant="ghost"
                               size="sm"
@@ -750,8 +790,11 @@ export default function TasksPage() {
               <CardContent className="p-6">
                 <div className="grid grid-cols-7 gap-4">
                   {/* Calendar Header */}
-                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                    <div key={day} className="text-center font-medium text-gray-600 dark:text-gray-400 py-2">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                    <div
+                      key={day}
+                      className="text-center font-medium text-gray-600 dark:text-gray-400 py-2"
+                    >
                       {day}
                     </div>
                   ))}
@@ -773,8 +816,8 @@ export default function TasksPage() {
                     for (let day = 1; day <= daysInMonth; day++) {
                       const date = new Date(today.getFullYear(), today.getMonth(), day);
                       const dateStr = date.toISOString().split('T')[0];
-                      const tasksOnDay = filteredTasks.filter(task =>
-                        task.due_date && task.due_date.split('T')[0] === dateStr
+                      const tasksOnDay = filteredTasks.filter(
+                        (task) => task.due_date && task.due_date.split('T')[0] === dateStr
                       );
                       const isToday = day === today.getDate();
 
@@ -782,22 +825,29 @@ export default function TasksPage() {
                         <div
                           key={day}
                           className={`h-24 border rounded-lg p-2 ${
-                            isToday ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-300' : 'border-gray-200 dark:border-gray-700'
+                            isToday
+                              ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-300'
+                              : 'border-gray-200 dark:border-gray-700'
                           }`}
                         >
-                          <div className={`text-sm font-medium mb-1 ${isToday ? 'text-purple-600' : 'text-gray-600'}`}>
+                          <div
+                            className={`text-sm font-medium mb-1 ${isToday ? 'text-purple-600' : 'text-gray-600'}`}
+                          >
                             {day}
                           </div>
                           <div className="space-y-1 overflow-auto max-h-16">
-                            {tasksOnDay.slice(0, 2).map(task => (
+                            {tasksOnDay.slice(0, 2).map((task) => (
                               <div
                                 key={task.id}
                                 onClick={() => handleEdit(task)}
                                 className={`text-xs p-1 rounded cursor-pointer truncate ${
-                                  task.priority === 'urgent' ? 'bg-red-100 text-red-700' :
-                                  task.priority === 'high' ? 'bg-orange-100 text-orange-700' :
-                                  task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                                  'bg-gray-100 text-gray-700'
+                                  task.priority === 'urgent'
+                                    ? 'bg-red-100 text-red-700'
+                                    : task.priority === 'high'
+                                      ? 'bg-orange-100 text-orange-700'
+                                      : task.priority === 'medium'
+                                        ? 'bg-yellow-100 text-yellow-700'
+                                        : 'bg-gray-100 text-gray-700'
                                 }`}
                               >
                                 {task.title}
@@ -831,8 +881,8 @@ export default function TasksPage() {
               Delete {selectedTasks.length} Task{selectedTasks.length !== 1 ? 's' : ''}?
             </DialogTitle>
             <DialogDescription className="text-base pt-4">
-              Are you sure you want to delete {selectedTasks.length} selected task{selectedTasks.length !== 1 ? 's' : ''}?
-              This action cannot be undone.
+              Are you sure you want to delete {selectedTasks.length} selected task
+              {selectedTasks.length !== 1 ? 's' : ''}? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">

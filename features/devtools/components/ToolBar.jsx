@@ -1,9 +1,5 @@
 import { Button } from '@/components/ui/button';
-import {
-  MousePointer2,
-  Camera,
-  Loader2
-} from 'lucide-react';
+import { MousePointer2, Camera, Loader2 } from 'lucide-react';
 
 /**
  * Mode selection toolbar for the bug reporter
@@ -14,7 +10,7 @@ export function ToolBar({
   hasScreenshot,
   isCapturing,
   onSelectElement,
-  onCaptureScreenshot
+  onCaptureScreenshot,
 }) {
   return (
     <div className="flex flex-col gap-2 p-4 border-b border-gray-200 dark:border-gray-700">
@@ -51,11 +47,15 @@ export function ToolBar({
       {/* Status indicators */}
       <div className="flex items-center gap-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
         <div className="flex items-center gap-1">
-          <div className={`w-2 h-2 rounded-full ${hasSelectedElement ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
+          <div
+            className={`w-2 h-2 rounded-full ${hasSelectedElement ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+          />
           Element {hasSelectedElement ? 'selected' : 'not selected'}
         </div>
         <div className="flex items-center gap-1">
-          <div className={`w-2 h-2 rounded-full ${hasScreenshot ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
+          <div
+            className={`w-2 h-2 rounded-full ${hasScreenshot ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+          />
           Screenshot {hasScreenshot ? 'captured' : 'not captured'}
         </div>
       </div>

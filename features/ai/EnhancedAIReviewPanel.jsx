@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Loader2,
   CheckCircle,
@@ -11,16 +11,19 @@ import {
   Sparkles,
   RefreshCw,
   Edit3,
-  Eye
-} from "lucide-react";
-import { InvokeLLM } from "@/api/integrations";
-import { toast } from "sonner";
-import { parseAIChanges, getChangeTypeBadgeColor } from "@/utils/diffUtils";
+  Eye,
+} from 'lucide-react';
+import { InvokeLLM } from '@/api/integrations';
+import { toast } from 'sonner';
+import { parseAIChanges, getChangeTypeBadgeColor } from '@/utils/diffUtils';
 
 // Estimate token count (rough approximation)
 const estimateTokens = (text) => {
   if (!text) return 0;
-  const plainText = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const plainText = text
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   return Math.ceil(plainText.length / 4);
 };
 
@@ -32,7 +35,10 @@ const estimateCost = (tokens) => {
 // Strip HTML to get plain text for AI analysis
 const stripHtml = (html) => {
   if (!html) return '';
-  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 };
 
 /**
@@ -48,53 +54,51 @@ export default function EnhancedAIReviewPanel({
   assignments = [],
   tasks = [],
   referenceDocumentUrls = [],
-  onChangesGenerated // Callback when changes are ready for review
+  onChangesGenerated, // Callback when changes are ready for review
 }) {
   const [review, setReview] = useState(null);
   const [isReviewing, setIsReviewing] = useState(false);
-  const [reviewType, setReviewType] = useState("comprehensive");
+  const [reviewType, setReviewType] = useState('comprehensive');
 
   const reviewTypes = [
     {
-      value: "comprehensive",
-      label: "Comprehensive Edit",
-      description: "Full review with grammar, style, clarity, and structure fixes",
-      icon: Sparkles
+      value: 'comprehensive',
+      label: 'Comprehensive Edit',
+      description: 'Full review with grammar, style, clarity, and structure fixes',
+      icon: Sparkles,
     },
     {
-      value: "grammar",
-      label: "Grammar & Spelling",
-      description: "Focus on language errors and typos",
-      icon: CheckCircle
+      value: 'grammar',
+      label: 'Grammar & Spelling',
+      description: 'Focus on language errors and typos',
+      icon: CheckCircle,
     },
     {
-      value: "style",
-      label: "Style & Tone",
-      description: "Improve writing style and consistency",
-      icon: Edit3
+      value: 'style',
+      label: 'Style & Tone',
+      description: 'Improve writing style and consistency',
+      icon: Edit3,
     },
     {
-      value: "clarity",
-      label: "Clarity & Conciseness",
-      description: "Make text clearer and more direct",
-      icon: Eye
-    }
+      value: 'clarity',
+      label: 'Clarity & Conciseness',
+      description: 'Make text clearer and more direct',
+      icon: Eye,
+    },
   ];
 
-  const currentReviewType = reviewTypes.find(t => t.value === reviewType);
+  const currentReviewType = reviewTypes.find((t) => t.value === reviewType);
 
   const buildPrompt = (strippedContent, reviewType) => {
     const assignmentContext = selectedAssignment
-      ? assignments.find(a => a.id === selectedAssignment)
+      ? assignments.find((a) => a.id === selectedAssignment)
       : null;
 
-    const taskContext = selectedTask
-      ? tasks.find(t => t.id === selectedTask)
-      : null;
+    const taskContext = selectedTask ? tasks.find((t) => t.id === selectedTask) : null;
 
-    let focusInstructions = "";
+    let focusInstructions = '';
 
-    if (reviewType === "comprehensive") {
+    if (reviewType === 'comprehensive') {
       focusInstructions = `Focus on ALL of the following:
 - Grammar and spelling errors
 - Style and tone consistency
@@ -102,19 +106,19 @@ export default function EnhancedAIReviewPanel({
 - Sentence structure
 - Word choice improvements
 - Formatting suggestions`;
-    } else if (reviewType === "grammar") {
+    } else if (reviewType === 'grammar') {
       focusInstructions = `Focus ONLY on:
 - Spelling mistakes
 - Grammar errors
 - Punctuation issues
 - Subject-verb agreement`;
-    } else if (reviewType === "style") {
+    } else if (reviewType === 'style') {
       focusInstructions = `Focus ONLY on:
 - Tone consistency
 - Writing style
 - Formality level
 - Word choice for better flow`;
-    } else if (reviewType === "clarity") {
+    } else if (reviewType === 'clarity') {
       focusInstructions = `Focus ONLY on:
 - Removing unnecessary words
 - Simplifying complex sentences
@@ -127,10 +131,10 @@ export default function EnhancedAIReviewPanel({
 ${focusInstructions}
 
 Document Context:
-- Title: ${title || "Untitled"}
-${description ? `- Description: ${description}` : ""}
-${assignmentContext ? `- Assignment: ${assignmentContext.name}` : ""}
-${taskContext ? `- Task: ${taskContext.title}` : ""}
+- Title: ${title || 'Untitled'}
+${description ? `- Description: ${description}` : ''}
+${assignmentContext ? `- Assignment: ${assignmentContext.name}` : ''}
+${taskContext ? `- Task: ${taskContext.title}` : ''}
 
 Document Content:
 """
@@ -164,7 +168,7 @@ CRITICAL RULES:
     const strippedContent = stripHtml(content);
 
     if (!content || strippedContent.length < 50) {
-      toast.error("Please add more content before requesting a review (minimum 50 characters)");
+      toast.error('Please add more content before requesting a review (minimum 50 characters)');
       return;
     }
 
@@ -176,8 +180,8 @@ CRITICAL RULES:
     if (contentLength > 10000) {
       const confirm = window.confirm(
         `This document is quite large (${contentLength} characters, ~${estimatedTokenCount} tokens).\n\n` +
-        `Estimated cost: $${estimatedCostUSD.toFixed(4)}\n\n` +
-        `Continue with AI review?`
+          `Estimated cost: $${estimatedCostUSD.toFixed(4)}\n\n` +
+          `Continue with AI review?`
       );
       if (!confirm) return;
     }
@@ -191,27 +195,27 @@ CRITICAL RULES:
         prompt,
         add_context_from_internet: false,
         response_json_schema: {
-          type: "object",
+          type: 'object',
           properties: {
-            overallScore: { type: "number" },
-            summary: { type: "string" },
+            overallScore: { type: 'number' },
+            summary: { type: 'string' },
             changes: {
-              type: "array",
+              type: 'array',
               items: {
-                type: "object",
+                type: 'object',
                 properties: {
-                  type: { type: "string" },
-                  originalText: { type: "string" },
-                  suggestedText: { type: "string" },
-                  reason: { type: "string" }
+                  type: { type: 'string' },
+                  originalText: { type: 'string' },
+                  suggestedText: { type: 'string' },
+                  reason: { type: 'string' },
                 },
-                required: ["type", "originalText", "suggestedText", "reason"]
-              }
-            }
+                required: ['type', 'originalText', 'suggestedText', 'reason'],
+              },
+            },
           },
-          required: ["overallScore", "summary", "changes"]
+          required: ['overallScore', 'summary', 'changes'],
         },
-        file_urls: referenceDocumentUrls.length > 0 ? referenceDocumentUrls : undefined
+        file_urls: referenceDocumentUrls.length > 0 ? referenceDocumentUrls : undefined,
       });
 
       // Parse the response
@@ -234,8 +238,8 @@ CRITICAL RULES:
           parsedResponse = response;
         }
       } catch (parseError) {
-        console.error("Failed to parse AI response:", parseError, response);
-        toast.error("AI response was not in the expected format. Please try again.");
+        console.error('Failed to parse AI response:', parseError, response);
+        toast.error('AI response was not in the expected format. Please try again.');
         return;
       }
 
@@ -243,28 +247,30 @@ CRITICAL RULES:
       const processedChanges = parseAIChanges(parsedResponse.changes || []);
 
       // Validate changes against actual content
-      const validatedChanges = processedChanges.filter(change => {
+      const validatedChanges = processedChanges.filter((change) => {
         const found = strippedContent.includes(change.originalText);
         if (!found) {
-          console.warn(`Change not found in document: "${change.originalText.substring(0, 50)}..."`);
+          console.warn(
+            `Change not found in document: "${change.originalText.substring(0, 50)}..."`
+          );
         }
         return found;
       });
 
       if (processedChanges.length > 0 && validatedChanges.length === 0) {
-        toast.warning("AI suggested changes but none matched the document text. Try again.");
+        toast.warning('AI suggested changes but none matched the document text. Try again.');
       }
 
       const reviewResult = {
         overallScore: parsedResponse.overallScore || 0,
-        summary: parsedResponse.summary || "Review complete",
+        summary: parsedResponse.summary || 'Review complete',
         changes: validatedChanges,
         type: reviewType,
         timestamp: new Date().toISOString(),
         documentLength: contentLength,
         tokensUsed: estimatedTokenCount,
         originalChangesCount: processedChanges.length,
-        validatedChangesCount: validatedChanges.length
+        validatedChangesCount: validatedChanges.length,
       };
 
       setReview(reviewResult);
@@ -272,12 +278,11 @@ CRITICAL RULES:
       if (validatedChanges.length > 0) {
         toast.success(`Found ${validatedChanges.length} suggested improvements`);
       } else {
-        toast.success("Document looks great! No changes suggested.");
+        toast.success('Document looks great! No changes suggested.');
       }
-
     } catch (error) {
-      console.error("Error generating review:", error);
-      toast.error("Failed to generate review. Please try again.");
+      console.error('Error generating review:', error);
+      toast.error('Failed to generate review. Please try again.');
     } finally {
       setIsReviewing(false);
     }
@@ -294,9 +299,9 @@ CRITICAL RULES:
   const estimatedCostUSD = estimateCost(estimatedTokenCount);
 
   const getScoreColor = (score) => {
-    if (score >= 80) return "text-green-600 dark:text-green-400";
-    if (score >= 60) return "text-yellow-600 dark:text-yellow-400";
-    return "text-red-600 dark:text-red-400";
+    if (score >= 80) return 'text-green-600 dark:text-green-400';
+    if (score >= 60) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
   return (
@@ -310,7 +315,9 @@ CRITICAL RULES:
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600 dark:text-gray-400">Est. Review Cost</span>
-            <Badge variant="outline" className="font-mono">${estimatedCostUSD.toFixed(4)}</Badge>
+            <Badge variant="outline" className="font-mono">
+              ${estimatedCostUSD.toFixed(4)}
+            </Badge>
           </div>
         </CardContent>
       </Card>
@@ -319,7 +326,7 @@ CRITICAL RULES:
       <div>
         <label className="text-sm font-medium mb-2 block">Review Type</label>
         <div className="grid grid-cols-2 gap-2">
-          {reviewTypes.map(type => {
+          {reviewTypes.map((type) => {
             const Icon = type.icon;
             return (
               <button
@@ -335,7 +342,9 @@ CRITICAL RULES:
                   <Icon className="w-4 h-4" />
                   <span className="font-medium text-sm">{type.label}</span>
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{type.description}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {type.description}
+                </div>
               </button>
             );
           })}
@@ -386,12 +395,7 @@ CRITICAL RULES:
                   <div className="text-xs text-gray-500">out of 100</div>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleReview}
-                disabled={isReviewing}
-              >
+              <Button variant="ghost" size="sm" onClick={handleReview} disabled={isReviewing}>
                 <RefreshCw className={`w-3 h-3 mr-1 ${isReviewing ? 'animate-spin' : ''}`} />
                 Re-analyze
               </Button>
@@ -405,13 +409,14 @@ CRITICAL RULES:
             {/* Changes Summary */}
             <div className="flex flex-wrap gap-2">
               <Badge variant="outline" className="text-xs">
-                {reviewTypes.find(t => t.value === review.type)?.label}
+                {reviewTypes.find((t) => t.value === review.type)?.label}
               </Badge>
               <Badge
                 variant="outline"
                 className={`text-xs ${review.changes.length > 0 ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300' : 'bg-green-50 dark:bg-green-950/20 border-green-300'}`}
               >
-                {review.changes.length} suggested {review.changes.length === 1 ? 'change' : 'changes'}
+                {review.changes.length} suggested{' '}
+                {review.changes.length === 1 ? 'change' : 'changes'}
               </Badge>
               {review.validatedChangesCount < review.originalChangesCount && (
                 <Badge variant="outline" className="text-xs text-gray-500">
@@ -456,11 +461,7 @@ CRITICAL RULES:
                 </div>
 
                 {/* Review & Edit Button */}
-                <Button
-                  onClick={handleReviewChanges}
-                  className="w-full mt-2"
-                  variant="outline"
-                >
+                <Button onClick={handleReviewChanges} className="w-full mt-2" variant="outline">
                   <Edit3 className="w-4 h-4 mr-2" />
                   Review & Accept Changes
                 </Button>

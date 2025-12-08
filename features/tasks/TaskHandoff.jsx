@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Dialog,
   DialogContent,
@@ -10,14 +10,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   ArrowRightLeft,
   User,
@@ -26,24 +26,18 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-} from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { toast } from "sonner";
-import { db } from "@/api/db";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
+import { db } from '@/api/db';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
-export default function TaskHandoff({
-  task,
-  currentUser,
-  users = [],
-  onClose,
-  onSuccess,
-}) {
-  const [handoffNotes, setHandoffNotes] = useState("");
+export default function TaskHandoff({ task, currentUser, users = [], onClose, onSuccess }) {
+  const [handoffNotes, setHandoffNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createFollowUp, setCreateFollowUp] = useState(false);
-  const [followUpTitle, setFollowUpTitle] = useState("");
-  const [selectedPartnerId, setSelectedPartnerId] = useState("");
+  const [followUpTitle, setFollowUpTitle] = useState('');
+  const [selectedPartnerId, setSelectedPartnerId] = useState('');
 
   const { currentWorkspaceId } = useWorkspace();
 
@@ -53,9 +47,7 @@ export default function TaskHandoff({
   );
 
   // Get the selected partner object
-  const selectedPartner = availablePartners.find(
-    (u) => u.email === selectedPartnerId
-  );
+  const selectedPartner = availablePartners.find((u) => u.email === selectedPartnerId);
 
   // Auto-select if only one partner available
   useEffect(() => {
@@ -66,7 +58,7 @@ export default function TaskHandoff({
 
   const handleHandoff = async () => {
     if (!task || !selectedPartner) {
-      toast.error("Please select a partner to hand off to");
+      toast.error('Please select a partner to hand off to');
       return;
     }
 
@@ -92,7 +84,7 @@ export default function TaskHandoff({
         handoff_history: handoffHistory,
         handoff_notes: handoffNotes,
         last_handoff_date: new Date().toISOString(),
-        status: task.status === "completed" ? "in_progress" : task.status,
+        status: task.status === 'completed' ? 'in_progress' : task.status,
       });
 
       // Create follow-up task if requested
@@ -104,7 +96,7 @@ export default function TaskHandoff({
           assigned_to: currentUser.email,
           assignment_id: task.assignment_id,
           priority: task.priority,
-          status: "todo",
+          status: 'todo',
           related_task_id: task.id,
           created_by: currentUser.email,
         });
@@ -121,12 +113,12 @@ export default function TaskHandoff({
             content: `📋 **Task Handoff**: "${
               task.title
             }" has been handed off to ${selectedPartner.full_name}.\n\n${
-              handoffNotes ? `**Notes:** ${handoffNotes}` : ""
+              handoffNotes ? `**Notes:** ${handoffNotes}` : ''
             }`,
-            message_type: "system",
+            message_type: 'system',
           });
         } catch (msgError) {
-          console.error("Error creating handoff message:", msgError);
+          console.error('Error creating handoff message:', msgError);
         }
       }
 
@@ -138,18 +130,18 @@ export default function TaskHandoff({
 
       resetForm();
     } catch (error) {
-      console.error("Error handing off task:", error);
-      toast.error("Failed to hand off task");
+      console.error('Error handing off task:', error);
+      toast.error('Failed to hand off task');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const resetForm = () => {
-    setHandoffNotes("");
+    setHandoffNotes('');
     setCreateFollowUp(false);
-    setFollowUpTitle("");
-    setSelectedPartnerId("");
+    setFollowUpTitle('');
+    setSelectedPartnerId('');
   };
 
   const handleClose = () => {
@@ -159,8 +151,7 @@ export default function TaskHandoff({
 
   if (!task) return null;
 
-  const hasExistingHandoffs =
-    task.handoff_history && task.handoff_history.length > 0;
+  const hasExistingHandoffs = task.handoff_history && task.handoff_history.length > 0;
 
   return (
     <Dialog open={!!task} onOpenChange={(open) => !open && handleClose()}>
@@ -178,21 +169,19 @@ export default function TaskHandoff({
         <div className="space-y-4 py-4">
           {/* Task Info */}
           <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <p className="font-medium text-gray-900 dark:text-white">
-              {task.title}
-            </p>
+            <p className="font-medium text-gray-900 dark:text-white">{task.title}</p>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="outline" className="text-xs capitalize">
-                {task.status?.replace("_", " ")}
+                {task.status?.replace('_', ' ')}
               </Badge>
               <Badge
                 variant="outline"
                 className={`text-xs capitalize ${
-                  task.priority === "urgent"
-                    ? "border-red-500 text-red-600"
-                    : task.priority === "high"
-                    ? "border-orange-500 text-orange-600"
-                    : "border-gray-300"
+                  task.priority === 'urgent'
+                    ? 'border-red-500 text-red-600'
+                    : task.priority === 'high'
+                      ? 'border-orange-500 text-orange-600'
+                      : 'border-gray-300'
                 }`}
               >
                 {task.priority}
@@ -211,26 +200,21 @@ export default function TaskHandoff({
                   <Avatar className="h-10 w-10">
                     <AvatarFallback className="bg-green-100 text-green-700">
                       {availablePartners[0].full_name
-                        ?.split(" ")
+                        ?.split(' ')
                         .map((n) => n[0])
-                        .join("")
-                        .toUpperCase() || "P"}
+                        .join('')
+                        .toUpperCase() || 'P'}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">
                       {availablePartners[0].full_name}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {availablePartners[0].email}
-                    </p>
+                    <p className="text-xs text-gray-500">{availablePartners[0].email}</p>
                   </div>
                 </div>
               ) : (
-                <Select
-                  value={selectedPartnerId}
-                  onValueChange={setSelectedPartnerId}
-                >
+                <Select value={selectedPartnerId} onValueChange={setSelectedPartnerId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a team member" />
                   </SelectTrigger>
@@ -241,10 +225,10 @@ export default function TaskHandoff({
                           <Avatar className="h-6 w-6">
                             <AvatarFallback className="text-xs">
                               {partner.full_name
-                                ?.split(" ")
+                                ?.split(' ')
                                 .map((n) => n[0])
-                                .join("")
-                                .toUpperCase() || "?"}
+                                .join('')
+                                .toUpperCase() || '?'}
                             </AvatarFallback>
                           </Avatar>
                           <span>{partner.full_name}</span>
@@ -271,10 +255,10 @@ export default function TaskHandoff({
                 <Avatar className="h-10 w-10 mx-auto mb-1">
                   <AvatarFallback className="bg-blue-100 text-blue-700">
                     {currentUser?.full_name
-                      ?.split(" ")
+                      ?.split(' ')
                       .map((n) => n[0])
-                      .join("")
-                      .toUpperCase() || "Y"}
+                      .join('')
+                      .toUpperCase() || 'Y'}
                   </AvatarFallback>
                 </Avatar>
                 <p className="text-xs text-gray-600">You</p>
@@ -287,15 +271,13 @@ export default function TaskHandoff({
                 <Avatar className="h-10 w-10 mx-auto mb-1">
                   <AvatarFallback className="bg-green-100 text-green-700">
                     {selectedPartner?.full_name
-                      ?.split(" ")
+                      ?.split(' ')
                       .map((n) => n[0])
-                      .join("")
-                      .toUpperCase() || "P"}
+                      .join('')
+                      .toUpperCase() || 'P'}
                   </AvatarFallback>
                 </Avatar>
-                <p className="text-xs text-gray-600">
-                  {selectedPartner?.full_name?.split(" ")[0]}
-                </p>
+                <p className="text-xs text-gray-600">{selectedPartner?.full_name?.split(' ')[0]}</p>
               </div>
             </div>
           )}
@@ -354,13 +336,11 @@ export default function TaskHandoff({
                     <Clock className="w-3 h-3 text-gray-400 mt-0.5" />
                     <div>
                       <p className="text-gray-700 dark:text-gray-300">
-                        {handoff.from_user_name || handoff.from_user} →{" "}
+                        {handoff.from_user_name || handoff.from_user} →{' '}
                         {handoff.to_user_name || handoff.to_user}
                       </p>
                       {handoff.notes && (
-                        <p className="text-gray-500 mt-1 italic">
-                          "{handoff.notes}"
-                        </p>
+                        <p className="text-gray-500 mt-1 italic">"{handoff.notes}"</p>
                       )}
                       <p className="text-gray-400 mt-1">
                         {formatDistanceToNow(new Date(handoff.timestamp), {

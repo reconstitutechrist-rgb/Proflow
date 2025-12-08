@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Note } from "@/api/entities";
-import { db } from "@/api/db";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import React, { useState, useEffect, useCallback } from 'react';
+import { Note } from '@/api/entities';
+import { db } from '@/api/db';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   StickyNote,
   Plus,
@@ -19,17 +19,17 @@ import {
   Loader2,
   Pin,
   PinOff,
-} from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { toast } from "sonner";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 
 export default function SharedNotes({ compact = false }) {
   const [notes, setNotes] = useState([]);
@@ -37,8 +37,8 @@ export default function SharedNotes({ compact = false }) {
   const [saving, setSaving] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
-  const [newNoteTitle, setNewNoteTitle] = useState("");
-  const [newNoteContent, setNewNoteContent] = useState("");
+  const [newNoteTitle, setNewNoteTitle] = useState('');
+  const [newNoteContent, setNewNoteContent] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
 
   const { currentWorkspaceId, currentWorkspace } = useWorkspace();
@@ -55,7 +55,7 @@ export default function SharedNotes({ compact = false }) {
       const user = await db.auth.me();
       setCurrentUser(user);
     } catch (error) {
-      console.error("Error loading user:", error);
+      console.error('Error loading user:', error);
     }
   };
 
@@ -64,12 +64,12 @@ export default function SharedNotes({ compact = false }) {
       setLoading(true);
       const notesData = await Note.filter(
         { workspace_id: currentWorkspaceId, is_shared: true },
-        "-updated_date"
+        '-updated_date'
       );
       setNotes(notesData);
     } catch (error) {
-      console.error("Error loading shared notes:", error);
-      toast.error("Failed to load shared notes");
+      console.error('Error loading shared notes:', error);
+      toast.error('Failed to load shared notes');
     } finally {
       setLoading(false);
     }
@@ -77,7 +77,7 @@ export default function SharedNotes({ compact = false }) {
 
   const handleSaveNote = async () => {
     if (!newNoteTitle.trim() && !newNoteContent.trim()) {
-      toast.error("Please add a title or content");
+      toast.error('Please add a title or content');
       return;
     }
 
@@ -86,7 +86,7 @@ export default function SharedNotes({ compact = false }) {
 
       const noteData = {
         workspace_id: currentWorkspaceId,
-        title: newNoteTitle.trim() || "Untitled Note",
+        title: newNoteTitle.trim() || 'Untitled Note',
         content: newNoteContent,
         is_shared: true,
         created_by: currentUser?.email,
@@ -100,17 +100,17 @@ export default function SharedNotes({ compact = false }) {
           last_edited_by: currentUser?.email,
           last_edited_by_name: currentUser?.full_name,
         });
-        toast.success("Note updated");
+        toast.success('Note updated');
       } else {
         await Note.create(noteData);
-        toast.success("Shared note created");
+        toast.success('Shared note created');
       }
 
       resetForm();
       loadNotes();
     } catch (error) {
-      console.error("Error saving note:", error);
-      toast.error("Failed to save note");
+      console.error('Error saving note:', error);
+      toast.error('Failed to save note');
     } finally {
       setSaving(false);
     }
@@ -119,11 +119,11 @@ export default function SharedNotes({ compact = false }) {
   const handleDeleteNote = async (noteId) => {
     try {
       await Note.delete(noteId);
-      toast.success("Note deleted");
+      toast.success('Note deleted');
       loadNotes();
     } catch (error) {
-      console.error("Error deleting note:", error);
-      toast.error("Failed to delete note");
+      console.error('Error deleting note:', error);
+      toast.error('Failed to delete note');
     }
   };
 
@@ -134,21 +134,21 @@ export default function SharedNotes({ compact = false }) {
       });
       loadNotes();
     } catch (error) {
-      console.error("Error toggling pin:", error);
+      console.error('Error toggling pin:', error);
     }
   };
 
   const handleEditNote = (note) => {
     setEditingNote(note);
-    setNewNoteTitle(note.title || "");
-    setNewNoteContent(note.content || "");
+    setNewNoteTitle(note.title || '');
+    setNewNoteContent(note.content || '');
     setIsDialogOpen(true);
   };
 
   const resetForm = () => {
     setEditingNote(null);
-    setNewNoteTitle("");
-    setNewNoteContent("");
+    setNewNoteTitle('');
+    setNewNoteContent('');
     setIsDialogOpen(false);
   };
 
@@ -193,15 +193,11 @@ export default function SharedNotes({ compact = false }) {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
-                      {note.is_pinned && (
-                        <Pin className="w-3 h-3 inline mr-1 text-yellow-600" />
-                      )}
+                      {note.is_pinned && <Pin className="w-3 h-3 inline mr-1 text-yellow-600" />}
                       {note.title}
                     </p>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                    {note.content}
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">{note.content}</p>
                 </div>
               ))}
               {sortedNotes.length > 3 && (
@@ -211,9 +207,7 @@ export default function SharedNotes({ compact = false }) {
               )}
             </div>
           ) : (
-            <p className="text-sm text-gray-500 text-center py-2">
-              No shared notes yet
-            </p>
+            <p className="text-sm text-gray-500 text-center py-2">No shared notes yet</p>
           )}
         </CardContent>
 
@@ -229,7 +223,7 @@ export default function SharedNotes({ compact = false }) {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <StickyNote className="w-5 h-5 text-yellow-600" />
-                {editingNote ? "Edit Shared Note" : "New Shared Note"}
+                {editingNote ? 'Edit Shared Note' : 'New Shared Note'}
               </DialogTitle>
             </DialogHeader>
 
@@ -249,12 +243,11 @@ export default function SharedNotes({ compact = false }) {
               {editingNote && (
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <Clock className="w-3 h-3" />
-                  Last edited{" "}
+                  Last edited{' '}
                   {formatDistanceToNow(new Date(editingNote.updated_date), {
                     addSuffix: true,
                   })}
-                  {editingNote.last_edited_by_name &&
-                    ` by ${editingNote.last_edited_by_name}`}
+                  {editingNote.last_edited_by_name && ` by ${editingNote.last_edited_by_name}`}
                 </div>
               )}
             </div>
@@ -329,8 +322,8 @@ export default function SharedNotes({ compact = false }) {
                 key={note.id}
                 className={`p-4 rounded-lg border-2 transition-all hover:shadow-md cursor-pointer ${
                   note.is_pinned
-                    ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700"
-                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                    ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700'
+                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                 }`}
                 onClick={() => handleEditNote(note)}
               >
@@ -361,7 +354,7 @@ export default function SharedNotes({ compact = false }) {
                   <div className="flex items-center gap-1">
                     <Avatar className="h-4 w-4">
                       <AvatarFallback className="text-[8px]">
-                        {note.created_by_name?.charAt(0) || "?"}
+                        {note.created_by_name?.charAt(0) || '?'}
                       </AvatarFallback>
                     </Avatar>
                     <span>{note.created_by_name || note.created_by}</span>
@@ -402,7 +395,7 @@ export default function SharedNotes({ compact = false }) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <StickyNote className="w-5 h-5 text-yellow-600" />
-              {editingNote ? "Edit Shared Note" : "New Shared Note"}
+              {editingNote ? 'Edit Shared Note' : 'New Shared Note'}
             </DialogTitle>
           </DialogHeader>
 
@@ -422,12 +415,11 @@ export default function SharedNotes({ compact = false }) {
             {editingNote && (
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <Clock className="w-3 h-3" />
-                Last edited{" "}
+                Last edited{' '}
                 {formatDistanceToNow(new Date(editingNote.updated_date), {
                   addSuffix: true,
                 })}
-                {editingNote.last_edited_by_name &&
-                  ` by ${editingNote.last_edited_by_name}`}
+                {editingNote.last_edited_by_name && ` by ${editingNote.last_edited_by_name}`}
               </div>
             )}
           </div>

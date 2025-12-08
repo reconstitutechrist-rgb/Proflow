@@ -12,7 +12,7 @@ import {
   GripVertical,
   FileText,
   Sparkles,
-  AlertCircle
+  AlertCircle,
 } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import ChangeItem from './ChangeItem';
@@ -28,7 +28,7 @@ export default function DiffReviewView({
   changes = [],
   title = '',
   onApply,
-  onClose
+  onClose,
 }) {
   const [selectedChangeId, setSelectedChangeId] = useState(null);
   const {
@@ -42,7 +42,7 @@ export default function DiffReviewView({
     getFinalContent,
     isAccepted,
     isRejected,
-    stats
+    stats,
   } = useDocumentDiff(originalContent, changes);
 
   const handleApply = () => {
@@ -55,7 +55,7 @@ export default function DiffReviewView({
     let content = originalContent;
 
     // Apply all accepted changes
-    changes.forEach(change => {
+    changes.forEach((change) => {
       if (appliedChanges.has(change.id)) {
         content = content.replace(
           change.originalText,
@@ -125,15 +125,24 @@ export default function DiffReviewView({
           <div className="flex items-center gap-4">
             {/* Stats */}
             <div className="flex items-center gap-3 text-sm">
-              <Badge variant="outline" className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
+              <Badge
+                variant="outline"
+                className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800"
+              >
                 <Check className="w-3 h-3 mr-1" />
                 {stats.accepted} accepted
               </Badge>
-              <Badge variant="outline" className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800">
+              <Badge
+                variant="outline"
+                className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800"
+              >
                 <X className="w-3 h-3 mr-1" />
                 {stats.rejected} rejected
               </Badge>
-              <Badge variant="outline" className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+              <Badge
+                variant="outline"
+                className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+              >
                 {stats.pending} pending
               </Badge>
             </div>
@@ -221,13 +230,17 @@ export default function DiffReviewView({
         </div>
         <ScrollArea className="max-h-64">
           <div className="p-4 space-y-3">
-            {changes.map(change => (
+            {changes.map((change) => (
               <div
                 key={change.id}
                 className={`cursor-pointer transition-all ${
-                  selectedChangeId === change.id ? 'ring-2 ring-indigo-500 ring-offset-2 rounded-lg' : ''
+                  selectedChangeId === change.id
+                    ? 'ring-2 ring-indigo-500 ring-offset-2 rounded-lg'
+                    : ''
                 }`}
-                onClick={() => setSelectedChangeId(change.id === selectedChangeId ? null : change.id)}
+                onClick={() =>
+                  setSelectedChangeId(change.id === selectedChangeId ? null : change.id)
+                }
               >
                 <ChangeItem
                   change={change}

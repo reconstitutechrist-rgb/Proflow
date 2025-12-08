@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { Badge } from "@/components/ui/badge";
+import React, { useState, useMemo } from 'react';
+import { Badge } from '@/components/ui/badge';
 import {
   FolderKanban,
   Target,
@@ -7,8 +7,8 @@ import {
   ChevronDown,
   FileText,
   FolderOpen,
-} from "lucide-react";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+} from 'lucide-react';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
 export default function ProjectAssignmentStructure({
   documents,
@@ -24,15 +24,13 @@ export default function ProjectAssignmentStructure({
   const tree = useMemo(() => {
     // Filter documents to current workspace and exclude folder placeholders
     const workspaceDocs = documents.filter(
-      (doc) =>
-        doc.workspace_id === currentWorkspaceId &&
-        doc.document_type !== "folder_placeholder"
+      (doc) => doc.workspace_id === currentWorkspaceId && doc.document_type !== 'folder_placeholder'
     );
 
     // Group assignments by project_id
     const assignmentsByProject = {};
     assignments.forEach((a) => {
-      const projectId = a.project_id || "standalone";
+      const projectId = a.project_id || 'standalone';
       if (!assignmentsByProject[projectId]) {
         assignmentsByProject[projectId] = [];
       }
@@ -56,37 +54,32 @@ export default function ProjectAssignmentStructure({
 
         return {
           id: assignment.id,
-          name: assignment.title || assignment.name || "Untitled Assignment",
+          name: assignment.title || assignment.name || 'Untitled Assignment',
           documentCount: assignmentDocCount,
         };
       });
 
       return {
         id: project.id,
-        name: project.name || "Untitled Project",
+        name: project.name || 'Untitled Project',
         documentCount: projectDocCount,
         assignments: assignmentEntries,
-        totalAssignmentDocs: assignmentEntries.reduce(
-          (sum, a) => sum + a.documentCount,
-          0
-        ),
+        totalAssignmentDocs: assignmentEntries.reduce((sum, a) => sum + a.documentCount, 0),
       };
     });
 
     // Standalone assignments (no project)
-    const standaloneAssignments = (assignmentsByProject["standalone"] || []).map(
-      (assignment) => {
-        const docCount = workspaceDocs.filter((d) =>
-          d.assigned_to_assignments?.includes(assignment.id)
-        ).length;
+    const standaloneAssignments = (assignmentsByProject['standalone'] || []).map((assignment) => {
+      const docCount = workspaceDocs.filter((d) =>
+        d.assigned_to_assignments?.includes(assignment.id)
+      ).length;
 
-        return {
-          id: assignment.id,
-          name: assignment.title || assignment.name || "Untitled Assignment",
-          documentCount: docCount,
-        };
-      }
-    );
+      return {
+        id: assignment.id,
+        name: assignment.title || assignment.name || 'Untitled Assignment',
+        documentCount: docCount,
+      };
+    });
 
     // Unlinked documents (no project and no assignments)
     const unlinkedCount = workspaceDocs.filter(
@@ -131,11 +124,11 @@ export default function ProjectAssignmentStructure({
             {/* Project Row */}
             <div
               className={`flex items-center gap-2 py-2 px-3 rounded-lg cursor-pointer transition-colors group ${
-                isSelected("project", project.id)
-                  ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
-                  : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                isSelected('project', project.id)
+                  ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
-              onClick={() => onItemSelect("project", project.id)}
+              onClick={() => onItemSelect('project', project.id)}
             >
               {hasAssignments ? (
                 <button
@@ -175,11 +168,11 @@ export default function ProjectAssignmentStructure({
                   <div
                     key={assignment.id}
                     className={`flex items-center gap-2 py-2 px-3 rounded-lg cursor-pointer transition-colors ${
-                      isSelected("assignment", assignment.id)
-                        ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
-                        : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                      isSelected('assignment', assignment.id)
+                        ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                        : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
-                    onClick={() => onItemSelect("assignment", assignment.id)}
+                    onClick={() => onItemSelect('assignment', assignment.id)}
                   >
                     <Target className="w-4 h-4 text-purple-500 flex-shrink-0" />
 
@@ -210,11 +203,11 @@ export default function ProjectAssignmentStructure({
             <div
               key={assignment.id}
               className={`flex items-center gap-2 py-2 px-3 rounded-lg cursor-pointer transition-colors ${
-                isSelected("assignment", assignment.id)
-                  ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
-                  : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                isSelected('assignment', assignment.id)
+                  ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
-              onClick={() => onItemSelect("assignment", assignment.id)}
+              onClick={() => onItemSelect('assignment', assignment.id)}
             >
               <Target className="w-4 h-4 text-purple-500 flex-shrink-0" />
 
@@ -237,11 +230,11 @@ export default function ProjectAssignmentStructure({
         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           <div
             className={`flex items-center gap-2 py-2 px-3 rounded-lg cursor-pointer transition-colors ${
-              isSelected("unlinked", null)
-                ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
-                : "hover:bg-gray-100 dark:hover:bg-gray-800"
+              isSelected('unlinked', null)
+                ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
-            onClick={() => onItemSelect("unlinked", null)}
+            onClick={() => onItemSelect('unlinked', null)}
           >
             <FileText className="w-5 h-5 text-gray-400 flex-shrink-0" />
 

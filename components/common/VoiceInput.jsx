@@ -1,32 +1,34 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mic, MicOff, Loader2, AlertCircle, CheckCircle } from "lucide-react";
-import { toast } from "sonner";
+import React, { useState, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Mic, MicOff, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function VoiceInput({ isActive, onToggle, onTranscription }) {
   const [isRecording, setIsRecording] = useState(false);
-  const [transcript, setTranscript] = useState("");
+  const [transcript, setTranscript] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  
+
   const recognitionRef = useRef(null);
   const timerRef = useRef(null);
 
   useEffect(() => {
     // Check if browser supports speech recognition
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      setError("Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.");
+      setError(
+        'Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.'
+      );
       return;
     }
 
     // Initialize speech recognition
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognitionRef.current = new SpeechRecognition();
-    
+
     recognitionRef.current.continuous = true;
     recognitionRef.current.interimResults = true;
     recognitionRef.current.lang = 'en-US';
@@ -82,27 +84,27 @@ export default function VoiceInput({ isActive, onToggle, onTranscription }) {
 
   const startRecording = () => {
     if (!recognitionRef.current) {
-      setError("Speech recognition not initialized");
+      setError('Speech recognition not initialized');
       return;
     }
 
     setError(null);
-    setTranscript("");
+    setTranscript('');
     setRecordingDuration(0);
-    
+
     try {
       recognitionRef.current.start();
       setIsRecording(true);
-      
+
       // Start duration timer
       timerRef.current = setInterval(() => {
-        setRecordingDuration(prev => prev + 1);
+        setRecordingDuration((prev) => prev + 1);
       }, 1000);
-      
-      toast.success("Recording started - speak now");
+
+      toast.success('Recording started - speak now');
     } catch (err) {
       console.error('Error starting recognition:', err);
-      setError("Failed to start recording. Please try again.");
+      setError('Failed to start recording. Please try again.');
     }
   };
 
@@ -110,15 +112,15 @@ export default function VoiceInput({ isActive, onToggle, onTranscription }) {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
     }
-    
+
     setIsRecording(false);
-    
+
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    
-    toast.info("Recording stopped");
+
+    toast.info('Recording stopped');
   };
 
   const handleToggle = () => {
@@ -132,9 +134,9 @@ export default function VoiceInput({ isActive, onToggle, onTranscription }) {
   const handleInsert = () => {
     if (transcript.trim()) {
       onTranscription(transcript.trim());
-      setTranscript("");
+      setTranscript('');
       setRecordingDuration(0);
-      toast.success("Transcription inserted into document");
+      toast.success('Transcription inserted into document');
     }
   };
 
@@ -208,11 +210,7 @@ export default function VoiceInput({ isActive, onToggle, onTranscription }) {
               {transcript}
             </div>
 
-            <Button
-              size="sm"
-              onClick={handleInsert}
-              className="w-full"
-            >
+            <Button size="sm" onClick={handleInsert} className="w-full">
               Insert into Document
             </Button>
           </CardContent>

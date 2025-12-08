@@ -9,7 +9,7 @@ export function ElementSelector({ isActive, onSelect, onCancel }) {
   const { hoveredRect, isSelecting } = useElementSelector({
     isActive,
     onSelect,
-    onCancel
+    onCancel,
   });
 
   if (!isActive) {
@@ -40,17 +40,19 @@ export function ElementSelector({ isActive, onSelect, onCancel }) {
           alignItems: 'center',
           gap: '12px',
           boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-          pointerEvents: 'none'
+          pointerEvents: 'none',
         }}
       >
         <span>Click an element to select it</span>
-        <span style={{
-          opacity: 0.7,
-          fontSize: '12px',
-          padding: '2px 8px',
-          backgroundColor: 'rgba(255,255,255,0.15)',
-          borderRadius: '4px'
-        }}>
+        <span
+          style={{
+            opacity: 0.7,
+            fontSize: '12px',
+            padding: '2px 8px',
+            backgroundColor: 'rgba(255,255,255,0.15)',
+            borderRadius: '4px',
+          }}
+        >
           ESC to cancel
         </span>
       </div>

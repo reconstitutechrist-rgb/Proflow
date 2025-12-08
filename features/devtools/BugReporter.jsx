@@ -33,7 +33,9 @@ class DevToolsErrorBoundary extends Component {
             title={`DevTools Error: ${this.state.error?.message || 'Unknown error'}`}
             onClick={() => {
               console.error('DevTools failed to load:', this.state.error);
-              alert(`DevTools Error: ${this.state.error?.message}\n\nCheck browser console for details.`);
+              alert(
+                `DevTools Error: ${this.state.error?.message}\n\nCheck browser console for details.`
+              );
             }}
           >
             <AlertTriangle className="w-6 h-6 text-white" />
@@ -50,27 +52,24 @@ class DevToolsErrorBoundary extends Component {
  * Internal component that uses the bug reporter context
  */
 function BugReporterContent() {
-  const {
-    isPanelOpen,
-    setIsPanelOpen,
-    currentMode,
-    updateSelectedElement,
-    exitMode
-  } = useBugReporter();
+  const { isPanelOpen, setIsPanelOpen, currentMode, updateSelectedElement, exitMode } =
+    useBugReporter();
 
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event) => {
       // Skip if in input/textarea
-      if (['INPUT', 'TEXTAREA'].includes(event.target.tagName) ||
-          event.target.contentEditable === 'true') {
+      if (
+        ['INPUT', 'TEXTAREA'].includes(event.target.tagName) ||
+        event.target.contentEditable === 'true'
+      ) {
         return;
       }
 
       // Ctrl+Shift+B to toggle panel
       if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'b') {
         event.preventDefault();
-        setIsPanelOpen(prev => !prev);
+        setIsPanelOpen((prev) => !prev);
       }
 
       // Escape to cancel current mode

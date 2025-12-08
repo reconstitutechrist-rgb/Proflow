@@ -1,16 +1,16 @@
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Loader2,
   Upload,
@@ -22,10 +22,10 @@ import {
   Target,
   Globe,
   Link2,
-} from "lucide-react";
-import DragDropZone from "@/components/DragDropZone";
-import ProgressIndicator from "@/components/ProgressIndicator";
-import { MEMORY_LIMITS } from "@/hooks/useAskAI";
+} from 'lucide-react';
+import DragDropZone from '@/components/DragDropZone';
+import ProgressIndicator from '@/components/ProgressIndicator';
+import { MEMORY_LIMITS } from '@/hooks/useAskAI';
 
 export function AskAIDocumentSidebar({
   uploadedDocuments,
@@ -73,13 +73,14 @@ export function AskAIDocumentSidebar({
       </CardHeader>
 
       {/* Auto-loaded documents indicator */}
-      {uploadedDocuments.filter(d => d.autoLoaded).length > 0 && (
+      {uploadedDocuments.filter((d) => d.autoLoaded).length > 0 && (
         <div className="mx-4 mt-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-200 dark:border-purple-800 rounded-lg">
           <div className="p-3">
             <div className="flex items-center gap-2">
               <Link2 className="w-4 h-4 text-purple-600 flex-shrink-0" />
               <span className="text-xs font-medium text-purple-900 dark:text-purple-100">
-                {uploadedDocuments.filter(d => d.autoLoaded).length} linked document(s) auto-loaded
+                {uploadedDocuments.filter((d) => d.autoLoaded).length} linked document(s)
+                auto-loaded
               </span>
             </div>
           </div>
@@ -98,17 +99,26 @@ export function AskAIDocumentSidebar({
               </div>
               <div className="flex items-center gap-1 flex-wrap">
                 {docsWithRealEmbeddings.length > 0 && (
-                  <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-1.5 py-0">
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-1.5 py-0"
+                  >
                     {docsWithRealEmbeddings.length} AI
                   </Badge>
                 )}
                 {docsWithSemanticChunking.length > 0 && (
-                  <Badge variant="secondary" className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-1.5 py-0">
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-1.5 py-0"
+                  >
                     {docsWithSemanticChunking.length} sem
                   </Badge>
                 )}
                 {docsWithSimulatedEmbeddings.length > 0 && (
-                  <Badge variant="secondary" className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0">
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0"
+                  >
                     {docsWithSimulatedEmbeddings.length} sim
                   </Badge>
                 )}
@@ -122,27 +132,27 @@ export function AskAIDocumentSidebar({
         <div className="mb-4">
           <Select
             value={
-              contextType === "project" && selectedProject
+              contextType === 'project' && selectedProject
                 ? `project:${selectedProject.id}`
-                : contextType === "assignment" && selectedAssignment
-                ? `assignment:${selectedAssignment.id}`
-                : "none"
+                : contextType === 'assignment' && selectedAssignment
+                  ? `assignment:${selectedAssignment.id}`
+                  : 'none'
             }
             onValueChange={(value) => {
-              if (value === "none") {
-                setContextType("none");
+              if (value === 'none') {
+                setContextType('none');
                 setSelectedAssignment(null);
                 setSelectedProject(null);
-              } else if (value.startsWith("project:")) {
-                const projectId = value.replace("project:", "");
-                const project = projects.find(p => p.id === projectId);
-                setContextType("project");
+              } else if (value.startsWith('project:')) {
+                const projectId = value.replace('project:', '');
+                const project = projects.find((p) => p.id === projectId);
+                setContextType('project');
                 setSelectedProject(project || null);
                 setSelectedAssignment(null);
-              } else if (value.startsWith("assignment:")) {
-                const assignmentId = value.replace("assignment:", "");
-                const assignment = assignments.find(a => a.id === assignmentId);
-                setContextType("assignment");
+              } else if (value.startsWith('assignment:')) {
+                const assignmentId = value.replace('assignment:', '');
+                const assignment = assignments.find((a) => a.id === assignmentId);
+                setContextType('assignment');
                 setSelectedAssignment(assignment || null);
                 setSelectedProject(null);
               }
@@ -150,12 +160,12 @@ export function AskAIDocumentSidebar({
           >
             <SelectTrigger>
               <SelectValue>
-                {contextType === "project" && selectedProject ? (
+                {contextType === 'project' && selectedProject ? (
                   <span className="flex items-center gap-2">
                     <Target className="w-4 h-4 text-purple-600" />
                     {selectedProject.name}
                   </span>
-                ) : contextType === "assignment" && selectedAssignment ? (
+                ) : contextType === 'assignment' && selectedAssignment ? (
                   <span className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-blue-600" />
                     {selectedAssignment.name}
@@ -192,7 +202,10 @@ export function AskAIDocumentSidebar({
                 <>
                   <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">Assignments</div>
                   {assignments.map((assignment) => (
-                    <SelectItem key={`assignment:${assignment.id}`} value={`assignment:${assignment.id}`}>
+                    <SelectItem
+                      key={`assignment:${assignment.id}`}
+                      value={`assignment:${assignment.id}`}
+                    >
                       <span className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-blue-600" />
                         {assignment.name}
@@ -259,7 +272,8 @@ export function AskAIDocumentSidebar({
         {excludedDocumentCount > 0 && (
           <div className="mb-3 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
             <p className="text-xs text-gray-600 dark:text-gray-400">
-              {excludedDocumentCount} document{excludedDocumentCount > 1 ? 's' : ''} excluded from context
+              {excludedDocumentCount} document{excludedDocumentCount > 1 ? 's' : ''} excluded from
+              context
             </p>
           </div>
         )}
@@ -314,7 +328,9 @@ export function AskAIDocumentSidebar({
                                   : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
                               }`}
                             >
-                              {doc.embeddingModel === 'text-embedding-ada-002' ? '✓ OpenAI' : '⚠ Simulated'}
+                              {doc.embeddingModel === 'text-embedding-ada-002'
+                                ? '✓ OpenAI'
+                                : '⚠ Simulated'}
                             </Badge>
                           )}
                           {doc.chunkingStrategy && (
@@ -330,7 +346,10 @@ export function AskAIDocumentSidebar({
                             </Badge>
                           )}
                           {doc.fromCache && (
-                            <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+                            <Badge
+                              variant="secondary"
+                              className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                            >
                               Cached
                             </Badge>
                           )}
@@ -346,7 +365,11 @@ export function AskAIDocumentSidebar({
                             size="sm"
                             className="h-5 px-2 text-xs"
                             onClick={() => toggleDocumentInContext(doc.id)}
-                            title={doc.includedInContext === false ? "Include in context" : "Exclude from context"}
+                            title={
+                              doc.includedInContext === false
+                                ? 'Include in context'
+                                : 'Exclude from context'
+                            }
                           >
                             {doc.includedInContext === false ? (
                               <>

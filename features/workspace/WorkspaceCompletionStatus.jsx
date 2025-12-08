@@ -1,17 +1,8 @@
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { 
-  CheckCircle, 
-  Circle,
-  Shield,
-  Code,
-  FileText,
-  Zap,
-  TrendingUp,
-  Award
-} from "lucide-react";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { CheckCircle, Circle, Shield, Code, FileText, Zap, TrendingUp, Award } from 'lucide-react';
 
 // DocumentRefiner removed - consolidated into DocumentsHub
 
@@ -21,76 +12,76 @@ export default function WorkspaceCompletionStatus() {
       total: 13,
       completed: 10,
       items: [
-        { name: "Dashboard", status: "complete" },
-        { name: "Projects", status: "complete" },
-        { name: "Assignments", status: "complete" },
-        { name: "Documents", status: "complete" },
-        { name: "Tasks", status: "complete" },
-        { name: "Chat", status: "complete" },
-        { name: "Research", status: "complete" },
-        { name: "Generate", status: "complete" },
-        { name: "AskAI", status: "complete" },
-        { name: "DocumentCreator", status: "complete" },
-        { name: "Users", status: "enhanced" },
-        { name: "Preferences", status: "n/a" },
-        { name: "Workspaces", status: "optimized" }
-      ]
+        { name: 'Dashboard', status: 'complete' },
+        { name: 'Projects', status: 'complete' },
+        { name: 'Assignments', status: 'complete' },
+        { name: 'Documents', status: 'complete' },
+        { name: 'Tasks', status: 'complete' },
+        { name: 'Chat', status: 'complete' },
+        { name: 'Research', status: 'complete' },
+        { name: 'Generate', status: 'complete' },
+        { name: 'AskAI', status: 'complete' },
+        { name: 'DocumentCreator', status: 'complete' },
+        { name: 'Users', status: 'enhanced' },
+        { name: 'Preferences', status: 'n/a' },
+        { name: 'Workspaces', status: 'optimized' },
+      ],
     },
     security: {
       total: 5,
       completed: 5,
       items: [
-        { name: "DocumentDuplicateDialog", status: "complete" },
-        { name: "FileShareDialog", status: "complete" },
-        { name: "DocumentPackager", status: "complete" },
-        { name: "CreateFolderDialog", status: "complete" },
-        { name: "FolderStructure", status: "complete" }
-      ]
+        { name: 'DocumentDuplicateDialog', status: 'complete' },
+        { name: 'FileShareDialog', status: 'complete' },
+        { name: 'DocumentPackager', status: 'complete' },
+        { name: 'CreateFolderDialog', status: 'complete' },
+        { name: 'FolderStructure', status: 'complete' },
+      ],
     },
     highPriority: {
       total: 7,
       completed: 7,
       items: [
-        { name: "DocumentVersionHistory", status: "complete" },
-        { name: "AISummaryButton", status: "complete" },
-        { name: "TaskDependencyTracker", status: "complete" },
-        { name: "WorkflowPatternRecognition", status: "complete" },
-        { name: "ThreadSearch", status: "complete" },
-        { name: "PromptBuilderWizard", status: "complete" },
-        { name: "DocumentRefiner", status: "complete" }
-      ]
+        { name: 'DocumentVersionHistory', status: 'complete' },
+        { name: 'AISummaryButton', status: 'complete' },
+        { name: 'TaskDependencyTracker', status: 'complete' },
+        { name: 'WorkflowPatternRecognition', status: 'complete' },
+        { name: 'ThreadSearch', status: 'complete' },
+        { name: 'PromptBuilderWizard', status: 'complete' },
+        { name: 'DocumentRefiner', status: 'complete' },
+      ],
     },
     mediumPriority: {
       total: 10,
       completed: 10,
       items: [
-        { name: "AIDocumentAnalyzer", status: "complete" },
-        { name: "AIProjectExpert", status: "complete" },
-        { name: "ProjectInsights", status: "complete" },
-        { name: "ContentRewriter", status: "complete" },
-        { name: "GrammarAssistant", status: "complete" },
-        { name: "AudienceRewriter", status: "complete" },
-        { name: "DocToPdfConverter", status: "complete" },
-        { name: "DocumentQA", status: "complete" },
-        { name: "SmartTaskSuggestions", status: "complete" },
-        { name: "ProjectHealthOverview", status: "complete" }
-      ]
+        { name: 'AIDocumentAnalyzer', status: 'complete' },
+        { name: 'AIProjectExpert', status: 'complete' },
+        { name: 'ProjectInsights', status: 'complete' },
+        { name: 'ContentRewriter', status: 'complete' },
+        { name: 'GrammarAssistant', status: 'complete' },
+        { name: 'AudienceRewriter', status: 'complete' },
+        { name: 'DocToPdfConverter', status: 'complete' },
+        { name: 'DocumentQA', status: 'complete' },
+        { name: 'SmartTaskSuggestions', status: 'complete' },
+        { name: 'ProjectHealthOverview', status: 'complete' },
+      ],
     },
     polish: {
       total: 6,
       completed: 6,
       items: [
-        { name: "WorkspacePerformanceMonitor", status: "complete" },
-        { name: "WorkspaceLoadingState", status: "complete" },
-        { name: "WorkspaceEmptyState", status: "complete" },
-        { name: "OptimizedWorkspaceContext", status: "complete" },
-        { name: "WorkspaceHealthCheck", status: "complete" },
-        { name: "Documentation Pages", status: "complete" }
-      ]
-    }
+        { name: 'WorkspacePerformanceMonitor', status: 'complete' },
+        { name: 'WorkspaceLoadingState', status: 'complete' },
+        { name: 'WorkspaceEmptyState', status: 'complete' },
+        { name: 'OptimizedWorkspaceContext', status: 'complete' },
+        { name: 'WorkspaceHealthCheck', status: 'complete' },
+        { name: 'Documentation Pages', status: 'complete' },
+      ],
+    },
   };
 
-  const totalCompleted = 
+  const totalCompleted =
     completionData.pages.completed +
     completionData.security.completed +
     completionData.highPriority.completed +
@@ -108,12 +99,12 @@ export default function WorkspaceCompletionStatus() {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "complete":
+      case 'complete':
         return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case "enhanced":
-      case "optimized":
+      case 'enhanced':
+      case 'optimized':
         return <Zap className="w-4 h-4 text-blue-600" />;
-      case "n/a":
+      case 'n/a':
         return <Circle className="w-4 h-4 text-gray-400" />;
       default:
         return <Circle className="w-4 h-4 text-gray-400" />;
@@ -136,7 +127,7 @@ export default function WorkspaceCompletionStatus() {
           <div key={index} className="flex items-center gap-2 text-sm py-1">
             {getStatusIcon(item.status)}
             <span className="text-gray-700 dark:text-gray-300">{item.name}</span>
-            {(item.status === "enhanced" || item.status === "optimized") && (
+            {(item.status === 'enhanced' || item.status === 'optimized') && (
               <Badge variant="outline" className="text-xs">
                 {item.status}
               </Badge>
@@ -176,7 +167,9 @@ export default function WorkspaceCompletionStatus() {
         <div className="space-y-2">
           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
             <span>Overall Progress</span>
-            <span className="font-medium">{totalCompleted}/{totalItems} items</span>
+            <span className="font-medium">
+              {totalCompleted}/{totalItems} items
+            </span>
           </div>
           <Progress value={completionPercentage} className="h-3" />
         </div>

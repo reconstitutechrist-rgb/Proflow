@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { Assignment } from "@/api/entities";
-import { Task } from "@/api/entities";
-import { Document } from "@/api/entities";
-import { Message } from "@/api/entities";
-import { db } from "@/api/db";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import React, { useState, useEffect } from 'react';
+import { Assignment } from '@/api/entities';
+import { Task } from '@/api/entities';
+import { Document } from '@/api/entities';
+import { Message } from '@/api/entities';
+import { db } from '@/api/db';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   LayoutDashboard,
   FolderOpen,
@@ -24,16 +24,16 @@ import {
   Target,
   ArrowRight,
   Zap,
-} from "lucide-react";
-import { Link } from "react-router";
-import { createPageUrl } from "@/lib/utils";
-import StatsOverview from "@/components/dashboard/StatsOverview";
-import RecentActivity from "@/components/dashboard/RecentActivity";
-import AssignmentProgress from "@/features/assignments/AssignmentProgress";
-import DashboardNotes from "@/components/dashboard/DashboardNotes";
-import PartnerActivity from "@/components/dashboard/PartnerActivity";
-import SharedNotes from "@/components/dashboard/SharedNotes";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+} from 'lucide-react';
+import { Link } from 'react-router';
+import { createPageUrl } from '@/lib/utils';
+import StatsOverview from '@/components/dashboard/StatsOverview';
+import RecentActivity from '@/components/dashboard/RecentActivity';
+import AssignmentProgress from '@/features/assignments/AssignmentProgress';
+import DashboardNotes from '@/components/dashboard/DashboardNotes';
+import PartnerActivity from '@/components/dashboard/PartnerActivity';
+import SharedNotes from '@/components/dashboard/SharedNotes';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -53,7 +53,7 @@ export default function DashboardPage() {
     overdue: 0,
     dueToday: 0,
     highPriority: 0,
-    blocked: 0
+    blocked: 0,
   });
   const [error, setError] = useState(null);
 
@@ -75,41 +75,21 @@ export default function DashboardPage() {
       setUser(currentUser);
 
       // Load all data filtered by workspace
-      const [assignments, tasks, documents, messages] =
-        await Promise.allSettled([
-          Assignment.filter(
-            { workspace_id: currentWorkspaceId },
-            "-updated_date",
-            20
-          ),
-          Task.filter(
-            { workspace_id: currentWorkspaceId },
-            "-updated_date",
-            50
-          ),
-          Document.filter(
-            { workspace_id: currentWorkspaceId },
-            "-updated_date",
-            100
-          ),
-          Message.filter(
-            { workspace_id: currentWorkspaceId },
-            "-created_date",
-            50
-          ).catch(() => []),
-        ]);
+      const [assignments, tasks, documents, messages] = await Promise.allSettled([
+        Assignment.filter({ workspace_id: currentWorkspaceId }, '-updated_date', 20),
+        Task.filter({ workspace_id: currentWorkspaceId }, '-updated_date', 50),
+        Document.filter({ workspace_id: currentWorkspaceId }, '-updated_date', 100),
+        Message.filter({ workspace_id: currentWorkspaceId }, '-created_date', 50).catch(() => []),
+      ]);
 
-      const assignmentData =
-        assignments.status === "fulfilled" ? assignments.value : [];
+      const assignmentData = assignments.status === 'fulfilled' ? assignments.value : [];
       const activeAssignments = assignmentData.filter(
-        (a) => a.status === "in_progress" || a.status === "planning"
+        (a) => a.status === 'in_progress' || a.status === 'planning'
       );
 
-      const taskData = tasks.status === "fulfilled" ? tasks.value : [];
-      const userTasks = taskData.filter(
-        (t) => t.assigned_to === currentUser.email
-      );
-      const completedTasks = userTasks.filter((t) => t.status === "completed");
+      const taskData = tasks.status === 'fulfilled' ? tasks.value : [];
+      const userTasks = taskData.filter((t) => t.assigned_to === currentUser.email);
+      const completedTasks = userTasks.filter((t) => t.status === 'completed');
 
       // Calculate today's date without time
       const today = new Date();
@@ -119,27 +99,27 @@ export default function DashboardPage() {
 
       // Calculate needs attention metrics
       const overdueTasksList = userTasks.filter((t) => {
-        if (t.status === "completed" || !t.due_date) return false;
+        if (t.status === 'completed' || !t.due_date) return false;
         const dueDate = new Date(t.due_date);
         return dueDate < today;
       });
 
       const dueTodayTasks = userTasks.filter((t) => {
-        if (t.status === "completed" || !t.due_date) return false;
+        if (t.status === 'completed' || !t.due_date) return false;
         const dueDate = new Date(t.due_date);
         dueDate.setHours(0, 0, 0, 0);
         return dueDate.getTime() === today.getTime();
       });
 
       const highPriorityTasks = userTasks.filter(
-        (t) => t.status !== "completed" && (t.priority === "urgent" || t.priority === "high")
+        (t) => t.status !== 'completed' && (t.priority === 'urgent' || t.priority === 'high')
       );
 
-      const blockedTasks = userTasks.filter((t) => t.status === "blocked");
+      const blockedTasks = userTasks.filter((t) => t.status === 'blocked');
 
       // Calculate Today's Focus - AI-suggested top 3 priorities
       const focusTasks = userTasks
-        .filter((t) => t.status !== "completed")
+        .filter((t) => t.status !== 'completed')
         .sort((a, b) => {
           // Priority order
           const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
@@ -153,8 +133,10 @@ export default function DashboardPage() {
           if (!aOverdue && bOverdue) return 1;
 
           // Then by due today
-          const aDueToday = a.due_date && new Date(a.due_date).setHours(0,0,0,0) === today.getTime();
-          const bDueToday = b.due_date && new Date(b.due_date).setHours(0,0,0,0) === today.getTime();
+          const aDueToday =
+            a.due_date && new Date(a.due_date).setHours(0, 0, 0, 0) === today.getTime();
+          const bDueToday =
+            b.due_date && new Date(b.due_date).setHours(0, 0, 0, 0) === today.getTime();
           if (aDueToday && !bDueToday) return -1;
           if (!aDueToday && bDueToday) return 1;
 
@@ -178,17 +160,16 @@ export default function DashboardPage() {
         overdue: overdueTasksList.length,
         dueToday: dueTodayTasks.length,
         highPriority: highPriorityTasks.length,
-        blocked: blockedTasks.length
+        blocked: blockedTasks.length,
       });
 
       const pendingTasks = userTasks
-        .filter((t) => t.status !== "completed" && t.due_date)
+        .filter((t) => t.status !== 'completed' && t.due_date)
         .sort((a, b) => new Date(a.due_date) - new Date(b.due_date))
         .slice(0, 5);
 
-      const documentData =
-        documents.status === "fulfilled" ? documents.value : [];
-      const messageData = messages.status === "fulfilled" ? messages.value : [];
+      const documentData = documents.status === 'fulfilled' ? documents.value : [];
+      const messageData = messages.status === 'fulfilled' ? messages.value : [];
       const recentMessages = messageData.slice(0, 10);
 
       setStats({
@@ -202,8 +183,8 @@ export default function DashboardPage() {
 
       setUpcomingTasks(pendingTasks);
     } catch (err) {
-      console.error("Error loading dashboard:", err);
-      setError("Failed to load dashboard data. Please refresh the page.");
+      console.error('Error loading dashboard:', err);
+      setError('Failed to load dashboard data. Please refresh the page.');
     } finally {
       setLoading(false);
     }
@@ -242,7 +223,8 @@ export default function DashboardPage() {
   }
 
   // Check if there are items that need attention
-  const hasNeedsAttention = needsAttention.overdue > 0 || needsAttention.dueToday > 0 || needsAttention.blocked > 0;
+  const hasNeedsAttention =
+    needsAttention.overdue > 0 || needsAttention.dueToday > 0 || needsAttention.blocked > 0;
 
   return (
     <div className="space-y-6">
@@ -250,14 +232,18 @@ export default function DashboardPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Welcome back, {user?.full_name || "User"}!
+            Welcome back, {user?.full_name || 'User'}!
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
             Here's what's happening with your assignments today.
           </p>
         </div>
         <div className="text-right text-sm text-gray-500">
-          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+          {new Date().toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+          })}
         </div>
       </div>
 
@@ -273,39 +259,45 @@ export default function DashboardPage() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {needsAttention.overdue > 0 && (
-                <Link to={`${createPageUrl("Tasks")}?preset=overdue`}>
+                <Link to={`${createPageUrl('Tasks')}?preset=overdue`}>
                   <div className="flex items-center gap-3 p-3 bg-red-100 dark:bg-red-900/30 rounded-lg cursor-pointer hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
                     <div className="p-2 bg-red-500 rounded-lg">
                       <AlertCircle className="w-4 h-4 text-white" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-red-700 dark:text-red-300">{needsAttention.overdue}</p>
+                      <p className="text-2xl font-bold text-red-700 dark:text-red-300">
+                        {needsAttention.overdue}
+                      </p>
                       <p className="text-xs text-red-600 dark:text-red-400">Overdue</p>
                     </div>
                   </div>
                 </Link>
               )}
               {needsAttention.dueToday > 0 && (
-                <Link to={`${createPageUrl("Tasks")}?preset=due-today`}>
+                <Link to={`${createPageUrl('Tasks')}?preset=due-today`}>
                   <div className="flex items-center gap-3 p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg cursor-pointer hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors">
                     <div className="p-2 bg-orange-500 rounded-lg">
                       <Clock className="w-4 h-4 text-white" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{needsAttention.dueToday}</p>
+                      <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">
+                        {needsAttention.dueToday}
+                      </p>
                       <p className="text-xs text-orange-600 dark:text-orange-400">Due Today</p>
                     </div>
                   </div>
                 </Link>
               )}
               {needsAttention.highPriority > 0 && (
-                <Link to={`${createPageUrl("Tasks")}?priority=high`}>
+                <Link to={`${createPageUrl('Tasks')}?priority=high`}>
                   <div className="flex items-center gap-3 p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg cursor-pointer hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors">
                     <div className="p-2 bg-purple-500 rounded-lg">
                       <Zap className="w-4 h-4 text-white" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{needsAttention.highPriority}</p>
+                      <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                        {needsAttention.highPriority}
+                      </p>
                       <p className="text-xs text-purple-600 dark:text-purple-400">High Priority</p>
                     </div>
                   </div>
@@ -317,7 +309,9 @@ export default function DashboardPage() {
                     <AlertTriangle className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-700 dark:text-gray-300">{needsAttention.blocked}</p>
+                    <p className="text-2xl font-bold text-gray-700 dark:text-gray-300">
+                      {needsAttention.blocked}
+                    </p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">Blocked</p>
                   </div>
                 </div>
@@ -336,7 +330,10 @@ export default function DashboardPage() {
                 <Sparkles className="w-5 h-5" />
                 Today's Focus
               </CardTitle>
-              <Badge variant="secondary" className="bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300">
+              <Badge
+                variant="secondary"
+                className="bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300"
+              >
                 AI Suggested
               </Badge>
             </div>
@@ -344,23 +341,34 @@ export default function DashboardPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {todaysFocus.map((task, index) => (
-                <Link key={task.id} to={createPageUrl("Tasks")}>
+                <Link key={task.id} to={createPageUrl('Tasks')}>
                   <div className="flex items-start gap-3 p-4 bg-white dark:bg-gray-800 rounded-lg border border-purple-100 dark:border-purple-800 hover:shadow-md transition-shadow cursor-pointer">
-                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
-                      index === 0 ? 'bg-gradient-to-r from-purple-500 to-indigo-500' :
-                      index === 1 ? 'bg-gradient-to-r from-blue-500 to-cyan-500' :
-                      'bg-gradient-to-r from-green-500 to-emerald-500'
-                    }`}>
+                    <div
+                      className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+                        index === 0
+                          ? 'bg-gradient-to-r from-purple-500 to-indigo-500'
+                          : index === 1
+                            ? 'bg-gradient-to-r from-blue-500 to-cyan-500'
+                            : 'bg-gradient-to-r from-green-500 to-emerald-500'
+                      }`}
+                    >
                       {index + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 dark:text-white truncate">{task.title}</p>
+                      <p className="font-medium text-gray-900 dark:text-white truncate">
+                        {task.title}
+                      </p>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className={`text-xs ${
-                          task.priority === 'urgent' ? 'border-red-300 text-red-600' :
-                          task.priority === 'high' ? 'border-orange-300 text-orange-600' :
-                          'border-gray-300 text-gray-600'
-                        }`}>
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${
+                            task.priority === 'urgent'
+                              ? 'border-red-300 text-red-600'
+                              : task.priority === 'high'
+                                ? 'border-orange-300 text-orange-600'
+                                : 'border-gray-300 text-gray-600'
+                          }`}
+                        >
                           {task.priority}
                         </Badge>
                         {task.due_date && (
@@ -384,16 +392,12 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Active Assignments
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Active Assignments</CardTitle>
             <FolderOpen className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.activeAssignments}</div>
-            <p className="text-xs text-gray-500 mt-1">
-              {stats.totalAssignments} total assignments
-            </p>
+            <p className="text-xs text-gray-500 mt-1">{stats.totalAssignments} total assignments</p>
           </CardContent>
         </Card>
 
@@ -428,9 +432,7 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Recent Messages
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Recent Messages</CardTitle>
             <MessageSquare className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
@@ -453,7 +455,7 @@ export default function DashboardPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Upcoming Tasks</CardTitle>
-              <Link to={createPageUrl("Tasks")}>
+              <Link to={createPageUrl('Tasks')}>
                 <Button variant="outline" size="sm">
                   View All
                 </Button>
@@ -470,13 +472,13 @@ export default function DashboardPage() {
                   >
                     <div
                       className={`w-2 h-2 rounded-full mt-2 ${
-                        task.priority === "urgent"
-                          ? "bg-red-500"
-                          : task.priority === "high"
-                          ? "bg-orange-500"
-                          : task.priority === "medium"
-                          ? "bg-yellow-500"
-                          : "bg-green-500"
+                        task.priority === 'urgent'
+                          ? 'bg-red-500'
+                          : task.priority === 'high'
+                            ? 'bg-orange-500'
+                            : task.priority === 'medium'
+                              ? 'bg-yellow-500'
+                              : 'bg-green-500'
                       }`}
                     />
                     <div className="flex-1 min-w-0">
@@ -494,7 +496,7 @@ export default function DashboardPage() {
                           </div>
                         )}
                         <Badge variant="outline" className="text-xs capitalize">
-                          {task.status.replace("_", " ")}
+                          {task.status.replace('_', ' ')}
                         </Badge>
                       </div>
                     </div>
@@ -505,9 +507,7 @@ export default function DashboardPage() {
               <div className="text-center py-12">
                 <CheckCircle2 className="w-12 h-12 mx-auto text-gray-300 mb-3" />
                 <p className="text-gray-500">No upcoming tasks</p>
-                <p className="text-sm text-gray-400 mt-1">
-                  You're all caught up!
-                </p>
+                <p className="text-sm text-gray-400 mt-1">You're all caught up!</p>
               </div>
             )}
           </CardContent>
@@ -528,7 +528,7 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Link to={createPageUrl("Assignments")}>
+            <Link to={createPageUrl('Assignments')}>
               <Button
                 variant="outline"
                 className="w-full h-auto py-4 flex flex-col items-center gap-2"
@@ -537,7 +537,7 @@ export default function DashboardPage() {
                 <span className="text-sm">New Assignment</span>
               </Button>
             </Link>
-            <Link to={createPageUrl("Tasks")}>
+            <Link to={createPageUrl('Tasks')}>
               <Button
                 variant="outline"
                 className="w-full h-auto py-4 flex flex-col items-center gap-2"
@@ -546,7 +546,7 @@ export default function DashboardPage() {
                 <span className="text-sm">Add Task</span>
               </Button>
             </Link>
-            <Link to={createPageUrl("Documents")}>
+            <Link to={createPageUrl('Documents')}>
               <Button
                 variant="outline"
                 className="w-full h-auto py-4 flex flex-col items-center gap-2"
@@ -555,7 +555,7 @@ export default function DashboardPage() {
                 <span className="text-sm">Upload Document</span>
               </Button>
             </Link>
-            <Link to={createPageUrl("Chat")}>
+            <Link to={createPageUrl('Chat')}>
               <Button
                 variant="outline"
                 className="w-full h-auto py-4 flex flex-col items-center gap-2"

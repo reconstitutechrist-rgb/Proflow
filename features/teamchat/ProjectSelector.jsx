@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Select,
   SelectContent,
@@ -9,7 +8,7 @@ import {
 import { FolderOpen } from 'lucide-react';
 
 export default function ProjectSelector({ projects, selectedProjectId, onSelect }) {
-  const selectedProject = projects?.find(p => p.id === selectedProjectId);
+  const selectedProject = projects?.find((p) => p.id === selectedProjectId);
 
   return (
     <Select value={selectedProjectId || ''} onValueChange={(value) => onSelect(value || null)}>

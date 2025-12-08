@@ -44,32 +44,41 @@ const pageContextMap = {
 const getQuickActions = (pageType) => {
   const actions = {
     dashboard: [
-      { label: "What should I focus on today?", query: "Based on my current tasks and deadlines, what should I prioritize today?" },
-      { label: "Summarize my progress", query: "Give me a summary of my progress this week" },
+      {
+        label: 'What should I focus on today?',
+        query: 'Based on my current tasks and deadlines, what should I prioritize today?',
+      },
+      { label: 'Summarize my progress', query: 'Give me a summary of my progress this week' },
     ],
     projects: [
-      { label: "Create a project plan", query: "Help me create a project plan" },
-      { label: "Suggest project milestones", query: "What milestones should I set for my project?" },
+      { label: 'Create a project plan', query: 'Help me create a project plan' },
+      {
+        label: 'Suggest project milestones',
+        query: 'What milestones should I set for my project?',
+      },
     ],
     assignments: [
-      { label: "Break down this assignment", query: "Help me break down this assignment into tasks" },
-      { label: "Suggest next steps", query: "What should be my next steps for this assignment?" },
+      {
+        label: 'Break down this assignment',
+        query: 'Help me break down this assignment into tasks',
+      },
+      { label: 'Suggest next steps', query: 'What should be my next steps for this assignment?' },
     ],
     tasks: [
-      { label: "Prioritize my tasks", query: "Help me prioritize my current tasks" },
-      { label: "Create subtasks", query: "Break down this task into smaller subtasks" },
+      { label: 'Prioritize my tasks', query: 'Help me prioritize my current tasks' },
+      { label: 'Create subtasks', query: 'Break down this task into smaller subtasks' },
     ],
     documents: [
-      { label: "Summarize this document", query: "Give me a summary of this document" },
-      { label: "Suggest improvements", query: "How can I improve this document?" },
+      { label: 'Summarize this document', query: 'Give me a summary of this document' },
+      { label: 'Suggest improvements', query: 'How can I improve this document?' },
     ],
     ai: [
-      { label: "What can you help with?", query: "What are the different ways you can help me?" },
-      { label: "Research a topic", query: "Help me research" },
+      { label: 'What can you help with?', query: 'What are the different ways you can help me?' },
+      { label: 'Research a topic', query: 'Help me research' },
     ],
     chat: [
-      { label: "Draft a message", query: "Help me draft a message" },
-      { label: "Summarize conversation", query: "Summarize this conversation" },
+      { label: 'Draft a message', query: 'Help me draft a message' },
+      { label: 'Summarize conversation', query: 'Summarize this conversation' },
     ],
   };
   return actions[pageType] || actions.dashboard;
@@ -87,7 +96,11 @@ export default function UnifiedAIAssistant() {
   const messagesEndRef = useRef(null);
 
   // Get page context
-  const pageContext = pageContextMap[location.pathname] || { type: 'general', label: 'General', icon: Brain };
+  const pageContext = pageContextMap[location.pathname] || {
+    type: 'general',
+    label: 'General',
+    icon: Brain,
+  };
   const quickActions = getQuickActions(pageContext.type);
 
   // Scroll to bottom when messages change
@@ -110,17 +123,29 @@ export default function UnifiedAIAssistant() {
 
         // Load additional context based on page
         if (pageContext.type === 'tasks') {
-          const tasks = await db.entities.Task.filter({ workspace_id: currentWorkspaceId }, "-updated_date", 10);
+          const tasks = await db.entities.Task.filter(
+            { workspace_id: currentWorkspaceId },
+            '-updated_date',
+            10
+          );
           if (isCancelled) return;
           context.recentTasks = tasks?.slice(0, 5) || [];
           context.taskCount = tasks?.length || 0;
         } else if (pageContext.type === 'projects') {
-          const projects = await db.entities.Project.filter({ workspace_id: currentWorkspaceId }, "-updated_date", 10);
+          const projects = await db.entities.Project.filter(
+            { workspace_id: currentWorkspaceId },
+            '-updated_date',
+            10
+          );
           if (isCancelled) return;
           context.recentProjects = projects?.slice(0, 5) || [];
           context.projectCount = projects?.length || 0;
         } else if (pageContext.type === 'assignments') {
-          const assignments = await db.entities.Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date", 10);
+          const assignments = await db.entities.Assignment.filter(
+            { workspace_id: currentWorkspaceId },
+            '-updated_date',
+            10
+          );
           if (isCancelled) return;
           context.recentAssignments = assignments?.slice(0, 5) || [];
           context.assignmentCount = assignments?.length || 0;
@@ -189,20 +214,20 @@ The user is currently on the ${pageContext.label} page in the "${currentContext?
 
       // Add relevant context only if arrays have items
       if (currentContext?.recentTasks?.length > 0) {
-        contextPrompt += `\n\nRecent tasks: ${currentContext.recentTasks.map(t => t.title).join(', ')}`;
+        contextPrompt += `\n\nRecent tasks: ${currentContext.recentTasks.map((t) => t.title).join(', ')}`;
       }
       if (currentContext?.recentProjects?.length > 0) {
-        contextPrompt += `\n\nRecent projects: ${currentContext.recentProjects.map(p => p.name).join(', ')}`;
+        contextPrompt += `\n\nRecent projects: ${currentContext.recentProjects.map((p) => p.name).join(', ')}`;
       }
       if (currentContext?.recentAssignments?.length > 0) {
-        contextPrompt += `\n\nRecent assignments: ${currentContext.recentAssignments.map(a => a.name).join(', ')}`;
+        contextPrompt += `\n\nRecent assignments: ${currentContext.recentAssignments.map((a) => a.name).join(', ')}`;
       }
 
       // Include recent conversation history (last 6 messages for context)
       const recentHistory = currentMessages.slice(-6);
       if (recentHistory.length > 1) {
         contextPrompt += `\n\n--- Conversation History ---`;
-        recentHistory.forEach(msg => {
+        recentHistory.forEach((msg) => {
           const role = msg.role === 'user' ? 'User' : 'Assistant';
           contextPrompt += `\n${role}: ${msg.content}`;
         });
@@ -215,11 +240,12 @@ The user is currently on the ${pageContext.label} page in the "${currentContext?
       const result = await db.integrations.Core.InvokeLLM({
         prompt: contextPrompt,
         response_json_schema: null,
-        add_context_from_internet: false
+        add_context_from_internet: false,
       });
 
       // Safely extract the response text
-      const responseText = extractResponseText(result) || "I couldn't generate a response. Please try again.";
+      const responseText =
+        extractResponseText(result) || "I couldn't generate a response. Please try again.";
 
       const aiMessage = {
         id: generateMessageId(),
@@ -228,7 +254,7 @@ The user is currently on the ${pageContext.label} page in the "${currentContext?
         timestamp: new Date().toISOString(),
       };
 
-      setMessages(prev => [...prev, aiMessage]);
+      setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
       console.error('Error getting AI response:', error);
       toast.error('Failed to get AI response');
@@ -240,7 +266,7 @@ The user is currently on the ${pageContext.label} page in the "${currentContext?
         timestamp: new Date().toISOString(),
         error: true,
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsProcessing(false);
     }
@@ -333,9 +359,7 @@ The user is currently on the ${pageContext.label} page in the "${currentContext?
                     <CardContent className="py-2">
                       <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                         <p>Workspace: {currentContext.workspaceName}</p>
-                        {currentContext.taskCount > 0 && (
-                          <p>Tasks: {currentContext.taskCount}</p>
-                        )}
+                        {currentContext.taskCount > 0 && <p>Tasks: {currentContext.taskCount}</p>}
                         {currentContext.projectCount > 0 && (
                           <p>Projects: {currentContext.projectCount}</p>
                         )}
@@ -359,15 +383,20 @@ The user is currently on the ${pageContext.label} page in the "${currentContext?
                         message.role === 'user'
                           ? 'bg-purple-600 text-white'
                           : message.error
-                          ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
+                            ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
                       }`}
                     >
                       <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      <p className={`text-xs mt-1 ${
-                        message.role === 'user' ? 'text-purple-200' : 'text-gray-500'
-                      }`}>
-                        {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <p
+                        className={`text-xs mt-1 ${
+                          message.role === 'user' ? 'text-purple-200' : 'text-gray-500'
+                        }`}
+                      >
+                        {new Date(message.timestamp).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </p>
                     </div>
                   </div>

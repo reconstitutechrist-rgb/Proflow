@@ -1,21 +1,20 @@
-
-import React, { useState, useRef } from "react";
-import { db } from "@/api/db";
-import { UploadFile } from "@/api/integrations"; // Keep this for clarity, though `db.integrations.Core.UploadFile` will be used
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import React, { useState, useRef } from 'react';
+import { db } from '@/api/db';
+import { UploadFile } from '@/api/integrations'; // Keep this for clarity, though `db.integrations.Core.UploadFile` will be used
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+} from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import {
   Upload,
   X,
@@ -26,11 +25,11 @@ import {
   File,
   RefreshCw,
   FileType, // NEW import
-  Zap // NEW import
-} from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox"; // NEW import
-import { toast } from "sonner";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+  Zap, // NEW import
+} from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox'; // NEW import
+import { toast } from 'sonner';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
 // File size limit: 100 MB
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
@@ -42,14 +41,14 @@ export default function DocumentUploader({
   assignments = [],
   projects = [],
   currentUser,
-  selectedFolderPath = "/",
+  selectedFolderPath = '/',
   onUploadComplete,
   existingDocuments = [],
   // NEW PROPS from outline
   assignmentId,
   projectId,
   taskId,
-  folder = "/", // New prop, will override selectedFolderPath for new uploads if provided
+  folder = '/', // New prop, will override selectedFolderPath for new uploads if provided
 }) {
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -59,37 +58,43 @@ export default function DocumentUploader({
 
   const handleFileSelect = (e) => {
     const selectedFiles = Array.from(e.target.files);
-    
+
     // Check for oversized files
-    const oversizedFiles = selectedFiles.filter(file => file.size > MAX_FILE_SIZE);
+    const oversizedFiles = selectedFiles.filter((file) => file.size > MAX_FILE_SIZE);
     if (oversizedFiles.length > 0) {
-      const fileList = oversizedFiles.map(f => `${f.name} (${(f.size / 1024 / 1024).toFixed(1)} MB)`).join(', ');
-      toast.error(`The following files exceed the ${MAX_FILE_SIZE / 1024 / 1024} MB limit: ${fileList}`);
-      
-      const validFiles = selectedFiles.filter(file => file.size <= MAX_FILE_SIZE);
+      const fileList = oversizedFiles
+        .map((f) => `${f.name} (${(f.size / 1024 / 1024).toFixed(1)} MB)`)
+        .join(', ');
+      toast.error(
+        `The following files exceed the ${MAX_FILE_SIZE / 1024 / 1024} MB limit: ${fileList}`
+      );
+
+      const validFiles = selectedFiles.filter((file) => file.size <= MAX_FILE_SIZE);
       if (validFiles.length === 0) return;
-      
-      const newFiles = validFiles.map(file => {
+
+      const newFiles = validFiles.map((file) => {
         // Check if this file is updating an existing document
-        const existingDoc = existingDocuments.find(doc => doc.file_name === file.name);
+        const existingDoc = existingDocuments.find((doc) => doc.file_name === file.name);
         const fileExtension = file.name.split('.').pop().toLowerCase(); // NEW: Get file extension
-        const isConvertible = ['doc', 'docx', 'html', 'htm', 'txt', 'rtf', 'odt'].includes(fileExtension); // NEW: Check if convertible
+        const isConvertible = ['doc', 'docx', 'html', 'htm', 'txt', 'rtf', 'odt'].includes(
+          fileExtension
+        ); // NEW: Check if convertible
 
         return {
           file,
           id: Math.random().toString(36).substr(2, 9),
-          title: existingDoc ? existingDoc.title : file.name.replace(/\.[^/.]+$/, ""),
-          description: existingDoc ? existingDoc.description : "",
-          document_type: existingDoc ? existingDoc.document_type : "other",
+          title: existingDoc ? existingDoc.title : file.name.replace(/\.[^/.]+$/, ''),
+          description: existingDoc ? existingDoc.description : '',
+          document_type: existingDoc ? existingDoc.document_type : 'other',
           // Use assignmentId prop as default for new files if existingDoc doesn't have it
           assigned_to_assignments: existingDoc
             ? existingDoc.assigned_to_assignments
-            : (assignmentId ? [assignmentId] : []),
+            : assignmentId
+              ? [assignmentId]
+              : [],
           // Use projectId prop as default for new files if existingDoc doesn't have it
-          assigned_to_project: existingDoc
-            ? existingDoc.assigned_to_project
-            : (projectId || null),
-          status: "pending",
+          assigned_to_project: existingDoc ? existingDoc.assigned_to_project : projectId || null,
+          status: 'pending',
           progress: 0,
           error: null,
           retryCount: 0,
@@ -97,52 +102,58 @@ export default function DocumentUploader({
           existingDocId: existingDoc ? existingDoc.id : null,
           currentVersion: existingDoc ? existingDoc.version : null,
           needsChangeNotes: !!existingDoc,
-          changeNotes: "",
+          changeNotes: '',
           // ADDED: selected_task_id
-          selected_task_id: existingDoc ? existingDoc.selected_task_id : (taskId || null),
+          selected_task_id: existingDoc ? existingDoc.selected_task_id : taskId || null,
           // NEW: PDF Conversion options
           isConvertible: isConvertible,
           convertToPdf: false, // User choice, initially false
           converting: false, // Status for conversion process
-          conversionError: null // Error message for conversion
+          conversionError: null, // Error message for conversion
         };
       });
 
-      setFiles(prev => [...prev, ...newFiles]);
+      setFiles((prev) => [...prev, ...newFiles]);
 
       if (validFiles.length > 0) {
-        const updateCount = newFiles.filter(f => f.existingDocId).length;
-        const convertibleCount = newFiles.filter(f => f.isConvertible).length; // NEW: count convertible
+        const updateCount = newFiles.filter((f) => f.existingDocId).length;
+        const convertibleCount = newFiles.filter((f) => f.isConvertible).length; // NEW: count convertible
         if (updateCount > 0) {
-          toast.info(`${updateCount} file(s) will update existing documents. ${oversizedFiles.length} file(s) were too large.`);
+          toast.info(
+            `${updateCount} file(s) will update existing documents. ${oversizedFiles.length} file(s) were too large.`
+          );
         } else {
-          toast.info(`Added ${validFiles.length} file(s). ${convertibleCount} can be converted to PDF. ${oversizedFiles.length} file(s) were too large.`); // NEW: updated toast
+          toast.info(
+            `Added ${validFiles.length} file(s). ${convertibleCount} can be converted to PDF. ${oversizedFiles.length} file(s) were too large.`
+          ); // NEW: updated toast
         }
       }
       return;
     }
-    
+
     // All files are valid
-    const newFiles = selectedFiles.map(file => {
-      const existingDoc = existingDocuments.find(doc => doc.file_name === file.name);
+    const newFiles = selectedFiles.map((file) => {
+      const existingDoc = existingDocuments.find((doc) => doc.file_name === file.name);
       const fileExtension = file.name.split('.').pop().toLowerCase(); // NEW: Get file extension
-      const isConvertible = ['doc', 'docx', 'html', 'htm', 'txt', 'rtf', 'odt'].includes(fileExtension); // NEW: Check if convertible
+      const isConvertible = ['doc', 'docx', 'html', 'htm', 'txt', 'rtf', 'odt'].includes(
+        fileExtension
+      ); // NEW: Check if convertible
 
       return {
         file,
         id: Math.random().toString(36).substr(2, 9),
-        title: existingDoc ? existingDoc.title : file.name.replace(/\.[^/.]+$/, ""),
-        description: existingDoc ? existingDoc.description : "",
-        document_type: existingDoc ? existingDoc.document_type : "other",
+        title: existingDoc ? existingDoc.title : file.name.replace(/\.[^/.]+$/, ''),
+        description: existingDoc ? existingDoc.description : '',
+        document_type: existingDoc ? existingDoc.document_type : 'other',
         // Use assignmentId prop as default for new files if existingDoc doesn't have it
         assigned_to_assignments: existingDoc
           ? existingDoc.assigned_to_assignments
-          : (assignmentId ? [assignmentId] : []),
+          : assignmentId
+            ? [assignmentId]
+            : [],
         // Use projectId prop as default for new files if existingDoc doesn't have it
-        assigned_to_project: existingDoc
-          ? existingDoc.assigned_to_project
-          : (projectId || null),
-        status: "pending",
+        assigned_to_project: existingDoc ? existingDoc.assigned_to_project : projectId || null,
+        status: 'pending',
         progress: 0,
         error: null,
         retryCount: 0,
@@ -150,23 +161,23 @@ export default function DocumentUploader({
         existingDocId: existingDoc ? existingDoc.id : null,
         currentVersion: existingDoc ? existingDoc.version : null,
         needsChangeNotes: !!existingDoc,
-        changeNotes: "",
+        changeNotes: '',
         // ADDED: selected_task_id
-        selected_task_id: existingDoc ? existingDoc.selected_task_id : (taskId || null),
+        selected_task_id: existingDoc ? existingDoc.selected_task_id : taskId || null,
         // NEW: PDF Conversion options
         isConvertible: isConvertible,
         convertToPdf: false, // User choice, initially false
         converting: false, // Status for conversion process
-        conversionError: null // Error message for conversion
+        conversionError: null, // Error message for conversion
       };
     });
 
-    setFiles(prev => [...prev, ...newFiles]);
+    setFiles((prev) => [...prev, ...newFiles]);
 
-    const updateCount = newFiles.filter(f => f.existingDocId).length;
-    const largeFiles = selectedFiles.filter(f => f.size > LARGE_FILE_THRESHOLD);
-    const convertibleCount = newFiles.filter(f => f.isConvertible).length; // NEW: count convertible
-    
+    const updateCount = newFiles.filter((f) => f.existingDocId).length;
+    const largeFiles = selectedFiles.filter((f) => f.size > LARGE_FILE_THRESHOLD);
+    const convertibleCount = newFiles.filter((f) => f.isConvertible).length; // NEW: count convertible
+
     if (updateCount > 0) {
       toast.info(`${updateCount} file(s) will update existing documents.`);
     }
@@ -179,8 +190,8 @@ export default function DocumentUploader({
   };
 
   const removeFile = (fileId) => {
-    setFiles(prev => prev.filter(f => f.id !== fileId));
-    setUploadProgress(prev => {
+    setFiles((prev) => prev.filter((f) => f.id !== fileId));
+    setUploadProgress((prev) => {
       const newProgress = { ...prev };
       delete newProgress[fileId];
       return newProgress;
@@ -188,18 +199,18 @@ export default function DocumentUploader({
   };
 
   const updateFileField = (fileId, field, value) => {
-    setFiles(prev => prev.map(f =>
-      f.id === fileId ? { ...f, [field]: value } : f
-    ));
+    setFiles((prev) => prev.map((f) => (f.id === fileId ? { ...f, [field]: value } : f)));
   };
 
   // NEW: Convert file to PDF using CloudConvert
   const convertFileToPdf = async (fileData) => {
     try {
       // Update status
-      setFiles(prev => prev.map(f =>
-        f.id === fileData.id ? { ...f, converting: true, conversionError: null, error: null } : f
-      ));
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileData.id ? { ...f, converting: true, conversionError: null, error: null } : f
+        )
+      );
 
       // First upload the original file to our S3, so CloudConvert can access it
       const uploadResult = await db.integrations.Core.UploadFile({ file: fileData.file });
@@ -209,7 +220,7 @@ export default function DocumentUploader({
       const response = await db.functions.invoke('convertUploadToPdf', {
         fileUrl: fileUrl,
         fileName: fileData.file.name,
-        workspaceId: currentWorkspaceId
+        workspaceId: currentWorkspaceId,
       });
 
       if (response.data && response.data.success && response.data.pdfUrl) {
@@ -220,132 +231,168 @@ export default function DocumentUploader({
         const pdfFile = new File([pdfBlob], pdfFileName, { type: 'application/pdf' });
 
         // Update the file data with the converted PDF
-        setFiles(prev => prev.map(f =>
-          f.id === fileData.id ? { 
-            ...f, 
-            file: pdfFile, // Replace original file with PDF
-            // file_name will be updated when creating/updating Document based on new pdfFile.name
-            converting: false,
-            conversionError: null,
-            convertToPdf: false // Mark as converted, so it doesn't try again
-          } : f
-        ));
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileData.id
+              ? {
+                  ...f,
+                  file: pdfFile, // Replace original file with PDF
+                  // file_name will be updated when creating/updating Document based on new pdfFile.name
+                  converting: false,
+                  conversionError: null,
+                  convertToPdf: false, // Mark as converted, so it doesn't try again
+                }
+              : f
+          )
+        );
 
         toast.success(`"${fileData.file.name}" converted to PDF successfully!`);
         return true;
       } else {
-        throw new Error(response.data?.error || "Conversion failed");
+        throw new Error(response.data?.error || 'Conversion failed');
       }
     } catch (error) {
-      console.error("Error converting file:", error);
-      setFiles(prev => prev.map(f =>
-        f.id === fileData.id ? { 
-          ...f, 
-          converting: false, 
-          conversionError: error.message || "Conversion failed",
-          error: "PDF conversion failed" // Also set general error to show on card
-        } : f
-      ));
+      console.error('Error converting file:', error);
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileData.id
+            ? {
+                ...f,
+                converting: false,
+                conversionError: error.message || 'Conversion failed',
+                error: 'PDF conversion failed', // Also set general error to show on card
+              }
+            : f
+        )
+      );
       toast.error(`Failed to convert "${fileData.file.name}": ${error.message}`);
       return false;
     }
   };
 
-
   // Upload with timeout wrapper
   const uploadWithTimeout = async (file, timeoutMs) => {
     return Promise.race([
       db.integrations.Core.UploadFile({ file }), // Using db client
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Upload timeout - file too large or connection too slow')), timeoutMs)
-      )
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error('Upload timeout - file too large or connection too slow')),
+          timeoutMs
+        )
+      ),
     ]);
   };
 
   // Retry logic for failed uploads
   const uploadWithRetry = async (fileData, maxRetries = MAX_RETRIES) => {
     let lastError;
-    
+
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         if (attempt > 0) {
           console.log(`Retry attempt ${attempt}/${maxRetries} for ${fileData.file.name}`);
-          setFiles(prev => prev.map(f =>
-            f.id === fileData.id ? { ...f, error: `Retrying... (${attempt}/${maxRetries})` } : f
-          ));
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileData.id ? { ...f, error: `Retrying... (${attempt}/${maxRetries})` } : f
+            )
+          );
           // Wait before retrying (exponential backoff)
-          await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempt), 10000)));
+          await new Promise((resolve) =>
+            setTimeout(resolve, Math.min(1000 * Math.pow(2, attempt), 10000))
+          );
         }
-        
+
         const timeout = fileData.isLargeFile ? UPLOAD_TIMEOUT : 60000; // 5 min for large files, 1 min for normal
         const result = await uploadWithTimeout(fileData.file, timeout);
         return result;
-        
       } catch (error) {
         lastError = error;
         console.error(`Upload attempt ${attempt + 1} failed for ${fileData.file.name}:`, error);
-        
+
         // Don't retry if it's a validation error or similar
         if (error.message?.includes('validation') || error.message?.includes('invalid')) {
           throw error;
         }
-        
+
         // If we've exhausted retries, throw the error
         if (attempt === maxRetries) {
           throw lastError;
         }
       }
     }
-    
+
     throw lastError;
   };
 
   const handleUpload = async () => {
     if (files.length === 0) {
-      toast.error("Please select at least one file to upload");
+      toast.error('Please select at least one file to upload');
       return;
     }
 
-    const filesWithoutTitle = files.filter(f => !f.title.trim());
+    const filesWithoutTitle = files.filter((f) => !f.title.trim());
     if (filesWithoutTitle.length > 0) {
-      toast.error("Please provide titles for all documents");
+      toast.error('Please provide titles for all documents');
       return;
     }
 
     // Check for files that need change notes but don't have them
-    const filesNeedingNotes = files.filter(f => f.needsChangeNotes && !f.changeNotes.trim());
+    const filesNeedingNotes = files.filter((f) => f.needsChangeNotes && !f.changeNotes.trim());
     if (filesNeedingNotes.length > 0) {
-      toast.error("Please provide change notes for document updates");
+      toast.error('Please provide change notes for document updates');
       return;
     }
 
     // ADDED: Workspace ID validation
     if (!currentWorkspaceId) {
-        toast.error("No active workspace found. Please select a workspace before uploading documents.");
-        setUploading(false);
-        return;
+      toast.error(
+        'No active workspace found. Please select a workspace before uploading documents.'
+      );
+      setUploading(false);
+      return;
     }
 
     setUploading(true);
 
     // NEW: First, convert any files that need conversion
-    const filesToConvert = files.filter(f => 
-      f.isConvertible && f.convertToPdf && f.status === "pending" && !f.converting
+    const filesToConvert = files.filter(
+      (f) => f.isConvertible && f.convertToPdf && f.status === 'pending' && !f.converting
     );
     for (const fileData of filesToConvert) {
       const conversionSuccess = await convertFileToPdf(fileData);
       if (!conversionSuccess) {
         // If conversion fails, ask user if they want to continue with original
-        const continueWithOriginal = confirm(`Failed to convert "${fileData.file.name}" to PDF. Do you want to upload the original file instead?`);
+        const continueWithOriginal = confirm(
+          `Failed to convert "${fileData.file.name}" to PDF. Do you want to upload the original file instead?`
+        );
         if (continueWithOriginal) {
-          setFiles(prev => prev.map(f =>
-            f.id === fileData.id ? { ...f, convertToPdf: false, conversionError: null, error: null, status: "pending" } : f
-          ));
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileData.id
+                ? {
+                    ...f,
+                    convertToPdf: false,
+                    conversionError: null,
+                    error: null,
+                    status: 'pending',
+                  }
+                : f
+            )
+          );
         } else {
           // If user cancels, mark as error and move on
-          setFiles(prev => prev.map(f =>
-            f.id === fileData.id ? { ...f, status: "error", error: fileData.conversionError || "PDF conversion failed", converting: false } : f
-          ));
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileData.id
+                ? {
+                    ...f,
+                    status: 'error',
+                    error: fileData.conversionError || 'PDF conversion failed',
+                    converting: false,
+                  }
+                : f
+            )
+          );
           continue; // Skip upload for this file
         }
       }
@@ -354,32 +401,44 @@ export default function DocumentUploader({
     // Now upload all files (including those that were just converted or whose conversion was skipped)
     for (const fileData of files) {
       // Skip already successful uploads or files that had conversion errors and weren't retried
-      if (fileData.status === "success" || (fileData.status === "error" && fileData.conversionError)) {
+      if (
+        fileData.status === 'success' ||
+        (fileData.status === 'error' && fileData.conversionError)
+      ) {
         continue;
       }
 
       try {
         // Update status to uploading
-        setFiles(prev => prev.map(f =>
-          f.id === fileData.id ? { ...f, status: "uploading", progress: 0, error: null } : f
-        ));
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileData.id ? { ...f, status: 'uploading', progress: 0, error: null } : f
+          )
+        );
 
         // For large files, show slower but more realistic progress
         const progressSpeed = fileData.isLargeFile ? 5 : 10;
         const progressMax = fileData.isLargeFile ? 85 : 90;
-        
-        const progressInterval = setInterval(() => {
-          setFiles(prev => prev.map(f => {
-            if (f.id === fileData.id && f.progress < progressMax) {
-              return { ...f, progress: Math.min(f.progress + progressSpeed, progressMax) };
-            }
-            return f;
-          }));
-        }, fileData.isLargeFile ? 500 : 200);
+
+        const progressInterval = setInterval(
+          () => {
+            setFiles((prev) =>
+              prev.map((f) => {
+                if (f.id === fileData.id && f.progress < progressMax) {
+                  return { ...f, progress: Math.min(f.progress + progressSpeed, progressMax) };
+                }
+                return f;
+              })
+            );
+          },
+          fileData.isLargeFile ? 500 : 200
+        );
 
         // Show specific message for large files
         if (fileData.isLargeFile) {
-          toast.info(`Uploading large file: ${fileData.file.name}. This may take several minutes...`);
+          toast.info(
+            `Uploading large file: ${fileData.file.name}. This may take several minutes...`
+          );
         }
 
         // Upload file with retry logic
@@ -389,60 +448,62 @@ export default function DocumentUploader({
           file_url = uploadResult.file_url;
         } catch (uploadError) {
           clearInterval(progressInterval);
-          
-          let errorMessage = "Upload failed";
-          console.error("Upload error details:", uploadError);
-          
+
+          let errorMessage = 'Upload failed';
+          console.error('Upload error details:', uploadError);
+
           if (uploadError.message?.includes('timeout')) {
             errorMessage = `Upload timeout - ${fileData.file.name} (${(fileData.file.size / 1024 / 1024).toFixed(1)} MB) took too long. Try a faster connection or smaller file.`;
-          } else if (uploadError.message?.includes('network') || uploadError.message?.includes('fetch')) {
-            errorMessage = "Network error - please check your internet connection and try again";
-          } else if (uploadError.message?.includes('size') || uploadError.message?.includes('too large')) {
+          } else if (
+            uploadError.message?.includes('network') ||
+            uploadError.message?.includes('fetch')
+          ) {
+            errorMessage = 'Network error - please check your internet connection and try again';
+          } else if (
+            uploadError.message?.includes('size') ||
+            uploadError.message?.includes('too large')
+          ) {
             errorMessage = `File too large - server rejected the file. Maximum supported size may be less than ${MAX_FILE_SIZE / 1024 / 1024} MB.`;
           } else if (uploadError.message) {
             errorMessage = uploadError.message;
           }
-          
+
           throw new Error(errorMessage);
         }
 
         clearInterval(progressInterval);
 
         // Update to 100% before creating document
-        setFiles(prev => prev.map(f =>
-          f.id === fileData.id ? { ...f, progress: 100 } : f
-        ));
+        setFiles((prev) => prev.map((f) => (f.id === fileData.id ? { ...f, progress: 100 } : f)));
 
         // If updating existing document, create version history entry
         if (fileData.existingDocId) {
-          const existingDoc = existingDocuments.find(d => d.id === fileData.existingDocId);
-          
+          const existingDoc = existingDocuments.find((d) => d.id === fileData.existingDocId);
+
           if (existingDoc) {
             // Calculate new version number with timestamp for robust uniqueness
-            const versionParts = (existingDoc.version || "1.0").split('.');
+            const versionParts = (existingDoc.version || '1.0').split('.');
             let major = parseInt(versionParts[0] || '1', 10);
             let minor = parseInt(versionParts[1] || '0', 10);
-            
+
             // Increment minor version for new file content
             minor++;
             const newVersion = `${major}.${minor}.${Date.now()}`;
-            
+
             // Create version history entry for the OLD version
             const versionEntry = {
               file_url: existingDoc.file_url, // URL of the previous file
-              version: existingDoc.version || "1.0",
+              version: existingDoc.version || '1.0',
               created_date: new Date().toISOString(),
-              created_by: currentUser?.email || "unknown",
-              change_notes: fileData.changeNotes || "Document updated"
+              created_by: currentUser?.email || 'unknown',
+              change_notes: fileData.changeNotes || 'Document updated',
             };
-            
-            const updatedVersionHistory = [
-              ...(existingDoc.version_history || []),
-              versionEntry
-            ];
-            
+
+            const updatedVersionHistory = [...(existingDoc.version_history || []), versionEntry];
+
             // Update existing document with new file details and version
-            await db.entities.Document.update(fileData.existingDocId, { // Using db client
+            await db.entities.Document.update(fileData.existingDocId, {
+              // Using db client
               workspace_id: currentWorkspaceId, // ADDED: Workspace scoping
               title: fileData.title,
               description: fileData.description,
@@ -458,12 +519,13 @@ export default function DocumentUploader({
               version_history: updatedVersionHistory,
               selected_task_id: fileData.selected_task_id || null, // ADDED: selected_task_id
             });
-            
+
             toast.success(`"${fileData.title}" updated to version ${newVersion}`);
           }
         } else {
           // Create new document
-          await db.entities.Document.create({ // Using db client
+          await db.entities.Document.create({
+            // Using db client
             workspace_id: currentWorkspaceId, // ADDED: Workspace scoping
             title: fileData.title,
             description: fileData.description,
@@ -475,27 +537,26 @@ export default function DocumentUploader({
             assigned_to_assignments: fileData.assigned_to_assignments,
             assigned_to_project: fileData.assigned_to_project || null,
             folder_path: folder || selectedFolderPath, // Use new 'folder' prop if provided, else existing
-            version: "1.0", // Initial version
+            version: '1.0', // Initial version
             version_history: [], // No history yet
             selected_task_id: fileData.selected_task_id || null, // ADDED: selected_task_id
           });
-          
+
           toast.success(`"${fileData.title}" uploaded successfully`);
         }
 
         // Mark as success
-        setFiles(prev => prev.map(f =>
-          f.id === fileData.id ? { ...f, status: "success" } : f
-        ));
-
+        setFiles((prev) =>
+          prev.map((f) => (f.id === fileData.id ? { ...f, status: 'success' } : f))
+        );
       } catch (error) {
-        console.error("Error uploading file:", error);
-        const errorMessage = error.message || "Upload failed";
-        setFiles(prev => prev.map(f =>
-          f.id === fileData.id
-            ? { ...f, status: "error", error: errorMessage }
-            : f
-        ));
+        console.error('Error uploading file:', error);
+        const errorMessage = error.message || 'Upload failed';
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileData.id ? { ...f, status: 'error', error: errorMessage } : f
+          )
+        );
         toast.error(`Failed to upload "${fileData.title}": ${errorMessage}`);
       }
     }
@@ -503,8 +564,8 @@ export default function DocumentUploader({
     setUploading(false);
 
     // Check if all uploads were successful
-    const allSuccessful = files.every(f =>
-      files.find(file => file.id === f.id)?.status === "success"
+    const allSuccessful = files.every(
+      (f) => files.find((file) => file.id === f.id)?.status === 'success'
     );
 
     if (allSuccessful && files.length > 0) {
@@ -513,24 +574,37 @@ export default function DocumentUploader({
         onUploadComplete();
       }
     } else {
-      const failedCount = files.filter(f => 
-        files.find(file => file.id === f.id)?.status === "error"
+      const failedCount = files.filter(
+        (f) => files.find((file) => file.id === f.id)?.status === 'error'
       ).length;
       if (failedCount > 0) {
-        toast.warning(`${failedCount} document(s) failed to upload. You can retry them individually.`);
+        toast.warning(
+          `${failedCount} document(s) failed to upload. You can retry them individually.`
+        );
       }
     }
   };
 
   // Retry individual file
   const retryFile = async (fileId) => {
-    const fileData = files.find(f => f.id === fileId);
+    const fileData = files.find((f) => f.id === fileId);
     if (!fileData) return;
-    
-    setFiles(prev => prev.map(f =>
-      f.id === fileId ? { ...f, status: "pending", error: null, retryCount: f.retryCount + 1, conversionError: null, converting: false } : f
-    ));
-    
+
+    setFiles((prev) =>
+      prev.map((f) =>
+        f.id === fileId
+          ? {
+              ...f,
+              status: 'pending',
+              error: null,
+              retryCount: f.retryCount + 1,
+              conversionError: null,
+              converting: false,
+            }
+          : f
+      )
+    );
+
     // Trigger upload for this file by calling handleUpload.
     // It will iterate through all files, but only process those not yet successful.
     await handleUpload();
@@ -538,11 +612,11 @@ export default function DocumentUploader({
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "uploading":
+      case 'uploading':
         return <Loader2 className="w-4 h-4 animate-spin text-blue-600" />;
-      case "success":
+      case 'success':
         return <CheckCircle2 className="w-4 h-4 text-green-600" />;
-      case "error":
+      case 'error':
         return <AlertCircle className="w-4 h-4 text-red-600" />;
       default:
         return <File className="w-4 h-4 text-gray-400" />;
@@ -551,21 +625,21 @@ export default function DocumentUploader({
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "uploading":
-        return "border-blue-200 bg-blue-50 dark:bg-blue-950/20";
-      case "success":
-        return "border-green-200 bg-green-50 dark:bg-green-950/20";
-      case "error":
-        return "border-red-200 bg-red-50 dark:bg-red-950/20";
+      case 'uploading':
+        return 'border-blue-200 bg-blue-50 dark:bg-blue-950/20';
+      case 'success':
+        return 'border-green-200 bg-green-50 dark:bg-green-950/20';
+      case 'error':
+        return 'border-red-200 bg-red-50 dark:bg-red-950/20';
       default:
-        return "border-gray-200 bg-white dark:bg-gray-900";
+        return 'border-gray-200 bg-white dark:bg-gray-900';
     }
   };
 
-  const pendingFiles = files.filter(f => f.status === "pending" && !f.converting).length;
-  const uploadingFiles = files.filter(f => f.status === "uploading" || f.converting).length; // Consider converting as part of uploading status for summary
-  const successFiles = files.filter(f => f.status === "success").length;
-  const errorFiles = files.filter(f => f.status === "error").length;
+  const pendingFiles = files.filter((f) => f.status === 'pending' && !f.converting).length;
+  const uploadingFiles = files.filter((f) => f.status === 'uploading' || f.converting).length; // Consider converting as part of uploading status for summary
+  const successFiles = files.filter((f) => f.status === 'success').length;
+  const errorFiles = files.filter((f) => f.status === 'error').length;
 
   return (
     <div className="flex flex-col h-full max-h-[70vh]">
@@ -601,22 +675,26 @@ export default function DocumentUploader({
               </Badge>
             )}
           </div>
-          {!uploading && (pendingFiles === 0 && errorFiles === 0) && successFiles === files.length && files.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setFiles([]);
-                setUploadProgress({});
-                if (onUploadComplete) {
-                  onUploadComplete();
-                }
-              }}
-              className="rounded-xl"
-            >
-              Done
-            </Button>
-          )}
+          {!uploading &&
+            pendingFiles === 0 &&
+            errorFiles === 0 &&
+            successFiles === files.length &&
+            files.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setFiles([]);
+                  setUploadProgress({});
+                  if (onUploadComplete) {
+                    onUploadComplete();
+                  }
+                }}
+                className="rounded-xl"
+              >
+                Done
+              </Button>
+            )}
         </div>
       )}
 
@@ -680,7 +758,7 @@ export default function DocumentUploader({
                               )}
                               {fileData.existingDocId && (
                                 <Badge className="text-[10px] px-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                                  Update v{fileData.currentVersion || "1.0"}
+                                  Update v{fileData.currentVersion || '1.0'}
                                 </Badge>
                               )}
                               {fileData.retryCount > 0 && (
@@ -697,7 +775,7 @@ export default function DocumentUploader({
                             </p>
                           </div>
 
-                          {fileData.status === "pending" && !uploading && (
+                          {fileData.status === 'pending' && !uploading && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -707,7 +785,7 @@ export default function DocumentUploader({
                               <X className="w-4 h-4" />
                             </Button>
                           )}
-                          {fileData.status === "error" && !uploading && (
+                          {fileData.status === 'error' && !uploading && (
                             <div className="flex gap-2">
                               <Button
                                 variant="ghost"
@@ -731,28 +809,32 @@ export default function DocumentUploader({
                         </div>
 
                         {/* NEW: PDF Conversion Option */}
-                        {fileData.isConvertible && fileData.status === "pending" && !fileData.converting && (
-                          <div className="mt-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                            <div className="flex items-center gap-2">
-                              <Checkbox
-                                id={`convert-${fileData.id}`}
-                                checked={fileData.convertToPdf}
-                                onCheckedChange={(checked) => updateFileField(fileData.id, "convertToPdf", checked)}
-                                disabled={uploading}
-                              />
-                              <label
-                                htmlFor={`convert-${fileData.id}`}
-                                className="text-sm font-medium text-green-800 dark:text-green-300 cursor-pointer flex items-center gap-2"
-                              >
-                                <Zap className="w-4 h-4" />
-                                Convert to PDF before uploading
-                              </label>
+                        {fileData.isConvertible &&
+                          fileData.status === 'pending' &&
+                          !fileData.converting && (
+                            <div className="mt-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`convert-${fileData.id}`}
+                                  checked={fileData.convertToPdf}
+                                  onCheckedChange={(checked) =>
+                                    updateFileField(fileData.id, 'convertToPdf', checked)
+                                  }
+                                  disabled={uploading}
+                                />
+                                <label
+                                  htmlFor={`convert-${fileData.id}`}
+                                  className="text-sm font-medium text-green-800 dark:text-green-300 cursor-pointer flex items-center gap-2"
+                                >
+                                  <Zap className="w-4 h-4" />
+                                  Convert to PDF before uploading
+                                </label>
+                              </div>
+                              <p className="text-xs text-green-700 dark:text-green-400 mt-1 ml-6">
+                                (This will convert to PDF/A format using CloudConvert)
+                              </p>
                             </div>
-                            <p className="text-xs text-green-700 dark:text-green-400 mt-1 ml-6">
-                              (This will convert to PDF/A format using CloudConvert)
-                            </p>
-                          </div>
-                        )}
+                          )}
 
                         {/* NEW: Converting Status */}
                         {fileData.converting && (
@@ -778,18 +860,18 @@ export default function DocumentUploader({
                         )}
 
                         {/* Progress Bar */}
-                        {fileData.status === "uploading" && (
+                        {fileData.status === 'uploading' && (
                           <div className="mt-2">
                             <Progress value={fileData.progress} className="h-2" />
                             <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                               Uploading... {fileData.progress}%
-                              {fileData.isLargeFile && " (Large file - please wait)"}
+                              {fileData.isLargeFile && ' (Large file - please wait)'}
                             </p>
                           </div>
                         )}
 
                         {/* Error Message */}
-                        {fileData.status === "error" && fileData.error && (
+                        {fileData.status === 'error' && fileData.error && (
                           <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800">
                             <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400">
                               <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -798,7 +880,8 @@ export default function DocumentUploader({
                                 <p className="text-xs mt-1">{fileData.error}</p>
                                 {fileData.isLargeFile && (
                                   <p className="text-xs mt-1 text-amber-600 dark:text-amber-400">
-                                    💡 Tip: Try uploading this large file over a more stable connection, or compress it first.
+                                    💡 Tip: Try uploading this large file over a more stable
+                                    connection, or compress it first.
                                   </p>
                                 )}
                               </div>
@@ -807,7 +890,7 @@ export default function DocumentUploader({
                         )}
 
                         {/* Success Message */}
-                        {fileData.status === "success" && (
+                        {fileData.status === 'success' && (
                           <div className="mt-2 flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
                             <CheckCircle2 className="w-4 h-4" />
                             <span>Upload complete</span>
@@ -817,14 +900,14 @@ export default function DocumentUploader({
                     </div>
 
                     {/* Form Fields (only for pending or error files) */}
-                    {(fileData.status === "pending" || fileData.status === "error") && (
+                    {(fileData.status === 'pending' || fileData.status === 'error') && (
                       <div className="grid gap-3 pt-3 border-t">
                         <div>
                           <Label htmlFor={`title-${fileData.id}`}>Document Title *</Label>
                           <Input
                             id={`title-${fileData.id}`}
                             value={fileData.title}
-                            onChange={(e) => updateFileField(fileData.id, "title", e.target.value)}
+                            onChange={(e) => updateFileField(fileData.id, 'title', e.target.value)}
                             placeholder="Enter document title"
                             disabled={uploading || fileData.converting}
                             className="mt-1"
@@ -836,7 +919,9 @@ export default function DocumentUploader({
                           <Textarea
                             id={`description-${fileData.id}`}
                             value={fileData.description}
-                            onChange={(e) => updateFileField(fileData.id, "description", e.target.value)}
+                            onChange={(e) =>
+                              updateFileField(fileData.id, 'description', e.target.value)
+                            }
                             placeholder="Enter document description"
                             disabled={uploading || fileData.converting}
                             rows={2}
@@ -847,13 +932,18 @@ export default function DocumentUploader({
                         {/* Change Notes for Updates */}
                         {fileData.needsChangeNotes && (
                           <div>
-                            <Label htmlFor={`changeNotes-${fileData.id}`} className="text-blue-700 dark:text-blue-300">
+                            <Label
+                              htmlFor={`changeNotes-${fileData.id}`}
+                              className="text-blue-700 dark:text-blue-300"
+                            >
                               Change Notes * (What changed in this version?)
                             </Label>
                             <Textarea
                               id={`changeNotes-${fileData.id}`}
                               value={fileData.changeNotes}
-                              onChange={(e) => updateFileField(fileData.id, "changeNotes", e.target.value)}
+                              onChange={(e) =>
+                                updateFileField(fileData.id, 'changeNotes', e.target.value)
+                              }
                               placeholder="Describe what changed in this version..."
                               disabled={uploading || fileData.converting}
                               rows={2}
@@ -867,7 +957,9 @@ export default function DocumentUploader({
                             <Label>Document Type</Label>
                             <Select
                               value={fileData.document_type}
-                              onValueChange={(value) => updateFileField(fileData.id, "document_type", value)}
+                              onValueChange={(value) =>
+                                updateFileField(fileData.id, 'document_type', value)
+                              }
                               disabled={uploading || fileData.converting}
                             >
                               <SelectTrigger className="mt-1">
@@ -887,12 +979,18 @@ export default function DocumentUploader({
                           <div>
                             <Label>Link to Project</Label>
                             {projects.length === 0 ? (
-                              <p className="text-xs text-gray-500 mt-1 italic">No projects available in this workspace</p>
+                              <p className="text-xs text-gray-500 mt-1 italic">
+                                No projects available in this workspace
+                              </p>
                             ) : (
                               <Select
-                                value={fileData.assigned_to_project || "none"}
+                                value={fileData.assigned_to_project || 'none'}
                                 onValueChange={(value) => {
-                                  updateFileField(fileData.id, "assigned_to_project", value === "none" ? null : value);
+                                  updateFileField(
+                                    fileData.id,
+                                    'assigned_to_project',
+                                    value === 'none' ? null : value
+                                  );
                                 }}
                                 disabled={uploading || fileData.converting}
                               >
@@ -901,7 +999,7 @@ export default function DocumentUploader({
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="none">No Project</SelectItem>
-                                  {projects.map(project => (
+                                  {projects.map((project) => (
                                     <SelectItem key={project.id} value={project.id}>
                                       {project.name}
                                     </SelectItem>
@@ -915,13 +1013,19 @@ export default function DocumentUploader({
                         <div>
                           <Label>Link to Assignment</Label>
                           {assignments.length === 0 ? (
-                            <p className="text-xs text-gray-500 mt-1 italic">No assignments available in this workspace</p>
+                            <p className="text-xs text-gray-500 mt-1 italic">
+                              No assignments available in this workspace
+                            </p>
                           ) : (
                             <Select
-                              value={fileData.assigned_to_assignments[0] || "none"}
+                              value={fileData.assigned_to_assignments[0] || 'none'}
                               onValueChange={(value) => {
-                                const assignmentsList = value === "none" ? [] : [value];
-                                updateFileField(fileData.id, "assigned_to_assignments", assignmentsList);
+                                const assignmentsList = value === 'none' ? [] : [value];
+                                updateFileField(
+                                  fileData.id,
+                                  'assigned_to_assignments',
+                                  assignmentsList
+                                );
                               }}
                               disabled={uploading || fileData.converting}
                             >
@@ -930,7 +1034,7 @@ export default function DocumentUploader({
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">No Assignment</SelectItem>
-                                {assignments.map(assignment => (
+                                {assignments.map((assignment) => (
                                   <SelectItem key={assignment.id} value={assignment.id}>
                                     {assignment.name}
                                   </SelectItem>
@@ -950,43 +1054,49 @@ export default function DocumentUploader({
       )}
 
       {/* Upload Button - Always visible at bottom */}
-      {files.length > 0 && (pendingFiles > 0 || errorFiles > 0 || files.some(f => f.converting)) && (
-        <div className="flex items-center justify-between pt-4 border-t mt-4 shrink-0 bg-white dark:bg-gray-900">
-          <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {pendingFiles} file(s) pending{errorFiles > 0 && `, ${errorFiles} failed`}
-            </p>
-            {files.some(f => f.isLargeFile && (f.status === "pending" || f.status === "error" || f.converting)) && ( // Adjusted condition
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                ⚠️ Large files may take 5-10 minutes to upload
+      {files.length > 0 &&
+        (pendingFiles > 0 || errorFiles > 0 || files.some((f) => f.converting)) && (
+          <div className="flex items-center justify-between pt-4 border-t mt-4 shrink-0 bg-white dark:bg-gray-900">
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {pendingFiles} file(s) pending{errorFiles > 0 && `, ${errorFiles} failed`}
               </p>
-            )}
-            {files.some(f => f.convertToPdf && (f.status === "pending" || f.converting)) && ( // NEW: message about conversion
-              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                ✨ {files.filter(f => f.convertToPdf).length} file(s) will be converted to PDF first
-              </p>
-            )}
+              {files.some(
+                (f) =>
+                  f.isLargeFile && (f.status === 'pending' || f.status === 'error' || f.converting)
+              ) && ( // Adjusted condition
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                  ⚠️ Large files may take 5-10 minutes to upload
+                </p>
+              )}
+              {files.some((f) => f.convertToPdf && (f.status === 'pending' || f.converting)) && ( // NEW: message about conversion
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                  ✨ {files.filter((f) => f.convertToPdf).length} file(s) will be converted to PDF
+                  first
+                </p>
+              )}
+            </div>
+            <Button
+              onClick={handleUpload}
+              disabled={uploading || (pendingFiles === 0 && errorFiles === 0)}
+              size="lg"
+              className="bg-blue-600 hover:bg-blue-700 rounded-xl"
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-5 h-5 mr-2" />
+                  Upload {pendingFiles + errorFiles} Document
+                  {pendingFiles + errorFiles !== 1 ? 's' : ''}
+                </>
+              )}
+            </Button>
           </div>
-          <Button
-            onClick={handleUpload}
-            disabled={uploading || (pendingFiles === 0 && errorFiles === 0)}
-            size="lg"
-            className="bg-blue-600 hover:bg-blue-700 rounded-xl"
-          >
-            {uploading ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Uploading...
-              </>
-            ) : (
-              <>
-                <Upload className="w-5 h-5 mr-2" />
-                Upload {pendingFiles + errorFiles} Document{(pendingFiles + errorFiles) !== 1 ? 's' : ''}
-              </>
-            )}
-          </Button>
-        </div>
-      )}
+        )}
     </div>
   );
 }

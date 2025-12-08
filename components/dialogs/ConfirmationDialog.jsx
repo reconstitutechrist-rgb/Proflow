@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -8,8 +8,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { AlertTriangle, Info, Save, Trash2 } from "lucide-react";
+} from '@/components/ui/alert-dialog';
+import { AlertTriangle, Info, Save, Trash2 } from 'lucide-react';
 
 export default function ConfirmationDialog({
   isOpen,
@@ -17,15 +17,15 @@ export default function ConfirmationDialog({
   onConfirm,
   title,
   description,
-  confirmText = "Confirm",
-  cancelText = "Cancel",
-  variant = "default" // default, danger, warning
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  variant = 'default', // default, danger, warning
 }) {
   const getIcon = () => {
     switch (variant) {
-      case "danger":
+      case 'danger':
         return <Trash2 className="w-5 h-5 text-red-600" />;
-      case "warning":
+      case 'warning':
         return <AlertTriangle className="w-5 h-5 text-yellow-600" />;
       default:
         return <Info className="w-5 h-5 text-blue-600" />;
@@ -34,12 +34,12 @@ export default function ConfirmationDialog({
 
   const getButtonClass = () => {
     switch (variant) {
-      case "danger":
-        return "bg-red-600 hover:bg-red-700 focus:ring-red-600";
-      case "warning":
-        return "bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-600";
+      case 'danger':
+        return 'bg-red-600 hover:bg-red-700 focus:ring-red-600';
+      case 'warning':
+        return 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-600';
       default:
-        return "bg-blue-600 hover:bg-blue-700 focus:ring-blue-600";
+        return 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-600';
     }
   };
 
@@ -51,18 +51,11 @@ export default function ConfirmationDialog({
             {getIcon()}
             {title}
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-base">
-            {description}
-          </AlertDialogDescription>
+          <AlertDialogDescription className="text-base">{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>
-            {cancelText}
-          </AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={onConfirm}
-            className={getButtonClass()}
-          >
+          <AlertDialogCancel onClick={onClose}>{cancelText}</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} className={getButtonClass()}>
             {confirmText}
           </AlertDialogAction>
         </AlertDialogFooter>

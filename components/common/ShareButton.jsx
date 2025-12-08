@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Share2, Loader2 } from "lucide-react";
-import { User } from "@/api/entities";
-import { db } from "@/api/db";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import { toast } from "sonner";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Share2, Loader2 } from 'lucide-react';
+import { User } from '@/api/entities';
+import { db } from '@/api/db';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { toast } from 'sonner';
 
 // Import UI components from shadcn/ui
 import {
@@ -15,14 +15,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 
 export default function ShareButton({
   entityType, // e.g., "document", "task", "assignment"
@@ -67,8 +67,8 @@ export default function ShareButton({
 
       setUsers(filteredUsers);
     } catch (error) {
-      console.error("Error loading users:", error);
-      toast.error("Failed to load team members");
+      console.error('Error loading users:', error);
+      toast.error('Failed to load team members');
     } finally {
       setLoading(false);
     }
@@ -76,7 +76,7 @@ export default function ShareButton({
 
   const handleShare = async () => {
     if (!selectedUser) {
-      toast.error("Please select a team member to share with");
+      toast.error('Please select a team member to share with');
       return;
     }
 
@@ -84,10 +84,7 @@ export default function ShareButton({
       setSharing(true);
 
       // Get the entity and update its shared_with field
-      const entityManager =
-        db.entities[
-          entityType.charAt(0).toUpperCase() + entityType.slice(1)
-        ];
+      const entityManager = db.entities[entityType.charAt(0).toUpperCase() + entityType.slice(1)];
 
       if (entityManager && entityId) {
         const entity = await entityManager.get(entityId);
@@ -103,11 +100,7 @@ export default function ShareButton({
       }
 
       const sharedWithUser = users.find((u) => u.email === selectedUser);
-      toast.success(
-        `Shared "${entityName}" with ${
-          sharedWithUser?.full_name || selectedUser
-        }`
-      );
+      toast.success(`Shared "${entityName}" with ${sharedWithUser?.full_name || selectedUser}`);
 
       if (onShareComplete) {
         onShareComplete(selectedUser);
@@ -116,8 +109,8 @@ export default function ShareButton({
       setOpen(false);
       setSelectedUser(null);
     } catch (error) {
-      console.error("Error sharing:", error);
-      toast.error("Failed to share. Please try again.");
+      console.error('Error sharing:', error);
+      toast.error('Failed to share. Please try again.');
     } finally {
       setSharing(false);
     }
@@ -141,32 +134,23 @@ export default function ShareButton({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Share {entityType}</DialogTitle>
-          <DialogDescription>
-            Share "{entityName}" with your team members
-          </DialogDescription>
+          <DialogDescription>Share "{entityName}" with your team members</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div>
-            <label
-              htmlFor="team-member-select"
-              className="text-sm font-medium mb-2 block"
-            >
+            <label htmlFor="team-member-select" className="text-sm font-medium mb-2 block">
               Select Team Member
             </label>
             {loading ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-                <span className="ml-2 text-sm text-gray-500">
-                  Loading team members...
-                </span>
+                <span className="ml-2 text-sm text-gray-500">Loading team members...</span>
               </div>
             ) : (
               <Select
-                value={selectedUser || "none"}
-                onValueChange={(value) =>
-                  setSelectedUser(value === "none" ? null : value)
-                }
+                value={selectedUser || 'none'}
+                onValueChange={(value) => setSelectedUser(value === 'none' ? null : value)}
               >
                 <SelectTrigger id="team-member-select">
                   <SelectValue placeholder="Select a team member..." />
@@ -206,25 +190,17 @@ export default function ShareButton({
         </div>
 
         <DialogFooter>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => handleOpenChange(false)}
-          >
+          <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>
-          <Button
-            type="button"
-            onClick={handleShare}
-            disabled={!selectedUser || sharing}
-          >
+          <Button type="button" onClick={handleShare} disabled={!selectedUser || sharing}>
             {sharing ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Sharing...
               </>
             ) : (
-              "Share"
+              'Share'
             )}
           </Button>
         </DialogFooter>

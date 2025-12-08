@@ -1,33 +1,19 @@
-import React, { useState, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  ArrowLeft,
-  Save,
-  Loader2,
-  Sparkles,
-  LayoutList,
-  Users,
-  Eye,
-  X,
-} from "lucide-react";
-import { toast } from "sonner";
-import RichTextEditor from "@/components/editor/RichTextEditor";
+import React, { useState, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ArrowLeft, Save, Loader2, Sparkles, LayoutList, Users, Eye, X } from 'lucide-react';
+import { toast } from 'sonner';
+import RichTextEditor from '@/components/editor/RichTextEditor';
 
-import EditorPreviewSplit, { VIEW_MODES } from "@/components/editor/EditorPreviewSplit";
-import LivePreview from "@/components/editor/LivePreview";
-import DiffReviewView from "@/components/editor/DiffReviewView";
-import EnhancedAIReviewPanel from "@/features/ai/EnhancedAIReviewPanel";
-import AIDocumentStructurer from "@/features/ai/AIDocumentStructurer";
-import AudienceRewriter from "@/features/ai/AudienceRewriter";
+import EditorPreviewSplit, { VIEW_MODES } from '@/components/editor/EditorPreviewSplit';
+import LivePreview from '@/components/editor/LivePreview';
+import DiffReviewView from '@/components/editor/DiffReviewView';
+import EnhancedAIReviewPanel from '@/features/ai/EnhancedAIReviewPanel';
+import AIDocumentStructurer from '@/features/ai/AIDocumentStructurer';
+import AudienceRewriter from '@/features/ai/AudienceRewriter';
 
 /**
  * DocumentReviewModal - Full-page modal for reviewing and finalizing documents
@@ -52,18 +38,18 @@ export default function DocumentReviewModal({
   selectedTask,
   assignments = [],
   tasks = [],
-  referenceDocumentUrls = []
+  referenceDocumentUrls = [],
 }) {
   // Local state for editing within the modal
-  const [content, setContent] = useState(initialContent || "");
-  const [title, setTitle] = useState(initialTitle || "");
-  const [description, setDescription] = useState(initialDescription || "");
+  const [content, setContent] = useState(initialContent || '');
+  const [title, setTitle] = useState(initialTitle || '');
+  const [description, setDescription] = useState(initialDescription || '');
 
   // View mode state
   const [viewMode, setViewMode] = useState(VIEW_MODES.SPLIT);
 
   // Active review tab
-  const [activeTab, setActiveTab] = useState("smart-review");
+  const [activeTab, setActiveTab] = useState('smart-review');
 
   // Diff review state
   const [pendingChanges, setPendingChanges] = useState([]);
@@ -72,9 +58,9 @@ export default function DocumentReviewModal({
   // Sync with initial values when modal opens
   React.useEffect(() => {
     if (isOpen) {
-      setContent(initialContent || "");
-      setTitle(initialTitle || "");
-      setDescription(initialDescription || "");
+      setContent(initialContent || '');
+      setTitle(initialTitle || '');
+      setDescription(initialDescription || '');
       setViewMode(VIEW_MODES.SPLIT);
       setPendingChanges([]);
       setShowDiffReview(false);
@@ -92,7 +78,7 @@ export default function DocumentReviewModal({
     setContent(finalContent);
     setShowDiffReview(false);
     setPendingChanges([]);
-    toast.success("Changes applied successfully");
+    toast.success('Changes applied successfully');
   }, []);
 
   // Handler for canceling diff review
@@ -103,8 +89,8 @@ export default function DocumentReviewModal({
 
   // Handler for inserting content (used by AudienceRewriter)
   const handleInsertContent = useCallback((newContent) => {
-    setContent(prev => prev + (prev ? '\n\n' : '') + newContent);
-    toast.success("Content inserted");
+    setContent((prev) => prev + (prev ? '\n\n' : '') + newContent);
+    toast.success('Content inserted');
   }, []);
 
   // Save and close
@@ -113,7 +99,7 @@ export default function DocumentReviewModal({
       await onSave({
         content,
         title,
-        description
+        description,
       });
     }
   };
@@ -126,7 +112,10 @@ export default function DocumentReviewModal({
         content,
         title,
         description,
-        hasChanges: content !== initialContent || title !== initialTitle || description !== initialDescription
+        hasChanges:
+          content !== initialContent ||
+          title !== initialTitle ||
+          description !== initialDescription,
       });
     }
   };
@@ -145,16 +134,12 @@ export default function DocumentReviewModal({
                 Review & Finalize
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {title || "Untitled Document"}
+                {title || 'Untitled Document'}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={handleBackToEditing}
-              className="gap-2"
-            >
+            <Button variant="outline" onClick={handleBackToEditing} className="gap-2">
               <ArrowLeft className="w-4 h-4" />
               Back to Editing
             </Button>
@@ -205,11 +190,7 @@ export default function DocumentReviewModal({
                 </div>
               }
               previewContent={
-                <LivePreview
-                  content={content}
-                  title={title}
-                  description={description}
-                />
+                <LivePreview content={content} title={title} description={description} />
               }
             />
           </div>
@@ -257,10 +238,7 @@ export default function DocumentReviewModal({
                 </TabsContent>
 
                 <TabsContent value="audience" className="mt-0">
-                  <AudienceRewriter
-                    initialText={content}
-                    onApplyRewrite={handleInsertContent}
-                  />
+                  <AudienceRewriter initialText={content} onApplyRewrite={handleInsertContent} />
                 </TabsContent>
               </div>
             </Tabs>

@@ -5,7 +5,7 @@ import { readFileSync } from 'fs';
 // Read environment variables from .env file
 const envContent = readFileSync('.env', 'utf-8');
 const envVars = {};
-envContent.split('\n').forEach(line => {
+envContent.split('\n').forEach((line) => {
   const [key, ...valueParts] = line.split('=');
   if (key && valueParts.length) {
     envVars[key.trim()] = valueParts.join('=').trim();
@@ -36,7 +36,7 @@ async function verifyDatabase() {
     'workspace_members',
     'document_versions',
     'comments',
-    'tags'
+    'tags',
   ];
 
   console.log('Testing connection to tables:\n');
@@ -72,7 +72,10 @@ async function verifyDatabase() {
 
   console.log('\n🔍 Testing authentication...');
   try {
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
     if (error) {
       console.log(`⚠️  Auth: No user logged in`);
     } else if (user) {

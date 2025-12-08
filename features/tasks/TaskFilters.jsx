@@ -1,7 +1,13 @@
-import React from "react";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, FolderOpen, AlertCircle, User } from "lucide-react";
+import React from 'react';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Search, Filter, FolderOpen, AlertCircle, User } from 'lucide-react';
 
 export default function TaskFilters({
   assignments,
@@ -11,7 +17,7 @@ export default function TaskFilters({
   onPriorityChange,
   searchQuery,
   onSearchChange,
-  users = []
+  users = [],
 }) {
   return (
     <div className="space-y-4">
@@ -67,9 +73,7 @@ export default function TaskFilters({
       {/* Info Message */}
       <div className="text-xs text-gray-500 dark:text-gray-400 flex items-start gap-2">
         <Filter className="w-3 h-3 mt-0.5 flex-shrink-0" />
-        <p>
-          Use tabs above to filter by status. Filters here apply across all status tabs.
-        </p>
+        <p>Use tabs above to filter by status. Filters here apply across all status tabs.</p>
       </div>
     </div>
   );

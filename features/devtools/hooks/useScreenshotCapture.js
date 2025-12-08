@@ -18,9 +18,9 @@ export function useScreenshotCapture({ onCapture, panelSelector = '[data-bug-rep
 
     // Store original styles
     const panelOriginalVisibility = panel?.style.visibility;
-    const overlayStates = Array.from(overlays).map(overlay => ({
+    const overlayStates = Array.from(overlays).map((overlay) => ({
       element: overlay,
-      visibility: overlay.style.visibility
+      visibility: overlay.style.visibility,
     }));
 
     // Function to restore visibility
@@ -38,12 +38,12 @@ export function useScreenshotCapture({ onCapture, panelSelector = '[data-bug-rep
       if (panel) {
         panel.style.visibility = 'hidden';
       }
-      overlays.forEach(overlay => {
+      overlays.forEach((overlay) => {
         overlay.style.visibility = 'hidden';
       });
 
       // Wait for DOM to update
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Capture the screenshot
       const canvas = await html2canvas(document.body, {
@@ -62,9 +62,11 @@ export function useScreenshotCapture({ onCapture, panelSelector = '[data-bug-rep
         ignoreElements: (element) => {
           // Ignore bug reporter elements
           if (!element || !element.hasAttribute) return false;
-          return element.hasAttribute('data-bug-reporter') ||
-                 element.hasAttribute('data-bug-reporter-panel');
-        }
+          return (
+            element.hasAttribute('data-bug-reporter') ||
+            element.hasAttribute('data-bug-reporter-panel')
+          );
+        },
       });
 
       // Restore visibility before processing
@@ -93,7 +95,7 @@ export function useScreenshotCapture({ onCapture, panelSelector = '[data-bug-rep
   return {
     captureScreenshot,
     isCapturing,
-    error
+    error,
   };
 }
 

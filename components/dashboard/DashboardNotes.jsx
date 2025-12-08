@@ -1,30 +1,30 @@
-import React, { useState, useEffect } from "react";
-import { Note } from "@/api/entities";
-import { Assignment } from "@/api/entities";
-import { Task } from "@/api/entities";
-import { Document } from "@/api/entities";
-import { db } from "@/api/db";
-import DOMPurify from "dompurify";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect } from 'react';
+import { Note } from '@/api/entities';
+import { Assignment } from '@/api/entities';
+import { Task } from '@/api/entities';
+import { Document } from '@/api/entities';
+import { db } from '@/api/db';
+import DOMPurify from 'dompurify';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   StickyNote,
   Plus,
@@ -36,17 +36,17 @@ import {
   Loader2,
   X,
   Link as LinkIcon,
-  Tag
-} from "lucide-react";
-import { Label } from "@/components/ui/label";
-import RichTextEditor from "@/components/ui/rich-text-editor";
-import { toast } from "sonner";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+  Tag,
+} from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import RichTextEditor from '@/components/ui/rich-text-editor';
+import { toast } from 'sonner';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
 export default function DashboardNotes({ currentUser }) {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [filteredNotes, setFilteredNotes] = useState([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -59,25 +59,25 @@ export default function DashboardNotes({ currentUser }) {
   const { currentWorkspaceId } = useWorkspace();
 
   const [noteForm, setNoteForm] = useState({
-    title: "",
-    content: "",
+    title: '',
+    content: '',
     tags: [],
-    tagInput: "",
-    associated_entity_type: "none",
-    associated_entity_id: "",
-    associated_entity_name: "",
-    color: "#FBBF24",
-    is_pinned: false
+    tagInput: '',
+    associated_entity_type: 'none',
+    associated_entity_id: '',
+    associated_entity_name: '',
+    color: '#FBBF24',
+    is_pinned: false,
   });
 
   const noteColors = [
-    { value: "#FBBF24", label: "Yellow" },
-    { value: "#60A5FA", label: "Blue" },
-    { value: "#34D399", label: "Green" },
-    { value: "#F87171", label: "Red" },
-    { value: "#A78BFA", label: "Purple" },
-    { value: "#FB923C", label: "Orange" },
-    { value: "#EC4899", label: "Pink" }
+    { value: '#FBBF24', label: 'Yellow' },
+    { value: '#60A5FA', label: 'Blue' },
+    { value: '#34D399', label: 'Green' },
+    { value: '#F87171', label: 'Red' },
+    { value: '#A78BFA', label: 'Purple' },
+    { value: '#FB923C', label: 'Orange' },
+    { value: '#EC4899', label: 'Pink' },
   ];
 
   useEffect(() => {
@@ -98,20 +98,20 @@ export default function DashboardNotes({ currentUser }) {
     try {
       setLoading(true);
       const [notesData, assignmentsData, tasksData, documentsData] = await Promise.all([
-        Note.filter({ workspace_id: currentWorkspaceId }, "-updated_date", 100),
-        Assignment.filter({ workspace_id: currentWorkspaceId }, "-updated_date", 50),
-        Task.filter({ workspace_id: currentWorkspaceId }, "-updated_date", 50),
-        Document.filter({ workspace_id: currentWorkspaceId }, "-updated_date", 50)
+        Note.filter({ workspace_id: currentWorkspaceId }, '-updated_date', 100),
+        Assignment.filter({ workspace_id: currentWorkspaceId }, '-updated_date', 50),
+        Task.filter({ workspace_id: currentWorkspaceId }, '-updated_date', 50),
+        Document.filter({ workspace_id: currentWorkspaceId }, '-updated_date', 50),
       ]);
-      
+
       setNotes(notesData);
       setFilteredNotes(notesData);
       setAssignments(assignmentsData);
       setTasks(tasksData);
       setDocuments(documentsData);
     } catch (error) {
-      console.error("Error loading notes:", error);
-      toast.error("Failed to load notes");
+      console.error('Error loading notes:', error);
+      toast.error('Failed to load notes');
     } finally {
       setLoading(false);
     }
@@ -119,8 +119,11 @@ export default function DashboardNotes({ currentUser }) {
 
   const generateAIKeywords = async (title, content) => {
     try {
-      const strippedContent = content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-      
+      const strippedContent = content
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
       const prompt = `Analyze this note and generate 8-12 relevant keywords and phrases for semantic search.
 
 Note Title: ${title}
@@ -138,19 +141,19 @@ Return only a JSON array of keyword strings.`;
       const response = await db.integrations.Core.InvokeLLM({
         prompt: prompt,
         response_json_schema: {
-          type: "object",
+          type: 'object',
           properties: {
             keywords: {
-              type: "array",
-              items: { type: "string" }
-            }
-          }
-        }
+              type: 'array',
+              items: { type: 'string' },
+            },
+          },
+        },
       });
 
       return response.keywords || [];
     } catch (error) {
-      console.error("Error generating AI keywords:", error);
+      console.error('Error generating AI keywords:', error);
       return [];
     }
   };
@@ -173,35 +176,42 @@ Return only a JSON array of search term strings.`;
       const response = await db.integrations.Core.InvokeLLM({
         prompt: prompt,
         response_json_schema: {
-          type: "object",
+          type: 'object',
           properties: {
             search_terms: {
-              type: "array",
-              items: { type: "string" }
-            }
-          }
-        }
+              type: 'array',
+              items: { type: 'string' },
+            },
+          },
+        },
       });
 
       const searchTerms = response.search_terms || [];
-      const allTerms = [searchQuery.toLowerCase(), ...searchTerms.map(t => t.toLowerCase())];
+      const allTerms = [searchQuery.toLowerCase(), ...searchTerms.map((t) => t.toLowerCase())];
 
-      const filtered = notes.filter(note => {
-        const strippedContent = (note.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-        const noteText = `${note.title} ${strippedContent} ${(note.ai_keywords || []).join(' ')} ${(note.tags || []).join(' ')}`.toLowerCase();
-        return allTerms.some(term => noteText.includes(term));
+      const filtered = notes.filter((note) => {
+        const strippedContent = (note.content || '')
+          .replace(/<[^>]*>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        const noteText =
+          `${note.title} ${strippedContent} ${(note.ai_keywords || []).join(' ')} ${(note.tags || []).join(' ')}`.toLowerCase();
+        return allTerms.some((term) => noteText.includes(term));
       });
 
       setFilteredNotes(filtered);
     } catch (error) {
-      console.error("Error performing semantic search:", error);
-      const filtered = notes.filter(note => {
-        const strippedContent = (note.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      console.error('Error performing semantic search:', error);
+      const filtered = notes.filter((note) => {
+        const strippedContent = (note.content || '')
+          .replace(/<[^>]*>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
         const noteText = `${note.title} ${strippedContent}`.toLowerCase();
         return noteText.includes(searchQuery.toLowerCase());
       });
       setFilteredNotes(filtered);
-      toast.error("Semantic search unavailable, using basic search");
+      toast.error('Semantic search unavailable, using basic search');
     } finally {
       setSearching(false);
     }
@@ -210,15 +220,15 @@ Return only a JSON array of search term strings.`;
   const handleCreateNote = () => {
     setEditingNote(null);
     setNoteForm({
-      title: "",
-      content: "",
+      title: '',
+      content: '',
       tags: [],
-      tagInput: "",
-      associated_entity_type: "none",
-      associated_entity_id: "",
-      associated_entity_name: "",
-      color: "#FBBF24",
-      is_pinned: false
+      tagInput: '',
+      associated_entity_type: 'none',
+      associated_entity_id: '',
+      associated_entity_name: '',
+      color: '#FBBF24',
+      is_pinned: false,
     });
     setShowCreateDialog(true);
   };
@@ -226,28 +236,28 @@ Return only a JSON array of search term strings.`;
   const handleEditNote = (note) => {
     setEditingNote(note);
     setNoteForm({
-      title: note.title || "",
-      content: note.content || "",
+      title: note.title || '',
+      content: note.content || '',
       tags: note.tags || [],
-      tagInput: "",
-      associated_entity_type: note.associated_entity_type || "none",
-      associated_entity_id: note.associated_entity_id || "",
-      associated_entity_name: note.associated_entity_name || "",
-      color: note.color || "#FBBF24",
-      is_pinned: note.is_pinned || false
+      tagInput: '',
+      associated_entity_type: note.associated_entity_type || 'none',
+      associated_entity_id: note.associated_entity_id || '',
+      associated_entity_name: note.associated_entity_name || '',
+      color: note.color || '#FBBF24',
+      is_pinned: note.is_pinned || false,
     });
     setShowCreateDialog(true);
   };
 
   const handleSaveNote = async () => {
     if (!noteForm.title.trim() || !noteForm.content.trim()) {
-      toast.error("Please provide both title and content for the note");
+      toast.error('Please provide both title and content for the note');
       return;
     }
 
     try {
       setSavingNote(true);
-      
+
       const aiKeywords = await generateAIKeywords(noteForm.title, noteForm.content);
 
       const noteData = {
@@ -260,39 +270,39 @@ Return only a JSON array of search term strings.`;
         associated_entity_name: noteForm.associated_entity_name || null,
         color: noteForm.color,
         is_pinned: noteForm.is_pinned,
-        ai_keywords: aiKeywords
+        ai_keywords: aiKeywords,
       };
 
       if (editingNote) {
         await Note.update(editingNote.id, noteData);
-        toast.success("Note updated successfully");
+        toast.success('Note updated successfully');
       } else {
         await Note.create(noteData);
-        toast.success("Note created successfully");
+        toast.success('Note created successfully');
       }
 
       setShowCreateDialog(false);
       loadData();
     } catch (error) {
-      console.error("Error saving note:", error);
-      toast.error("Failed to save note. Please try again");
+      console.error('Error saving note:', error);
+      toast.error('Failed to save note. Please try again');
     } finally {
       setSavingNote(false);
     }
   };
 
   const handleDeleteNote = async (noteId) => {
-    if (!confirm("Are you sure you want to delete this note?")) {
+    if (!confirm('Are you sure you want to delete this note?')) {
       return;
     }
 
     try {
       await Note.delete(noteId);
-      toast.success("Note deleted successfully");
+      toast.success('Note deleted successfully');
       loadData();
     } catch (error) {
-      console.error("Error deleting note:", error);
-      toast.error("Failed to delete note. Please try again");
+      console.error('Error deleting note:', error);
+      toast.error('Failed to delete note. Please try again');
     }
   };
 
@@ -300,13 +310,13 @@ Return only a JSON array of search term strings.`;
     try {
       await Note.update(note.id, {
         ...note,
-        is_pinned: !note.is_pinned
+        is_pinned: !note.is_pinned,
       });
-      toast.success(note.is_pinned ? "Note unpinned" : "Note pinned");
+      toast.success(note.is_pinned ? 'Note unpinned' : 'Note pinned');
       loadData();
     } catch (error) {
-      console.error("Error toggling pin:", error);
-      toast.error("Failed to update note");
+      console.error('Error toggling pin:', error);
+      toast.error('Failed to update note');
     }
   };
 
@@ -315,7 +325,7 @@ Return only a JSON array of search term strings.`;
       setNoteForm({
         ...noteForm,
         tags: [...noteForm.tags, noteForm.tagInput.trim()],
-        tagInput: ""
+        tagInput: '',
       });
     }
   };
@@ -323,7 +333,7 @@ Return only a JSON array of search term strings.`;
   const handleRemoveTag = (tagToRemove) => {
     setNoteForm({
       ...noteForm,
-      tags: noteForm.tags.filter(tag => tag !== tagToRemove)
+      tags: noteForm.tags.filter((tag) => tag !== tagToRemove),
     });
   };
 
@@ -331,40 +341,40 @@ Return only a JSON array of search term strings.`;
     setNoteForm({
       ...noteForm,
       associated_entity_type: entityType,
-      associated_entity_id: "",
-      associated_entity_name: ""
+      associated_entity_id: '',
+      associated_entity_name: '',
     });
   };
 
   const handleSelectEntity = (entityId) => {
-    let entityName = "";
-    
-    if (noteForm.associated_entity_type === "assignment") {
-      const assignment = assignments.find(a => a.id === entityId);
-      entityName = assignment?.name || "";
-    } else if (noteForm.associated_entity_type === "task") {
-      const task = tasks.find(t => t.id === entityId);
-      entityName = task?.title || "";
-    } else if (noteForm.associated_entity_type === "document") {
-      const document = documents.find(d => d.id === entityId);
-      entityName = document?.title || "";
+    let entityName = '';
+
+    if (noteForm.associated_entity_type === 'assignment') {
+      const assignment = assignments.find((a) => a.id === entityId);
+      entityName = assignment?.name || '';
+    } else if (noteForm.associated_entity_type === 'task') {
+      const task = tasks.find((t) => t.id === entityId);
+      entityName = task?.title || '';
+    } else if (noteForm.associated_entity_type === 'document') {
+      const document = documents.find((d) => d.id === entityId);
+      entityName = document?.title || '';
     }
 
     setNoteForm({
       ...noteForm,
       associated_entity_id: entityId,
-      associated_entity_name: entityName
+      associated_entity_name: entityName,
     });
   };
 
   const recentNotes = filteredNotes.slice(0, 5);
-  const pinnedNotes = filteredNotes.filter(n => n.is_pinned);
-  const unpinnedNotes = filteredNotes.filter(n => !n.is_pinned);
+  const pinnedNotes = filteredNotes.filter((n) => n.is_pinned);
+  const unpinnedNotes = filteredNotes.filter((n) => !n.is_pinned);
   const sortedFilteredNotes = [...pinnedNotes, ...unpinnedNotes];
 
   const renderNoteCard = (note) => (
-    <Card 
-      key={note.id} 
+    <Card
+      key={note.id}
       className="relative hover:shadow-lg transition-all duration-200 border-l-4"
       style={{ borderLeftColor: note.color }}
     >
@@ -372,18 +382,14 @@ Return only a JSON array of search term strings.`;
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
-              <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                {note.title}
-              </h3>
-              {note.is_pinned && (
-                <Pin className="w-4 h-4 text-amber-500 flex-shrink-0" />
-              )}
+              <h3 className="font-semibold text-gray-900 dark:text-white truncate">{note.title}</h3>
+              {note.is_pinned && <Pin className="w-4 h-4 text-amber-500 flex-shrink-0" />}
             </div>
             <div
               className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3 mb-3"
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(note.content || '') }}
             />
-            
+
             {note.tags && note.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-2">
                 {note.tags.map((tag, idx) => (
@@ -411,7 +417,9 @@ Return only a JSON array of search term strings.`;
               className="h-8 w-8"
               onClick={() => handleTogglePin(note)}
             >
-              <Pin className={`w-4 h-4 ${note.is_pinned ? 'text-amber-500 fill-amber-500' : 'text-gray-400'}`} />
+              <Pin
+                className={`w-4 h-4 ${note.is_pinned ? 'text-amber-500 fill-amber-500' : 'text-gray-400'}`}
+              />
             </Button>
             <Button
               variant="ghost"
@@ -466,7 +474,11 @@ Return only a JSON array of search term strings.`;
               <StickyNote className="w-5 h-5 text-amber-600" />
               Notes
             </CardTitle>
-            <Button onClick={handleCreateNote} size="sm" className="bg-amber-600 hover:bg-amber-700">
+            <Button
+              onClick={handleCreateNote}
+              size="sm"
+              className="bg-amber-600 hover:bg-amber-700"
+            >
               <Plus className="w-4 h-4 mr-2" />
               New Note
             </Button>
@@ -487,7 +499,7 @@ Return only a JSON array of search term strings.`;
               )}
               {!searching && searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => setSearchQuery('')}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   <X className="w-4 h-4" />
@@ -497,12 +509,8 @@ Return only a JSON array of search term strings.`;
 
             <Tabs defaultValue="recent" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="recent">
-                  Recent Notes
-                </TabsTrigger>
-                <TabsTrigger value="all">
-                  All Notes ({filteredNotes.length})
-                </TabsTrigger>
+                <TabsTrigger value="recent">Recent Notes</TabsTrigger>
+                <TabsTrigger value="all">All Notes ({filteredNotes.length})</TabsTrigger>
               </TabsList>
 
               <TabsContent value="recent" className="space-y-3 mt-4">
@@ -527,9 +535,7 @@ Return only a JSON array of search term strings.`;
 
               <TabsContent value="all" className="space-y-3 mt-4">
                 {sortedFilteredNotes.length > 0 ? (
-                  <div className="grid gap-3">
-                    {sortedFilteredNotes.map(renderNoteCard)}
-                  </div>
+                  <div className="grid gap-3">{sortedFilteredNotes.map(renderNoteCard)}</div>
                 ) : (
                   <div className="text-center py-12">
                     {searchQuery ? (
@@ -551,7 +557,10 @@ Return only a JSON array of search term strings.`;
                         <p className="text-gray-500 dark:text-gray-400 mb-4">
                           Create your first note to get started!
                         </p>
-                        <Button onClick={handleCreateNote} className="bg-amber-600 hover:bg-amber-700">
+                        <Button
+                          onClick={handleCreateNote}
+                          className="bg-amber-600 hover:bg-amber-700"
+                        >
                           <Plus className="w-4 h-4 mr-2" />
                           Create Note
                         </Button>
@@ -571,7 +580,7 @@ Return only a JSON array of search term strings.`;
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <StickyNote className="w-5 h-5 text-amber-600" />
-              {editingNote ? "Edit Note" : "Create New Note"}
+              {editingNote ? 'Edit Note' : 'Create New Note'}
             </DialogTitle>
           </DialogHeader>
 
@@ -605,7 +614,7 @@ Return only a JSON array of search term strings.`;
                   value={noteForm.tagInput}
                   onChange={(e) => setNoteForm({ ...noteForm, tagInput: e.target.value })}
                   onKeyPress={(e) => {
-                    if (e.key === "Enter") {
+                    if (e.key === 'Enter') {
                       e.preventDefault();
                       handleAddTag();
                     }
@@ -642,8 +651,8 @@ Return only a JSON array of search term strings.`;
                     type="button"
                     onClick={() => setNoteForm({ ...noteForm, color: color.value })}
                     className={`w-8 h-8 rounded-full border-2 transition-all ${
-                      noteForm.color === color.value 
-                        ? 'border-gray-900 dark:border-white scale-110' 
+                      noteForm.color === color.value
+                        ? 'border-gray-900 dark:border-white scale-110'
                         : 'border-gray-300 dark:border-gray-600 hover:scale-105'
                     }`}
                     style={{ backgroundColor: color.value }}
@@ -670,28 +679,25 @@ Return only a JSON array of search term strings.`;
                 </SelectContent>
               </Select>
 
-              {noteForm.associated_entity_type !== "none" && (
-                <Select
-                  value={noteForm.associated_entity_id}
-                  onValueChange={handleSelectEntity}
-                >
+              {noteForm.associated_entity_type !== 'none' && (
+                <Select value={noteForm.associated_entity_id} onValueChange={handleSelectEntity}>
                   <SelectTrigger>
                     <SelectValue placeholder={`Select ${noteForm.associated_entity_type}...`} />
                   </SelectTrigger>
                   <SelectContent>
-                    {noteForm.associated_entity_type === "assignment" &&
+                    {noteForm.associated_entity_type === 'assignment' &&
                       assignments.map((assignment) => (
                         <SelectItem key={assignment.id} value={assignment.id}>
                           {assignment.name}
                         </SelectItem>
                       ))}
-                    {noteForm.associated_entity_type === "task" &&
+                    {noteForm.associated_entity_type === 'task' &&
                       tasks.map((task) => (
                         <SelectItem key={task.id} value={task.id}>
                           {task.title}
                         </SelectItem>
                       ))}
-                    {noteForm.associated_entity_type === "document" &&
+                    {noteForm.associated_entity_type === 'document' &&
                       documents.map((document) => (
                         <SelectItem key={document.id} value={document.id}>
                           {document.title}
@@ -720,20 +726,20 @@ Return only a JSON array of search term strings.`;
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleSaveNote} 
+            <Button
+              onClick={handleSaveNote}
               className="bg-amber-600 hover:bg-amber-700"
               disabled={savingNote}
             >
               {savingNote ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {editingNote ? "Updating..." : "Creating..."}
+                  {editingNote ? 'Updating...' : 'Creating...'}
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 mr-2" />
-                  {editingNote ? "Update Note" : "Create Note"}
+                  {editingNote ? 'Update Note' : 'Create Note'}
                 </>
               )}
             </Button>

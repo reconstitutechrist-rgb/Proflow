@@ -19,8 +19,8 @@ import {
   nextSaturday,
   nextSunday,
   getDay,
-  setDay
-} from "date-fns";
+  setDay,
+} from 'date-fns';
 
 const SIMILARITY_THRESHOLD = 0.7;
 
@@ -72,17 +72,19 @@ export function parseDateString(dateStr) {
       return format(startOfMonth(addMonths(today, 1)), 'yyyy-MM-dd');
     }
 
-    const dayMatch = lowerDate.match(/next\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/);
+    const dayMatch = lowerDate.match(
+      /next\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/
+    );
     if (dayMatch) {
       const dayName = dayMatch[1];
       const dayFunctions = {
-        'monday': nextMonday,
-        'tuesday': nextTuesday,
-        'wednesday': nextWednesday,
-        'thursday': nextThursday,
-        'friday': nextFriday,
-        'saturday': nextSaturday,
-        'sunday': nextSunday
+        monday: nextMonday,
+        tuesday: nextTuesday,
+        wednesday: nextWednesday,
+        thursday: nextThursday,
+        friday: nextFriday,
+        saturday: nextSaturday,
+        sunday: nextSunday,
       };
 
       if (dayFunctions[dayName]) {
@@ -90,10 +92,20 @@ export function parseDateString(dateStr) {
       }
     }
 
-    const thisDayMatch = lowerDate.match(/(?:this|this coming)\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/);
+    const thisDayMatch = lowerDate.match(
+      /(?:this|this coming)\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/
+    );
     if (thisDayMatch) {
       const dayName = thisDayMatch[1];
-      const targetDay = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].indexOf(dayName);
+      const targetDay = [
+        'sunday',
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+      ].indexOf(dayName);
       const currentDay = getDay(today);
 
       if (targetDay >= currentDay) {
@@ -135,7 +147,7 @@ export function parseDateString(dateStr) {
 
     return null;
   } catch (error) {
-    console.error("Date parsing error:", error);
+    console.error('Date parsing error:', error);
     return null;
   }
 }
@@ -144,13 +156,15 @@ export function parseDateString(dateStr) {
  * Validate recurrence pattern for recurring tasks
  */
 export function validateRecurrencePattern(pattern) {
-  if (!pattern) return { isValid: false, errors: ["Recurrence pattern is missing"] };
+  if (!pattern) return { isValid: false, errors: ['Recurrence pattern is missing'] };
 
   const errors = [];
 
   const validFrequencies = ['daily', 'weekly', 'monthly', 'yearly'];
   if (!pattern.frequency || !validFrequencies.includes(pattern.frequency)) {
-    errors.push(`Invalid frequency: "${pattern.frequency}". Must be one of: ${validFrequencies.join(', ')}`);
+    errors.push(
+      `Invalid frequency: "${pattern.frequency}". Must be one of: ${validFrequencies.join(', ')}`
+    );
   }
 
   if (pattern.interval !== undefined) {
@@ -161,19 +175,25 @@ export function validateRecurrencePattern(pattern) {
 
   if (pattern.frequency === 'weekly' && pattern.days_of_week) {
     if (!Array.isArray(pattern.days_of_week)) {
-      errors.push("days_of_week must be an array");
+      errors.push('days_of_week must be an array');
     } else {
-      const invalidDays = pattern.days_of_week.filter(day =>
-        typeof day !== 'number' || day < 0 || day > 6
+      const invalidDays = pattern.days_of_week.filter(
+        (day) => typeof day !== 'number' || day < 0 || day > 6
       );
       if (invalidDays.length > 0) {
-        errors.push(`Invalid days_of_week: ${invalidDays.join(', ')}. Must be numbers 0-6 (0=Sunday)`);
+        errors.push(
+          `Invalid days_of_week: ${invalidDays.join(', ')}. Must be numbers 0-6 (0=Sunday)`
+        );
       }
     }
   }
 
   if (pattern.frequency === 'monthly' && pattern.day_of_month !== undefined) {
-    if (typeof pattern.day_of_month !== 'number' || pattern.day_of_month < 1 || pattern.day_of_month > 31) {
+    if (
+      typeof pattern.day_of_month !== 'number' ||
+      pattern.day_of_month < 1 ||
+      pattern.day_of_month > 31
+    ) {
       errors.push(`Invalid day_of_month: ${pattern.day_of_month}. Must be between 1 and 31`);
     }
   }
@@ -186,14 +206,18 @@ export function validateRecurrencePattern(pattern) {
   }
 
   if (pattern.occurrences !== undefined) {
-    if (typeof pattern.occurrences !== 'number' || pattern.occurrences < 1 || pattern.occurrences > 1000) {
+    if (
+      typeof pattern.occurrences !== 'number' ||
+      pattern.occurrences < 1 ||
+      pattern.occurrences > 1000
+    ) {
       errors.push(`Invalid occurrences: ${pattern.occurrences}. Must be between 1 and 1000`);
     }
   }
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -223,7 +247,7 @@ export function validateSubtasks(subtasks) {
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -240,7 +264,7 @@ export function calculateSimilarity(str1, str2) {
   const words1 = new Set(s1.split(/\s+/));
   const words2 = new Set(s2.split(/\s+/));
 
-  const intersection = new Set([...words1].filter(word => words2.has(word)));
+  const intersection = new Set([...words1].filter((word) => words2.has(word)));
   const union = new Set([...words1, ...words2]);
 
   return intersection.size / union.size;
@@ -265,9 +289,9 @@ export function checkForDuplicates(newTask, existingTasks, threshold = SIMILARIT
         similarity: titleSimilarity,
         reasons: [
           `${Math.round(titleSimilarity * 100)}% title match`,
-          sameAssignment && "Same assignment",
-          sameAssignee && "Same assignee"
-        ].filter(Boolean)
+          sameAssignment && 'Same assignment',
+          sameAssignee && 'Same assignee',
+        ].filter(Boolean),
       });
     }
   }
@@ -278,34 +302,38 @@ export function checkForDuplicates(newTask, existingTasks, threshold = SIMILARIT
 /**
  * Validate complete task structure
  */
-export function validateTaskStructure(task, { assignments = [], projects = [], users = [], currentUser = null } = {}) {
+export function validateTaskStructure(
+  task,
+  { assignments = [], projects = [], users = [], currentUser = null } = {}
+) {
   const errors = [];
 
   if (!task.title || typeof task.title !== 'string' || !task.title.trim()) {
-    errors.push("Task must have a title");
+    errors.push('Task must have a title');
   }
 
   // Validate assignment_id
-  const validatedAssignment = task.assignment_id && assignments.find(a => a.id === task.assignment_id);
+  const validatedAssignment =
+    task.assignment_id && assignments.find((a) => a.id === task.assignment_id);
   if (!validatedAssignment) {
     if (assignments.length === 0) {
-      errors.push("No assignments available. Please create an assignment first.");
+      errors.push('No assignments available. Please create an assignment first.');
     } else {
       errors.push(`Invalid assignment: ${task.assignment_id || 'none specified'}`);
     }
   }
 
   // Validate project_id if provided (optional)
-  const validatedProject = task.project_id ? projects.find(p => p.id === task.project_id) : null;
+  const validatedProject = task.project_id ? projects.find((p) => p.id === task.project_id) : null;
   if (task.project_id && !validatedProject) {
     errors.push(`Invalid project: ${task.project_id}`);
   }
 
   // Validate assigned_to
-  const validatedUser = task.assigned_to && users.find(u => u.email === task.assigned_to);
+  const validatedUser = task.assigned_to && users.find((u) => u.email === task.assigned_to);
   if (!validatedUser) {
     if (users.length === 0) {
-      errors.push("No users available.");
+      errors.push('No users available.');
     } else {
       errors.push(`Invalid user: ${task.assigned_to || 'none specified'}`);
     }
@@ -325,7 +353,7 @@ export function validateTaskStructure(task, { assignments = [], projects = [], u
   if (task.is_recurring && task.recurrence_pattern) {
     const recurrenceValidation = validateRecurrencePattern(task.recurrence_pattern);
     if (!recurrenceValidation.isValid) {
-      errors.push(...recurrenceValidation.errors.map(e => `Recurrence: ${e}`));
+      errors.push(...recurrenceValidation.errors.map((e) => `Recurrence: ${e}`));
     }
   }
 
@@ -342,11 +370,11 @@ export function validateTaskStructure(task, { assignments = [], projects = [], u
     errors,
     validatedTask: {
       ...task,
-      assignment_id: validatedAssignment?.id || (assignments[0]?.id || ""),
+      assignment_id: validatedAssignment?.id || assignments[0]?.id || '',
       project_id: validatedProject?.id || null,
-      assigned_to: validatedUser?.email || (currentUser?.email || ""),
-      due_date: task.due_date ? parseDateString(task.due_date) : null
-    }
+      assigned_to: validatedUser?.email || currentUser?.email || '',
+      due_date: task.due_date ? parseDateString(task.due_date) : null,
+    },
   };
 }
 
@@ -355,29 +383,31 @@ export function validateTaskStructure(task, { assignments = [], projects = [], u
  */
 export const TASK_TEMPLATES = [
   {
-    icon: "📝",
-    title: "Single Task",
-    description: "Create one task with all details",
-    example: "Create a task to review the Q3 budget report by Friday, assign it to john@company.com, high priority"
+    icon: '📝',
+    title: 'Single Task',
+    description: 'Create one task with all details',
+    example:
+      'Create a task to review the Q3 budget report by Friday, assign it to john@company.com, high priority',
   },
   {
-    icon: "🔄",
-    title: "Recurring Task",
-    description: "Set up a repeating task",
-    example: "Create a weekly task to check social media metrics every Monday, medium priority"
+    icon: '🔄',
+    title: 'Recurring Task',
+    description: 'Set up a repeating task',
+    example: 'Create a weekly task to check social media metrics every Monday, medium priority',
   },
   {
-    icon: "📋",
-    title: "Task Breakdown",
-    description: "Break down a project into subtasks",
-    example: "I need to onboard the new developer. Help me break this down into subtasks with a checklist"
+    icon: '📋',
+    title: 'Task Breakdown',
+    description: 'Break down a project into subtasks',
+    example:
+      'I need to onboard the new developer. Help me break this down into subtasks with a checklist',
   },
   {
-    icon: "⚡",
-    title: "Quick Add",
+    icon: '⚡',
+    title: 'Quick Add',
     description: "Just the basics, I'll add details later",
-    example: "Add task: Call client about proposal"
-  }
+    example: 'Add task: Call client about proposal',
+  },
 ];
 
 /**
@@ -385,10 +415,10 @@ export const TASK_TEMPLATES = [
  */
 export function getPriorityColor(priority) {
   const colors = {
-    low: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-    medium: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
-    high: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
-    urgent: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+    low: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+    medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+    high: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+    urgent: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
   };
   return colors[priority] || colors.medium;
 }
@@ -396,17 +426,17 @@ export function getPriorityColor(priority) {
 /**
  * Draft storage utilities
  */
-const DRAFT_STORAGE_KEY = "ai_assistant_task_draft";
+const DRAFT_STORAGE_KEY = 'ai_assistant_task_draft';
 
 export function saveTaskDraft(data) {
   try {
     const draft = {
       ...data,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
     localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
   } catch (error) {
-    console.error("Error saving task draft:", error);
+    console.error('Error saving task draft:', error);
   }
 }
 
@@ -426,7 +456,7 @@ export function loadTaskDraft() {
     localStorage.removeItem(DRAFT_STORAGE_KEY);
     return null;
   } catch (error) {
-    console.error("Error loading task draft:", error);
+    console.error('Error loading task draft:', error);
     return null;
   }
 }
@@ -435,6 +465,6 @@ export function clearTaskDraft() {
   try {
     localStorage.removeItem(DRAFT_STORAGE_KEY);
   } catch (error) {
-    console.error("Error clearing task draft:", error);
+    console.error('Error clearing task draft:', error);
   }
 }

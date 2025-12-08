@@ -1,18 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { Button } from '@/components/ui/button';
-import {
-  Edit3,
-  Eye,
-  Columns,
-  GripVertical
-} from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Edit3, Eye, Columns, GripVertical } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 /**
  * View modes for the editor
@@ -20,7 +10,7 @@ import {
 export const VIEW_MODES = {
   EDIT: 'edit',
   PREVIEW: 'preview',
-  SPLIT: 'split'
+  SPLIT: 'split',
 };
 
 /**
@@ -32,7 +22,7 @@ export default function EditorPreviewSplit({
   onViewModeChange,
   editorContent,
   previewContent,
-  className = ''
+  className = '',
 }) {
   // Load saved panel size from localStorage
   const [panelSizes, setPanelSizes] = useState(() => {
@@ -55,9 +45,7 @@ export default function EditorPreviewSplit({
     return (
       <div className={`h-full flex flex-col ${className}`}>
         <ViewModeToggle viewMode={viewMode} onViewModeChange={onViewModeChange} />
-        <div className="flex-1 overflow-auto">
-          {editorContent}
-        </div>
+        <div className="flex-1 overflow-auto">{editorContent}</div>
       </div>
     );
   }
@@ -66,9 +54,7 @@ export default function EditorPreviewSplit({
     return (
       <div className={`h-full flex flex-col ${className}`}>
         <ViewModeToggle viewMode={viewMode} onViewModeChange={onViewModeChange} />
-        <div className="flex-1 overflow-auto">
-          {previewContent}
-        </div>
+        <div className="flex-1 overflow-auto">{previewContent}</div>
       </div>
     );
   }
@@ -77,16 +63,8 @@ export default function EditorPreviewSplit({
   return (
     <div className={`h-full flex flex-col ${className}`}>
       <ViewModeToggle viewMode={viewMode} onViewModeChange={onViewModeChange} />
-      <PanelGroup
-        direction="horizontal"
-        onLayout={handlePanelResize}
-        className="flex-1"
-      >
-        <Panel
-          defaultSize={panelSizes[0]}
-          minSize={30}
-          className="overflow-auto"
-        >
+      <PanelGroup direction="horizontal" onLayout={handlePanelResize} className="flex-1">
+        <Panel defaultSize={panelSizes[0]} minSize={30} className="overflow-auto">
           <div className="h-full border-r border-gray-200 dark:border-gray-700">
             <div className="sticky top-0 z-10 px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-2">
@@ -94,9 +72,7 @@ export default function EditorPreviewSplit({
                 Editor
               </span>
             </div>
-            <div className="p-4">
-              {editorContent}
-            </div>
+            <div className="p-4">{editorContent}</div>
           </div>
         </Panel>
 
@@ -104,11 +80,7 @@ export default function EditorPreviewSplit({
           <GripVertical className="w-4 h-4 text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
         </PanelResizeHandle>
 
-        <Panel
-          defaultSize={panelSizes[1]}
-          minSize={30}
-          className="overflow-auto"
-        >
+        <Panel defaultSize={panelSizes[1]} minSize={30} className="overflow-auto">
           <div className="h-full">
             <div className="sticky top-0 z-10 px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-2">
@@ -116,9 +88,7 @@ export default function EditorPreviewSplit({
                 Preview
               </span>
             </div>
-            <div className="p-4">
-              {previewContent}
-            </div>
+            <div className="p-4">{previewContent}</div>
           </div>
         </Panel>
       </PanelGroup>

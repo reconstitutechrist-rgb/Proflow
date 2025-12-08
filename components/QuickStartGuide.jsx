@@ -8,27 +8,31 @@ const QuickStartGuide = ({ onClose, onStartTutorial }) => {
     {
       icon: '📄',
       title: 'Upload Documents',
-      description: 'Start by uploading your PDF documents. You can drag and drop multiple files or click to browse.',
-      action: 'Upload'
+      description:
+        'Start by uploading your PDF documents. You can drag and drop multiple files or click to browse.',
+      action: 'Upload',
     },
     {
       icon: '🔍',
       title: 'Enable RAG',
-      description: 'Turn on Retrieval-Augmented Generation to search through your documents for relevant context.',
-      action: 'Enable'
+      description:
+        'Turn on Retrieval-Augmented Generation to search through your documents for relevant context.',
+      action: 'Enable',
     },
     {
       icon: '💬',
       title: 'Ask Questions',
-      description: 'Type your questions about the documents. The AI will analyze them and provide detailed answers.',
-      action: 'Ask'
+      description:
+        'Type your questions about the documents. The AI will analyze them and provide detailed answers.',
+      action: 'Ask',
     },
     {
       icon: '💾',
       title: 'Save Session',
-      description: 'Your conversations are automatically saved. Access them anytime from the session list.',
-      action: 'Done'
-    }
+      description:
+        'Your conversations are automatically saved. Access them anytime from the session list.',
+      action: 'Done',
+    },
   ];
 
   const handleNext = () => {
@@ -60,7 +64,9 @@ const QuickStartGuide = ({ onClose, onStartTutorial }) => {
 
         <div className="quick-start-content">
           <div className="quick-start-icon">{card.icon}</div>
-          <div className="quick-start-step">Step {currentCard + 1} of {cards.length}</div>
+          <div className="quick-start-step">
+            Step {currentCard + 1} of {cards.length}
+          </div>
           <h2 className="quick-start-title">{card.title}</h2>
           <p className="quick-start-description">{card.description}</p>
         </div>

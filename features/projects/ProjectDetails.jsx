@@ -1,9 +1,8 @@
-
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   X,
   Edit,
@@ -13,29 +12,47 @@ import {
   Target,
   DollarSign,
   Tag as TagIcon,
-  Trash2
-} from "lucide-react";
-import { format } from "date-fns";
+  Trash2,
+} from 'lucide-react';
+import { format } from 'date-fns';
 
-export default function ProjectDetails({ project, onClose, onEdit, onDelete, onNavigateToAssignments, currentUser }) {
+export default function ProjectDetails({
+  project,
+  onClose,
+  onEdit,
+  onDelete,
+  onNavigateToAssignments,
+  currentUser,
+}) {
   const getStatusColor = (status) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300';
-      case 'active': return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300';
-      case 'on_hold': return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300';
-      case 'planning': return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'completed':
+        return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300';
+      case 'active':
+        return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300';
+      case 'on_hold':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300';
+      case 'planning':
+        return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'urgent': return 'bg-red-500 text-white';
-      case 'high': return 'bg-orange-500 text-white';
-      case 'medium': return 'bg-yellow-500 text-white';
-      case 'low': return 'bg-green-500 text-white';
-      default: return 'bg-gray-500 text-white';
+      case 'urgent':
+        return 'bg-red-500 text-white';
+      case 'high':
+        return 'bg-orange-500 text-white';
+      case 'medium':
+        return 'bg-yellow-500 text-white';
+      case 'low':
+        return 'bg-green-500 text-white';
+      default:
+        return 'bg-gray-500 text-white';
     }
   };
 
@@ -47,10 +64,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete, onN
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-3">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: project.color }}
-                />
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color }} />
                 <CardTitle className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
                   {project.name}
                 </CardTitle>
@@ -64,9 +78,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete, onN
                 </Badge>
               </div>
               {project.description && (
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
-                  {project.description}
-                </p>
+                <p className="text-gray-600 dark:text-gray-400 mt-2">{project.description}</p>
               )}
             </div>
 
@@ -75,9 +87,9 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete, onN
                 <Edit className="w-4 h-4 mr-2" />
                 Edit
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => onDelete(project)} 
+              <Button
+                variant="outline"
+                onClick={() => onDelete(project)}
                 className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
@@ -169,7 +181,9 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete, onN
                 <div className="flex items-start gap-3">
                   <Users className="w-5 h-5 text-gray-400 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Project Manager</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Project Manager
+                    </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       {project.project_manager}
                     </p>
@@ -181,7 +195,9 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete, onN
                 <div className="flex items-start gap-3">
                   <Users className="w-5 h-5 text-gray-400 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Client Contact</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Client Contact
+                    </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       {project.client_contact}
                     </p>
@@ -229,7 +245,11 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete, onN
               <CardContent>
                 <div className="flex flex-wrap gap-2">
                   {project.tags.map((tag, idx) => (
-                    <Badge key={idx} variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                    <Badge
+                      key={idx}
+                      variant="secondary"
+                      className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                    >
                       {tag}
                     </Badge>
                   ))}

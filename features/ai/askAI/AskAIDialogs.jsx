@@ -1,8 +1,8 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -10,14 +10,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Loader2,
   FileText,
@@ -28,7 +28,7 @@ import {
   FileDown,
   CheckCircle2,
   DollarSign,
-} from "lucide-react";
+} from 'lucide-react';
 
 export function AskAIDialogs({
   // Save dialog
@@ -73,14 +73,11 @@ export function AskAIDialogs({
       <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {currentSession ? "Update Session" : "Save Session"}
-            </DialogTitle>
+            <DialogTitle>{currentSession ? 'Update Session' : 'Save Session'}</DialogTitle>
             <DialogDescription>
               {currentSession
                 ? 'Update the session name and description'
-                : 'Give your conversation a name to save it for later'
-              }
+                : 'Give your conversation a name to save it for later'}
             </DialogDescription>
           </DialogHeader>
 
@@ -132,7 +129,7 @@ export function AskAIDialogs({
             </Button>
             <Button onClick={handleSaveSession} disabled={!sessionName.trim()}>
               <Save className="w-4 h-4 mr-2" />
-              {currentSession ? "Update" : "Save"} Session
+              {currentSession ? 'Update' : 'Save'} Session
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -143,9 +140,7 @@ export function AskAIDialogs({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Export Session</DialogTitle>
-            <DialogDescription>
-              Download your conversation as a document
-            </DialogDescription>
+            <DialogDescription>Download your conversation as a document</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
@@ -205,10 +200,7 @@ export function AskAIDialogs({
             <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={() => handleExportSession(exportFormat)}
-              disabled={isExporting}
-            >
+            <Button onClick={() => handleExportSession(exportFormat)} disabled={isExporting}>
               {isExporting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -231,7 +223,8 @@ export function AskAIDialogs({
           <DialogHeader>
             <DialogTitle>Delete Session</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &ldquo;{deleteConfirmSession?.name}&rdquo;? This action cannot be undone.
+              Are you sure you want to delete &ldquo;{deleteConfirmSession?.name}&rdquo;? This
+              action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

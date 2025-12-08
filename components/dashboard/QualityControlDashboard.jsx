@@ -1,12 +1,11 @@
-
-import React, { useState, useEffect } from "react";
-import { Document } from "@/api/entities";
-import { Assignment } from "@/api/entities";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect } from 'react';
+import { Document } from '@/api/entities';
+import { Assignment } from '@/api/entities';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Shield,
   AlertTriangle,
@@ -16,8 +15,8 @@ import {
   Clock,
   Target,
   Zap,
-  RefreshCw
-} from "lucide-react";
+  RefreshCw,
+} from 'lucide-react';
 
 export default function QualityControlDashboard() {
   const [documents, setDocuments] = useState([]);
@@ -28,21 +27,15 @@ export default function QualityControlDashboard() {
   // Moved calculateQualityStats definition before its usage in loadQualityData
   const calculateQualityStats = (docs, assignments) => {
     const totalDocs = docs.length;
-    const analyzedDocs = docs.filter(doc => 
-      doc.ai_analysis?.analysis_status === 'completed'
+    const analyzedDocs = docs.filter(
+      (doc) => doc.ai_analysis?.analysis_status === 'completed'
     ).length;
-    
-    const highQualityDocs = docs.filter(doc => 
-      doc.ai_analysis?.completeness_score >= 80
-    ).length;
-    
-    const docsWithConflicts = docs.filter(doc => 
-      doc.ai_analysis?.conflicts?.length > 0
-    ).length;
-    
-    const docsWithGaps = docs.filter(doc => 
-      doc.ai_analysis?.potential_gaps?.length > 0
-    ).length;
+
+    const highQualityDocs = docs.filter((doc) => doc.ai_analysis?.completeness_score >= 80).length;
+
+    const docsWithConflicts = docs.filter((doc) => doc.ai_analysis?.conflicts?.length > 0).length;
+
+    const docsWithGaps = docs.filter((doc) => doc.ai_analysis?.potential_gaps?.length > 0).length;
 
     const analysisRate = totalDocs > 0 ? Math.round((analyzedDocs / totalDocs) * 100) : 0;
     const qualityRate = totalDocs > 0 ? Math.round((highQualityDocs / totalDocs) * 100) : 0;
@@ -54,23 +47,20 @@ export default function QualityControlDashboard() {
       documentsWithConflicts: docsWithConflicts,
       documentsWithGaps: docsWithGaps,
       analysisCompletionRate: analysisRate,
-      qualityScore: qualityRate
+      qualityScore: qualityRate,
     });
   };
 
   const loadQualityData = React.useCallback(async () => {
     try {
       setLoading(true);
-      const [docsData, assignmentsData] = await Promise.all([
-        Document.list(),
-        Assignment.list()
-      ]);
+      const [docsData, assignmentsData] = await Promise.all([Document.list(), Assignment.list()]);
 
       setDocuments(docsData);
       setAssignments(assignmentsData);
       calculateQualityStats(docsData, assignmentsData);
     } catch (error) {
-      console.error("Error loading quality data:", error);
+      console.error('Error loading quality data:', error);
     } finally {
       setLoading(false);
     }
@@ -81,17 +71,21 @@ export default function QualityControlDashboard() {
   }, [loadQualityData]); // Now correctly depends on loadQualityData
 
   const getQualityColor = (score) => {
-    if (score >= 80) return "text-green-600 bg-green-50";
-    if (score >= 60) return "text-yellow-600 bg-yellow-50";
-    return "text-red-600 bg-red-50";
+    if (score >= 80) return 'text-green-600 bg-green-50';
+    if (score >= 60) return 'text-yellow-600 bg-yellow-50';
+    return 'text-red-600 bg-red-50';
   };
 
   const getConflictSeverityColor = (severity) => {
     switch (severity?.toLowerCase()) {
-      case 'high': return "bg-red-100 text-red-800";
-      case 'medium': return "bg-yellow-100 text-yellow-800";
-      case 'low': return "bg-green-100 text-green-800";
-      default: return "bg-gray-100 text-gray-800";
+      case 'high':
+        return 'bg-red-100 text-red-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'low':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -101,7 +95,7 @@ export default function QualityControlDashboard() {
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(i => (
+            {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-24 bg-gray-200 rounded-xl"></div>
             ))}
           </div>
@@ -120,7 +114,9 @@ export default function QualityControlDashboard() {
             <Shield className="w-6 h-6 text-blue-600" />
             Quality Control Dashboard
           </h2>
-          <p className="text-gray-600 mt-1">Monitor document quality and identify potential issues</p>
+          <p className="text-gray-600 mt-1">
+            Monitor document quality and identify potential issues
+          </p>
         </div>
         <Button onClick={loadQualityData} variant="outline">
           <RefreshCw className="w-4 h-4 mr-2" />
@@ -191,36 +187,43 @@ export default function QualityControlDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {documents.filter(doc => doc.ai_analysis?.conflicts?.length > 0).map((doc) => (
-                  <div key={doc.id} className="p-4 border border-red-200 rounded-lg bg-red-50">
-                    <div className="flex items-start justify-between mb-3">
-                      <h4 className="font-medium text-gray-900">{doc.title}</h4>
-                      <Badge variant="outline" className="bg-red-100 text-red-800">
-                        {doc.ai_analysis.conflicts.length} conflicts
-                      </Badge>
-                    </div>
-                    <div className="space-y-2">
-                      {doc.ai_analysis.conflicts.map((conflict, index) => (
-                        <div key={index} className="flex items-start gap-3 p-3 bg-white rounded border">
-                          <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">{conflict.description}</p>
-                            <p className="text-xs text-gray-600 mt-1">{conflict.details}</p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge className={getConflictSeverityColor(conflict.severity)}>
-                                {conflict.severity} severity
-                              </Badge>
-                              <span className="text-xs text-gray-500">
-                                vs. {conflict.conflicting_document_title}
-                              </span>
+                {documents
+                  .filter((doc) => doc.ai_analysis?.conflicts?.length > 0)
+                  .map((doc) => (
+                    <div key={doc.id} className="p-4 border border-red-200 rounded-lg bg-red-50">
+                      <div className="flex items-start justify-between mb-3">
+                        <h4 className="font-medium text-gray-900">{doc.title}</h4>
+                        <Badge variant="outline" className="bg-red-100 text-red-800">
+                          {doc.ai_analysis.conflicts.length} conflicts
+                        </Badge>
+                      </div>
+                      <div className="space-y-2">
+                        {doc.ai_analysis.conflicts.map((conflict, index) => (
+                          <div
+                            key={index}
+                            className="flex items-start gap-3 p-3 bg-white rounded border"
+                          >
+                            <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900">
+                                {conflict.description}
+                              </p>
+                              <p className="text-xs text-gray-600 mt-1">{conflict.details}</p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge className={getConflictSeverityColor(conflict.severity)}>
+                                  {conflict.severity} severity
+                                </Badge>
+                                <span className="text-xs text-gray-500">
+                                  vs. {conflict.conflicting_document_title}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-                {documents.filter(doc => doc.ai_analysis?.conflicts?.length > 0).length === 0 && (
+                  ))}
+                {documents.filter((doc) => doc.ai_analysis?.conflicts?.length > 0).length === 0 && (
                   <div className="text-center py-12 text-gray-500">
                     <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-400" />
                     <p className="text-lg font-medium text-gray-900 mb-2">No conflicts found</p>
@@ -242,27 +245,36 @@ export default function QualityControlDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {documents.filter(doc => doc.ai_analysis?.potential_gaps?.length > 0).map((doc) => (
-                  <div key={doc.id} className="p-4 border border-yellow-200 rounded-lg bg-yellow-50">
-                    <div className="flex items-start justify-between mb-3">
-                      <h4 className="font-medium text-gray-900">{doc.title}</h4>
-                      <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
-                        {doc.ai_analysis.potential_gaps.length} gaps
-                      </Badge>
-                    </div>
-                    <div className="space-y-2">
-                      {doc.ai_analysis.potential_gaps.map((gap, index) => (
-                        <div key={index} className="flex items-start gap-3 p-3 bg-white rounded border">
-                          <Clock className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                          <div className="flex-1">
-                            <p className="text-sm text-gray-900">{gap}</p>
+                {documents
+                  .filter((doc) => doc.ai_analysis?.potential_gaps?.length > 0)
+                  .map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="p-4 border border-yellow-200 rounded-lg bg-yellow-50"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <h4 className="font-medium text-gray-900">{doc.title}</h4>
+                        <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                          {doc.ai_analysis.potential_gaps.length} gaps
+                        </Badge>
+                      </div>
+                      <div className="space-y-2">
+                        {doc.ai_analysis.potential_gaps.map((gap, index) => (
+                          <div
+                            key={index}
+                            className="flex items-start gap-3 p-3 bg-white rounded border"
+                          >
+                            <Clock className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-sm text-gray-900">{gap}</p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-                {documents.filter(doc => doc.ai_analysis?.potential_gaps?.length > 0).length === 0 && (
+                  ))}
+                {documents.filter((doc) => doc.ai_analysis?.potential_gaps?.length > 0).length ===
+                  0 && (
                   <div className="text-center py-12 text-gray-500">
                     <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-400" />
                     <p className="text-lg font-medium text-gray-900 mb-2">No gaps identified</p>
@@ -284,34 +296,38 @@ export default function QualityControlDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {documents.filter(doc => doc.ai_analysis?.completeness_score != null).map((doc) => (
-                  <div key={doc.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                    <FileText className="w-6 h-6 text-gray-400 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-gray-900 truncate">{doc.title}</h4>
-                      <p className="text-sm text-gray-600 truncate">{doc.file_name}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <div className={`text-lg font-bold px-3 py-1 rounded-full ${
-                          getQualityColor(doc.ai_analysis.completeness_score)
-                        }`}>
-                          {doc.ai_analysis.completeness_score}%
+                {documents
+                  .filter((doc) => doc.ai_analysis?.completeness_score != null)
+                  .map((doc) => (
+                    <div key={doc.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                      <FileText className="w-6 h-6 text-gray-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-gray-900 truncate">{doc.title}</h4>
+                        <p className="text-sm text-gray-600 truncate">{doc.file_name}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div
+                            className={`text-lg font-bold px-3 py-1 rounded-full ${getQualityColor(
+                              doc.ai_analysis.completeness_score
+                            )}`}
+                          >
+                            {doc.ai_analysis.completeness_score}%
+                          </div>
+                        </div>
+                        <div className="w-24">
+                          <Progress value={doc.ai_analysis.completeness_score} className="h-2" />
                         </div>
                       </div>
-                      <div className="w-24">
-                        <Progress 
-                          value={doc.ai_analysis.completeness_score} 
-                          className="h-2"
-                        />
-                      </div>
                     </div>
-                  </div>
-                ))}
-                {documents.filter(doc => doc.ai_analysis?.completeness_score != null).length === 0 && (
+                  ))}
+                {documents.filter((doc) => doc.ai_analysis?.completeness_score != null).length ===
+                  0 && (
                   <div className="text-center py-12 text-gray-500">
                     <Zap className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                    <p className="text-lg font-medium text-gray-900 mb-2">No quality scores available</p>
+                    <p className="text-lg font-medium text-gray-900 mb-2">
+                      No quality scores available
+                    </p>
                     <p>Upload and analyze documents to see quality metrics</p>
                   </div>
                 )}

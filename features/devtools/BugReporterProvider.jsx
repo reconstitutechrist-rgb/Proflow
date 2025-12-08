@@ -26,13 +26,13 @@ export const BugReporterProvider = ({ children }) => {
     selector: '',
     componentPath: null,
     componentName: null,
-    dimensions: { width: 0, height: 0, x: 0, y: 0 }
+    dimensions: { width: 0, height: 0, x: 0, y: 0 },
   });
 
   // Screenshot and annotations
   const [screenshot, setScreenshot] = useState({
     dataUrl: null,
-    annotations: []
+    annotations: [],
   });
 
   // Issue details
@@ -42,7 +42,7 @@ export const BugReporterProvider = ({ children }) => {
   // Viewport size - updates on window resize
   const [viewportSize, setViewportSize] = useState({
     width: window.innerWidth,
-    height: window.innerHeight
+    height: window.innerHeight,
   });
 
   // Update viewport size on resize
@@ -50,7 +50,7 @@ export const BugReporterProvider = ({ children }) => {
     const handleResize = () => {
       setViewportSize({
         width: window.innerWidth,
-        height: window.innerHeight
+        height: window.innerHeight,
       });
     };
 
@@ -60,7 +60,7 @@ export const BugReporterProvider = ({ children }) => {
 
   // Actions
   const togglePanel = useCallback(() => {
-    setIsPanelOpen(prev => !prev);
+    setIsPanelOpen((prev) => !prev);
   }, []);
 
   const startSelectMode = useCallback(() => {
@@ -86,39 +86,39 @@ export const BugReporterProvider = ({ children }) => {
       selector: '',
       componentPath: null,
       componentName: null,
-      dimensions: { width: 0, height: 0, x: 0, y: 0 }
+      dimensions: { width: 0, height: 0, x: 0, y: 0 },
     });
   }, []);
 
   const updateScreenshot = useCallback((dataUrl) => {
-    setScreenshot(prev => ({ ...prev, dataUrl }));
+    setScreenshot((prev) => ({ ...prev, dataUrl }));
   }, []);
 
   const addAnnotation = useCallback((annotation) => {
-    setScreenshot(prev => ({
+    setScreenshot((prev) => ({
       ...prev,
-      annotations: [...prev.annotations, annotation]
+      annotations: [...prev.annotations, annotation],
     }));
   }, []);
 
   const undoAnnotation = useCallback(() => {
-    setScreenshot(prev => ({
+    setScreenshot((prev) => ({
       ...prev,
-      annotations: prev.annotations.slice(0, -1)
+      annotations: prev.annotations.slice(0, -1),
     }));
   }, []);
 
   const clearAnnotations = useCallback(() => {
-    setScreenshot(prev => ({
+    setScreenshot((prev) => ({
       ...prev,
-      annotations: []
+      annotations: [],
     }));
   }, []);
 
   const clearScreenshot = useCallback(() => {
     setScreenshot({
       dataUrl: null,
-      annotations: []
+      annotations: [],
     });
   }, []);
 
@@ -129,11 +129,11 @@ export const BugReporterProvider = ({ children }) => {
       selector: '',
       componentPath: null,
       componentName: null,
-      dimensions: { width: 0, height: 0, x: 0, y: 0 }
+      dimensions: { width: 0, height: 0, x: 0, y: 0 },
     });
     setScreenshot({
       dataUrl: null,
-      annotations: []
+      annotations: [],
     });
     setIssueDescription('');
     setRequestedChange('');
@@ -166,14 +166,10 @@ export const BugReporterProvider = ({ children }) => {
     clearScreenshot,
     setIssueDescription,
     setRequestedChange,
-    resetAll
+    resetAll,
   };
 
-  return (
-    <BugReporterContext.Provider value={value}>
-      {children}
-    </BugReporterContext.Provider>
-  );
+  return <BugReporterContext.Provider value={value}>{children}</BugReporterContext.Provider>;
 };
 
 export default BugReporterProvider;

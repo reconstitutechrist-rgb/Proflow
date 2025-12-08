@@ -1,13 +1,42 @@
 // Closure phrase detection with fuzzy matching for auto-archive feature
 
 const CLOSURE_PHRASES = [
-  'bye', 'goodbye', 'see you', 'talk later', 'catch you later',
-  'sounds good', 'that sounds great', 'that sounds good', 'perfect', 'great',
-  'lets get to it', "let's get to it", "let's do it", 'lets do it', 'lets do this',
-  "let's do this", 'alright then', 'thanks everyone', 'thank you all',
-  'take care', 'until next time', 'signing off', 'gotta go', 'got to go',
-  'ttyl', 'cya', 'later', 'peace out', 'cheers', 'all done', "we're done",
-  'wrap it up', 'wrapping up', 'thats all', "that's all", 'meeting adjourned'
+  'bye',
+  'goodbye',
+  'see you',
+  'talk later',
+  'catch you later',
+  'sounds good',
+  'that sounds great',
+  'that sounds good',
+  'perfect',
+  'great',
+  'lets get to it',
+  "let's get to it",
+  "let's do it",
+  'lets do it',
+  'lets do this',
+  "let's do this",
+  'alright then',
+  'thanks everyone',
+  'thank you all',
+  'take care',
+  'until next time',
+  'signing off',
+  'gotta go',
+  'got to go',
+  'ttyl',
+  'cya',
+  'later',
+  'peace out',
+  'cheers',
+  'all done',
+  "we're done",
+  'wrap it up',
+  'wrapping up',
+  'thats all',
+  "that's all",
+  'meeting adjourned',
 ];
 
 /**
@@ -21,7 +50,9 @@ const levenshteinDistance = (str1, str2) => {
   const n = str2.length;
 
   // Create a matrix to store distances
-  const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+  const dp = Array(m + 1)
+    .fill(null)
+    .map(() => Array(n + 1).fill(0));
 
   // Initialize first row and column
   for (let i = 0; i <= m; i++) dp[i][0] = i;
@@ -33,11 +64,13 @@ const levenshteinDistance = (str1, str2) => {
       if (str1[i - 1] === str2[j - 1]) {
         dp[i][j] = dp[i - 1][j - 1];
       } else {
-        dp[i][j] = 1 + Math.min(
-          dp[i - 1][j],     // deletion
-          dp[i][j - 1],     // insertion
-          dp[i - 1][j - 1]  // substitution
-        );
+        dp[i][j] =
+          1 +
+          Math.min(
+            dp[i - 1][j], // deletion
+            dp[i][j - 1], // insertion
+            dp[i - 1][j - 1] // substitution
+          );
       }
     }
   }
@@ -55,7 +88,7 @@ const calculateSimilarity = (str1, str2) => {
   const distance = levenshteinDistance(str1, str2);
   const maxLength = Math.max(str1.length, str2.length);
   if (maxLength === 0) return 1;
-  return 1 - (distance / maxLength);
+  return 1 - distance / maxLength;
 };
 
 /**
@@ -83,7 +116,7 @@ export const detectClosurePhrase = (message, similarityThreshold = 0.7) => {
         detected: true,
         phrase,
         confidence: 1.0,
-        matchType: 'exact'
+        matchType: 'exact',
       };
     }
   }
@@ -114,7 +147,7 @@ export const detectClosurePhrase = (message, similarityThreshold = 0.7) => {
         detected: true,
         phrase,
         confidence: 0.95,
-        matchType: 'exact'
+        matchType: 'exact',
       };
     }
   }
@@ -125,7 +158,7 @@ export const detectClosurePhrase = (message, similarityThreshold = 0.7) => {
       detected: true,
       phrase: bestMatch.phrase,
       confidence: bestMatch.similarity,
-      matchType: 'fuzzy'
+      matchType: 'fuzzy',
     };
   }
 
@@ -153,5 +186,5 @@ export default {
   detectClosurePhrase,
   getClosurePhrases,
   addClosurePhrase,
-  calculateSimilarity
+  calculateSimilarity,
 };

@@ -1,22 +1,9 @@
 import React, { useState } from 'react';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Bug,
-  MousePointer2,
-  Camera,
-  FileText,
-  X,
-  Maximize2,
-  Minimize2
-} from 'lucide-react';
+import { Bug, MousePointer2, Camera, FileText, X, Maximize2, Minimize2 } from 'lucide-react';
 import { useBugReporter } from '../BugReporterProvider';
 import { useScreenshotCapture } from '../hooks/useScreenshotCapture';
 import { ToolBar } from './ToolBar';
@@ -46,7 +33,7 @@ export function DevToolsPanel() {
     setRequestedChange,
     resetAll,
     clearAnnotations,
-    addAnnotation
+    addAnnotation,
   } = useBugReporter();
 
   const [activeTab, setActiveTab] = useState('capture');
@@ -57,7 +44,7 @@ export function DevToolsPanel() {
       updateScreenshot(dataUrl);
       toast.success('Screenshot captured!');
       setActiveTab('annotate');
-    }
+    },
   });
 
   const handleSelectElement = () => {
@@ -75,7 +62,7 @@ export function DevToolsPanel() {
       setIsPanelOpen(false);
 
       // Wait for the panel to close
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       // Capture the screenshot
       await captureScreenshot();
@@ -92,7 +79,7 @@ export function DevToolsPanel() {
   const handleAnnotationsChange = (newAnnotations) => {
     // Clear existing and add new
     clearAnnotations();
-    newAnnotations.forEach(ann => addAnnotation(ann));
+    newAnnotations.forEach((ann) => addAnnotation(ann));
   };
 
   const handleCloseAnnotator = () => {
@@ -109,9 +96,7 @@ export function DevToolsPanel() {
     <Sheet open={isPanelOpen} onOpenChange={setIsPanelOpen}>
       <SheetContent
         side="right"
-        className={`p-0 flex flex-col ${
-          isFullscreen ? 'w-full sm:w-full' : 'w-full sm:w-[450px]'
-        }`}
+        className={`p-0 flex flex-col ${isFullscreen ? 'w-full sm:w-full' : 'w-full sm:w-[450px]'}`}
         data-bug-reporter-panel
       >
         <SheetHeader className="p-4 border-b bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30">
@@ -122,9 +107,7 @@ export function DevToolsPanel() {
               </div>
               <div>
                 <SheetTitle className="text-left">Visual Bug Reporter</SheetTitle>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  Development Tool
-                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Development Tool</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -160,7 +143,10 @@ export function DevToolsPanel() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="capture" className="flex-1 flex flex-col mt-0 data-[state=inactive]:hidden">
+          <TabsContent
+            value="capture"
+            className="flex-1 flex flex-col mt-0 data-[state=inactive]:hidden"
+          >
             <ToolBar
               currentMode={currentMode}
               hasSelectedElement={!!selectedElement.selector}
@@ -193,8 +179,7 @@ export function DevToolsPanel() {
                       )}
                       {selectedElement.componentPath && (
                         <p>
-                          <span className="font-medium">File:</span>{' '}
-                          {selectedElement.componentPath}
+                          <span className="font-medium">File:</span> {selectedElement.componentPath}
                         </p>
                       )}
                       <p>
@@ -236,7 +221,10 @@ export function DevToolsPanel() {
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="annotate" className="flex-1 flex flex-col mt-0 p-0 data-[state=inactive]:hidden">
+          <TabsContent
+            value="annotate"
+            className="flex-1 flex flex-col mt-0 p-0 data-[state=inactive]:hidden"
+          >
             {screenshot.dataUrl ? (
               <ScreenshotAnnotator
                 screenshotDataUrl={screenshot.dataUrl}
@@ -251,7 +239,10 @@ export function DevToolsPanel() {
             )}
           </TabsContent>
 
-          <TabsContent value="generate" className="flex-1 flex flex-col mt-0 data-[state=inactive]:hidden">
+          <TabsContent
+            value="generate"
+            className="flex-1 flex flex-col mt-0 data-[state=inactive]:hidden"
+          >
             <PromptGenerator
               route={currentRoute}
               selectedElement={selectedElement}

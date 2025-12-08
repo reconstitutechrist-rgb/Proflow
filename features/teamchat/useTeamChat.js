@@ -244,7 +244,9 @@ export function useTeamChat() {
 
       channel.on('presence', { event: 'leave' }, ({ leftPresences }) => {
         if (!isMounted) return;
-        setTypingUsers((prev) => prev.filter((u) => !leftPresences.find((l) => l.email === u.email)));
+        setTypingUsers((prev) =>
+          prev.filter((u) => !leftPresences.find((l) => l.email === u.email))
+        );
       });
 
       channel.subscribe((status) => {

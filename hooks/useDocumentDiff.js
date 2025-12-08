@@ -18,15 +18,13 @@ export function useDocumentDiff(originalContent, changes = []) {
 
   // Get pending changes (not yet accepted or rejected)
   const pendingChanges = useMemo(() => {
-    return changes.filter(
-      c => !appliedChanges.has(c.id) && !rejectedChanges.has(c.id)
-    );
+    return changes.filter((c) => !appliedChanges.has(c.id) && !rejectedChanges.has(c.id));
   }, [changes, appliedChanges, rejectedChanges]);
 
   // Accept a single change
   const acceptChange = useCallback((changeId) => {
-    setAppliedChanges(prev => new Set([...prev, changeId]));
-    setRejectedChanges(prev => {
+    setAppliedChanges((prev) => new Set([...prev, changeId]));
+    setRejectedChanges((prev) => {
       const next = new Set(prev);
       next.delete(changeId);
       return next;
@@ -35,8 +33,8 @@ export function useDocumentDiff(originalContent, changes = []) {
 
   // Reject a single change
   const rejectChange = useCallback((changeId) => {
-    setRejectedChanges(prev => new Set([...prev, changeId]));
-    setAppliedChanges(prev => {
+    setRejectedChanges((prev) => new Set([...prev, changeId]));
+    setAppliedChanges((prev) => {
       const next = new Set(prev);
       next.delete(changeId);
       return next;
@@ -45,13 +43,13 @@ export function useDocumentDiff(originalContent, changes = []) {
 
   // Accept all changes
   const acceptAll = useCallback(() => {
-    setAppliedChanges(new Set(changes.map(c => c.id)));
+    setAppliedChanges(new Set(changes.map((c) => c.id)));
     setRejectedChanges(new Set());
   }, [changes]);
 
   // Reject all changes
   const rejectAll = useCallback(() => {
-    setRejectedChanges(new Set(changes.map(c => c.id)));
+    setRejectedChanges(new Set(changes.map((c) => c.id)));
     setAppliedChanges(new Set());
   }, [changes]);
 
@@ -62,13 +60,16 @@ export function useDocumentDiff(originalContent, changes = []) {
   }, []);
 
   // Toggle a change (if accepted, reject; if rejected or pending, accept)
-  const toggleChange = useCallback((changeId) => {
-    if (appliedChanges.has(changeId)) {
-      rejectChange(changeId);
-    } else {
-      acceptChange(changeId);
-    }
-  }, [appliedChanges, acceptChange, rejectChange]);
+  const toggleChange = useCallback(
+    (changeId) => {
+      if (appliedChanges.has(changeId)) {
+        rejectChange(changeId);
+      } else {
+        acceptChange(changeId);
+      }
+    },
+    [appliedChanges, acceptChange, rejectChange]
+  );
 
   // Get the final content with all accepted changes
   const getFinalContent = useCallback(() => {
@@ -76,22 +77,31 @@ export function useDocumentDiff(originalContent, changes = []) {
   }, [originalContent, changes, appliedChanges]);
 
   // Check if a change is accepted
-  const isAccepted = useCallback((changeId) => {
-    return appliedChanges.has(changeId);
-  }, [appliedChanges]);
+  const isAccepted = useCallback(
+    (changeId) => {
+      return appliedChanges.has(changeId);
+    },
+    [appliedChanges]
+  );
 
   // Check if a change is rejected
-  const isRejected = useCallback((changeId) => {
-    return rejectedChanges.has(changeId);
-  }, [rejectedChanges]);
+  const isRejected = useCallback(
+    (changeId) => {
+      return rejectedChanges.has(changeId);
+    },
+    [rejectedChanges]
+  );
 
   // Get stats
-  const stats = useMemo(() => ({
-    total: changes.length,
-    accepted: appliedChanges.size,
-    rejected: rejectedChanges.size,
-    pending: pendingChanges.length
-  }), [changes.length, appliedChanges.size, rejectedChanges.size, pendingChanges.length]);
+  const stats = useMemo(
+    () => ({
+      total: changes.length,
+      accepted: appliedChanges.size,
+      rejected: rejectedChanges.size,
+      pending: pendingChanges.length,
+    }),
+    [changes.length, appliedChanges.size, rejectedChanges.size, pendingChanges.length]
+  );
 
   return {
     // Content
@@ -118,7 +128,7 @@ export function useDocumentDiff(originalContent, changes = []) {
     isRejected,
 
     // Stats
-    stats
+    stats,
   };
 }
 

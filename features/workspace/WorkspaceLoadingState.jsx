@@ -1,8 +1,8 @@
-import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Building2 } from "lucide-react";
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2, Building2 } from 'lucide-react';
 
-export default function WorkspaceLoadingState({ message = "Loading workspace..." }) {
+export default function WorkspaceLoadingState({ message = 'Loading workspace...' }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
@@ -21,9 +21,7 @@ export default function WorkspaceLoadingState({ message = "Loading workspace..."
 
             {/* Loading Text */}
             <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {message}
-              </h3>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{message}</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Please wait while we prepare your workspace...
               </p>
@@ -31,9 +29,18 @@ export default function WorkspaceLoadingState({ message = "Loading workspace..."
 
             {/* Progress Dots */}
             <div className="flex gap-2">
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              <div
+                className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
+                style={{ animationDelay: '0ms' }}
+              ></div>
+              <div
+                className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
+                style={{ animationDelay: '150ms' }}
+              ></div>
+              <div
+                className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
+                style={{ animationDelay: '300ms' }}
+              ></div>
             </div>
           </div>
         </CardContent>

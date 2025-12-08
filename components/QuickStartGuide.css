@@ -79,7 +79,8 @@
 }
 
 @keyframes bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -89,7 +90,7 @@
 
 .quick-start-step {
   font-size: 13px;
-  color: #4CAF50;
+  color: #4caf50;
   font-weight: 600;
   margin-bottom: 12px;
   text-transform: uppercase;
@@ -132,13 +133,13 @@
 }
 
 .progress-dot.active {
-  background: #4CAF50;
+  background: #4caf50;
   width: 32px;
   border-radius: 5px;
 }
 
 .progress-dot.completed {
-  background: #4CAF50;
+  background: #4caf50;
 }
 
 .quick-start-actions {
@@ -159,7 +160,7 @@
 }
 
 .quick-start-btn.primary {
-  background: #4CAF50;
+  background: #4caf50;
   color: white;
 }
 

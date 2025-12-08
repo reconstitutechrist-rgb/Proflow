@@ -1,8 +1,8 @@
-import React, { Component } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import React, { Component } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   MessageSquare,
   Send,
@@ -23,8 +23,8 @@ import {
   FolderOpen,
   Target,
   AlertCircle,
-  Loader2
-} from "lucide-react";
+  Loader2,
+} from 'lucide-react';
 
 // Error Boundary for message list
 class MessageListErrorBoundary extends Component {
@@ -38,7 +38,7 @@ class MessageListErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("MessageList error:", error, errorInfo);
+    console.error('MessageList error:', error, errorInfo);
   }
 
   render() {
@@ -74,18 +74,18 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+} from '@/components/ui/dropdown-menu';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
-import ConversationSidebar from "@/features/chat/ConversationSidebar";
-import EnhancedMessage from "@/features/chat/EnhancedMessage";
-import RichTextEditor from "@/components/editor/RichTextEditor";
-import ThreadSearch from "@/features/chat/ThreadSearch";
-import { useChat } from "@/hooks/useChat";
-import { ChatHeader, ChatNewThreadDialog } from "@/features/chat/chatPage";
+import ConversationSidebar from '@/features/chat/ConversationSidebar';
+import EnhancedMessage from '@/features/chat/EnhancedMessage';
+import RichTextEditor from '@/components/editor/RichTextEditor';
+import ThreadSearch from '@/features/chat/ThreadSearch';
+import { useChat } from '@/hooks/useChat';
+import { ChatHeader, ChatNewThreadDialog } from '@/features/chat/chatPage';
 
 // VirtualizedMessageList component with actual virtualization
-const VirtualizedMessageList = React.memo(({
+const VirtualizedMessageList = React.memo(function VirtualizedMessageList({
   messages,
   currentUser,
   replyToMessageData,
@@ -97,7 +97,7 @@ const VirtualizedMessageList = React.memo(({
   onBookmark,
   onAddReaction,
   onRemoveReaction,
-}) => {
+}) {
   const containerRef = React.useRef(null);
   const [visibleRange, setVisibleRange] = React.useState({ start: 0, end: 50 });
 
@@ -173,11 +173,7 @@ const VirtualizedMessageList = React.memo(({
   const bottomSpacer = Math.max(0, (messages.length - visibleRange.end) * ITEM_HEIGHT);
 
   return (
-    <div
-      ref={containerRef}
-      className="h-full overflow-y-auto"
-      style={{ position: 'relative' }}
-    >
+    <div ref={containerRef} className="h-full overflow-y-auto" style={{ position: 'relative' }}>
       <div style={{ height: TOTAL_HEIGHT, position: 'relative' }}>
         {/* Top spacer */}
         <div style={{ height: topSpacer }} aria-hidden="true" />
@@ -189,11 +185,7 @@ const VirtualizedMessageList = React.memo(({
             const previousMessage = actualIndex > 0 ? messages[actualIndex - 1] : null;
             const repliedToMessage = message.reply_to ? replyToMessageData[message.reply_to] : null;
             return (
-              <div
-                key={message.id}
-                id={`message-${message.id}`}
-                style={{ minHeight: ITEM_HEIGHT }}
-              >
+              <div key={message.id} id={`message-${message.id}`} style={{ minHeight: ITEM_HEIGHT }}>
                 <EnhancedMessage
                   message={message}
                   previousMessage={previousMessage}
@@ -353,18 +345,27 @@ export default function ChatPage() {
                         <Hash className="w-5 h-5 text-indigo-500" />
                         {currentThread.name || currentThread.topic}
                         {!currentThread.assignment_id && !currentThread.project_id && (
-                          <Badge variant="outline" className="text-sm font-normal bg-green-100/50 dark:bg-green-900/20 text-green-700 dark:text-green-300">
+                          <Badge
+                            variant="outline"
+                            className="text-sm font-normal bg-green-100/50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
+                          >
                             General Workspace Chat
                           </Badge>
                         )}
                         {currentThread.project_id && (
-                          <Badge variant="outline" className="text-sm font-normal bg-indigo-100/50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300">
+                          <Badge
+                            variant="outline"
+                            className="text-sm font-normal bg-indigo-100/50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300"
+                          >
                             <Target className="w-3 h-3 mr-1" />
                             Project
                           </Badge>
                         )}
                         {currentThread.assignment_id && (
-                          <Badge variant="outline" className="text-sm font-normal bg-purple-100/50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300">
+                          <Badge
+                            variant="outline"
+                            className="text-sm font-normal bg-purple-100/50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300"
+                          >
                             <FolderOpen className="w-3 h-3 mr-1" />
                             Assignment
                           </Badge>
@@ -403,18 +404,26 @@ export default function ChatPage() {
                           aria-label={`${showPinnedMessages ? 'Hide' : 'Show'} pinned messages (${pinnedMessages.length})`}
                           aria-pressed={showPinnedMessages}
                         >
-                          <Pin className={`w-4 h-4 ${showPinnedMessages ? 'text-yellow-600' : ''}`} />
+                          <Pin
+                            className={`w-4 h-4 ${showPinnedMessages ? 'text-yellow-600' : ''}`}
+                          />
                         </Button>
                       )}
 
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => setViewMode(viewMode === 'compact' ? 'comfortable' : 'compact')}
+                        onClick={() =>
+                          setViewMode(viewMode === 'compact' ? 'comfortable' : 'compact')
+                        }
                         title="Toggle view density"
                         aria-label={`Switch to ${viewMode === 'compact' ? 'comfortable' : 'compact'} view`}
                       >
-                        {viewMode === 'compact' ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {viewMode === 'compact' ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
                       </Button>
 
                       <DropdownMenu>
@@ -458,11 +467,17 @@ export default function ChatPage() {
                     <Users className="w-4 h-4 text-gray-500" />
                     <div className="flex -space-x-2">
                       {currentThread.participants?.slice(0, 5).map((participantEmail, idx) => {
-                        const member = users.find(m => m.email === participantEmail);
+                        const member = users.find((m) => m.email === participantEmail);
                         return (
-                          <Avatar key={idx} className="w-6 h-6 border-2 border-white dark:border-gray-800">
+                          <Avatar
+                            key={idx}
+                            className="w-6 h-6 border-2 border-white dark:border-gray-800"
+                          >
                             <AvatarFallback className="text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                              {member?.full_name?.split(' ').map(n => n[0]).join('') || '?'}
+                              {member?.full_name
+                                ?.split(' ')
+                                .map((n) => n[0])
+                                .join('') || '?'}
                             </AvatarFallback>
                           </Avatar>
                         );
@@ -508,9 +523,16 @@ export default function ChatPage() {
                     </div>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {pinnedMessages.map((msg) => (
-                        <div key={msg.id} className="p-2 bg-white dark:bg-gray-800 rounded-lg text-sm">
-                          <div className="font-medium text-gray-900 dark:text-white">{msg.author_name}</div>
-                          <div className="text-gray-700 dark:text-gray-300 line-clamp-2">{msg.content}</div>
+                        <div
+                          key={msg.id}
+                          className="p-2 bg-white dark:bg-gray-800 rounded-lg text-sm"
+                        >
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {msg.author_name}
+                          </div>
+                          <div className="text-gray-700 dark:text-gray-300 line-clamp-2">
+                            {msg.content}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -583,17 +605,25 @@ export default function ChatPage() {
                   {typingUsers.length > 0 && (
                     <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mt-2">
                       <div className="flex gap-1">
-                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        <span
+                          className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                          style={{ animationDelay: '0ms' }}
+                        />
+                        <span
+                          className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                          style={{ animationDelay: '150ms' }}
+                        />
+                        <span
+                          className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                          style={{ animationDelay: '300ms' }}
+                        />
                       </div>
                       <span>
                         {typingUsers.length === 1
                           ? `${typingUsers[0].name} is typing...`
                           : typingUsers.length === 2
                             ? `${typingUsers[0].name} and ${typingUsers[1].name} are typing...`
-                            : `${typingUsers[0].name} and ${typingUsers.length - 1} others are typing...`
-                        }
+                            : `${typingUsers[0].name} and ${typingUsers.length - 1} others are typing...`}
                       </span>
                     </div>
                   )}
@@ -624,9 +654,7 @@ export default function ChatPage() {
                   <div className="px-4 py-2 bg-yellow-50 dark:bg-yellow-900/20 border-b flex items-center justify-between">
                     <div className="flex items-center gap-2 text-sm">
                       <Edit className="w-4 h-4 text-yellow-600" />
-                      <span className="text-gray-700 dark:text-gray-300">
-                        Editing message
-                      </span>
+                      <span className="text-gray-700 dark:text-gray-300">Editing message</span>
                     </div>
                     <Button
                       variant="ghost"
@@ -634,7 +662,7 @@ export default function ChatPage() {
                       className="h-6 w-6"
                       onClick={() => {
                         setEditingMessage(null);
-                        setNewMessage("");
+                        setNewMessage('');
                       }}
                     >
                       <X className="w-4 h-4" />
@@ -652,7 +680,11 @@ export default function ChatPage() {
                           setNewMessage(value);
                           handleTyping();
                         }}
-                        onSend={editingMessage ? () => handleEditMessage(editingMessage) : handleSendMessage}
+                        onSend={
+                          editingMessage
+                            ? () => handleEditMessage(editingMessage)
+                            : handleSendMessage
+                        }
                         onFileAttach={() => fileInputRef.current?.click()}
                         placeholder={`Message ${currentThread.name || currentThread.topic}... (or drag & drop files)`}
                         teamMembers={users}
@@ -666,10 +698,12 @@ export default function ChatPage() {
                       />
                     </div>
                     <Button
-                      onClick={editingMessage ? () => handleEditMessage(editingMessage) : handleSendMessage}
+                      onClick={
+                        editingMessage ? () => handleEditMessage(editingMessage) : handleSendMessage
+                      }
                       disabled={!newMessage.trim() || !currentThread || uploadingFile || isSending}
                       className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-md h-12 px-6"
-                      aria-label={editingMessage ? "Update message" : "Send message"}
+                      aria-label={editingMessage ? 'Update message' : 'Send message'}
                     >
                       {isSending ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -707,17 +741,21 @@ export default function ChatPage() {
       </div>
 
       {/* No Context Warning */}
-      {selectedContextId !== "general" && !currentAssignment && !currentProject && assignments.length === 0 && projects.length === 0 && (
-        <div className="text-center py-12">
-          <FolderOpen className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            No assignments available for chat
-          </h3>
-          <p className="text-base text-gray-500 dark:text-gray-400">
-            Create an assignment first to start team conversations
-          </p>
-        </div>
-      )}
+      {selectedContextId !== 'general' &&
+        !currentAssignment &&
+        !currentProject &&
+        assignments.length === 0 &&
+        projects.length === 0 && (
+          <div className="text-center py-12">
+            <FolderOpen className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              No assignments available for chat
+            </h3>
+            <p className="text-base text-gray-500 dark:text-gray-400">
+              Create an assignment first to start team conversations
+            </p>
+          </div>
+        )}
 
       {/* New Thread Dialog */}
       <ChatNewThreadDialog

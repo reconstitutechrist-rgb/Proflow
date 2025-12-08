@@ -46,32 +46,36 @@ proflow/
 
 ### Navigation Groups
 
-| Group | Pages | Description |
-|-------|-------|-------------|
-| **Home** | Dashboard | Overview, attention items, priorities |
-| **Work** | Projects, Assignments, Tasks | Work management hierarchy |
-| **Documents** | Documents (Hub) | Library, Studio, Templates |
-| **AI** | AI Hub | Chat, Research, Generate |
-| **Team** | Chat, Members | Communication & team management |
+| Group         | Pages                        | Description                           |
+| ------------- | ---------------------------- | ------------------------------------- |
+| **Home**      | Dashboard                    | Overview, attention items, priorities |
+| **Work**      | Projects, Assignments, Tasks | Work management hierarchy             |
+| **Documents** | Documents (Hub)              | Library, Studio, Templates            |
+| **AI**        | AI Hub                       | Chat, Research, Generate              |
+| **Team**      | Chat, Members                | Communication & team management       |
 
 ### Page Details
 
 #### Dashboard (`/Dashboard`)
+
 - Needs Attention section (overdue, due today, high priority, blocked)
 - Today's Focus (AI-suggested priorities)
 - Quick stats and recent activity
 
 #### Documents Hub (`/Documents`)
+
 - **Library Tab**: Browse, search, filter, upload documents
 - **Studio Tab**: Rich text editor with AI sidebar
 - **Templates Tab**: Quick AI generation from templates
 
 #### AI Hub (`/AIHub`)
+
 - **Chat Tab**: Document Q&A with RAG support
 - **Research Tab**: Web research with AI assistance
 - **Generate Tab**: Content generation with assignment context
 
 #### Tasks (`/Tasks`)
+
 - **Kanban View**: Drag-and-drop board
 - **List View**: Table with sorting
 - **Calendar View**: Monthly timeline
@@ -82,18 +86,21 @@ proflow/
 ## Key Features
 
 ### Workspace Management
+
 - Multi-tenant workspaces
 - Context-based filtering (all entities scoped by workspace_id)
 - Quick workspace switching via header dropdown
 - Workspace management modal (create, invite, members)
 
 ### AI Integration
+
 - **Contextual AI Assistant**: Floating button that adapts to current page
 - **Transform Menu**: Quick content transformations (summarize, simplify, etc.)
 - **Document AI**: Conversational assistant in document editor
 - **RAG Support**: Document embeddings for Q&A
 
 ### Mobile Support
+
 - Bottom navigation bar with 5 items
 - Floating action button for quick create
 - Responsive layouts throughout
@@ -102,15 +109,15 @@ proflow/
 
 ## Data Entities
 
-| Entity | Description |
-|--------|-------------|
-| `Project` | High-level initiative |
-| `Assignment` | Project component with scope |
-| `Task` | Actionable work item |
-| `Document` | Content with metadata |
-| `User` | User profile |
-| `Workspace` | Multi-tenant container |
-| `AIResearchChat` | Research history |
+| Entity           | Description                  |
+| ---------------- | ---------------------------- |
+| `Project`        | High-level initiative        |
+| `Assignment`     | Project component with scope |
+| `Task`           | Actionable work item         |
+| `Document`       | Content with metadata        |
+| `User`           | User profile                 |
+| `Workspace`      | Multi-tenant container       |
+| `AIResearchChat` | Research history             |
 
 All entities are filtered by `workspace_id` for multi-tenancy.
 
@@ -119,6 +126,7 @@ All entities are filtered by `workspace_id` for multi-tenancy.
 ## Routing
 
 ### Active Routes
+
 ```
 /                    → Dashboard
 /Dashboard           → Dashboard
@@ -133,6 +141,7 @@ All entities are filtered by `workspace_id` for multi-tenancy.
 ```
 
 ### Deprecated Routes (redirect to Documents)
+
 ```
 /DocumentCreator     → /Documents?tab=templates
 /DocumentStudio      → /Documents?tab=studio
@@ -140,6 +149,7 @@ All entities are filtered by `workspace_id` for multi-tenancy.
 ```
 
 ### Query Parameters
+
 ```
 /Documents?tab=library           - Library view
 /Documents?tab=studio            - Editor view
@@ -156,28 +166,36 @@ All entities are filtered by `workspace_id` for multi-tenancy.
 
 ## Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl/Cmd + K` | Global Search |
-| `Ctrl/Cmd + D` | Dashboard |
-| `Ctrl/Cmd + P` | Projects |
-| `Ctrl/Cmd + A` | Assignments |
-| `Ctrl/Cmd + T` | Tasks |
+| Shortcut       | Action              |
+| -------------- | ------------------- |
+| `Ctrl/Cmd + K` | Global Search       |
+| `Ctrl/Cmd + D` | Dashboard           |
+| `Ctrl/Cmd + P` | Projects            |
+| `Ctrl/Cmd + A` | Assignments         |
+| `Ctrl/Cmd + T` | Tasks               |
 | `Ctrl/Cmd + O` | Documents (Library) |
-| `Ctrl/Cmd + W` | Documents (Studio) |
-| `Ctrl/Cmd + Q` | AI Hub |
-| `Ctrl/Cmd + C` | Chat |
+| `Ctrl/Cmd + W` | Documents (Studio)  |
+| `Ctrl/Cmd + Q` | AI Hub              |
+| `Ctrl/Cmd + C` | Chat                |
 
 ---
 
 ## Context Providers
 
 ```jsx
-<AuthProvider>           // Authentication state
-  <WorkspaceProvider>    // Current workspace context
-    <TutorialProvider>   // Tutorial state
-      <Layout>           // Navigation, sidebar, header
-        <Routes />       // Page routing
+<AuthProvider>
+  {' '}
+  // Authentication state
+  <WorkspaceProvider>
+    {' '}
+    // Current workspace context
+    <TutorialProvider>
+      {' '}
+      // Tutorial state
+      <Layout>
+        {' '}
+        // Navigation, sidebar, header
+        <Routes /> // Page routing
       </Layout>
     </TutorialProvider>
   </WorkspaceProvider>
@@ -189,6 +207,7 @@ All entities are filtered by `workspace_id` for multi-tenancy.
 ## Development
 
 ### Scripts
+
 ```bash
 npm run dev      # Start development server
 npm run build    # Production build
@@ -197,6 +216,7 @@ npm run lint     # Run ESLint
 ```
 
 ### Environment Variables
+
 ```
 VITE_SUPABASE_URL=<supabase-url>
 VITE_SUPABASE_ANON_KEY=<supabase-key>
@@ -207,6 +227,7 @@ VITE_SUPABASE_ANON_KEY=<supabase-key>
 ## Recent Changes (v2.0.0)
 
 See `CHANGELOG.md` for detailed information about:
+
 - Unified Documents Hub
 - Unified AI Hub
 - Enhanced Dashboard

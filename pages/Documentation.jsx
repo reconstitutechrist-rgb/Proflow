@@ -1,26 +1,26 @@
-import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { 
-  BookOpen, 
-  Code, 
-  Users, 
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import {
+  BookOpen,
+  Code,
+  Users,
   Database,
   Download,
   FileText,
   CheckCircle,
-  AlertTriangle
-} from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import rehypeSanitize from "rehype-sanitize";
+  AlertTriangle,
+} from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 
 export default function DocumentationPage() {
-  const [activeDoc, setActiveDoc] = useState("testing");
+  const [activeDoc, setActiveDoc] = useState('testing');
 
   const docs = {
     testing: {
-      title: "Testing Checklist",
+      title: 'Testing Checklist',
       icon: CheckCircle,
       content: `# 🧪 Workspace Feature - Testing Checklist
 
@@ -134,10 +134,10 @@ export default function DocumentationPage() {
 - [ ] No cross-workspace data leakage
 - [ ] Performance acceptable
 - [ ] Documentation complete
-`
+`,
     },
     developer: {
-      title: "Developer Guide",
+      title: 'Developer Guide',
       icon: Code,
       content: `# 👨‍💻 Workspace Feature - Developer Guide
 
@@ -313,10 +313,10 @@ Before submitting code, verify:
 3. **Skipping validation**
 4. **Using workspace name instead of ID**
 5. **Not handling workspace switches**
-`
+`,
     },
     user: {
-      title: "User Guide",
+      title: 'User Guide',
       icon: Users,
       content: `# 📘 Workspaces - User Guide
 
@@ -447,10 +447,10 @@ Each workspace has its own:
 2. Copy the content
 3. Switch to the target workspace
 4. Create a new document and paste the content
-`
+`,
     },
     migration: {
-      title: "Migration Guide",
+      title: 'Migration Guide',
       icon: Database,
       content: `# 🔄 Workspace Feature - Migration Guide
 
@@ -629,8 +629,8 @@ Migration is successful when:
 - [ ] No cross-workspace data leakage
 - [ ] All CRUD operations work correctly
 - [ ] Performance is acceptable
-`
-    }
+`,
+    },
   };
 
   const currentDoc = docs[activeDoc];
@@ -664,7 +664,7 @@ Migration is successful when:
                   return (
                     <Button
                       key={key}
-                      variant={activeDoc === key ? "default" : "ghost"}
+                      variant={activeDoc === key ? 'default' : 'ghost'}
                       className="w-full justify-start"
                       onClick={() => setActiveDoc(key)}
                     >

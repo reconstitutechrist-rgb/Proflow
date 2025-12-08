@@ -99,7 +99,7 @@ const storage = {
    * Clear all proflow-related items from localStorage
    */
   clearAll() {
-    Object.values(STORAGE_KEYS).forEach(key => {
+    Object.values(STORAGE_KEYS).forEach((key) => {
       this.remove(key);
     });
   },
@@ -181,7 +181,7 @@ export const fileStorage = {
   },
 
   removeFile(fileId) {
-    const files = this.getFiles().filter(f => f.id !== fileId);
+    const files = this.getFiles().filter((f) => f.id !== fileId);
     return this.setFiles(files);
   },
 
@@ -279,7 +279,7 @@ export const askAiStorage = {
 
   saveSession(session) {
     const sessions = this.getSessions();
-    const existingIndex = sessions.findIndex(s => s.id === session.id);
+    const existingIndex = sessions.findIndex((s) => s.id === session.id);
     if (existingIndex >= 0) {
       sessions[existingIndex] = session;
     } else {
@@ -290,7 +290,7 @@ export const askAiStorage = {
   },
 
   removeSession(sessionId) {
-    const sessions = this.getSessions().filter(s => s.id !== sessionId);
+    const sessions = this.getSessions().filter((s) => s.id !== sessionId);
     return storage.set(STORAGE_KEYS.ASK_AI_SESSIONS, sessions);
   },
 };

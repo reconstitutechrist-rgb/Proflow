@@ -64,7 +64,7 @@ export const UploadFile = async (fileOrParams) => {
 // Get uploaded file by ID
 export const GetFile = async (fileId) => {
   const files = JSON.parse(localStorage.getItem('proflow_files') || '[]');
-  return files.find(f => f.id === fileId) || null;
+  return files.find((f) => f.id === fileId) || null;
 };
 
 /**
@@ -97,7 +97,8 @@ export const ExtractDataFromUploadedFile = async (params) => {
 
   return {
     success: true,
-    message: 'File extraction not configured. Please set up your preferred file extraction provider.',
+    message:
+      'File extraction not configured. Please set up your preferred file extraction provider.',
     data: json_schema ? {} : null,
   };
 };

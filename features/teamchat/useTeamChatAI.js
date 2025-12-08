@@ -51,8 +51,8 @@ export function useTeamChatAI() {
     try {
       // Format messages for summarization
       const messageContent = messages
-        .filter(m => m.message_type === 'text' && m.content)
-        .map(m => `${m.author_name || m.author_email}: ${m.content}`)
+        .filter((m) => m.message_type === 'text' && m.content)
+        .map((m) => `${m.author_name || m.author_email}: ${m.content}`)
         .join('\n');
 
       if (!messageContent) {
@@ -79,25 +79,25 @@ Provide a concise but comprehensive summary.`,
             key_points: {
               type: 'array',
               items: { type: 'string' },
-              description: 'List of key discussion points'
+              description: 'List of key discussion points',
             },
             decisions: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Decisions made during the conversation'
+              description: 'Decisions made during the conversation',
             },
             action_items: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Action items or tasks mentioned'
+              description: 'Action items or tasks mentioned',
             },
             pending_items: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Unresolved questions or pending items'
-            }
-          }
-        }
+              description: 'Unresolved questions or pending items',
+            },
+          },
+        },
       });
 
       // Handle stub response
@@ -143,18 +143,18 @@ Provide a concise but comprehensive summary.`,
    * Generate a basic summary without LLM
    */
   const generateBasicSummary = (messages) => {
-    const textMessages = messages.filter(m => m.message_type === 'text' && m.content);
-    const participants = [...new Set(textMessages.map(m => m.author_name || m.author_email))];
+    const textMessages = messages.filter((m) => m.message_type === 'text' && m.content);
+    const participants = [...new Set(textMessages.map((m) => m.author_name || m.author_email))];
     const messageCount = textMessages.length;
 
     // Extract potential action items using regex
     const actionItems = [];
-    textMessages.forEach(m => {
-      ACTION_PHRASES.forEach(phrase => {
+    textMessages.forEach((m) => {
+      ACTION_PHRASES.forEach((phrase) => {
         const regex = new RegExp(`${phrase}\\s+([^.!?]+[.!?]?)`, 'gi');
         const matches = m.content.match(regex);
         if (matches) {
-          matches.forEach(match => {
+          matches.forEach((match) => {
             const item = match.replace(new RegExp(`^${phrase}\\s+`, 'i'), '').trim();
             if (item && !actionItems.includes(item)) {
               actionItems.push(item);
@@ -186,8 +186,8 @@ Provide a concise but comprehensive summary.`,
     try {
       // Format messages for task extraction
       const messageContent = messages
-        .filter(m => m.message_type === 'text' && m.content)
-        .map(m => `${m.author_name || m.author_email}: ${m.content}`)
+        .filter((m) => m.message_type === 'text' && m.content)
+        .map((m) => `${m.author_name || m.author_email}: ${m.content}`)
         .join('\n');
 
       if (!messageContent) {
@@ -197,10 +197,10 @@ Provide a concise but comprehensive summary.`,
 
       // Build context about projects and users
       const projectContext = projects?.length
-        ? `Available projects: ${projects.map(p => p.name).join(', ')}`
+        ? `Available projects: ${projects.map((p) => p.name).join(', ')}`
         : '';
       const userContext = users?.length
-        ? `Team members: ${users.map(u => u.full_name || u.email).join(', ')}`
+        ? `Team members: ${users.map((u) => u.full_name || u.email).join(', ')}`
         : '';
 
       // Call LLM for task extraction
@@ -231,12 +231,12 @@ For each task, identify:
                   description: { type: 'string' },
                   assignee_hint: { type: 'string' },
                   priority: { type: 'string', enum: ['low', 'medium', 'high', 'urgent'] },
-                  mentioned_project: { type: 'string' }
-                }
-              }
-            }
-          }
-        }
+                  mentioned_project: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
       });
 
       // Handle stub response - extract tasks manually
@@ -249,14 +249,15 @@ For each task, identify:
       const tasks = response?.tasks || [];
 
       // Enrich tasks with project IDs
-      const enrichedTasks = tasks.map(task => {
+      const enrichedTasks = tasks.map((task) => {
         let projectId = defaultProjectId;
 
         // Try to match mentioned project to actual project
         if (task.mentioned_project && projects?.length) {
-          const matchedProject = projects.find(p =>
-            p.name.toLowerCase().includes(task.mentioned_project.toLowerCase()) ||
-            task.mentioned_project.toLowerCase().includes(p.name.toLowerCase())
+          const matchedProject = projects.find(
+            (p) =>
+              p.name.toLowerCase().includes(task.mentioned_project.toLowerCase()) ||
+              task.mentioned_project.toLowerCase().includes(p.name.toLowerCase())
           );
           if (matchedProject) {
             projectId = matchedProject.id;
@@ -266,10 +267,11 @@ For each task, identify:
         // Try to match assignee hint to actual user
         let assignedTo = null;
         if (task.assignee_hint && users?.length) {
-          const matchedUser = users.find(u =>
-            u.full_name?.toLowerCase().includes(task.assignee_hint.toLowerCase()) ||
-            u.email?.toLowerCase().includes(task.assignee_hint.toLowerCase()) ||
-            task.assignee_hint.toLowerCase().includes(u.full_name?.toLowerCase() || '')
+          const matchedUser = users.find(
+            (u) =>
+              u.full_name?.toLowerCase().includes(task.assignee_hint.toLowerCase()) ||
+              u.email?.toLowerCase().includes(task.assignee_hint.toLowerCase()) ||
+              task.assignee_hint.toLowerCase().includes(u.full_name?.toLowerCase() || '')
           );
           if (matchedUser) {
             assignedTo = matchedUser.email;
@@ -300,12 +302,12 @@ For each task, identify:
    */
   const extractTasksManually = (messages) => {
     const tasks = [];
-    const textMessages = messages.filter(m => m.message_type === 'text' && m.content);
+    const textMessages = messages.filter((m) => m.message_type === 'text' && m.content);
 
-    textMessages.forEach(message => {
+    textMessages.forEach((message) => {
       const content = message.content.toLowerCase();
 
-      ACTION_PHRASES.forEach(phrase => {
+      ACTION_PHRASES.forEach((phrase) => {
         const phraseIndex = content.indexOf(phrase);
         if (phraseIndex !== -1) {
           // Extract the text after the action phrase
@@ -319,9 +321,7 @@ For each task, identify:
 
           if (taskText && taskText.length > 3) {
             // Check for duplicate
-            const isDuplicate = tasks.some(t =>
-              t.title.toLowerCase() === taskText.toLowerCase()
-            );
+            const isDuplicate = tasks.some((t) => t.title.toLowerCase() === taskText.toLowerCase());
 
             if (!isDuplicate) {
               tasks.push({
@@ -392,7 +392,7 @@ For each task, identify:
     const mentionedProjects = [];
     const lowerMessage = message.toLowerCase();
 
-    projects.forEach(project => {
+    projects.forEach((project) => {
       const projectName = project.name.toLowerCase();
       if (lowerMessage.includes(projectName)) {
         mentionedProjects.push(project);

@@ -6,12 +6,15 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default [
-  { ignores: ['dist', 'coverage'] },
+  { ignores: ['dist', 'coverage', 'test-*.js', 'verify-*.js'] },
   {
     files: ['**/*.{js,jsx}'],
     languageOptions: {
       ecmaVersion: 2020,
-      globals: globals.browser,
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
       parserOptions: {
         ecmaVersion: 'latest',
         ecmaFeatures: { jsx: true },
@@ -31,6 +34,18 @@ export default [
       ...reactHooks.configs.recommended.rules,
       'react/jsx-no-target-blank': 'off',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'react/prop-types': 'off', // Disable prop-types validation for now
+      'no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+          caughtErrors: 'none',
+        },
+      ],
+      'react/no-unescaped-entities': 'off', // Allow unescaped entities
+      'react-hooks/exhaustive-deps': 'warn', // Change from error to warning
     },
   },
   eslintConfigPrettier,

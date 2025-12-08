@@ -30,58 +30,66 @@ const updates = [
   {
     icon: LayoutDashboard,
     title: 'Enhanced Dashboard',
-    description: 'New "Needs Attention" section highlights overdue tasks, due today items, and high-priority work. Plus "Today\'s Focus" shows AI-suggested priorities.',
+    description:
+      'New "Needs Attention" section highlights overdue tasks, due today items, and high-priority work. Plus "Today\'s Focus" shows AI-suggested priorities.',
     color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600',
-    tag: 'Dashboard'
+    tag: 'Dashboard',
   },
   {
     icon: FileText,
     title: 'Unified Documents Hub',
-    description: 'Library, Studio, and Templates combined into one page with tabs. Browse, create, and generate documents without switching pages.',
+    description:
+      'Library, Studio, and Templates combined into one page with tabs. Browse, create, and generate documents without switching pages.',
     color: 'bg-green-100 dark:bg-green-900/30 text-green-600',
-    tag: 'Documents'
+    tag: 'Documents',
   },
   {
     icon: Brain,
     title: 'AI Hub',
-    description: 'Ask AI, Research, and Generate unified into one powerful hub. All AI tools in one place with shared context.',
+    description:
+      'Ask AI, Research, and Generate unified into one powerful hub. All AI tools in one place with shared context.',
     color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600',
-    tag: 'AI'
+    tag: 'AI',
   },
   {
     icon: CheckSquare,
     title: 'Task Views',
-    description: 'Three new views: Kanban, List, and Calendar. Plus quick filter presets for My Tasks, Overdue, Due Today, and This Week.',
+    description:
+      'Three new views: Kanban, List, and Calendar. Plus quick filter presets for My Tasks, Overdue, Due Today, and This Week.',
     color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600',
-    tag: 'Tasks'
+    tag: 'Tasks',
   },
   {
     icon: FolderOpen,
     title: 'Workspace Modal',
-    description: 'Manage workspaces, invite members, and switch contexts from a quick dropdown modal - no more navigating away.',
+    description:
+      'Manage workspaces, invite members, and switch contexts from a quick dropdown modal - no more navigating away.',
     color: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600',
-    tag: 'Workspaces'
+    tag: 'Workspaces',
   },
   {
     icon: Sparkles,
     title: 'Contextual AI Assistant',
-    description: 'New floating AI button that knows which page you\'re on and suggests relevant quick actions.',
+    description:
+      "New floating AI button that knows which page you're on and suggests relevant quick actions.",
     color: 'bg-pink-100 dark:bg-pink-900/30 text-pink-600',
-    tag: 'AI'
+    tag: 'AI',
   },
   {
     icon: Wand2,
     title: 'Transform Menu',
-    description: 'Unified content transformation tool. Summarize, simplify, make formal, friendly, or technical - all from one menu.',
+    description:
+      'Unified content transformation tool. Summarize, simplify, make formal, friendly, or technical - all from one menu.',
     color: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600',
-    tag: 'AI'
+    tag: 'AI',
   },
   {
     icon: Smartphone,
     title: 'Mobile Navigation',
-    description: 'New bottom navigation bar on mobile with quick create button. Tap the + to quickly add tasks, documents, or start AI chat.',
+    description:
+      'New bottom navigation bar on mobile with quick create button. Tap the + to quickly add tasks, documents, or start AI chat.',
     color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600',
-    tag: 'Mobile'
+    tag: 'Mobile',
   },
 ];
 
@@ -148,8 +156,12 @@ export default function WhatsNewModal({ forceOpen = false, onClose }) {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">{update.title}</h3>
-                      <Badge variant="secondary" className="text-xs">{update.tag}</Badge>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        {update.title}
+                      </h3>
+                      <Badge variant="secondary" className="text-xs">
+                        {update.tag}
+                      </Badge>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{update.description}</p>
                   </div>
@@ -163,7 +175,10 @@ export default function WhatsNewModal({ forceOpen = false, onClose }) {
           <Button variant="outline" onClick={handleClose} className="sm:flex-1">
             Got it
           </Button>
-          <Button onClick={handleStartTutorial} className="sm:flex-1 bg-gradient-to-r from-purple-600 to-indigo-600">
+          <Button
+            onClick={handleStartTutorial}
+            className="sm:flex-1 bg-gradient-to-r from-purple-600 to-indigo-600"
+          >
             <Sparkles className="w-4 h-4 mr-2" />
             Take a Quick Tour
             <ChevronRight className="w-4 h-4 ml-2" />

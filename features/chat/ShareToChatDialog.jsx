@@ -1,14 +1,13 @@
-
-import React, { useState, useEffect, useCallback } from "react";
-import { Message } from "@/api/entities";
-import { Assignment } from "@/api/entities";
-import { ConversationThread } from "@/api/entities";
-import { InvokeLLM } from "@/api/integrations";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import React, { useState, useEffect, useCallback } from 'react';
+import { Message } from '@/api/entities';
+import { Assignment } from '@/api/entities';
+import { ConversationThread } from '@/api/entities';
+import { InvokeLLM } from '@/api/integrations';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -16,43 +15,43 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Share2, 
-  MessageSquare, 
-  Loader2, 
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Share2,
+  MessageSquare,
+  Loader2,
   Sparkles,
   FileText,
   CheckCircle,
   Hash,
-  Users
-} from "lucide-react";
+  Users,
+} from 'lucide-react';
 
-export default function ShareToChatDialog({ 
-  isOpen, 
-  onClose, 
-  item, 
+export default function ShareToChatDialog({
+  isOpen,
+  onClose,
+  item,
   itemType, // "document", "task", "assignment"
-  currentUser 
+  currentUser,
 }) {
   const [assignments, setAssignments] = useState([]);
   const [threads, setThreads] = useState([]);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [selectedThread, setSelectedThread] = useState(null);
-  const [customMessage, setCustomMessage] = useState("");
+  const [customMessage, setCustomMessage] = useState('');
   const [includeAISummary, setIncludeAISummary] = useState(true);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
-  const [aiSummary, setAiSummary] = useState("");
-  const [shareTarget, setShareTarget] = useState("assignment"); // "assignment" or "thread"
+  const [aiSummary, setAiSummary] = useState('');
+  const [shareTarget, setShareTarget] = useState('assignment'); // "assignment" or "thread"
 
   useEffect(() => {
     if (isOpen) {
@@ -61,9 +60,9 @@ export default function ShareToChatDialog({
       // Reset state when dialog closes
       setSelectedAssignment(null);
       setSelectedThread(null);
-      setCustomMessage("");
-      setAiSummary("");
-      setShareTarget("assignment");
+      setCustomMessage('');
+      setAiSummary('');
+      setShareTarget('assignment');
     }
   }, [isOpen]);
 
@@ -81,12 +80,12 @@ export default function ShareToChatDialog({
 
     setIsGeneratingSummary(true);
     try {
-      let prompt = "";
+      let prompt = '';
       // itemData was declared but not used inside the useCallback, so it can be removed
-      // let itemData = {}; 
+      // let itemData = {};
 
       switch (itemType) {
-        case "document":
+        case 'document':
           // itemData assignment was removed as it's not used
           prompt = `Create a brief, shareable summary for this document that would be useful in a team chat:
 
@@ -103,7 +102,7 @@ Create a 2-3 sentence summary that:
 Keep it conversational and chat-friendly.`;
           break;
 
-        case "task":
+        case 'task':
           // itemData assignment was removed as it's not used
           prompt = `Create a brief, shareable summary for this task that would be useful in a team chat:
 
@@ -122,7 +121,7 @@ Create a 2-3 sentence summary that:
 Keep it conversational and action-oriented.`;
           break;
 
-        case "assignment":
+        case 'assignment':
           // itemData assignment was removed as it's not used
           prompt = `Create a brief, shareable summary for this assignment that would be useful in a team chat:
 
@@ -145,21 +144,21 @@ Keep it conversational and informative.`;
       const response = await InvokeLLM({
         prompt: prompt,
         response_json_schema: {
-          type: "object",
+          type: 'object',
           properties: {
-            summary: { type: "string" },
+            summary: { type: 'string' },
             key_highlights: {
-              type: "array",
-              items: { type: "string" }
-            }
-          }
-        }
+              type: 'array',
+              items: { type: 'string' },
+            },
+          },
+        },
       });
 
       setAiSummary(response.summary);
     } catch (error) {
-      console.error("Error generating AI summary:", error);
-      setAiSummary("");
+      console.error('Error generating AI summary:', error);
+      setAiSummary('');
     } finally {
       setIsGeneratingSummary(false);
     }
@@ -169,7 +168,7 @@ Keep it conversational and informative.`;
     if (includeAISummary && item && selectedAssignment) {
       generateAISummary();
     } else {
-      setAiSummary("");
+      setAiSummary('');
     }
   }, [includeAISummary, item, selectedAssignment, generateAISummary]); // Added generateAISummary to dependencies
 
@@ -181,36 +180,39 @@ Keep it conversational and informative.`;
         setSelectedAssignment(assignmentList[0].id);
       }
     } catch (error) {
-      console.error("Error loading assignments:", error);
+      console.error('Error loading assignments:', error);
     }
   };
 
   const loadThreads = async (assignmentId) => {
     try {
-      const threadList = await ConversationThread.filter({ 
-        assignment_id: assignmentId,
-        status: "active"
-      }, "-last_activity");
+      const threadList = await ConversationThread.filter(
+        {
+          assignment_id: assignmentId,
+          status: 'active',
+        },
+        '-last_activity'
+      );
       setThreads(threadList);
     } catch (error) {
-      console.error("Error loading threads:", error);
+      console.error('Error loading threads:', error);
     }
   };
 
   const handleShare = async () => {
     if (!selectedAssignment) {
-      alert("Please select an assignment to share to");
+      alert('Please select an assignment to share to');
       return;
     }
 
     setIsSharing(true);
     try {
       // assignment variable was declared but not used, so it can be removed
-      // const assignment = assignments.find(a => a.id === selectedAssignment); 
-      
+      // const assignment = assignments.find(a => a.id === selectedAssignment);
+
       // Build the message content
-      let messageContent = "";
-      
+      let messageContent = '';
+
       // Add custom message if provided
       if (customMessage.trim()) {
         messageContent += `${customMessage}\n\n`;
@@ -226,11 +228,11 @@ Keep it conversational and informative.`;
       }
 
       // Add key metadata based on item type
-      if (itemType === "document") {
+      if (itemType === 'document') {
         messageContent += `\n📄 Type: ${item.document_type} | Size: ${(item.file_size / 1024).toFixed(1)} KB`;
-      } else if (itemType === "task") {
+      } else if (itemType === 'task') {
         messageContent += `\n✅ Status: ${item.status} | Priority: ${item.priority} | Due: ${item.due_date || 'TBD'}`;
-      } else if (itemType === "assignment") {
+      } else if (itemType === 'assignment') {
         messageContent += `\n📊 Status: ${item.status} | Team: ${item.team_members?.length || 0} members`;
       }
 
@@ -240,21 +242,22 @@ Keep it conversational and informative.`;
         assignment_id: selectedAssignment,
         author_email: currentUser?.email,
         author_name: currentUser?.full_name,
-        message_type: "shared_item",
-        thread_id: shareTarget === "thread" && selectedThread ? selectedThread : null,
-        linked_documents: itemType === "document" ? [item.id] : [],
-        tags: [itemType, "shared"]
+        message_type: 'shared_item',
+        thread_id: shareTarget === 'thread' && selectedThread ? selectedThread : null,
+        linked_documents: itemType === 'document' ? [item.id] : [],
+        tags: [itemType, 'shared'],
       };
 
       await Message.create(messageData);
 
       // Success feedback
-      alert(`${itemTypeLabel} shared successfully to ${shareTarget === "thread" ? "thread" : "assignment chat"}!`);
+      alert(
+        `${itemTypeLabel} shared successfully to ${shareTarget === 'thread' ? 'thread' : 'assignment chat'}!`
+      );
       onClose();
-
     } catch (error) {
-      console.error("Error sharing to chat:", error);
-      alert("Failed to share. Please try again.");
+      console.error('Error sharing to chat:', error);
+      alert('Failed to share. Please try again.');
     } finally {
       setIsSharing(false);
     }
@@ -262,8 +265,8 @@ Keep it conversational and informative.`;
 
   if (!item) return null;
 
-  const selectedAssignmentObj = assignments.find(a => a.id === selectedAssignment);
-  const selectedThreadObj = threads.find(t => t.id === selectedThread);
+  const selectedAssignmentObj = assignments.find((a) => a.id === selectedAssignment);
+  const selectedThreadObj = threads.find((t) => t.id === selectedThread);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -273,19 +276,17 @@ Keep it conversational and informative.`;
             <Share2 className="w-5 h-5 text-blue-600" />
             Share to Chat
           </DialogTitle>
-          <DialogDescription>
-            Share this {itemType} with your team via chat
-          </DialogDescription>
+          <DialogDescription>Share this {itemType} with your team via chat</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 mt-4">
           {/* Item Preview */}
           <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
             <div className="flex items-start gap-3">
-              {itemType === "document" && <FileText className="w-5 h-5 text-blue-600 mt-0.5" />}
-              {itemType === "task" && <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />}
-              {itemType === "assignment" && <Users className="w-5 h-5 text-purple-600 mt-0.5" />}
-              
+              {itemType === 'document' && <FileText className="w-5 h-5 text-blue-600 mt-0.5" />}
+              {itemType === 'task' && <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />}
+              {itemType === 'assignment' && <Users className="w-5 h-5 text-purple-600 mt-0.5" />}
+
               <div className="flex-1 min-w-0">
                 <h4 className="font-semibold text-gray-900">{item.title || item.name}</h4>
                 {item.description && (
@@ -309,7 +310,7 @@ Keep it conversational and informative.`;
                   <SelectValue placeholder="Select assignment" />
                 </SelectTrigger>
                 <SelectContent>
-                  {assignments.map(assignment => (
+                  {assignments.map((assignment) => (
                     <SelectItem key={assignment.id} value={assignment.id}>
                       <div className="flex items-center gap-2">
                         <span>{assignment.name}</span>
@@ -336,14 +337,14 @@ Keep it conversational and informative.`;
                     Specific Thread
                   </TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="thread" className="mt-4">
                   <Select value={selectedThread} onValueChange={setSelectedThread}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a thread" />
                     </SelectTrigger>
                     <SelectContent>
-                      {threads.map(thread => (
+                      {threads.map((thread) => (
                         <SelectItem key={thread.id} value={thread.id}>
                           <div className="flex items-center gap-2">
                             <Hash className="w-3 h-3" />
@@ -410,13 +411,13 @@ Keep it conversational and informative.`;
             <p className="text-xs font-semibold text-blue-900 mb-2">Preview:</p>
             <div className="text-sm text-gray-700 space-y-1">
               {customMessage && <p className="font-medium">{customMessage}</p>}
-              <p>📎 Shared {itemType}: <strong>{item.title || item.name}</strong></p>
-              {includeAISummary && aiSummary && (
-                <p className="text-gray-600 italic">{aiSummary}</p>
-              )}
+              <p>
+                📎 Shared {itemType}: <strong>{item.title || item.name}</strong>
+              </p>
+              {includeAISummary && aiSummary && <p className="text-gray-600 italic">{aiSummary}</p>}
               <p className="text-xs text-gray-500 mt-2">
-                Sharing to: {selectedAssignmentObj?.name} 
-                {shareTarget === "thread" && selectedThreadObj && ` → ${selectedThreadObj.topic}`}
+                Sharing to: {selectedAssignmentObj?.name}
+                {shareTarget === 'thread' && selectedThreadObj && ` → ${selectedThreadObj.topic}`}
               </p>
             </div>
           </div>
@@ -426,8 +427,8 @@ Keep it conversational and informative.`;
           <Button variant="outline" onClick={onClose} disabled={isSharing}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleShare} 
+          <Button
+            onClick={handleShare}
             disabled={isSharing || !selectedAssignment}
             className="bg-blue-600 hover:bg-blue-700"
           >

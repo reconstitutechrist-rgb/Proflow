@@ -9,7 +9,10 @@ async function testConnection() {
 
   // Test 2: Try to get current session
   try {
-    const { data: { session }, error } = await supabase.auth.getSession();
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
     if (error) {
       console.log('⚠ No active session (this is normal if not logged in):', error.message);
     } else {
@@ -21,10 +24,7 @@ async function testConnection() {
 
   // Test 3: Try a simple query (this will fail if tables don't exist, but confirms connection)
   try {
-    const { data, error } = await supabase
-      .from('workspaces')
-      .select('count')
-      .limit(1);
+    const { data, error } = await supabase.from('workspaces').select('count').limit(1);
 
     if (error) {
       if (error.code === '42P01') {

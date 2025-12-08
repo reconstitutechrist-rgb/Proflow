@@ -1,33 +1,37 @@
-
-import React, { useState } from "react";
-import { InvokeLLM } from "@/api/integrations";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { 
-  Sparkles, 
-  Loader2, 
-  CheckCircle2, 
-  Target, 
-  Users, 
+import React, { useState } from 'react';
+import { InvokeLLM } from '@/api/integrations';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Sparkles,
+  Loader2,
+  CheckCircle2,
+  Target,
+  Users,
   MessageSquare,
   ChevronDown,
   ChevronUp,
-  ListPlus // Added new icon for 'create tasks'
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+  ListPlus, // Added new icon for 'create tasks'
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-export default function ThreadSummaryButton({ messages, threadTopic, assignmentName, onActionItemsExtracted }) {
+export default function ThreadSummaryButton({
+  messages,
+  threadTopic,
+  assignmentName,
+  onActionItemsExtracted,
+}) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [summary, setSummary] = useState(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [error, setError] = useState(null);
   const [isCreatingTasks, setIsCreatingTasks] = useState(false); // New state to track task creation
-  const [tasksCreated, setTasksCreated] = useState(false);       // New state to confirm tasks created
+  const [tasksCreated, setTasksCreated] = useState(false); // New state to confirm tasks created
 
   const generateSummary = async () => {
     if (messages.length < 5) {
-      setError("Need at least 5 messages to generate a meaningful summary");
+      setError('Need at least 5 messages to generate a meaningful summary');
       return;
     }
 
@@ -37,11 +41,11 @@ export default function ThreadSummaryButton({ messages, threadTopic, assignmentN
 
     try {
       // Format messages for AI analysis
-      const chatContent = messages.map(msg => ({
+      const chatContent = messages.map((msg) => ({
         author: msg.author_name || msg.author_email,
         timestamp: new Date(msg.created_date).toLocaleString(),
         content: msg.content,
-        type: msg.message_type
+        type: msg.message_type,
       }));
 
       const response = await InvokeLLM({
@@ -60,52 +64,52 @@ Please analyze this conversation and provide:
 
 Be specific and actionable. Extract exact quotes when relevant for decisions or action items.`,
         response_json_schema: {
-          type: "object",
+          type: 'object',
           properties: {
-            executive_summary: { type: "string" },
+            executive_summary: { type: 'string' },
             key_decisions: {
-              type: "array",
+              type: 'array',
               items: {
-                type: "object",
+                type: 'object',
                 properties: {
-                  decision: { type: "string" },
-                  decision_maker: { type: "string" },
-                  rationale: { type: "string" },
-                  timestamp: { type: "string" }
-                }
-              }
+                  decision: { type: 'string' },
+                  decision_maker: { type: 'string' },
+                  rationale: { type: 'string' },
+                  timestamp: { type: 'string' },
+                },
+              },
             },
             action_items: {
-              type: "array",
+              type: 'array',
               items: {
-                type: "object",
+                type: 'object',
                 properties: {
-                  task: { type: "string" },
-                  assignee: { type: "string" },
-                  deadline: { type: "string" },
-                  priority: { type: "string" },
-                  context: { type: "string" }
-                }
-              }
+                  task: { type: 'string' },
+                  assignee: { type: 'string' },
+                  deadline: { type: 'string' },
+                  priority: { type: 'string' },
+                  context: { type: 'string' },
+                },
+              },
             },
             important_topics: {
-              type: "array",
-              items: { type: "string" }
+              type: 'array',
+              items: { type: 'string' },
             },
             participants_summary: {
-              type: "array",
+              type: 'array',
               items: {
-                type: "object",
+                type: 'object',
                 properties: {
-                  name: { type: "string" },
-                  contribution: { type: "string" },
-                  message_count: { type: "number" }
-                }
-              }
+                  name: { type: 'string' },
+                  contribution: { type: 'string' },
+                  message_count: { type: 'number' },
+                },
+              },
             },
-            confidence_score: { type: "number" }
-          }
-        }
+            confidence_score: { type: 'number' },
+          },
+        },
       });
 
       setSummary(response);
@@ -113,10 +117,9 @@ Be specific and actionable. Extract exact quotes when relevant for decisions or 
 
       // The onActionItemsExtracted call is now moved to handleCreateTasks,
       // to be triggered explicitly by the user clicking the "Create Tasks" button.
-
     } catch (err) {
-      console.error("Error generating summary:", err);
-      setError("Failed to generate summary. Please try again.");
+      console.error('Error generating summary:', err);
+      setError('Failed to generate summary. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -125,7 +128,7 @@ Be specific and actionable. Extract exact quotes when relevant for decisions or 
   // New function to handle the creation of tasks from extracted action items
   const handleCreateTasks = async () => {
     if (!summary || !summary.action_items || summary.action_items.length === 0) {
-      setError("No action items to create tasks from.");
+      setError('No action items to create tasks from.');
       return;
     }
 
@@ -138,8 +141,8 @@ Be specific and actionable. Extract exact quotes when relevant for decisions or 
       }
       setTasksCreated(true); // Set confirmation state on success
     } catch (err) {
-      console.error("Error creating tasks:", err);
-      setError("Failed to create tasks. Please try again.");
+      console.error('Error creating tasks:', err);
+      setError('Failed to create tasks. Please try again.');
       setTasksCreated(false); // Reset on error
     } finally {
       setIsCreatingTasks(false);
@@ -194,16 +197,17 @@ Be specific and actionable. Extract exact quotes when relevant for decisions or 
                       <h3 className="font-semibold text-gray-900">AI Conversation Summary</h3>
                       <p className="text-xs text-gray-600">
                         Generated from {messages.length} messages
-                        {summary.confidence_score && ` • ${Math.round(summary.confidence_score)}% confidence`}
+                        {summary.confidence_score &&
+                          ` • ${Math.round(summary.confidence_score)}% confidence`}
                       </p>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsExpanded(!isExpanded)}
-                  >
-                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  <Button variant="ghost" size="sm" onClick={() => setIsExpanded(!isExpanded)}>
+                    {isExpanded ? (
+                      <ChevronUp className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
 
@@ -219,7 +223,7 @@ Be specific and actionable. Extract exact quotes when relevant for decisions or 
                 {isExpanded && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
+                    animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                     className="space-y-4"
                   >
@@ -239,7 +243,9 @@ Be specific and actionable. Extract exact quotes when relevant for decisions or 
                                 {decision.timestamp && <span>• {decision.timestamp}</span>}
                               </div>
                               {decision.rationale && (
-                                <p className="text-sm text-gray-600 mt-1 italic">{decision.rationale}</p>
+                                <p className="text-sm text-gray-600 mt-1 italic">
+                                  {decision.rationale}
+                                </p>
                               )}
                             </div>
                           ))}
@@ -270,7 +276,11 @@ Be specific and actionable. Extract exact quotes when relevant for decisions or 
                             ) : (
                               <ListPlus className="w-4 h-4 mr-1" />
                             )}
-                            {isCreatingTasks ? "Creating Tasks..." : tasksCreated ? "Tasks Created!" : "Create Tasks"}
+                            {isCreatingTasks
+                              ? 'Creating Tasks...'
+                              : tasksCreated
+                                ? 'Tasks Created!'
+                                : 'Create Tasks'}
                           </Button>
                         </div>
                         <div className="space-y-3">
@@ -289,10 +299,11 @@ Be specific and actionable. Extract exact quotes when relevant for decisions or 
                                   </Badge>
                                 )}
                                 {item.priority && (
-                                  <Badge 
+                                  <Badge
                                     className={`text-xs ${
-                                      item.priority.toLowerCase() === 'high' || item.priority.toLowerCase() === 'urgent' 
-                                        ? 'bg-red-100 text-red-800' 
+                                      item.priority.toLowerCase() === 'high' ||
+                                      item.priority.toLowerCase() === 'urgent'
+                                        ? 'bg-red-100 text-red-800'
                                         : 'bg-gray-100 text-gray-800'
                                     }`}
                                   >
@@ -335,17 +346,24 @@ Be specific and actionable. Extract exact quotes when relevant for decisions or 
                             <div key={idx} className="flex items-start gap-3">
                               <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
                                 <span className="text-xs font-medium text-indigo-700">
-                                  {participant.name.split(' ').map(n => n[0]).join('')}
+                                  {participant.name
+                                    .split(' ')
+                                    .map((n) => n[0])
+                                    .join('')}
                                 </span>
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-medium text-gray-900">{participant.name}</span>
+                                  <span className="font-medium text-gray-900">
+                                    {participant.name}
+                                  </span>
                                   <Badge variant="outline" className="text-xs">
                                     {participant.message_count} messages
                                   </Badge>
                                 </div>
-                                <p className="text-sm text-gray-600 mt-1">{participant.contribution}</p>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {participant.contribution}
+                                </p>
                               </div>
                             </div>
                           ))}

@@ -5,7 +5,7 @@ import { readFileSync } from 'fs';
 // Read environment variables
 const envContent = readFileSync('.env', 'utf-8');
 const envVars = {};
-envContent.split('\n').forEach(line => {
+envContent.split('\n').forEach((line) => {
   const [key, ...valueParts] = line.split('=');
   if (key && valueParts.length) {
     envVars[key.trim()] = valueParts.join('=').trim();
@@ -15,7 +15,7 @@ envContent.split('\n').forEach(line => {
 // Override import.meta.env for Node.js
 global.importMetaEnv = {
   VITE_SUPABASE_URL: envVars.VITE_SUPABASE_URL,
-  VITE_SUPABASE_ANON_KEY: envVars.VITE_SUPABASE_ANON_KEY
+  VITE_SUPABASE_ANON_KEY: envVars.VITE_SUPABASE_ANON_KEY,
 };
 
 async function testMapping() {

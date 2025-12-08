@@ -1,19 +1,10 @@
-
-import React, { useState, useEffect } from "react";
-import { db } from "@/api/db";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import { toast } from "sonner";
-import {
-  GitBranch,
-  ArrowRight,
-  AlertCircle,
-  Link,
-  X,
-  Plus,
-  Loader2,
-} from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { db } from '@/api/db';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { toast } from 'sonner';
+import { GitBranch, ArrowRight, AlertCircle, Link, X, Plus, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -22,23 +13,22 @@ import {
   DialogTrigger,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 export default function TaskDependencyTracker({ task, allTasks, onDependencyUpdate }) {
   const [dependencies, setDependencies] = useState([]);
   const [availableTasks, setAvailableTasks] = useState([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [selectedTask, setSelectedTask] = useState("");
-  const [dependencyType, setDependencyType] = useState("blocks");
+  const [selectedTask, setSelectedTask] = useState('');
+  const [dependencyType, setDependencyType] = useState('blocks');
   const [loading, setLoading] = useState(false); // Changed initial state to false
 
   const { currentWorkspaceId } = useWorkspace();
@@ -54,10 +44,10 @@ export default function TaskDependencyTracker({ task, allTasks, onDependencyUpda
 
     // CRITICAL: Validate task is in current workspace
     if (task.workspace_id !== currentWorkspaceId) {
-      toast.error("Cannot access dependencies from other workspaces");
-      console.error("Security violation: Cross-workspace dependency access", {
+      toast.error('Cannot access dependencies from other workspaces');
+      console.error('Security violation: Cross-workspace dependency access', {
         taskWorkspace: task.workspace_id,
-        currentWorkspace: currentWorkspaceId
+        currentWorkspace: currentWorkspaceId,
       });
       setDependencies([]); // Clear any potentially stale data
       setAvailableTasks([]); // Clear available tasks
@@ -66,43 +56,48 @@ export default function TaskDependencyTracker({ task, allTasks, onDependencyUpda
 
     // Get existing dependencies
     const existingDependencies = task.dependencies || [];
-    
+
     // CRITICAL: Filter allTasks to only show tasks from current workspace
-    const workspaceTasks = allTasks.filter(t => 
-      t.workspace_id === currentWorkspaceId && t.id !== task.id
+    const workspaceTasks = allTasks.filter(
+      (t) => t.workspace_id === currentWorkspaceId && t.id !== task.id
     );
 
     // Map dependency IDs to actual task objects
-    const dependencyTasks = existingDependencies.map(dep => {
-      const dependencyTask = workspaceTasks.find(t => t.id === dep.task_id);
-      return {
-        ...dep,
-        task: dependencyTask
-      };
-    }).filter(dep => dep.task); // Remove dependencies where task wasn't found
+    const dependencyTasks = existingDependencies
+      .map((dep) => {
+        const dependencyTask = workspaceTasks.find((t) => t.id === dep.task_id);
+        return {
+          ...dep,
+          task: dependencyTask,
+        };
+      })
+      .filter((dep) => dep.task); // Remove dependencies where task wasn't found
 
     setDependencies(dependencyTasks);
-    setAvailableTasks(workspaceTasks.filter(t => 
-      !existingDependencies.some(dep => dep.task_id === t.id)
-    ));
+    setAvailableTasks(
+      workspaceTasks.filter((t) => !existingDependencies.some((dep) => dep.task_id === t.id))
+    );
   };
 
   const handleAddDependency = async () => {
     if (!selectedTask || !task) return;
 
     // CRITICAL: Validate both tasks are in current workspace
-    const dependentTask = allTasks.find(t => t.id === selectedTask);
+    const dependentTask = allTasks.find((t) => t.id === selectedTask);
     if (!dependentTask) {
-      toast.error("Selected task not found");
+      toast.error('Selected task not found');
       return;
     }
 
-    if (dependentTask.workspace_id !== currentWorkspaceId || task.workspace_id !== currentWorkspaceId) {
-      toast.error("Cannot create dependencies across workspaces");
-      console.error("Security violation: Cross-workspace dependency creation attempt", {
+    if (
+      dependentTask.workspace_id !== currentWorkspaceId ||
+      task.workspace_id !== currentWorkspaceId
+    ) {
+      toast.error('Cannot create dependencies across workspaces');
+      console.error('Security violation: Cross-workspace dependency creation attempt', {
         taskWorkspace: task.workspace_id,
         dependentTaskWorkspace: dependentTask.workspace_id,
-        currentWorkspace: currentWorkspaceId
+        currentWorkspace: currentWorkspaceId,
       });
       return;
     }
@@ -113,28 +108,28 @@ export default function TaskDependencyTracker({ task, allTasks, onDependencyUpda
       const newDependency = {
         task_id: selectedTask,
         dependency_type: dependencyType,
-        created_date: new Date().toISOString()
+        created_date: new Date().toISOString(),
       };
 
       const updatedDependencies = [...(task.dependencies || []), newDependency];
 
       await db.entities.Task.update(task.id, {
         dependencies: updatedDependencies,
-        workspace_id: currentWorkspaceId // CRITICAL: Maintain workspace_id
+        workspace_id: currentWorkspaceId, // CRITICAL: Maintain workspace_id
       });
 
-      toast.success("Dependency added successfully");
+      toast.success('Dependency added successfully');
       setShowAddDialog(false);
-      setSelectedTask("");
-      
+      setSelectedTask('');
+
       if (onDependencyUpdate) {
         onDependencyUpdate();
       }
 
       loadDependencies();
     } catch (error) {
-      console.error("Error adding dependency:", error);
-      toast.error("Failed to add dependency");
+      console.error('Error adding dependency:', error);
+      toast.error('Failed to add dependency');
     } finally {
       setLoading(false);
     }
@@ -145,7 +140,7 @@ export default function TaskDependencyTracker({ task, allTasks, onDependencyUpda
 
     // CRITICAL: Validate task is in current workspace
     if (task.workspace_id !== currentWorkspaceId) {
-      toast.error("Cannot modify dependencies from other workspaces");
+      toast.error('Cannot modify dependencies from other workspaces');
       return;
     }
 
@@ -153,24 +148,24 @@ export default function TaskDependencyTracker({ task, allTasks, onDependencyUpda
       setLoading(true);
 
       const updatedDependencies = (task.dependencies || []).filter(
-        dep => dep.task_id !== dependencyTaskId
+        (dep) => dep.task_id !== dependencyTaskId
       );
 
       await db.entities.Task.update(task.id, {
         dependencies: updatedDependencies,
-        workspace_id: currentWorkspaceId // CRITICAL: Maintain workspace_id
+        workspace_id: currentWorkspaceId, // CRITICAL: Maintain workspace_id
       });
 
-      toast.success("Dependency removed successfully");
-      
+      toast.success('Dependency removed successfully');
+
       if (onDependencyUpdate) {
         onDependencyUpdate();
       }
 
       loadDependencies();
     } catch (error) {
-      console.error("Error removing dependency:", error);
-      toast.error("Failed to remove dependency");
+      console.error('Error removing dependency:', error);
+      toast.error('Failed to remove dependency');
     } finally {
       setLoading(false);
     }
@@ -178,11 +173,11 @@ export default function TaskDependencyTracker({ task, allTasks, onDependencyUpda
 
   const getDependencyIcon = (type) => {
     switch (type) {
-      case "blocks":
+      case 'blocks':
         return <AlertCircle className="w-4 h-4 text-red-500" />;
-      case "relates_to":
+      case 'relates_to':
         return <Link className="w-4 h-4 text-blue-500" />;
-      case "follows":
+      case 'follows':
         return <ArrowRight className="w-4 h-4 text-green-500" />;
       default:
         return <Link className="w-4 h-4 text-gray-500" />;
@@ -191,12 +186,12 @@ export default function TaskDependencyTracker({ task, allTasks, onDependencyUpda
 
   const getDependencyLabel = (type) => {
     switch (type) {
-      case "blocks":
-        return "Blocks";
-      case "relates_to":
-        return "Related to";
-      case "follows":
-        return "Follows";
+      case 'blocks':
+        return 'Blocks';
+      case 'relates_to':
+        return 'Related to';
+      case 'follows':
+        return 'Follows';
       default:
         return type;
     }
@@ -238,44 +233,47 @@ export default function TaskDependencyTracker({ task, allTasks, onDependencyUpda
         </div>
       ) : (
         <div className="space-y-2">
-          {dependencies.map((dep) => dep.task && (
-            <div
-              key={dep.task_id}
-              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-            >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                {getDependencyIcon(dep.dependency_type)}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                    {dep.task.title}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline" className="text-xs">
-                      {getDependencyLabel(dep.dependency_type)}
-                    </Badge>
-                    <Badge
-                      variant="secondary"
-                      className={`text-xs ${
-                        dep.task.status === "completed"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300"
-                          : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
-                      }`}
-                    >
-                      {dep.task.status.replace("_", " ")}
-                    </Badge>
+          {dependencies.map(
+            (dep) =>
+              dep.task && (
+                <div
+                  key={dep.task_id}
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {getDependencyIcon(dep.dependency_type)}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {dep.task.title}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          {getDependencyLabel(dep.dependency_type)}
+                        </Badge>
+                        <Badge
+                          variant="secondary"
+                          className={`text-xs ${
+                            dep.task.status === 'completed'
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                          }`}
+                        >
+                          {dep.task.status.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveDependency(dep.task_id)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleRemoveDependency(dep.task_id)}
-                className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          ))}
+              )
+          )}
         </div>
       )}
 
@@ -314,7 +312,7 @@ export default function TaskDependencyTracker({ task, allTasks, onDependencyUpda
                         <div className="flex flex-col">
                           <span className="font-medium">{t.title}</span>
                           <span className="text-xs text-gray-500">
-                            {t.status.replace("_", " ")} • {t.priority} priority
+                            {t.status.replace('_', ' ')} • {t.priority} priority
                           </span>
                         </div>
                       </SelectItem>

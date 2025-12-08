@@ -1,14 +1,14 @@
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   CheckCircle2,
   Edit2,
@@ -21,10 +21,10 @@ import {
   Repeat,
   RefreshCw,
   Target,
-  Loader2
-} from "lucide-react";
-import { format } from "date-fns";
-import { validateTaskStructure, getPriorityColor } from "@/utils/taskUtils";
+  Loader2,
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { validateTaskStructure, getPriorityColor } from '@/utils/taskUtils';
 
 export default function TaskProposalPanel({
   proposedTasks = [],
@@ -35,11 +35,11 @@ export default function TaskProposalPanel({
   users = [],
   currentUser,
   isCreating = false,
-  creationProgress = { current: 0, total: 0, currentTask: "" },
+  creationProgress = { current: 0, total: 0, currentTask: '' },
   onTasksChange,
   onCreateTasks,
   onClear,
-  onRetryFailed
+  onRetryFailed,
 }) {
   const [editingTaskIndex, setEditingTaskIndex] = useState(null);
 
@@ -89,12 +89,7 @@ export default function TaskProposalPanel({
         </div>
         {!isCreating && (
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onClear}
-              className="text-xs h-8"
-            >
+            <Button variant="outline" size="sm" onClick={onClear} className="text-xs h-8">
               <Trash2 className="w-3 h-3 mr-1" />
               Clear All
             </Button>
@@ -130,7 +125,7 @@ export default function TaskProposalPanel({
                   />
                   <div className="flex gap-2 flex-wrap">
                     <Select
-                      value={task.assignment_id || assignments[0]?.id || ""}
+                      value={task.assignment_id || assignments[0]?.id || ''}
                       onValueChange={(val) => handleTaskFieldChange(index, 'assignment_id', val)}
                     >
                       <SelectTrigger className="h-8 text-xs w-[140px]">
@@ -145,8 +140,10 @@ export default function TaskProposalPanel({
                       </SelectContent>
                     </Select>
                     <Select
-                      value={task.project_id || "none"}
-                      onValueChange={(val) => handleTaskFieldChange(index, 'project_id', val === "none" ? null : val)}
+                      value={task.project_id || 'none'}
+                      onValueChange={(val) =>
+                        handleTaskFieldChange(index, 'project_id', val === 'none' ? null : val)
+                      }
                     >
                       <SelectTrigger className="h-8 text-xs w-[140px]">
                         <SelectValue placeholder="Project" />
@@ -161,7 +158,7 @@ export default function TaskProposalPanel({
                       </SelectContent>
                     </Select>
                     <Select
-                      value={task.assigned_to || currentUser?.email || ""}
+                      value={task.assigned_to || currentUser?.email || ''}
                       onValueChange={(val) => handleTaskFieldChange(index, 'assigned_to', val)}
                     >
                       <SelectTrigger className="h-8 text-xs w-[140px]">
@@ -176,7 +173,7 @@ export default function TaskProposalPanel({
                       </SelectContent>
                     </Select>
                     <Select
-                      value={task.priority || "medium"}
+                      value={task.priority || 'medium'}
                       onValueChange={(val) => handleTaskFieldChange(index, 'priority', val)}
                     >
                       <SelectTrigger className="h-8 text-xs w-[100px]">
@@ -193,24 +190,32 @@ export default function TaskProposalPanel({
                 </div>
               ) : (
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm text-gray-800 dark:text-gray-200 truncate">{task.title}</p>
+                  <p className="font-medium text-sm text-gray-800 dark:text-gray-200 truncate">
+                    {task.title}
+                  </p>
                   <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
                     {task.project_id && (
-                      <Badge variant="secondary" className="px-1 py-0.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+                      <Badge
+                        variant="secondary"
+                        className="px-1 py-0.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300"
+                      >
                         <Target className="w-2.5 h-2.5 mr-1" />
-                        {projects.find(p => p.id === task.project_id)?.name || task.project_id}
+                        {projects.find((p) => p.id === task.project_id)?.name || task.project_id}
                       </Badge>
                     )}
                     {task.assignment_id && (
                       <Badge variant="secondary" className="px-1 py-0.5">
                         <Plus className="w-2.5 h-2.5 mr-1" />
-                        {assignments.find(a => a.id === task.assignment_id)?.name || task.assignment_id}
+                        {assignments.find((a) => a.id === task.assignment_id)?.name ||
+                          task.assignment_id}
                       </Badge>
                     )}
                     {task.assigned_to && (
                       <Badge variant="secondary" className="px-1 py-0.5">
                         <UserIcon className="w-2.5 h-2.5 mr-1" />
-                        {users.find(u => u.email === task.assigned_to)?.full_name?.split(' ')[0] || task.assigned_to.split('@')[0]}
+                        {users
+                          .find((u) => u.email === task.assigned_to)
+                          ?.full_name?.split(' ')[0] || task.assigned_to.split('@')[0]}
                       </Badge>
                     )}
                     {task.due_date && (
@@ -236,7 +241,7 @@ export default function TaskProposalPanel({
                       </Badge>
                     )}
                   </div>
-                  {duplicateWarnings.find(dw => dw.task === task) && (
+                  {duplicateWarnings.find((dw) => dw.task === task) && (
                     <div className="text-xs text-yellow-700 dark:text-yellow-400 mt-1 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3 flex-shrink-0" />
                       <span>Potential duplicate detected</span>
@@ -294,10 +299,15 @@ export default function TaskProposalPanel({
             </p>
           </div>
           {failedTasks.map((ft, idx) => (
-            <div key={idx} className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+            <div
+              key={idx}
+              className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3"
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm text-red-900 dark:text-red-200">{ft.task.title}</p>
+                  <p className="font-medium text-sm text-red-900 dark:text-red-200">
+                    {ft.task.title}
+                  </p>
                   <p className="text-xs text-red-700 dark:text-red-400 mt-1">{ft.error}</p>
                 </div>
                 <Button

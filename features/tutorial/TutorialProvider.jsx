@@ -68,7 +68,7 @@ export const TutorialProvider = ({ children }) => {
 
     const currentModuleData = tutorialData.modules[currentModule];
     const newCompletedStep = `${currentModule}-${currentStep}`;
-    
+
     if (!completedSteps.includes(newCompletedStep)) {
       const updated = [...completedSteps, newCompletedStep];
       setCompletedSteps(updated);
@@ -163,9 +163,5 @@ export const TutorialProvider = ({ children }) => {
     getCurrentStepNumber,
   };
 
-  return (
-    <TutorialContext.Provider value={value}>
-      {children}
-    </TutorialContext.Provider>
-  );
+  return <TutorialContext.Provider value={value}>{children}</TutorialContext.Provider>;
 };

@@ -1,14 +1,8 @@
-
-import React, { useState, useEffect } from "react";
-import ReactMarkdown from "react-markdown";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import React, { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   FileText,
   Download,
@@ -22,20 +16,19 @@ import {
   RefreshCw,
   Eye, // New import for tab icon
   Clock, // New import for tab icon
-  MessageSquare // New import for tab icon
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+  MessageSquare, // New import for tab icon
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
-import LinkDocumentToAssignmentDialog from "@/components/dialogs/LinkDocumentToAssignmentDialog";
-import AISummaryButton from "@/features/ai/AISummaryButton";
-import DocumentVersionHistory from "@/features/documents/DocumentVersionHistory";
-import DocumentComments from "@/features/documents/DocumentComments";
+import LinkDocumentToAssignmentDialog from '@/components/dialogs/LinkDocumentToAssignmentDialog';
+import AISummaryButton from '@/features/ai/AISummaryButton';
+import DocumentVersionHistory from '@/features/documents/DocumentVersionHistory';
+import DocumentComments from '@/features/documents/DocumentComments';
 
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
-import { validateWorkspaceAccess } from "@/lib/CrossWorkspaceValidator";
-import { db } from "@/api/db";
-
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { validateWorkspaceAccess } from '@/lib/CrossWorkspaceValidator';
+import { db } from '@/api/db';
 
 export default function DocumentPreview({
   document,
@@ -43,7 +36,7 @@ export default function DocumentPreview({
   onClose,
   onUpdate,
   currentUser, // Preserved as per "preserving all other features"
-  onDelete // New prop from outline
+  onDelete, // New prop from outline
 }) {
   const [isFullscreenPreview, setIsFullscreenPreview] = useState(false);
   // Removed showDetails state as tabs will handle this
@@ -52,7 +45,7 @@ export default function DocumentPreview({
   const [pdfViewMode, setPdfViewMode] = useState('google'); // 'google' or 'error'
   const [pdfLoading, setPdfLoading] = useState(true);
   const [loadAttempts, setLoadAttempts] = useState(0);
-  const [activeTab, setActiveTab] = useState("preview"); // New state for active tab
+  const [activeTab, setActiveTab] = useState('preview'); // New state for active tab
   const [textContent, setTextContent] = useState(null);
   const [textLoading, setTextLoading] = useState(false);
   const [textError, setTextError] = useState(false);
@@ -71,7 +64,7 @@ export default function DocumentPreview({
     setPdfViewMode('google');
     setLoadAttempts(0);
     setImageLoadError(false);
-    setActiveTab("preview"); // Reset to preview tab on document change
+    setActiveTab('preview'); // Reset to preview tab on document change
 
     // Initialize editedDocument when the document prop changes
     // This also implicitly handles `loadDocumentData()` from the outline for the editable state
@@ -99,10 +92,10 @@ export default function DocumentPreview({
     // Set a timeout to handle stuck loading states
     if (pdfLoading && pdfViewMode === 'google') {
       const timeout = setTimeout(() => {
-        console.log("PDF loading timeout");
+        console.log('PDF loading timeout');
         setPdfLoading(false);
         if (loadAttempts < 1) {
-          setLoadAttempts(prev => prev + 1);
+          setLoadAttempts((prev) => prev + 1);
           setPdfLoading(true);
         } else {
           setPdfViewMode('error');
@@ -149,7 +142,14 @@ export default function DocumentPreview({
     };
 
     fetchTextContent();
-  }, [document?.file_url, document?.fileUrl, document?.file_name, document?.fileName, document?.file_type, document?.fileType]);
+  }, [
+    document?.file_url,
+    document?.fileUrl,
+    document?.file_name,
+    document?.fileName,
+    document?.file_type,
+    document?.fileType,
+  ]);
 
   // Loading state while currentUser loads
   if (currentUser === undefined) {
@@ -175,7 +175,9 @@ export default function DocumentPreview({
 
     // Validate workspace hasn't changed (document cannot be moved between workspaces via this save)
     if (editedDocument.workspace_id !== currentWorkspaceId) {
-      toast.error("Cannot change document's workspace. Please ensure the document belongs to the current workspace.");
+      toast.error(
+        "Cannot change document's workspace. Please ensure the document belongs to the current workspace."
+      );
       return;
     }
 
@@ -183,18 +185,17 @@ export default function DocumentPreview({
       setIsSaving(true);
       // Using db client for entity operations
       await db.entities.Document.update(editedDocument.id, editedDocument);
-      toast.success("Document updated successfully!");
+      toast.success('Document updated successfully!');
       if (onUpdate) {
         onUpdate();
       }
     } catch (error) {
-      console.error("Error updating document:", error);
-      toast.error("Failed to update document.");
+      console.error('Error updating document:', error);
+      toast.error('Failed to update document.');
     } finally {
       setIsSaving(false);
     }
   };
-
 
   const getFileTypeInfo = () => {
     // Handle both camelCase and snake_case property names
@@ -207,7 +208,7 @@ export default function DocumentPreview({
       return {
         type: 'image',
         canPreview: true,
-        icon: FileImage
+        icon: FileImage,
       };
     }
 
@@ -215,7 +216,7 @@ export default function DocumentPreview({
       return {
         type: 'pdf',
         canPreview: true,
-        icon: FileText
+        icon: FileText,
       };
     }
 
@@ -224,7 +225,7 @@ export default function DocumentPreview({
       return {
         type: 'markdown',
         canPreview: true,
-        icon: FileText
+        icon: FileText,
       };
     }
 
@@ -233,7 +234,7 @@ export default function DocumentPreview({
       return {
         type: 'text',
         canPreview: false,
-        icon: FileText
+        icon: FileText,
       };
     }
 
@@ -242,14 +243,14 @@ export default function DocumentPreview({
       return {
         type: 'office',
         canPreview: false,
-        icon: FileText
+        icon: FileText,
       };
     }
 
     return {
       type: 'unknown',
       canPreview: false,
-      icon: FileText
+      icon: FileText,
     };
   };
 
@@ -270,8 +271,8 @@ export default function DocumentPreview({
 
     // Force download using fetch and blob
     fetch(document.file_url)
-      .then(response => response.blob())
-      .then(blob => {
+      .then((response) => response.blob())
+      .then((blob) => {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -281,7 +282,7 @@ export default function DocumentPreview({
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error('Download failed:', error);
         // Fallback to simple download
         const link = document.createElement('a');
@@ -385,8 +386,9 @@ export default function DocumentPreview({
                 PDF Preview Unavailable
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                This PDF couldn't be displayed in the preview. This might be due to browser restrictions, file permissions, or CORS policies.
-                You can still access the file using the options below.
+                This PDF couldn't be displayed in the preview. This might be due to browser
+                restrictions, file permissions, or CORS policies. You can still access the file
+                using the options below.
               </p>
               <div className="flex gap-3 justify-center flex-wrap mb-4">
                 <Button onClick={handleOpenInNewTab} size="lg">
@@ -426,12 +428,7 @@ export default function DocumentPreview({
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleOpenInNewTab}
-                className="text-xs"
-              >
+              <Button variant="ghost" size="sm" onClick={handleOpenInNewTab} className="text-xs">
                 <ExternalLink className="w-3 h-3 mr-1" />
                 Open in New Tab
               </Button>
@@ -463,15 +460,15 @@ export default function DocumentPreview({
               className="w-full h-full border-0"
               style={{
                 minHeight: '100%',
-                overflow: 'auto'
+                overflow: 'auto',
               }}
               title={document.title}
               onError={() => {
-                console.error("PDF iframe error");
+                console.error('PDF iframe error');
                 setPdfLoading(false);
                 if (loadAttempts < 1) {
                   setTimeout(() => {
-                    setLoadAttempts(prev => prev + 1);
+                    setLoadAttempts((prev) => prev + 1);
                     setPdfLoading(true);
                   }, 1000);
                 } else {
@@ -479,7 +476,7 @@ export default function DocumentPreview({
                 }
               }}
               onLoad={() => {
-                console.log("PDF iframe loaded successfully");
+                console.log('PDF iframe loaded successfully');
                 setTimeout(() => {
                   setPdfLoading(false);
                 }, 500);
@@ -508,7 +505,9 @@ export default function DocumentPreview({
           <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900">
             <div className="text-center p-8">
               <AlertTriangle className="w-16 h-16 mx-auto text-red-400 mb-4" />
-              <p className="text-gray-600 dark:text-gray-400 mb-4">Failed to load markdown content</p>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Failed to load markdown content
+              </p>
               <div className="flex gap-3 justify-center">
                 <Button onClick={handleOpenInNewTab}>
                   <ExternalLink className="w-4 h-4 mr-2" />
@@ -539,24 +538,37 @@ export default function DocumentPreview({
   };
 
   return (
-    <div className="flex flex-col h-full"> {/* Changed root div to flex column */}
+    <div className="flex flex-col h-full">
+      {' '}
+      {/* Changed root div to flex column */}
       {/* Header - Fixed */}
-      <div className="flex items-start justify-between p-6 border-b bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30"> {/* Updated header styling */}
+      <div className="flex items-start justify-between p-6 border-b bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30">
+        {' '}
+        {/* Updated header styling */}
         <div className="flex-1 min-w-0 mr-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">{document.title}</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 truncate">{document.file_name}</p>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">
+            {document.title}
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 truncate">
+            {document.file_name}
+          </p>
           {/* AI Summary and Link to Assignment buttons moved here */}
           <div className="mt-2 flex items-center gap-2">
-            {document.ai_analysis?.analysis_status === 'completed' && document.ai_analysis?.summary && (
-              <AISummaryButton
-                document={document}
-                content={document.ai_analysis.summary + '\n\nKey Points:\n' + (document.ai_analysis.key_points || []).join('\n')}
-                type="document"
-                title={`Summary: ${document.title}`}
-                variant="default"
-                size="sm"
-              />
-            )}
+            {document.ai_analysis?.analysis_status === 'completed' &&
+              document.ai_analysis?.summary && (
+                <AISummaryButton
+                  document={document}
+                  content={
+                    document.ai_analysis.summary +
+                    '\n\nKey Points:\n' +
+                    (document.ai_analysis.key_points || []).join('\n')
+                  }
+                  type="document"
+                  title={`Summary: ${document.title}`}
+                  variant="default"
+                  size="sm"
+                />
+              )}
             <Button
               variant="ghost"
               size="sm"
@@ -581,7 +593,6 @@ export default function DocumentPreview({
             */}
           </div>
         </div>
-
         <div className="flex items-center gap-2 flex-shrink-0">
           <Button
             variant="outline"
@@ -596,12 +607,7 @@ export default function DocumentPreview({
             <Maximize2 className="w-4 h-4" />
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownload}
-            title="Download File"
-          >
+          <Button variant="outline" size="sm" onClick={handleDownload} title="Download File">
             <Download className="w-4 h-4 mr-2" />
             Download
           </Button>
@@ -611,32 +617,31 @@ export default function DocumentPreview({
           </Button>
         </div>
       </div>
-
       {/* Tabs */}
       <div className="border-b bg-white dark:bg-gray-900">
         <div className="flex items-center gap-1 px-6">
           <Button
-            variant={activeTab === "preview" ? "default" : "ghost"}
+            variant={activeTab === 'preview' ? 'default' : 'ghost'}
             size="sm"
-            onClick={() => setActiveTab("preview")}
+            onClick={() => setActiveTab('preview')}
             className="rounded-b-none"
           >
             <Eye className="w-4 h-4 mr-2" />
             Preview
           </Button>
           <Button
-            variant={activeTab === "details" ? "default" : "ghost"}
+            variant={activeTab === 'details' ? 'default' : 'ghost'}
             size="sm"
-            onClick={() => setActiveTab("details")}
+            onClick={() => setActiveTab('details')}
             className="rounded-b-none"
           >
             <FileText className="w-4 h-4 mr-2" />
             Details
           </Button>
           <Button
-            variant={activeTab === "versions" ? "default" : "ghost"}
+            variant={activeTab === 'versions' ? 'default' : 'ghost'}
             size="sm"
-            onClick={() => setActiveTab("versions")}
+            onClick={() => setActiveTab('versions')}
             className="rounded-b-none"
           >
             <Clock className="w-4 h-4 mr-2" />
@@ -644,9 +649,9 @@ export default function DocumentPreview({
           </Button>
           {currentUser && (
             <Button
-              variant={activeTab === "comments" ? "default" : "ghost"}
+              variant={activeTab === 'comments' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setActiveTab("comments")}
+              onClick={() => setActiveTab('comments')}
               className="rounded-b-none"
             >
               <MessageSquare className="w-4 h-4 mr-2" />
@@ -655,54 +660,71 @@ export default function DocumentPreview({
           )}
         </div>
       </div>
-
       {/* Content */}
       <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
-        {activeTab === "preview" && (
-          <div className="h-full">
-            {renderDocumentContent()}
-          </div>
-        )}
+        {activeTab === 'preview' && <div className="h-full">{renderDocumentContent()}</div>}
 
-        {activeTab === "details" && (
+        {activeTab === 'details' && (
           <ScrollArea className="h-full">
             <div className="space-y-6 max-w-4xl p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400 font-medium block mb-1">File Size:</span>
+                  <span className="text-gray-500 dark:text-gray-400 font-medium block mb-1">
+                    File Size:
+                  </span>
                   <div className="font-semibold text-gray-900 dark:text-white">
-                    {document.file_size ? `${(document.file_size / 1024 / 1024).toFixed(2)} MB` : 'Unknown'}
+                    {document.file_size
+                      ? `${(document.file_size / 1024 / 1024).toFixed(2)} MB`
+                      : 'Unknown'}
                   </div>
                 </div>
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400 font-medium block mb-1">File Type:</span>
-                  <div className="font-semibold text-gray-900 dark:text-white">{document.file_type || 'Unknown'}</div>
-                </div>
-                <div>
-                  <span className="text-gray-500 dark:text-gray-400 font-medium block mb-1">Created:</span>
+                  <span className="text-gray-500 dark:text-gray-400 font-medium block mb-1">
+                    File Type:
+                  </span>
                   <div className="font-semibold text-gray-900 dark:text-white">
-                    {document.created_date ? new Date(document.created_date).toLocaleDateString() : 'Unknown'}
+                    {document.file_type || 'Unknown'}
                   </div>
                 </div>
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400 font-medium block mb-1">Created By:</span>
-                  <div className="font-semibold text-gray-900 dark:text-white truncate">{document.created_by || 'Unknown'}</div>
+                  <span className="text-gray-500 dark:text-gray-400 font-medium block mb-1">
+                    Created:
+                  </span>
+                  <div className="font-semibold text-gray-900 dark:text-white">
+                    {document.created_date
+                      ? new Date(document.created_date).toLocaleDateString()
+                      : 'Unknown'}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400 font-medium block mb-1">
+                    Created By:
+                  </span>
+                  <div className="font-semibold text-gray-900 dark:text-white truncate">
+                    {document.created_by || 'Unknown'}
+                  </div>
                 </div>
               </div>
 
               {document.description && (
                 <div className="pt-4">
-                  <span className="text-gray-500 dark:text-gray-400 font-medium text-sm block mb-2">Description:</span>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{document.description}</p>
+                  <span className="text-gray-500 dark:text-gray-400 font-medium text-sm block mb-2">
+                    Description:
+                  </span>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                    {document.description}
+                  </p>
                 </div>
               )}
 
               {document.assigned_to_assignments && document.assigned_to_assignments.length > 0 && (
                 <div className="pt-4">
-                  <span className="text-gray-500 dark:text-gray-400 font-medium text-sm block mb-2">Linked Assignments:</span>
+                  <span className="text-gray-500 dark:text-gray-400 font-medium text-sm block mb-2">
+                    Linked Assignments:
+                  </span>
                   <div className="flex flex-wrap gap-2">
-                    {document.assigned_to_assignments.map(assignmentId => {
-                      const assignment = assignments.find(a => a.id === assignmentId);
+                    {document.assigned_to_assignments.map((assignmentId) => {
+                      const assignment = assignments.find((a) => a.id === assignmentId);
                       return (
                         <span
                           key={assignmentId}
@@ -723,7 +745,7 @@ export default function DocumentPreview({
           </ScrollArea>
         )}
 
-        {activeTab === "versions" && (
+        {activeTab === 'versions' && (
           <div className="max-w-4xl mx-auto p-6">
             {currentUser ? (
               <DocumentVersionHistory
@@ -740,7 +762,7 @@ export default function DocumentPreview({
           </div>
         )}
 
-        {activeTab === "comments" && currentUser && (
+        {activeTab === 'comments' && currentUser && (
           <div className="max-w-4xl mx-auto p-6">
             <DocumentComments
               document={document}
@@ -750,7 +772,6 @@ export default function DocumentPreview({
           </div>
         )}
       </div>
-
       {/* Dialogs */}
       <LinkDocumentToAssignmentDialog
         document={document}
@@ -759,18 +780,13 @@ export default function DocumentPreview({
         onClose={() => setIsLinkDialogOpen(false)}
         onSuccess={handleLinkSuccess}
       />
-
       <Dialog open={isFullscreenPreview} onOpenChange={setIsFullscreenPreview}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 flex flex-col">
           <DialogHeader className="px-4 py-3 border-b flex-shrink-0">
             <div className="flex items-center justify-between">
               <DialogTitle className="truncate pr-4">{document.title}</DialogTitle>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownload}
-                >
+                <Button variant="outline" size="sm" onClick={handleDownload}>
                   <Download className="w-4 h-4 mr-2" />
                   Download
                 </Button>

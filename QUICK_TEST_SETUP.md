@@ -11,6 +11,7 @@ npm install
 ```
 
 This will take a few minutes. You should see:
+
 ```
 added XXX packages in XXs
 ```
@@ -22,6 +23,7 @@ npm run dev
 ```
 
 You should see output like:
+
 ```
 VITE v6.1.x ready in XXX ms
 
@@ -33,6 +35,7 @@ VITE v6.1.x ready in XXX ms
 ## Step 3: Open Document Workshop
 
 Open your browser and navigate to:
+
 ```
 http://localhost:5173/DocumentWorkshop
 ```
@@ -42,6 +45,7 @@ http://localhost:5173/DocumentWorkshop
 ## Step 4: Follow Testing Guide
 
 Once the app is running, follow the detailed testing guide in:
+
 ```
 TESTING_PHASE1.md
 ```
@@ -53,6 +57,7 @@ TESTING_PHASE1.md
 Once the app is running, verify these 3 things work:
 
 ### ✅ Test 1: Welcome Screen (5 seconds)
+
 - Open `/DocumentWorkshop`
 - You should see:
   - Large "Document Workshop" heading
@@ -60,6 +65,7 @@ Once the app is running, verify these 3 things work:
   - Gradient background
 
 ### ✅ Test 2: Template Selection (10 seconds)
+
 - Click "✨ Quick Generate"
 - You should see:
   - 4 template cards
@@ -67,6 +73,7 @@ Once the app is running, verify these 3 things work:
   - "Continue" button appears
 
 ### ✅ Test 3: Generation Form (15 seconds)
+
 - Click "Continue" with a template selected
 - You should see:
   - Title pre-filled
@@ -81,6 +88,7 @@ Once the app is running, verify these 3 things work:
 ## Troubleshooting
 
 ### Error: "Cannot find module 'vite'"
+
 ```bash
 # Delete everything and reinstall
 rm -rf node_modules package-lock.json
@@ -88,6 +96,7 @@ npm install
 ```
 
 ### Error: Port 5173 already in use
+
 ```bash
 # Kill existing process
 lsof -ti:5173 | xargs kill -9
@@ -97,6 +106,7 @@ npm run dev -- --port 5174
 ```
 
 ### Error: "React is not defined"
+
 ```bash
 # Clear cache and reinstall
 npm cache clean --force
@@ -105,6 +115,7 @@ npm install
 ```
 
 ### Browser shows blank page
+
 1. Open DevTools (F12)
 2. Check Console tab for errors
 3. Look for red error messages
@@ -144,6 +155,7 @@ Once Phase 1 is confirmed working:
 ## Need Help?
 
 Let me know if you encounter:
+
 - ❌ Installation errors
 - ❌ Server won't start
 - ❌ Blank pages

@@ -1,45 +1,78 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import React, { useState, useEffect, useMemo } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Sparkles, Image as ImageIcon, RefreshCw, Plus, AlertTriangle, Info, BarChart3, TrendingUp, PieChart, FileText, Wand2, Search } from "lucide-react";
-import { db } from "@/api/db";
-import { InvokeLLM } from "@/api/integrations";
-import { toast } from "sonner";
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Loader2,
+  Sparkles,
+  Image as ImageIcon,
+  RefreshCw,
+  Plus,
+  AlertTriangle,
+  Info,
+  BarChart3,
+  TrendingUp,
+  PieChart,
+  FileText,
+  Wand2,
+  Search,
+} from 'lucide-react';
+import { db } from '@/api/db';
+import { InvokeLLM } from '@/api/integrations';
+import { toast } from 'sonner';
 
-export default function AIImageGenerator({ onInsertImage, documentContext, referenceDocumentUrls = [] }) {
-  const [prompt, setPrompt] = useState("");
-  const [style, setStyle] = useState("realistic");
+export default function AIImageGenerator({
+  onInsertImage,
+  documentContext,
+  referenceDocumentUrls = [],
+}) {
+  const [prompt, setPrompt] = useState('');
+  const [style, setStyle] = useState('realistic');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
   const [generationCount, setGenerationCount] = useState(0);
-  const [activeTab, setActiveTab] = useState("standard");
+  const [activeTab, setActiveTab] = useState('standard');
 
   // Document-based generation states
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [documentSuggestions, setDocumentSuggestions] = useState([]);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
 
-
   const styles = [
-    { value: "realistic", label: "Photorealistic", description: "Life-like, high-detail photography" },
-    { value: "illustration", label: "Illustration", description: "Hand-drawn or digital art style" },
-    { value: "abstract", label: "Abstract", description: "Non-representational, conceptual art" },
-    { value: "minimalist", label: "Minimalist", description: "Simple, clean, essential elements" },
-    { value: "professional", label: "Professional/Corporate", description: "Business-appropriate imagery" },
-    { value: "creative", label: "Creative/Artistic", description: "Expressive and imaginative" },
-    { value: "infographic", label: "Infographic/Data Viz", description: "Chart, graph, or data visualization style" }
+    {
+      value: 'realistic',
+      label: 'Photorealistic',
+      description: 'Life-like, high-detail photography',
+    },
+    {
+      value: 'illustration',
+      label: 'Illustration',
+      description: 'Hand-drawn or digital art style',
+    },
+    { value: 'abstract', label: 'Abstract', description: 'Non-representational, conceptual art' },
+    { value: 'minimalist', label: 'Minimalist', description: 'Simple, clean, essential elements' },
+    {
+      value: 'professional',
+      label: 'Professional/Corporate',
+      description: 'Business-appropriate imagery',
+    },
+    { value: 'creative', label: 'Creative/Artistic', description: 'Expressive and imaginative' },
+    {
+      value: 'infographic',
+      label: 'Infographic/Data Viz',
+      description: 'Chart, graph, or data visualization style',
+    },
   ];
 
   // Extract context-aware information
@@ -54,7 +87,7 @@ export default function AIImageGenerator({ onInsertImage, documentContext, refer
       taskStatus: null,
       taskPriority: null,
       allTasks: [],
-      taskStats: null
+      taskStats: null,
     };
 
     if (documentContext?.selectedAssignment) {
@@ -73,15 +106,15 @@ export default function AIImageGenerator({ onInsertImage, documentContext, refer
 
     if (documentContext?.allTasks && documentContext.allTasks.length > 0) {
       info.allTasks = documentContext.allTasks;
-      
+
       // Calculate task statistics
       const statusCounts = {};
       const priorityCounts = {};
-      
-      documentContext.allTasks.forEach(task => {
+
+      documentContext.allTasks.forEach((task) => {
         const taskStatus = task.status || 'todo';
         const taskPriority = task.priority || 'medium';
-        
+
         statusCounts[taskStatus] = (statusCounts[taskStatus] || 0) + 1;
         priorityCounts[taskPriority] = (priorityCounts[taskPriority] || 0) + 1;
       });
@@ -93,7 +126,7 @@ export default function AIImageGenerator({ onInsertImage, documentContext, refer
         completed: statusCounts['completed'] || 0,
         inProgress: statusCounts['in_progress'] || 0,
         todo: statusCounts['todo'] || 0,
-        review: statusCounts['review'] || 0
+        review: statusCounts['review'] || 0,
       };
     }
 
@@ -105,17 +138,21 @@ export default function AIImageGenerator({ onInsertImage, documentContext, refer
     const suggestions = [];
 
     if (contextInfo.taskStats && contextInfo.taskStats.total > 0) {
-      
       // Task Status Breakdown - Pie Chart
       suggestions.push({
-        type: "Task Status Breakdown",
+        type: 'Task Status Breakdown',
         icon: PieChart,
         description: `${contextInfo.taskStats.total} total tasks`,
         data: contextInfo.taskStats.byStatus,
         prompt: `Create a professional pie chart showing task status distribution for "${contextInfo.assignmentName}". 
 
 Data breakdown:
-${Object.entries(contextInfo.taskStats.byStatus).map(([status, count]) => `- ${status.replace('_', ' ')}: ${count} tasks (${Math.round((count / contextInfo.taskStats.total) * 100)}%)`).join('\n')}
+${Object.entries(contextInfo.taskStats.byStatus)
+  .map(
+    ([status, count]) =>
+      `- ${status.replace('_', ' ')}: ${count} tasks (${Math.round((count / contextInfo.taskStats.total) * 100)}%)`
+  )
+  .join('\n')}
 
 Requirements:
 - Use clean, modern corporate colors: blue (#3B82F6) for todo, yellow (#F59E0B) for in progress, green (#10B981) for completed, purple (#8B5CF6) for review
@@ -125,20 +162,25 @@ Requirements:
 - Professional infographic style with clear typography
 - Clean white or light gray background
 - Add a subtle shadow for depth
-- Make it suitable for business presentations`
+- Make it suitable for business presentations`,
       });
 
       // Priority Distribution - Bar Chart
       if (Object.keys(contextInfo.taskStats.byPriority).length > 0) {
         suggestions.push({
-          type: "Priority Distribution",
+          type: 'Priority Distribution',
           icon: BarChart3,
           description: `Across ${contextInfo.taskStats.total} tasks`,
           data: contextInfo.taskStats.byPriority,
           prompt: `Create a horizontal bar chart showing task priority distribution for "${contextInfo.assignmentName}".
 
 Data breakdown:
-${Object.entries(contextInfo.taskStats.byPriority).map(([priority, count]) => `- ${priority}: ${count} tasks (${Math.round((count / contextInfo.taskStats.total) * 100)}%)`).join('\n')}
+${Object.entries(contextInfo.taskStats.byPriority)
+  .map(
+    ([priority, count]) =>
+      `- ${priority}: ${count} tasks (${Math.round((count / contextInfo.taskStats.total) * 100)}%)`
+  )
+  .join('\n')}
 
 Requirements:
 - Use professional colors: red (#EF4444) for urgent, orange (#F97316) for high, yellow (#F59E0B) for medium, green (#10B981) for low
@@ -148,21 +190,23 @@ Requirements:
 - Title: "Task Priority Breakdown"
 - Professional infographic style
 - Clean white or light gray background
-- Modern, business-appropriate design`
+- Modern, business-appropriate design`,
         });
       }
 
       // Project Progress - Progress Ring
       if (contextInfo.taskStats.completed > 0) {
-        const percentage = Math.round((contextInfo.taskStats.completed / contextInfo.taskStats.total) * 100);
+        const percentage = Math.round(
+          (contextInfo.taskStats.completed / contextInfo.taskStats.total) * 100
+        );
         suggestions.push({
-          type: "Project Progress",
+          type: 'Project Progress',
           icon: TrendingUp,
           description: `${percentage}% complete`,
           data: {
             completed: contextInfo.taskStats.completed,
             total: contextInfo.taskStats.total,
-            percentage: percentage
+            percentage: percentage,
           },
           prompt: `Create a modern circular progress indicator for "${contextInfo.assignmentName}".
 
@@ -181,20 +225,20 @@ Requirements:
 - Clean, minimal design
 - Professional corporate style
 - White or light background
-- Suitable for executive presentations`
+- Suitable for executive presentations`,
         });
       }
 
       // Workflow Status - Horizontal Flow
       suggestions.push({
-        type: "Workflow Status",
+        type: 'Workflow Status',
         icon: BarChart3,
-        description: "Current workflow state",
+        description: 'Current workflow state',
         data: {
           todo: contextInfo.taskStats.todo,
           inProgress: contextInfo.taskStats.inProgress,
           review: contextInfo.taskStats.review || 0,
-          completed: contextInfo.taskStats.completed
+          completed: contextInfo.taskStats.completed,
         },
         prompt: `Create a horizontal workflow diagram showing the current state of "${contextInfo.assignmentName}".
 
@@ -216,7 +260,7 @@ Requirements:
 - Arrows connecting the stages
 - Title: "Project Workflow Status"
 - Professional infographic style
-- Clean design suitable for business presentations`
+- Clean design suitable for business presentations`,
       });
     }
 
@@ -228,34 +272,34 @@ Requirements:
     const prompts = {
       standard: [
         {
-          category: "Business",
+          category: 'Business',
           prompts: [
-            "Professional team meeting in modern office",
-            "Business handshake, corporate setting",
-            "Data analytics dashboard on screen",
-            "Product launch presentation"
-          ]
+            'Professional team meeting in modern office',
+            'Business handshake, corporate setting',
+            'Data analytics dashboard on screen',
+            'Product launch presentation',
+          ],
         },
         {
-          category: "Technology",
+          category: 'Technology',
           prompts: [
-            "Futuristic cityscape with technology",
-            "Cloud computing network visualization",
-            "AI neural network diagram",
-            "Modern workspace with laptops"
-          ]
+            'Futuristic cityscape with technology',
+            'Cloud computing network visualization',
+            'AI neural network diagram',
+            'Modern workspace with laptops',
+          ],
         },
         {
-          category: "Abstract",
+          category: 'Abstract',
           prompts: [
-            "Growth and progress concept",
-            "Innovation and creativity visualization",
-            "Success and achievement metaphor",
-            "Teamwork and collaboration"
-          ]
-        }
+            'Growth and progress concept',
+            'Innovation and creativity visualization',
+            'Success and achievement metaphor',
+            'Teamwork and collaboration',
+          ],
+        },
       ],
-      contextual: []
+      contextual: [],
     };
 
     // Add context-aware prompts
@@ -266,8 +310,8 @@ Requirements:
           `Team working on ${contextInfo.assignmentName}`,
           `Visual concept representing ${contextInfo.assignmentName}`,
           `Professional illustration of ${contextInfo.assignmentName} success`,
-          `Modern workspace for ${contextInfo.assignmentName} project`
-        ]
+          `Modern workspace for ${contextInfo.assignmentName} project`,
+        ],
       });
     }
 
@@ -278,21 +322,21 @@ Requirements:
           `Visual representation of ${contextInfo.taskTitle}`,
           `${contextInfo.taskPriority} priority task illustration`,
           `Professional diagram for ${contextInfo.taskTitle}`,
-          `Abstract concept of ${contextInfo.taskTitle}`
-        ]
+          `Abstract concept of ${contextInfo.taskTitle}`,
+        ],
       });
     }
 
     return prompts;
   }, [contextInfo]);
 
-  const currentStyle = styles.find(s => s.value === style);
+  const currentStyle = styles.find((s) => s.value === style);
 
   const handleGenerate = async (customPrompt = null, isDataViz = false) => {
     const finalPrompt = customPrompt || prompt;
-    
+
     if (!finalPrompt.trim()) {
-      toast.error("Please enter an image description");
+      toast.error('Please enter an image description');
       return;
     }
 
@@ -300,15 +344,15 @@ Requirements:
     if (generationCount >= 5) {
       const confirm = window.confirm(
         `You've generated ${generationCount} images in this session.\n\n` +
-        `Image generation can be costly. Continue?`
+          `Image generation can be costly. Continue?`
       );
       if (!confirm) return;
     }
 
     // Warn about data visualization accuracy and time
     if (isDataViz) {
-      toast.info("Generating data visualization. This may take 10-15 seconds.", {
-        duration: 5000
+      toast.info('Generating data visualization. This may take 10-15 seconds.', {
+        duration: 5000,
       });
     }
 
@@ -321,21 +365,27 @@ Requirements:
       // For data viz, the prompt is already comprehensive from the suggestion
       // For standard images, add context if available
       if (!isDataViz && !customPrompt) {
-        if (contextInfo.hasAssignment && !finalPrompt.toLowerCase().includes(contextInfo.assignmentName.toLowerCase())) {
+        if (
+          contextInfo.hasAssignment &&
+          !finalPrompt.toLowerCase().includes(contextInfo.assignmentName.toLowerCase())
+        ) {
           enhancedPrompt = `${finalPrompt} (context: for ${contextInfo.assignmentName} project)`;
         }
-        
-        if (contextInfo.hasTask && !finalPrompt.toLowerCase().includes(contextInfo.taskTitle.toLowerCase())) {
+
+        if (
+          contextInfo.hasTask &&
+          !finalPrompt.toLowerCase().includes(contextInfo.taskTitle.toLowerCase())
+        ) {
           enhancedPrompt = `${finalPrompt} (related to task: ${contextInfo.taskTitle})`;
         }
       }
 
       // Add style - for data viz use infographic style
-      const finalStyle = isDataViz ? "infographic" : style;
+      const finalStyle = isDataViz ? 'infographic' : style;
       enhancedPrompt = `${enhancedPrompt}, ${finalStyle} style, high quality, professional`;
 
       const response = await db.integrations.Core.GenerateImage({
-        prompt: enhancedPrompt
+        prompt: enhancedPrompt,
       });
 
       const newImage = {
@@ -344,17 +394,16 @@ Requirements:
         prompt: finalPrompt,
         style: finalStyle,
         timestamp: new Date().toISOString(),
-        isDataViz: isDataViz
+        isDataViz: isDataViz,
       };
 
       setGeneratedImages([newImage, ...generatedImages]);
       setSelectedImage(newImage);
-      setGenerationCount(prev => prev + 1);
-      toast.success("Image generated successfully");
-
+      setGenerationCount((prev) => prev + 1);
+      toast.success('Image generated successfully');
     } catch (error) {
-      console.error("Error generating image:", error);
-      toast.error("Failed to generate image. Please try again.");
+      console.error('Error generating image:', error);
+      toast.error('Failed to generate image. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -362,7 +411,7 @@ Requirements:
 
   const handleInsert = (image) => {
     onInsertImage(image.url);
-    toast.success("Image inserted into document");
+    toast.success('Image inserted into document');
   };
 
   const handleVariation = async (image) => {
@@ -381,17 +430,24 @@ Requirements:
 
   // Analyze documents for visualization opportunities
   const analyzeDocumentsForVisualization = async () => {
-    if (referenceDocumentUrls.length === 0 && (!documentContext?.content || documentContext.content.length < 50)) {
-      toast.error("Add reference documents or write more content to analyze");
+    if (
+      referenceDocumentUrls.length === 0 &&
+      (!documentContext?.content || documentContext.content.length < 50)
+    ) {
+      toast.error('Add reference documents or write more content to analyze');
       return;
     }
 
     try {
       setIsAnalyzing(true);
-      toast.info("Analyzing documents for visualization opportunities...", { duration: 3000 });
+      toast.info('Analyzing documents for visualization opportunities...', { duration: 3000 });
 
       const contentToAnalyze = documentContext?.content
-        ? documentContext.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 4000)
+        ? documentContext.content
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .substring(0, 4000)
         : '';
 
       const analysisPrompt = `Analyze this content and identify visualization opportunities.
@@ -423,7 +479,7 @@ If no good visualization opportunities exist, return an empty array: []`;
       const response = await InvokeLLM({
         prompt: analysisPrompt,
         add_context_from_internet: false,
-        file_urls: referenceDocumentUrls.length > 0 ? referenceDocumentUrls : undefined
+        file_urls: referenceDocumentUrls.length > 0 ? referenceDocumentUrls : undefined,
       });
 
       // Parse the response
@@ -431,7 +487,10 @@ If no good visualization opportunities exist, return an empty array: []`;
         // Clean the response - remove markdown code blocks if present
         let cleanedResponse = response.trim();
         if (cleanedResponse.startsWith('```')) {
-          cleanedResponse = cleanedResponse.replace(/```json?\n?/g, '').replace(/```\n?$/g, '').trim();
+          cleanedResponse = cleanedResponse
+            .replace(/```json?\n?/g, '')
+            .replace(/```\n?$/g, '')
+            .trim();
         }
 
         const suggestions = JSON.parse(cleanedResponse);
@@ -441,23 +500,24 @@ If no good visualization opportunities exist, return an empty array: []`;
           setHasAnalyzed(true);
 
           if (suggestions.length > 0) {
-            toast.success(`Found ${suggestions.length} visualization opportunity${suggestions.length > 1 ? 's' : ''}!`);
+            toast.success(
+              `Found ${suggestions.length} visualization opportunity${suggestions.length > 1 ? 's' : ''}!`
+            );
           } else {
-            toast.info("No visualization opportunities found in this content");
+            toast.info('No visualization opportunities found in this content');
           }
         } else {
-          throw new Error("Invalid response format");
+          throw new Error('Invalid response format');
         }
       } catch (parseError) {
-        console.error("Failed to parse analysis response:", parseError, response);
-        toast.error("Failed to parse analysis results");
+        console.error('Failed to parse analysis response:', parseError, response);
+        toast.error('Failed to parse analysis results');
         setDocumentSuggestions([]);
         setHasAnalyzed(true);
       }
-
     } catch (error) {
-      console.error("Error analyzing documents:", error);
-      toast.error("Failed to analyze documents");
+      console.error('Error analyzing documents:', error);
+      toast.error('Failed to analyze documents');
     } finally {
       setIsAnalyzing(false);
     }
@@ -472,13 +532,13 @@ If no good visualization opportunities exist, return an empty array: []`;
   // Generate visualization from document content directly
   const handleVisualizeContent = async () => {
     if (!documentContext?.content || documentContext.content.length < 50) {
-      toast.error("Add more content to your document first");
+      toast.error('Add more content to your document first');
       return;
     }
 
     try {
       setIsGenerating(true);
-      toast.info("Creating visualization from your document...", { duration: 3000 });
+      toast.info('Creating visualization from your document...', { duration: 3000 });
 
       const contentToVisualize = documentContext.content
         .replace(/<[^>]+>/g, ' ')
@@ -501,19 +561,18 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
 
       const generatedPrompt = await InvokeLLM({
         prompt: promptGeneratorPrompt,
-        add_context_from_internet: false
+        add_context_from_internet: false,
       });
 
       if (generatedPrompt && generatedPrompt.trim()) {
         await handleGenerate(generatedPrompt.trim(), true);
       } else {
-        toast.error("Could not generate visualization prompt");
+        toast.error('Could not generate visualization prompt');
         setIsGenerating(false);
       }
-
     } catch (error) {
-      console.error("Error visualizing content:", error);
-      toast.error("Failed to visualize content");
+      console.error('Error visualizing content:', error);
+      toast.error('Failed to visualize content');
       setIsGenerating(false);
     }
   };
@@ -527,7 +586,10 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
     <div className="space-y-4">
       {/* Cost Warning */}
       {generationCount >= 3 && (
-        <Alert variant="warning" className="bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800">
+        <Alert
+          variant="warning"
+          className="bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800"
+        >
           <AlertTriangle className="w-4 h-4 text-yellow-600" />
           <AlertDescription className="text-xs text-yellow-900 dark:text-yellow-100">
             {generationCount} images generated this session. Image generation incurs costs.
@@ -543,8 +605,10 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
             <strong>Context:</strong>
             {contextInfo.hasAssignment && ` ${contextInfo.assignmentName}`}
             {contextInfo.hasTask && ` • Task: ${contextInfo.taskTitle}`}
-            {contextInfo.taskStats && ` • ${contextInfo.taskStats.total} tasks (${contextInfo.taskStats.completed} completed)`}
-            {referenceDocumentUrls.length > 0 && ` • ${referenceDocumentUrls.length} reference doc(s)`}
+            {contextInfo.taskStats &&
+              ` • ${contextInfo.taskStats.total} tasks (${contextInfo.taskStats.completed} completed)`}
+            {referenceDocumentUrls.length > 0 &&
+              ` • ${referenceDocumentUrls.length} reference doc(s)`}
           </AlertDescription>
         </Alert>
       )}
@@ -585,7 +649,7 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {styles.map(s => (
+                {styles.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     <div>
                       <div className="font-medium">{s.label}</div>
@@ -690,7 +754,8 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
             <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
               <AlertTriangle className="w-4 h-4 text-amber-600" />
               <AlertDescription className="text-xs text-amber-900 dark:text-amber-100">
-                <strong>Requirements:</strong> Link this document to an assignment that has tasks. Task status and priority data will be used to generate charts.
+                <strong>Requirements:</strong> Link this document to an assignment that has tasks.
+                Task status and priority data will be used to generate charts.
               </AlertDescription>
             </Alert>
           )}
@@ -699,7 +764,8 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
             <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
               <AlertTriangle className="w-4 h-4 text-amber-600" />
               <AlertDescription className="text-xs text-amber-900 dark:text-amber-100">
-                <strong>Note:</strong> AI-generated charts are visual interpretations. For precise data visualizations, consider using dedicated charting tools.
+                <strong>Note:</strong> AI-generated charts are visual interpretations. For precise
+                data visualizations, consider using dedicated charting tools.
               </AlertDescription>
             </Alert>
           )}
@@ -709,7 +775,10 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
             {dataVizSuggestions.length > 0 ? (
               <div className="space-y-3">
                 {dataVizSuggestions.map((suggestion, idx) => (
-                  <Card key={idx} className="border hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors">
+                  <Card
+                    key={idx}
+                    className="border hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors"
+                  >
                     <CardContent className="pt-4">
                       <div className="flex items-start gap-3">
                         <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex-shrink-0">
@@ -723,7 +792,8 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
                           <div className="flex items-center gap-2 mt-2 flex-wrap">
                             {Object.entries(suggestion.data).map(([key, value]) => (
                               <Badge key={key} variant="outline" className="text-xs">
-                                {key.replace('_', ' ')}: {typeof value === 'object' ? JSON.stringify(value) : value}
+                                {key.replace('_', ' ')}:{' '}
+                                {typeof value === 'object' ? JSON.stringify(value) : value}
                               </Badge>
                             ))}
                           </div>
@@ -756,9 +826,9 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
                 <BarChart3 className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                 <p className="text-sm font-medium">No data available for visualization</p>
                 <p className="text-xs mt-1">
-                  {contextInfo.hasAssignment 
-                    ? `This assignment "${contextInfo.assignmentName}" doesn't have any tasks yet. Add tasks to see chart options.` 
-                    : "Link this document to an assignment with tasks to see chart options."}
+                  {contextInfo.hasAssignment
+                    ? `This assignment "${contextInfo.assignmentName}" doesn't have any tasks yet. Add tasks to see chart options.`
+                    : 'Link this document to an assignment with tasks to see chart options.'}
                 </p>
                 {!contextInfo.hasAssignment && (
                   <p className="text-xs mt-2 text-blue-600 dark:text-blue-400">
@@ -776,7 +846,8 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
             <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
               <AlertTriangle className="w-4 h-4 text-amber-600" />
               <AlertDescription className="text-xs text-amber-900 dark:text-amber-100">
-                <strong>Requirements:</strong> Add reference documents in the Tools tab above, or write at least 50 characters of content in your document.
+                <strong>Requirements:</strong> Add reference documents in the Tools tab above, or
+                write at least 50 characters of content in your document.
               </AlertDescription>
             </Alert>
           )}
@@ -786,7 +857,8 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
             <Alert className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800">
               <Wand2 className="w-4 h-4 text-purple-600" />
               <AlertDescription className="text-xs text-purple-900 dark:text-purple-100">
-                <strong>Smart Generation:</strong> Analyze your documents to discover data, concepts, and descriptions that can be turned into visualizations.
+                <strong>Smart Generation:</strong> Analyze your documents to discover data,
+                concepts, and descriptions that can be turned into visualizations.
               </AlertDescription>
             </Alert>
           )}
@@ -797,12 +869,26 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
               <div className="text-sm font-medium mb-2">Analysis Sources</div>
               <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${hasDocumentContent ? 'bg-green-500' : 'bg-gray-300'}`} />
-                  <span>Document Content: {hasDocumentContent ? `${documentContext?.content?.length || 0} chars` : 'Not enough content (need 50+ chars)'}</span>
+                  <div
+                    className={`w-2 h-2 rounded-full ${hasDocumentContent ? 'bg-green-500' : 'bg-gray-300'}`}
+                  />
+                  <span>
+                    Document Content:{' '}
+                    {hasDocumentContent
+                      ? `${documentContext?.content?.length || 0} chars`
+                      : 'Not enough content (need 50+ chars)'}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${hasReferenceDocuments ? 'bg-green-500' : 'bg-gray-300'}`} />
-                  <span>Reference Documents: {hasReferenceDocuments ? `${referenceDocumentUrls.length} file(s)` : 'None attached'}</span>
+                  <div
+                    className={`w-2 h-2 rounded-full ${hasReferenceDocuments ? 'bg-green-500' : 'bg-gray-300'}`}
+                  />
+                  <span>
+                    Reference Documents:{' '}
+                    {hasReferenceDocuments
+                      ? `${referenceDocumentUrls.length} file(s)`
+                      : 'None attached'}
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -840,17 +926,35 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
               {documentSuggestions.length > 0 ? (
                 <div className="space-y-3">
                   {documentSuggestions.map((suggestion) => (
-                    <Card key={suggestion.id} className="border hover:border-purple-300 dark:hover:border-purple-700 transition-colors">
+                    <Card
+                      key={suggestion.id}
+                      className="border hover:border-purple-300 dark:hover:border-purple-700 transition-colors"
+                    >
                       <CardContent className="pt-4">
                         <div className="flex items-start gap-3">
                           <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex-shrink-0">
-                            {suggestion.type === 'pie_chart' && <PieChart className="w-5 h-5 text-purple-600 dark:text-purple-400" />}
-                            {suggestion.type === 'bar_chart' && <BarChart3 className="w-5 h-5 text-purple-600 dark:text-purple-400" />}
-                            {suggestion.type === 'line_chart' && <TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-400" />}
-                            {(suggestion.type === 'image' || suggestion.type === 'diagram' || suggestion.type === 'infographic') && (
+                            {suggestion.type === 'pie_chart' && (
+                              <PieChart className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                            )}
+                            {suggestion.type === 'bar_chart' && (
+                              <BarChart3 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                            )}
+                            {suggestion.type === 'line_chart' && (
+                              <TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                            )}
+                            {(suggestion.type === 'image' ||
+                              suggestion.type === 'diagram' ||
+                              suggestion.type === 'infographic') && (
                               <ImageIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                             )}
-                            {!['pie_chart', 'bar_chart', 'line_chart', 'image', 'diagram', 'infographic'].includes(suggestion.type) && (
+                            {![
+                              'pie_chart',
+                              'bar_chart',
+                              'line_chart',
+                              'image',
+                              'diagram',
+                              'infographic',
+                            ].includes(suggestion.type) && (
                               <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                             )}
                           </div>
@@ -895,7 +999,9 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
                 <div className="text-center py-6 text-gray-500 dark:text-gray-400 border-2 border-dashed rounded-lg">
                   <Search className="w-10 h-10 mx-auto mb-2 text-gray-300" />
                   <p className="text-sm">No visualizations identified</p>
-                  <p className="text-xs mt-1">Try adding more data or descriptive content to your documents</p>
+                  <p className="text-xs mt-1">
+                    Try adding more data or descriptive content to your documents
+                  </p>
                 </div>
               )}
             </div>
@@ -937,7 +1043,7 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
               <p className="text-xs mt-1">
                 {canAnalyzeDocuments
                   ? "Click 'Analyze Documents' to discover visualization opportunities"
-                  : "Add reference documents or write more content first"}
+                  : 'Add reference documents or write more content first'}
               </p>
             </div>
           )}
@@ -953,10 +1059,10 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
               {generatedImages.length} total
             </Badge>
           </div>
-          
+
           <div className="space-y-3 max-h-[500px] overflow-y-auto">
             {generatedImages.map((image) => (
-              <Card 
+              <Card
                 key={image.id}
                 className={`cursor-pointer transition-all ${
                   selectedImage?.id === image.id ? 'ring-2 ring-indigo-500' : ''
@@ -964,21 +1070,21 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
                 onClick={() => setSelectedImage(image)}
               >
                 <CardContent className="pt-4 space-y-3">
-                  <img 
-                    src={image.url} 
+                  <img
+                    src={image.url}
                     alt={image.prompt}
                     className="w-full h-48 object-cover rounded-lg"
                     loading="lazy"
                   />
-                  
+
                   <div className="space-y-2">
                     <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
                       {image.prompt}
                     </p>
-                    
+
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="outline" className="text-xs">
-                        {styles.find(s => s.value === image.style)?.label || image.style}
+                        {styles.find((s) => s.value === image.style)?.label || image.style}
                       </Badge>
                       {image.isDataViz && (
                         <Badge className="text-xs bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
@@ -1031,10 +1137,9 @@ Return ONLY the image generation prompt, nothing else. Make it detailed and spec
           <ImageIcon className="w-12 h-12 mx-auto mb-3 text-gray-300" />
           <p className="text-sm">No images generated yet</p>
           <p className="text-xs mt-1">
-            {hasDataVizData 
-              ? "Generate standard images or data visualizations"
-              : "Describe the image you want and click generate"
-            }
+            {hasDataVizData
+              ? 'Generate standard images or data visualizations'
+              : 'Describe the image you want and click generate'}
           </p>
         </div>
       )}

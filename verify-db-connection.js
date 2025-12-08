@@ -14,7 +14,7 @@ async function verifyDatabase() {
     'workspace_members',
     'document_versions',
     'comments',
-    'tags'
+    'tags',
   ];
 
   console.log('Testing connection to each table:\n');
@@ -41,7 +41,10 @@ async function verifyDatabase() {
 
   console.log('\n🔍 Testing authentication...');
   try {
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
     if (error) {
       console.log(`⚠️  Auth: No user logged in (${error.message})`);
     } else if (user) {

@@ -1,5 +1,3 @@
-import React from 'react';
-
 /**
  * Overlay that highlights the currently hovered element during selection mode
  */
@@ -22,7 +20,7 @@ export function SelectionHighlight({ rect, isVisible }) {
         pointerEvents: 'none',
         zIndex: 999998,
         boxSizing: 'border-box',
-        transition: 'all 0.05s ease-out'
+        transition: 'all 0.05s ease-out',
       }}
     >
       {/* Size indicator */}
@@ -38,7 +36,7 @@ export function SelectionHighlight({ rect, isVisible }) {
           padding: '2px 6px',
           borderRadius: '4px',
           whiteSpace: 'nowrap',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
         }}
       >
         {Math.round(rect.width)} × {Math.round(rect.height)}

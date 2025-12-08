@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router";
-import { db } from "@/api/db";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router';
+import { db } from '@/api/db';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   ArrowLeft,
   Calendar,
@@ -25,24 +25,19 @@ import {
   TrendingUp,
   Download,
   Share2,
-  MoreHorizontal
-} from "lucide-react";
-import { format } from "date-fns";
+  MoreHorizontal,
+} from 'lucide-react';
+import { format } from 'date-fns';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 
-import RelatedContentSuggestions from "@/features/documents/RelatedContentSuggestions";
+import RelatedContentSuggestions from '@/features/documents/RelatedContentSuggestions';
 
-export default function AssignmentDetails({
-  assignment,
-  onClose,
-  onEdit,
-  currentUser
-}) {
+export default function AssignmentDetails({ assignment, onClose, onEdit, currentUser }) {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [documents, setDocuments] = useState([]);
@@ -64,19 +59,20 @@ export default function AssignmentDetails({
         setLoading(true);
 
         const [tasksData, docsData, messagesData, usersData] = await Promise.all([
-          db.entities.Task.filter({ assignment_id: assignment.id }, "-updated_date"),
+          db.entities.Task.filter({ assignment_id: assignment.id }, '-updated_date'),
           assignment.workspace_id
             ? db.entities.Document.filter({ workspace_id: assignment.workspace_id })
             : [],
-          db.entities.Message.filter({ assignment_id: assignment.id }, "-created_date"),
-          db.entities.User.list() // Users are filtered client-side by team membership
+          db.entities.Message.filter({ assignment_id: assignment.id }, '-created_date'),
+          db.entities.User.list(), // Users are filtered client-side by team membership
         ]);
 
         setTasks(tasksData);
 
         // Filter documents that are assigned to this assignment
-        const assignmentDocs = docsData.filter(doc =>
-          doc.assigned_to_assignments && doc.assigned_to_assignments.includes(assignment.id)
+        const assignmentDocs = docsData.filter(
+          (doc) =>
+            doc.assigned_to_assignments && doc.assigned_to_assignments.includes(assignment.id)
         );
         setDocuments(assignmentDocs);
 
@@ -85,13 +81,13 @@ export default function AssignmentDetails({
         // Get team members including manager
         const teamEmails = [
           assignment.assignment_manager,
-          ...(assignment.team_members || [])
+          ...(assignment.team_members || []),
         ].filter(Boolean);
 
-        const members = usersData.filter(user => teamEmails.includes(user.email));
+        const members = usersData.filter((user) => teamEmails.includes(user.email));
         setTeamMembers(members);
       } catch (error) {
-        console.error("Error loading assignment data:", error);
+        console.error('Error loading assignment data:', error);
       } finally {
         setLoading(false);
       }
@@ -103,22 +99,22 @@ export default function AssignmentDetails({
   // Assignment statistics
   const stats = useMemo(() => {
     const totalTasks = tasks.length;
-    const completedTasks = tasks.filter(t => t.status === 'completed').length;
-    const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length;
-    const reviewTasks = tasks.filter(t => t.status === 'review').length;
-    const todoTasks = tasks.filter(t => t.status === 'todo').length;
+    const completedTasks = tasks.filter((t) => t.status === 'completed').length;
+    const inProgressTasks = tasks.filter((t) => t.status === 'in_progress').length;
+    const reviewTasks = tasks.filter((t) => t.status === 'review').length;
+    const todoTasks = tasks.filter((t) => t.status === 'todo').length;
 
     const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
     // Overdue tasks
-    const overdueTasks = tasks.filter(task => {
+    const overdueTasks = tasks.filter((task) => {
       if (!task.due_date || task.status === 'completed') return false;
       return new Date(task.due_date) < new Date();
     }).length;
 
     // High priority tasks
-    const highPriorityTasks = tasks.filter(t =>
-      ['high', 'urgent'].includes(t.priority) && t.status !== 'completed'
+    const highPriorityTasks = tasks.filter(
+      (t) => ['high', 'urgent'].includes(t.priority) && t.status !== 'completed'
     ).length;
 
     return {
@@ -131,52 +127,67 @@ export default function AssignmentDetails({
       overdueTasks,
       highPriorityTasks,
       totalDocuments: documents.length,
-      totalMessages: messages.length
+      totalMessages: messages.length,
     };
   }, [tasks, documents, messages]);
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800 border-green-200';
-      case 'in_progress': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'on_hold': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'planning': return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'completed':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'on_hold':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'planning':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'urgent': return 'bg-red-500 text-white';
-      case 'high': return 'bg-orange-500 text-white';
-      case 'medium': return 'bg-yellow-500 text-white';
-      case 'low': return 'bg-green-500 text-white';
-      default: return 'bg-gray-500 text-white';
+      case 'urgent':
+        return 'bg-red-500 text-white';
+      case 'high':
+        return 'bg-orange-500 text-white';
+      case 'medium':
+        return 'bg-yellow-500 text-white';
+      case 'low':
+        return 'bg-green-500 text-white';
+      default:
+        return 'bg-gray-500 text-white';
     }
   };
 
   const getTaskStatusIcon = (status) => {
     switch (status) {
-      case 'completed': return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case 'in_progress': return <Clock className="w-4 h-4 text-blue-600" />;
-      case 'review': return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
-      default: return <Target className="w-4 h-4 text-gray-600" />;
+      case 'completed':
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case 'in_progress':
+        return <Clock className="w-4 h-4 text-blue-600" />;
+      case 'review':
+        return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
+      default:
+        return <Target className="w-4 h-4 text-gray-600" />;
     }
   };
 
   const handleDownloadAllDocuments = async () => {
     if (documents.length === 0) {
-      alert("No documents to download for this assignment.");
+      alert('No documents to download for this assignment.');
       return;
     }
 
     // Warn user about multiple downloads
     const confirmed = window.confirm(
       `This will download ${documents.length} document${documents.length > 1 ? 's' : ''} from "${assignment.name}". ` +
-      "Your browser may ask for permission to download multiple files. Continue?"
+        'Your browser may ask for permission to download multiple files. Continue?'
     );
-    
+
     if (!confirmed) {
       return;
     }
@@ -202,27 +213,28 @@ export default function AssignmentDetails({
 
         // Small delay between downloads (100ms)
         if (i < documents.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
       }
 
       // Show success feedback
       setTimeout(() => {
-        alert(`Started downloading ${documents.length} document${documents.length > 1 ? 's' : ''} for "${assignment.name}"`);
+        alert(
+          `Started downloading ${documents.length} document${documents.length > 1 ? 's' : ''} for "${assignment.name}"`
+        );
       }, 500);
-
     } catch (error) {
-      console.error("Error downloading documents:", error);
-      alert("Failed to download some documents. Please try again.");
+      console.error('Error downloading documents:', error);
+      alert('Failed to download some documents. Please try again.');
     } finally {
       setIsDownloadingAll(false);
     }
   };
 
-
-  const canEdit = currentUser?.user_role === 'admin' ||
-                  currentUser?.user_role === 'project_manager' ||
-                  currentUser?.email === assignment.assignment_manager;
+  const canEdit =
+    currentUser?.user_role === 'admin' ||
+    currentUser?.user_role === 'project_manager' ||
+    currentUser?.email === assignment.assignment_manager;
 
   if (loading) {
     return (
@@ -231,7 +243,7 @@ export default function AssignmentDetails({
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
           <div className="h-4 bg-gray-200 rounded w-2/3"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => (
+            {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-24 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -307,7 +319,10 @@ export default function AssignmentDetails({
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <h1 className="text-3xl font-bold text-gray-900">{assignment.name}</h1>
-                <Badge className={`border ${getStatusColor(assignment.status)}`} variant="secondary">
+                <Badge
+                  className={`border ${getStatusColor(assignment.status)}`}
+                  variant="secondary"
+                >
                   {assignment.status.replace('_', ' ')}
                 </Badge>
                 <Badge className={getPriorityColor(assignment.priority)}>
@@ -320,7 +335,8 @@ export default function AssignmentDetails({
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     <span>
-                      {format(new Date(assignment.start_date), 'MMM d')} - {format(new Date(assignment.end_date), 'MMM d, yyyy')}
+                      {format(new Date(assignment.start_date), 'MMM d')} -{' '}
+                      {format(new Date(assignment.end_date), 'MMM d, yyyy')}
                     </span>
                   </div>
                 )}
@@ -417,26 +433,34 @@ export default function AssignmentDetails({
                 <CardContent>
                   {tasks.length > 0 ? (
                     <div className="space-y-4">
-                      {tasks.map(task => (
-                        <div key={task.id} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                          <div className="flex-shrink-0">
-                            {getTaskStatusIcon(task.status)}
-                          </div>
+                      {tasks.map((task) => (
+                        <div
+                          key={task.id}
+                          className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex-shrink-0">{getTaskStatusIcon(task.status)}</div>
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-gray-900 truncate">{task.title}</h4>
                             <p className="text-sm text-gray-600 truncate">{task.description}</p>
                             <div className="flex items-center gap-4 mt-2">
-                              <Badge className={`text-xs ${
-                                task.priority === 'urgent' ? 'bg-red-100 text-red-800' :
-                                task.priority === 'high' ? 'bg-orange-100 text-orange-800' :
-                                task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-green-100 text-green-800'
-                              }`}>
+                              <Badge
+                                className={`text-xs ${
+                                  task.priority === 'urgent'
+                                    ? 'bg-red-100 text-red-800'
+                                    : task.priority === 'high'
+                                      ? 'bg-orange-100 text-orange-800'
+                                      : task.priority === 'medium'
+                                        ? 'bg-yellow-100 text-yellow-800'
+                                        : 'bg-green-100 text-green-800'
+                                }`}
+                              >
                                 {task.priority}
                               </Badge>
                               {task.assigned_to && (
                                 <span className="text-xs text-gray-500">
-                                  Assigned to {teamMembers.find(m => m.email === task.assigned_to)?.full_name || task.assigned_to}
+                                  Assigned to{' '}
+                                  {teamMembers.find((m) => m.email === task.assigned_to)
+                                    ?.full_name || task.assigned_to}
                                 </span>
                               )}
                               {task.due_date && (
@@ -446,7 +470,10 @@ export default function AssignmentDetails({
                               )}
                             </div>
                           </div>
-                          <Badge variant="outline" className={`${getStatusColor(task.status)} border`}>
+                          <Badge
+                            variant="outline"
+                            className={`${getStatusColor(task.status)} border`}
+                          >
                             {task.status.replace('_', ' ')}
                           </Badge>
                         </div>
@@ -482,8 +509,11 @@ export default function AssignmentDetails({
                 <CardContent>
                   {documents.length > 0 ? (
                     <div className="space-y-4">
-                      {documents.map(doc => (
-                        <div key={doc.id} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                      {documents.map((doc) => (
+                        <div
+                          key={doc.id}
+                          className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
                           <div className="flex-shrink-0">
                             <FileText className="w-6 h-6 text-blue-600" />
                           </div>
@@ -532,14 +562,21 @@ export default function AssignmentDetails({
                   <div className="space-y-6">
                     {/* Assignment Manager */}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Assignment Manager</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Assignment Manager
+                      </h3>
                       {(() => {
-                        const manager = teamMembers.find(m => m.email === assignment.assignment_manager);
+                        const manager = teamMembers.find(
+                          (m) => m.email === assignment.assignment_manager
+                        );
                         return manager ? (
                           <div className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
                             <Avatar className="w-12 h-12">
                               <AvatarFallback className="bg-blue-100 text-blue-600 text-lg font-semibold">
-                                {manager.full_name?.split(' ').map(n => n[0]).join('') || 'M'}
+                                {manager.full_name
+                                  ?.split(' ')
+                                  .map((n) => n[0])
+                                  .join('') || 'M'}
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex-1">
@@ -558,7 +595,10 @@ export default function AssignmentDetails({
                                 )}
                               </div>
                             </div>
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            <Badge
+                              variant="outline"
+                              className="bg-blue-50 text-blue-700 border-blue-200"
+                            >
                               Manager
                             </Badge>
                           </div>
@@ -571,25 +611,38 @@ export default function AssignmentDetails({
                     {/* Team Members */}
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">Team Members</h3>
-                      {teamMembers.filter(m => m.email !== assignment.assignment_manager).length > 0 ? (
+                      {teamMembers.filter((m) => m.email !== assignment.assignment_manager).length >
+                      0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {teamMembers.filter(m => m.email !== assignment.assignment_manager).map(member => (
-                            <div key={member.email} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
-                              <Avatar className="w-10 h-10">
-                                <AvatarFallback className="bg-gray-100 text-gray-600 font-semibold">
-                                  {member.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-semibold text-gray-900 truncate">{member.full_name}</h4>
-                                <p className="text-sm text-gray-600 truncate">{member.job_title}</p>
-                                <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                                  <Mail className="w-3 h-3" />
-                                  <span className="truncate">{member.email}</span>
+                          {teamMembers
+                            .filter((m) => m.email !== assignment.assignment_manager)
+                            .map((member) => (
+                              <div
+                                key={member.email}
+                                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg"
+                              >
+                                <Avatar className="w-10 h-10">
+                                  <AvatarFallback className="bg-gray-100 text-gray-600 font-semibold">
+                                    {member.full_name
+                                      ?.split(' ')
+                                      .map((n) => n[0])
+                                      .join('') || 'U'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-gray-900 truncate">
+                                    {member.full_name}
+                                  </h4>
+                                  <p className="text-sm text-gray-600 truncate">
+                                    {member.job_title}
+                                  </p>
+                                  <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                                    <Mail className="w-3 h-3" />
+                                    <span className="truncate">{member.email}</span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
                         </div>
                       ) : (
                         <p className="text-gray-500">No additional team members</p>
@@ -609,11 +662,17 @@ export default function AssignmentDetails({
                 <CardContent>
                   {messages.length > 0 ? (
                     <div className="space-y-4">
-                      {messages.map(message => (
-                        <div key={message.id} className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg">
+                      {messages.map((message) => (
+                        <div
+                          key={message.id}
+                          className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg"
+                        >
                           <Avatar className="w-8 h-8">
                             <AvatarFallback className="bg-gray-100 text-gray-600 text-sm">
-                              {message.author_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                              {message.author_name
+                                ?.split(' ')
+                                .map((n) => n[0])
+                                .join('') || 'U'}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">

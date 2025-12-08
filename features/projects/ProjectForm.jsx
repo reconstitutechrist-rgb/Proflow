@@ -1,23 +1,18 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import {
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // ProjectForm component - renders inside parent Dialog
 export default function ProjectForm({ project, onCancel, onSubmit }) {
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    goals: ""
+    name: '',
+    description: '',
+    goals: '',
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -25,15 +20,15 @@ export default function ProjectForm({ project, onCancel, onSubmit }) {
   useEffect(() => {
     if (project) {
       setFormData({
-        name: project.name || "",
-        description: project.description || "",
-        goals: project.goals || ""
+        name: project.name || '',
+        description: project.description || '',
+        goals: project.goals || '',
       });
     } else {
       setFormData({
-        name: "",
-        description: "",
-        goals: ""
+        name: '',
+        description: '',
+        goals: '',
       });
     }
   }, [project]);
@@ -42,7 +37,7 @@ export default function ProjectForm({ project, onCancel, onSubmit }) {
     e.preventDefault();
 
     if (!formData.name.trim()) {
-      toast.error("Please enter a project name");
+      toast.error('Please enter a project name');
       return;
     }
 
@@ -50,9 +45,9 @@ export default function ProjectForm({ project, onCancel, onSubmit }) {
     try {
       await onSubmit(formData);
     } catch (error) {
-      console.error("Error submitting form:", error);
-      toast.error("Failed to save project", {
-        description: error.message || "Please try again"
+      console.error('Error submitting form:', error);
+      toast.error('Failed to save project', {
+        description: error.message || 'Please try again',
       });
     } finally {
       setIsSaving(false);
@@ -63,10 +58,10 @@ export default function ProjectForm({ project, onCancel, onSubmit }) {
     <>
       <DialogHeader>
         <DialogTitle className="text-2xl font-bold">
-          {project ? "Edit Project" : "Create New Project"}
+          {project ? 'Edit Project' : 'Create New Project'}
         </DialogTitle>
         <DialogDescription>
-          {project ? "Update project details" : "Create a new project to organize your assignments"}
+          {project ? 'Update project details' : 'Create a new project to organize your assignments'}
         </DialogDescription>
       </DialogHeader>
 
@@ -116,8 +111,10 @@ export default function ProjectForm({ project, onCancel, onSubmit }) {
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Saving...
               </>
+            ) : project ? (
+              'Update Project'
             ) : (
-              project ? "Update Project" : "Create Project"
+              'Create Project'
             )}
           </Button>
         </DialogFooter>

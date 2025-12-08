@@ -1,15 +1,18 @@
-import React from 'react';
 import { Button } from '@/components/ui/button';
 import { GraduationCap } from 'lucide-react';
 import { useTutorial } from '@/features/tutorial/TutorialProvider';
 import { tutorialConfig } from '@/features/tutorial/tutorialSteps';
 
-function TutorialButtonInner({ variant = "ghost", size = "sm", showIcon = true }) {
+function TutorialButtonInner({ variant = 'ghost', size = 'sm', showIcon = true }) {
   const { startTutorial, hasCompletedTutorial, resetTutorial } = useTutorial();
 
   const handleStart = () => {
     if (hasCompletedTutorial()) {
-      if (confirm('You\'ve already completed the tutorial. Would you like to restart it from the beginning?')) {
+      if (
+        confirm(
+          "You've already completed the tutorial. Would you like to restart it from the beginning?"
+        )
+      ) {
         resetTutorial();
         startTutorial(tutorialConfig);
       }
@@ -39,8 +42,8 @@ export default function TutorialButton(props) {
     console.error('TutorialButton error:', error);
     return (
       <Button
-        variant={props.variant || "ghost"}
-        size={props.size || "sm"}
+        variant={props.variant || 'ghost'}
+        size={props.size || 'sm'}
         className="gap-2 w-full justify-start"
         disabled
       >

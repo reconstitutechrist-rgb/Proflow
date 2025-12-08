@@ -71,7 +71,7 @@ export function applyChangesToContent(content, changes, appliedIds) {
   }
 
   // Filter to only applied changes
-  const changesToApply = changes.filter(c => appliedIds.has(c.id));
+  const changesToApply = changes.filter((c) => appliedIds.has(c.id));
 
   if (changesToApply.length === 0) return content;
 
@@ -102,7 +102,7 @@ export function applyChangesToContent(content, changes, appliedIds) {
 export function createDiffHighlight(original, suggested) {
   return {
     removed: `<span class="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 line-through px-1 rounded">${escapeHtml(original)}</span>`,
-    added: `<span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-1 rounded">${escapeHtml(suggested)}</span>`
+    added: `<span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-1 rounded">${escapeHtml(suggested)}</span>`,
   };
 }
 
@@ -128,15 +128,9 @@ export function getContentWithHighlight(content, change, showSuggested = true) {
   const highlight = createDiffHighlight(change.originalText, change.suggestedText);
 
   if (showSuggested) {
-    return content.replace(
-      change.originalText,
-      highlight.added
-    );
+    return content.replace(change.originalText, highlight.added);
   } else {
-    return content.replace(
-      change.originalText,
-      highlight.removed
-    );
+    return content.replace(change.originalText, highlight.removed);
   }
 }
 
@@ -163,15 +157,16 @@ export function parseAIChanges(responseText) {
       return [];
     }
 
-    return changes.map(change => ({
-      id: generateChangeId(),
-      type: change.type || 'general',
-      originalText: change.originalText || '',
-      suggestedText: change.suggestedText || '',
-      reason: change.reason || '',
-      status: 'pending'
-    })).filter(c => c.originalText && c.suggestedText && c.originalText !== c.suggestedText);
-
+    return changes
+      .map((change) => ({
+        id: generateChangeId(),
+        type: change.type || 'general',
+        originalText: change.originalText || '',
+        suggestedText: change.suggestedText || '',
+        reason: change.reason || '',
+        status: 'pending',
+      }))
+      .filter((c) => c.originalText && c.suggestedText && c.originalText !== c.suggestedText);
   } catch (error) {
     console.error('Failed to parse AI changes:', error);
     return [];
@@ -189,7 +184,7 @@ export function getChangeTypeBadgeColor(type) {
     clarity: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
     structure: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
     punctuation: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300',
-    general: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
+    general: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300',
   };
   return colors[type] || colors.general;
 }

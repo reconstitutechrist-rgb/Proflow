@@ -62,9 +62,7 @@ export default function TeamChatMessage({ message, currentUser, onDelete }) {
     ? formatDistanceToNow(new Date(message.created_date), { addSuffix: true })
     : '';
 
-  const fullTimestamp = message.created_date
-    ? format(new Date(message.created_date), 'PPpp')
-    : '';
+  const fullTimestamp = message.created_date ? format(new Date(message.created_date), 'PPpp') : '';
 
   // System messages (centered, different style)
   if (isSystem) {
@@ -105,9 +103,10 @@ export default function TeamChatMessage({ message, currentUser, onDelete }) {
         <div
           className={`
             relative rounded-2xl px-3 py-2
-            ${isOwnMessage
-              ? 'bg-emerald-500 text-white rounded-br-md'
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md'
+            ${
+              isOwnMessage
+                ? 'bg-emerald-500 text-white rounded-br-md'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md'
             }
           `}
         >
@@ -120,9 +119,7 @@ export default function TeamChatMessage({ message, currentUser, onDelete }) {
             />
           ) : (
             /* Text message */
-            <p className="text-sm whitespace-pre-wrap break-words">
-              {message.content}
-            </p>
+            <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
           )}
 
           {/* Actions dropdown (only for own messages) */}
@@ -139,10 +136,7 @@ export default function TeamChatMessage({ message, currentUser, onDelete }) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                  <DropdownMenuItem
-                    onClick={() => onDelete(message.id)}
-                    className="text-red-600"
-                  >
+                  <DropdownMenuItem onClick={() => onDelete(message.id)} className="text-red-600">
                     <Trash2 className="w-4 h-4 mr-2" />
                     Delete
                   </DropdownMenuItem>

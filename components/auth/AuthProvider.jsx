@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { supabase } from "@/api/supabaseClient";
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/api/supabaseClient';
 
 const AuthContext = createContext();
 
@@ -14,7 +14,9 @@ export function AuthProvider({ children }) {
     const initAuth = async () => {
       try {
         // Get current session
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const {
+          data: { session: currentSession },
+        } = await supabase.auth.getSession();
 
         if (currentSession) {
           setSession(currentSession);
@@ -24,7 +26,7 @@ export function AuthProvider({ children }) {
           syncUserToLocalStorage(currentSession.user);
         }
       } catch (error) {
-        console.error("Error initializing auth:", error);
+        console.error('Error initializing auth:', error);
       } finally {
         setLoading(false);
         setInitialized(true);
@@ -34,24 +36,24 @@ export function AuthProvider({ children }) {
     initAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        console.log("Auth state changed:", event);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      console.log('Auth state changed:', event);
 
-        setSession(newSession);
-        setUser(newSession?.user || null);
+      setSession(newSession);
+      setUser(newSession?.user || null);
 
-        if (newSession?.user) {
-          syncUserToLocalStorage(newSession.user);
-        } else if (event === "SIGNED_OUT") {
-          // Clear localStorage on sign out
-          localStorage.removeItem("proflow_current_user");
-          localStorage.removeItem("active_workspace_id");
-        }
-
-        setLoading(false);
+      if (newSession?.user) {
+        syncUserToLocalStorage(newSession.user);
+      } else if (event === 'SIGNED_OUT') {
+        // Clear localStorage on sign out
+        localStorage.removeItem('proflow_current_user');
+        localStorage.removeItem('active_workspace_id');
       }
-    );
+
+      setLoading(false);
+    });
 
     return () => {
       subscription?.unsubscribe();
@@ -65,11 +67,12 @@ export function AuthProvider({ children }) {
     const userInfo = {
       id: supabaseUser.id,
       email: supabaseUser.email,
-      full_name: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split("@")[0] || "User",
+      full_name:
+        supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
       active_workspace_id: supabaseUser.user_metadata?.active_workspace_id || null,
     };
 
-    localStorage.setItem("proflow_current_user", JSON.stringify(userInfo));
+    localStorage.setItem('proflow_current_user', JSON.stringify(userInfo));
   };
 
   // Sign out
@@ -81,10 +84,10 @@ export function AuthProvider({ children }) {
 
       setUser(null);
       setSession(null);
-      localStorage.removeItem("proflow_current_user");
-      localStorage.removeItem("active_workspace_id");
+      localStorage.removeItem('proflow_current_user');
+      localStorage.removeItem('active_workspace_id');
     } catch (error) {
-      console.error("Error signing out:", error);
+      console.error('Error signing out:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -107,7 +110,7 @@ export function AuthProvider({ children }) {
 
       return data;
     } catch (error) {
-      console.error("Error updating profile:", error);
+      console.error('Error updating profile:', error);
       throw error;
     }
   }, []);
@@ -125,17 +128,13 @@ export function AuthProvider({ children }) {
     updateProfile,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }

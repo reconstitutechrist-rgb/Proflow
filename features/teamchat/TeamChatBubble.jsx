@@ -2,14 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  MessageCircle,
-  X,
-  Minimize2,
-  Maximize2,
-  Users,
-  GripVertical,
-} from 'lucide-react';
+import { MessageCircle, X, Minimize2, Maximize2, Users, GripVertical } from 'lucide-react';
 import TeamChatWindow from './TeamChatWindow';
 import { useTeamChat } from './useTeamChat';
 
@@ -71,51 +64,57 @@ export default function TeamChatBubble() {
   /**
    * Handle mouse down for drag start (works on both bubble and expanded window)
    */
-  const handleMouseDown = useCallback((e) => {
-    // For expanded window, only start drag from the drag-handle
-    // For closed bubble, allow drag from anywhere on the bubble
-    const isExpandedWindow = isOpen;
-    if (isExpandedWindow && !e.target.closest('.drag-handle')) return;
+  const handleMouseDown = useCallback(
+    (e) => {
+      // For expanded window, only start drag from the drag-handle
+      // For closed bubble, allow drag from anywhere on the bubble
+      const isExpandedWindow = isOpen;
+      if (isExpandedWindow && !e.target.closest('.drag-handle')) return;
 
-    e.preventDefault();
-    setIsDragging(true);
-    wasDraggedRef.current = false;
-    dragStartPosRef.current = { x: e.clientX, y: e.clientY };
+      e.preventDefault();
+      setIsDragging(true);
+      wasDraggedRef.current = false;
+      dragStartPosRef.current = { x: e.clientX, y: e.clientY };
 
-    const element = isOpen ? windowRef.current : bubbleRef.current;
-    if (!element) return;
+      const element = isOpen ? windowRef.current : bubbleRef.current;
+      if (!element) return;
 
-    const rect = element.getBoundingClientRect();
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-  }, [isOpen]);
+      const rect = element.getBoundingClientRect();
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+    },
+    [isOpen]
+  );
 
   /**
    * Handle mouse move for dragging
    */
-  const handleMouseMove = useCallback((e) => {
-    if (!isDragging) return;
+  const handleMouseMove = useCallback(
+    (e) => {
+      if (!isDragging) return;
 
-    // Check if we've moved enough to consider this a drag (not a click)
-    const dx = Math.abs(e.clientX - dragStartPosRef.current.x);
-    const dy = Math.abs(e.clientY - dragStartPosRef.current.y);
-    if (dx > 5 || dy > 5) {
-      wasDraggedRef.current = true;
-    }
+      // Check if we've moved enough to consider this a drag (not a click)
+      const dx = Math.abs(e.clientX - dragStartPosRef.current.x);
+      const dy = Math.abs(e.clientY - dragStartPosRef.current.y);
+      if (dx > 5 || dy > 5) {
+        wasDraggedRef.current = true;
+      }
 
-    const newX = e.clientX - dragOffset.x;
-    const newY = e.clientY - dragOffset.y;
+      const newX = e.clientX - dragOffset.x;
+      const newY = e.clientY - dragOffset.y;
 
-    // Constrain to viewport
-    const maxX = window.innerWidth - 100;
-    const maxY = window.innerHeight - 100;
-    const constrainedX = Math.max(0, Math.min(newX, maxX));
-    const constrainedY = Math.max(0, Math.min(newY, maxY));
+      // Constrain to viewport
+      const maxX = window.innerWidth - 100;
+      const maxY = window.innerHeight - 100;
+      const constrainedX = Math.max(0, Math.min(newX, maxX));
+      const constrainedY = Math.max(0, Math.min(newY, maxY));
 
-    setPosition({ x: constrainedX, y: constrainedY });
-  }, [isDragging, dragOffset]);
+      setPosition({ x: constrainedX, y: constrainedY });
+    },
+    [isDragging, dragOffset]
+  );
 
   /**
    * Handle mouse up for drag end
@@ -297,11 +296,7 @@ export default function TeamChatBubble() {
               onClick={() => setIsMinimized(!isMinimized)}
               aria-label={isMinimized ? 'Maximize' : 'Minimize'}
             >
-              {isMinimized ? (
-                <Maximize2 className="w-4 h-4" />
-              ) : (
-                <Minimize2 className="w-4 h-4" />
-              )}
+              {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
             </Button>
             <Button
               variant="ghost"
@@ -316,12 +311,7 @@ export default function TeamChatBubble() {
         </div>
 
         {/* Chat Window Content */}
-        {!isMinimized && (
-          <TeamChatWindow
-            teamChat={teamChat}
-            onResetPosition={resetPosition}
-          />
-        )}
+        {!isMinimized && <TeamChatWindow teamChat={teamChat} onResetPosition={resetPosition} />}
       </Card>
     </div>
   );

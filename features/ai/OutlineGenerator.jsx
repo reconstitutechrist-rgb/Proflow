@@ -1,13 +1,12 @@
-
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, Sparkles, RefreshCw, Check, AlertCircle } from "lucide-react";
-import { InvokeLLM } from "@/api/integrations";
-import { toast } from "sonner";
-import DOMPurify from "dompurify";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Sparkles, RefreshCw, Check, AlertCircle } from 'lucide-react';
+import { InvokeLLM } from '@/api/integrations';
+import { toast } from 'sonner';
+import DOMPurify from 'dompurify';
 
 export default function OutlineGenerator({
   title,
@@ -16,106 +15,104 @@ export default function OutlineGenerator({
   selectedTask, // New prop
   assignments,
   tasks, // New prop
-  onApplyOutline
+  onApplyOutline,
 }) {
-  const [customPrompt, setCustomPrompt] = useState("");
+  const [customPrompt, setCustomPrompt] = useState('');
   const [generatedOutline, setGeneratedOutline] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
 
   const documentTypes = [
-    { 
-      label: "Project Proposal", 
-      prompt: "Create a comprehensive project proposal outline",
-      icon: "📋"
+    {
+      label: 'Project Proposal',
+      prompt: 'Create a comprehensive project proposal outline',
+      icon: '📋',
     },
-    { 
-      label: "Technical Specification", 
-      prompt: "Create a detailed technical specification document outline",
-      icon: "⚙️"
+    {
+      label: 'Technical Specification',
+      prompt: 'Create a detailed technical specification document outline',
+      icon: '⚙️',
     },
-    { 
-      label: "Meeting Minutes", 
-      prompt: "Create a meeting minutes template outline",
-      icon: "📝"
+    {
+      label: 'Meeting Minutes',
+      prompt: 'Create a meeting minutes template outline',
+      icon: '📝',
     },
-    { 
-      label: "Status Report", 
-      prompt: "Create a project status report outline",
-      icon: "📊"
+    {
+      label: 'Status Report',
+      prompt: 'Create a project status report outline',
+      icon: '📊',
     },
-    { 
-      label: "User Guide", 
-      prompt: "Create a user guide/documentation outline",
-      icon: "📖"
+    {
+      label: 'User Guide',
+      prompt: 'Create a user guide/documentation outline',
+      icon: '📖',
     },
-    { 
-      label: "Research Report", 
-      prompt: "Create a research report outline",
-      icon: "🔬"
+    {
+      label: 'Research Report',
+      prompt: 'Create a research report outline',
+      icon: '🔬',
     },
-    { 
-      label: "Business Plan", 
-      prompt: "Create a business plan outline",
-      icon: "💼"
+    {
+      label: 'Business Plan',
+      prompt: 'Create a business plan outline',
+      icon: '💼',
     },
-    { 
-      label: "Custom", 
-      prompt: "",
-      icon: "✨"
-    }
+    {
+      label: 'Custom',
+      prompt: '',
+      icon: '✨',
+    },
   ];
 
-  const generateOutline = async (typePrompt = "") => {
+  const generateOutline = async (typePrompt = '') => {
     if (!title && !customPrompt && !typePrompt) {
-      toast.error("Please enter a document title or custom prompt");
+      toast.error('Please enter a document title or custom prompt');
       return;
     }
 
     try {
       setIsGenerating(true);
 
-      const assignmentContext = selectedAssignment 
-        ? assignments.find(a => a.id === selectedAssignment)
+      const assignmentContext = selectedAssignment
+        ? assignments.find((a) => a.id === selectedAssignment)
         : null;
 
-      const taskContext = selectedTask
-        ? tasks.find(t => t.id === selectedTask)
-        : null;
+      const taskContext = selectedTask ? tasks.find((t) => t.id === selectedTask) : null;
 
       const prompt = `Generate a detailed document outline in HTML format.
 
-Document Title: ${title || "Untitled"}
-${description ? `Description: ${description}` : ""}
-${assignmentContext ? `Assignment Context: ${assignmentContext.name} - ${assignmentContext.description}` : ""}
-${taskContext ? `Specific Task Context: ${taskContext.title} - ${taskContext.description || ''} (Status: ${taskContext.status}, Priority: ${taskContext.priority})` : ""}
-${typePrompt ? `Document Type: ${typePrompt}` : ""}
-${customPrompt ? `Additional Requirements: ${customPrompt}` : ""}
+Document Title: ${title || 'Untitled'}
+${description ? `Description: ${description}` : ''}
+${assignmentContext ? `Assignment Context: ${assignmentContext.name} - ${assignmentContext.description}` : ''}
+${taskContext ? `Specific Task Context: ${taskContext.title} - ${taskContext.description || ''} (Status: ${taskContext.status}, Priority: ${taskContext.priority})` : ''}
+${typePrompt ? `Document Type: ${typePrompt}` : ''}
+${customPrompt ? `Additional Requirements: ${customPrompt}` : ''}
 
 Create a well-structured outline with:
 1. Clear section headings (use <h2>, <h3> tags)
 2. Brief descriptions under each heading
 3. Subsections where appropriate
 4. Placeholder text to guide writing
-${taskContext ? `5. Content specifically relevant to the task: ${taskContext.title}` : ""}
+${taskContext ? `5. Content specifically relevant to the task: ${taskContext.title}` : ''}
 
 Format the output as clean HTML with proper heading hierarchy.
 Make it comprehensive but concise.
 DO NOT include any script tags, event handlers, or javascript code.
 Use <p> tags for descriptions and <ul><li> for bullet points where appropriate.`;
 
-      const response = await InvokeLLM({ // Using InvokeLLM from integrations
+      const response = await InvokeLLM({
+        // Using InvokeLLM from integrations
         prompt,
-        add_context_from_internet: false
+        add_context_from_internet: false,
       });
 
       const sanitizedOutline = DOMPurify.sanitize(response || '');
       setGeneratedOutline(sanitizedOutline);
-      toast.success("Outline generated successfully");
-
+      toast.success('Outline generated successfully');
     } catch (error) {
-      console.error("Error generating outline:", error);
-      toast.error("Failed to generate outline. Please try again.");
+      console.error('Error generating outline:', error);
+      toast.error('Failed to generate outline. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -143,7 +140,7 @@ Use <p> tags for descriptions and <ul><li> for bullet points where appropriate.`
           {documentTypes.map((type) => (
             <Button
               key={type.label}
-              variant={selectedTemplate === type.label ? "default" : "outline"}
+              variant={selectedTemplate === type.label ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleTemplateSelect(type)}
               disabled={isGenerating}
@@ -224,14 +221,17 @@ Use <p> tags for descriptions and <ul><li> for bullet points where appropriate.`
                 Apply to Document
               </Button>
             </div>
-            
-            <div 
+
+            <div
               className="prose dark:prose-invert max-w-none text-sm border rounded-lg p-4 bg-gray-50 dark:bg-gray-900 max-h-[400px] overflow-y-auto"
               dangerouslySetInnerHTML={{ __html: generatedOutline }}
             />
 
             <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-              <p>💡 This outline will replace your current document content. Make sure to save any important work first!</p>
+              <p>
+                💡 This outline will replace your current document content. Make sure to save any
+                important work first!
+              </p>
             </div>
           </CardContent>
         </Card>

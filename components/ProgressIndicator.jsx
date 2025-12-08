@@ -1,4 +1,3 @@
-import React from 'react';
 import './ProgressIndicator.css';
 
 const ProgressIndicator = ({
@@ -9,7 +8,7 @@ const ProgressIndicator = ({
   message = '',
   estimatedTime = null,
   canCancel = false,
-  onCancel = null
+  onCancel = null,
 }) => {
   const progressPercent = total > 0 ? (current / total) * 100 : percentage;
 
@@ -50,11 +49,7 @@ const ProgressIndicator = ({
         )}
       </div>
 
-      {message && (
-        <div className="progress-message">
-          {message}
-        </div>
-      )}
+      {message && <div className="progress-message">{message}</div>}
     </div>
   );
 };

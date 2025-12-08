@@ -1,46 +1,54 @@
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RefreshCw, Copy, Check, Loader2 } from "lucide-react";
-import { anthropicResearch } from "@/api/functions";
-import { toast } from "sonner";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { RefreshCw, Copy, Check, Loader2 } from 'lucide-react';
+import { anthropicResearch } from '@/api/functions';
+import { toast } from 'sonner';
 
 export default function ContentRewriter({ content, onApply }) {
   const [isRewriting, setIsRewriting] = useState(false);
-  const [rewrittenContent, setRewrittenContent] = useState("");
-  const [rewriteStyle, setRewriteStyle] = useState("concise");
-  const [targetAudience, setTargetAudience] = useState("general");
+  const [rewrittenContent, setRewrittenContent] = useState('');
+  const [rewriteStyle, setRewriteStyle] = useState('concise');
+  const [targetAudience, setTargetAudience] = useState('general');
 
   const handleRewrite = async () => {
     if (!content || !content.trim()) {
-      toast.error("No content to rewrite", {
-        description: "Please provide some content to rewrite."
+      toast.error('No content to rewrite', {
+        description: 'Please provide some content to rewrite.',
       });
       return;
     }
 
     setIsRewriting(true);
-    setRewrittenContent("");
+    setRewrittenContent('');
 
     try {
       const styleInstructions = {
-        concise: "Make this text more concise and to-the-point while preserving all key information.",
-        formal: "Rewrite this in a more formal, professional tone suitable for business documents.",
-        friendly: "Make this sound more friendly and approachable while maintaining professionalism.",
-        persuasive: "Rewrite this to be more persuasive and compelling.",
-        technical: "Make this more technical and detailed, adding relevant technical language.",
-        simple: "Simplify this text to make it easier to understand for a general audience."
+        concise:
+          'Make this text more concise and to-the-point while preserving all key information.',
+        formal: 'Rewrite this in a more formal, professional tone suitable for business documents.',
+        friendly:
+          'Make this sound more friendly and approachable while maintaining professionalism.',
+        persuasive: 'Rewrite this to be more persuasive and compelling.',
+        technical: 'Make this more technical and detailed, adding relevant technical language.',
+        simple: 'Simplify this text to make it easier to understand for a general audience.',
       };
 
       const audienceInstructions = {
-        general: "for a general audience",
-        executive: "for executive leadership and C-suite",
-        technical: "for technical professionals and engineers",
-        client: "for clients and external stakeholders",
-        team: "for internal team members"
+        general: 'for a general audience',
+        executive: 'for executive leadership and C-suite',
+        technical: 'for technical professionals and engineers',
+        client: 'for clients and external stakeholders',
+        team: 'for internal team members',
       };
 
       const prompt = `Rewrite the following content with these requirements:
@@ -55,18 +63,17 @@ Provide a rewritten version that is professional, clear, and tailored to the spe
 
       const { data } = await anthropicResearch({
         question: prompt,
-        documents: []
+        documents: [],
       });
 
       setRewrittenContent(data.response);
-      toast.success("Content rewritten successfully!", {
-        description: "Review the rewritten version and apply if you're happy with it."
+      toast.success('Content rewritten successfully!', {
+        description: "Review the rewritten version and apply if you're happy with it.",
       });
-
     } catch (error) {
-      console.error("Error rewriting content:", error);
-      toast.error("Failed to rewrite content", {
-        description: "There was an error rewriting your content. Please try again."
+      console.error('Error rewriting content:', error);
+      toast.error('Failed to rewrite content', {
+        description: 'There was an error rewriting your content. Please try again.',
       });
     } finally {
       setIsRewriting(false);
@@ -76,8 +83,8 @@ Provide a rewritten version that is professional, clear, and tailored to the spe
   const handleCopy = () => {
     if (rewrittenContent) {
       navigator.clipboard.writeText(rewrittenContent);
-      toast.success("Rewritten content copied!", {
-        description: "The content has been copied to your clipboard."
+      toast.success('Rewritten content copied!', {
+        description: 'The content has been copied to your clipboard.',
       });
     }
   };
@@ -85,8 +92,8 @@ Provide a rewritten version that is professional, clear, and tailored to the spe
   const handleApply = () => {
     if (rewrittenContent && onApply) {
       onApply(rewrittenContent);
-      toast.success("Content applied successfully!", {
-        description: "The rewritten content has been applied to your document."
+      toast.success('Content applied successfully!', {
+        description: 'The rewritten content has been applied to your document.',
       });
     }
   };
@@ -135,11 +142,7 @@ Provide a rewritten version that is professional, clear, and tailored to the spe
           </div>
         </div>
 
-        <Button
-          onClick={handleRewrite}
-          disabled={isRewriting || !content}
-          className="w-full"
-        >
+        <Button onClick={handleRewrite} disabled={isRewriting || !content} className="w-full">
           {isRewriting ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />

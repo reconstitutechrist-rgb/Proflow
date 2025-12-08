@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { db } from "@/api/db";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import React, { useState, useEffect } from 'react';
+import { db } from '@/api/db';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Search,
   FileText,
@@ -10,12 +10,12 @@ import {
   MessageSquare,
   CheckCircle,
   Calendar,
-  User
-} from "lucide-react";
-import { useWorkspace } from "@/features/workspace/WorkspaceContext";
+  User,
+} from 'lucide-react';
+import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
 export default function EnhancedSearch({ isOpen, onClose, onResultSelect }) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -37,15 +37,15 @@ export default function EnhancedSearch({ isOpen, onClose, onResultSelect }) {
       const [projects, documents, messages, tasks] = await Promise.all([
         db.entities.Project.filter({ workspace_id: currentWorkspaceId }),
         db.entities.Document.filter({ workspace_id: currentWorkspaceId }),
-        db.entities.Message.filter({ workspace_id: currentWorkspaceId }, "-created_date", 50),
-        db.entities.Task.filter({ workspace_id: currentWorkspaceId }, "-created_date", 50)
+        db.entities.Message.filter({ workspace_id: currentWorkspaceId }, '-created_date', 50),
+        db.entities.Task.filter({ workspace_id: currentWorkspaceId }, '-created_date', 50),
       ]);
 
       const results = [];
       const queryLower = query.toLowerCase();
 
       // Search projects
-      projects.forEach(project => {
+      projects.forEach((project) => {
         if (
           project.name.toLowerCase().includes(queryLower) ||
           project.description?.toLowerCase().includes(queryLower)
@@ -59,20 +59,20 @@ export default function EnhancedSearch({ isOpen, onClose, onResultSelect }) {
             metadata: {
               status: project.status,
               priority: project.priority,
-              date: project.created_date
-            }
+              date: project.created_date,
+            },
           });
         }
       });
 
       // Search documents
-      documents.forEach(doc => {
+      documents.forEach((doc) => {
         if (
           doc.title.toLowerCase().includes(queryLower) ||
           doc.description?.toLowerCase().includes(queryLower) ||
           doc.file_name?.toLowerCase().includes(queryLower)
         ) {
-          const project = projects.find(p => p.id === doc.project_id);
+          const project = projects.find((p) => p.id === doc.project_id);
           results.push({
             id: doc.id,
             type: 'document',
@@ -82,40 +82,41 @@ export default function EnhancedSearch({ isOpen, onClose, onResultSelect }) {
             metadata: {
               project: project?.name,
               type: doc.document_type,
-              date: doc.created_date
-            }
+              date: doc.created_date,
+            },
           });
         }
       });
 
       // Search messages
-      messages.forEach(message => {
+      messages.forEach((message) => {
         if (message.content.toLowerCase().includes(queryLower)) {
-          const project = projects.find(p => p.id === message.project_id);
+          const project = projects.find((p) => p.id === message.project_id);
           results.push({
             id: message.id,
             type: 'message',
             title: `Message from ${message.author_name || message.author_email}`,
-            description: message.content.length > 100 
-              ? `${message.content.substring(0, 100)}...` 
-              : message.content,
+            description:
+              message.content.length > 100
+                ? `${message.content.substring(0, 100)}...`
+                : message.content,
             icon: MessageSquare,
             metadata: {
               project: project?.name,
               author: message.author_name || message.author_email,
-              date: message.created_date
-            }
+              date: message.created_date,
+            },
           });
         }
       });
 
       // Search tasks
-      tasks.forEach(task => {
+      tasks.forEach((task) => {
         if (
           task.title.toLowerCase().includes(queryLower) ||
           task.description?.toLowerCase().includes(queryLower)
         ) {
-          const project = projects.find(p => p.id === task.project_id);
+          const project = projects.find((p) => p.id === task.project_id);
           results.push({
             id: task.id,
             type: 'task',
@@ -126,8 +127,8 @@ export default function EnhancedSearch({ isOpen, onClose, onResultSelect }) {
               project: project?.name,
               status: task.status,
               assignee: task.assigned_to,
-              date: task.created_date
-            }
+              date: task.created_date,
+            },
           });
         }
       });
@@ -137,14 +138,14 @@ export default function EnhancedSearch({ isOpen, onClose, onResultSelect }) {
         const aExact = a.title.toLowerCase() === queryLower ? 1 : 0;
         const bExact = b.title.toLowerCase() === queryLower ? 1 : 0;
         if (aExact !== bExact) return bExact - aExact;
-        
+
         // Then by date (newer first)
         return new Date(b.metadata.date) - new Date(a.metadata.date);
       });
 
       setSearchResults(results.slice(0, 20)); // Limit to 20 results
     } catch (error) {
-      console.error("Search error:", error);
+      console.error('Search error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -152,11 +153,16 @@ export default function EnhancedSearch({ isOpen, onClose, onResultSelect }) {
 
   const getTypeColor = (type) => {
     switch (type) {
-      case 'project': return 'bg-blue-100 text-blue-800';
-      case 'document': return 'bg-green-100 text-green-800';
-      case 'message': return 'bg-purple-100 text-purple-800';
-      case 'task': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'project':
+        return 'bg-blue-100 text-blue-800';
+      case 'document':
+        return 'bg-green-100 text-green-800';
+      case 'message':
+        return 'bg-purple-100 text-purple-800';
+      case 'task':
+        return 'bg-orange-100 text-orange-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -218,16 +224,12 @@ export default function EnhancedSearch({ isOpen, onClose, onResultSelect }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-900 truncate">
-                        {result.title}
-                      </h3>
+                      <h3 className="font-medium text-gray-900 truncate">{result.title}</h3>
                       <p className="text-sm text-gray-600 mt-1 line-clamp-2">
                         {result.description}
                       </p>
                     </div>
-                    <Badge className={getTypeColor(result.type)}>
-                      {result.type}
-                    </Badge>
+                    <Badge className={getTypeColor(result.type)}>{result.type}</Badge>
                   </div>
                   <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
                     {result.metadata.project && (

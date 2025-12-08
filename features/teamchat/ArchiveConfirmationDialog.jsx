@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Dialog,
   DialogContent,
@@ -45,7 +44,8 @@ export default function ArchiveConfirmationDialog({
               </>
             ) : (
               <>
-                Would you like to archive this chat? You can access archived chats later from the chat settings.
+                Would you like to archive this chat? You can access archived chats later from the
+                chat settings.
               </>
             )}
           </DialogDescription>

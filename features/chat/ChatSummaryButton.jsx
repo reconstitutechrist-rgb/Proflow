@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from "react";
-import AISummaryButton from "@/features/ai/AISummaryButton";
-import { Assignment } from "@/api/entities";
-import { Document } from "@/api/entities";
+import React, { useState, useEffect } from 'react';
+import AISummaryButton from '@/features/ai/AISummaryButton';
+import { Assignment } from '@/api/entities';
+import { Document } from '@/api/entities';
 
-export default function ChatSummaryButton({ messages, threadTopic, className, assignment_id, project_id }) {
+export default function ChatSummaryButton({
+  messages,
+  threadTopic,
+  className,
+  assignment_id,
+  project_id,
+}) {
   const [assignmentContext, setAssignmentContext] = useState(null);
   const [documentContexts, setDocumentContexts] = useState([]);
   const [isLoadingContext, setIsLoadingContext] = useState(false);
@@ -18,35 +24,44 @@ export default function ChatSummaryButton({ messages, threadTopic, className, as
     setIsLoadingContext(true);
     try {
       // Fetch assignment data
-      const assignment = await Assignment.filter({ id: assignment_id }, "-created_date", 1);
+      const assignment = await Assignment.filter({ id: assignment_id }, '-created_date', 1);
       if (assignment && assignment.length > 0) {
         setAssignmentContext(assignment[0]);
       }
 
       // Fetch related documents
-      const docs = await Document.filter({ 
-        assigned_to_assignments: { $in: [assignment_id] } 
-      }, "-created_date", 10); // Limit to 10 most recent docs
-      
-      setDocumentContexts(docs.map(doc => ({
-        id: doc.id,
-        title: doc.title,
-        description: doc.description || "No description",
-        document_type: doc.document_type || "other"
-      })));
+      const docs = await Document.filter(
+        {
+          assigned_to_assignments: { $in: [assignment_id] },
+        },
+        '-created_date',
+        10
+      ); // Limit to 10 most recent docs
+
+      setDocumentContexts(
+        docs.map((doc) => ({
+          id: doc.id,
+          title: doc.title,
+          description: doc.description || 'No description',
+          document_type: doc.document_type || 'other',
+        }))
+      );
     } catch (error) {
-      console.error("Error loading context:", error);
+      console.error('Error loading context:', error);
     } finally {
       setIsLoadingContext(false);
     }
   };
 
   // Build chat content from messages
-  const chatContent = messages.map(msg => 
-    `[${new Date(msg.created_date).toLocaleTimeString()}] ${msg.author_name}: ${msg.content}`
-  ).join('\n\n');
+  const chatContent = messages
+    .map(
+      (msg) =>
+        `[${new Date(msg.created_date).toLocaleTimeString()}] ${msg.author_name}: ${msg.content}`
+    )
+    .join('\n\n');
 
-  const title = threadTopic ? `Chat Summary: ${threadTopic}` : "Chat Summary";
+  const title = threadTopic ? `Chat Summary: ${threadTopic}` : 'Chat Summary';
 
   return (
     <AISummaryButton
@@ -64,9 +79,9 @@ export default function ChatSummaryButton({ messages, threadTopic, className, as
       disabled={messages.length === 0 || isLoadingContext}
       disabledMessage={
         isLoadingContext
-          ? "Loading context..."
+          ? 'Loading context...'
           : messages.length === 0
-            ? "No messages to summarize yet"
+            ? 'No messages to summarize yet'
             : undefined
       }
     />

@@ -1,14 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router';
 import { createPageUrl } from '@/lib/utils';
-import {
-  LayoutDashboard,
-  FolderOpen,
-  FileText,
-  Brain,
-  Users,
-  Plus,
-} from 'lucide-react';
+import { LayoutDashboard, FolderOpen, FileText, Brain, Users, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -25,36 +18,36 @@ export default function MobileBottomNav() {
       label: 'Home',
       icon: LayoutDashboard,
       href: createPageUrl('Dashboard'),
-      match: ['/Dashboard', '/']
+      match: ['/Dashboard', '/'],
     },
     {
       label: 'Work',
       icon: FolderOpen,
       href: createPageUrl('Projects'),
-      match: ['/Projects', '/Assignments', '/Tasks']
+      match: ['/Projects', '/Assignments', '/Tasks'],
     },
     {
       label: 'Docs',
       icon: FileText,
       href: createPageUrl('Documents'),
-      match: ['/Documents', '/DocumentsHub']
+      match: ['/Documents', '/DocumentsHub'],
     },
     {
       label: 'AI',
       icon: Brain,
       href: createPageUrl('AIHub'),
-      match: ['/AIHub', '/AskAI', '/Generate']
+      match: ['/AIHub', '/AskAI', '/Generate'],
     },
     {
       label: 'Team',
       icon: Users,
       href: createPageUrl('Chat'),
-      match: ['/Chat', '/Users']
+      match: ['/Chat', '/Users'],
     },
   ];
 
   const isActive = (item) => {
-    return item.match.some(path => location.pathname.includes(path));
+    return item.match.some((path) => location.pathname.includes(path));
   };
 
   return (
@@ -80,19 +73,28 @@ export default function MobileBottomNav() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="center" className="w-48 mb-2">
                     <DropdownMenuItem asChild>
-                      <Link to={`${createPageUrl('Tasks')}?new=true`} className="flex items-center gap-2">
+                      <Link
+                        to={`${createPageUrl('Tasks')}?new=true`}
+                        className="flex items-center gap-2"
+                      >
                         <FolderOpen className="w-4 h-4" />
                         New Task
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to={`${createPageUrl('Documents')}?tab=studio`} className="flex items-center gap-2">
+                      <Link
+                        to={`${createPageUrl('Documents')}?tab=studio`}
+                        className="flex items-center gap-2"
+                      >
                         <FileText className="w-4 h-4" />
                         New Document
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to={`${createPageUrl('AIHub')}?tab=chat`} className="flex items-center gap-2">
+                      <Link
+                        to={`${createPageUrl('AIHub')}?tab=chat`}
+                        className="flex items-center gap-2"
+                      >
                         <Brain className="w-4 h-4" />
                         Ask AI
                       </Link>
@@ -124,9 +126,7 @@ export default function MobileBottomNav() {
               key={item.label}
               to={item.href}
               className={`relative flex flex-col items-center justify-center flex-1 h-full py-2 transition-colors ${
-                active
-                  ? 'text-purple-600 dark:text-purple-400'
-                  : 'text-gray-500 dark:text-gray-400'
+                active ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'
               }`}
             >
               <Icon className={`w-5 h-5 ${active ? 'stroke-[2.5px]' : ''}`} />

@@ -7,9 +7,7 @@ import { detectClosurePhrase } from './closurePhraseDetector';
 
 // File upload validation constants
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_IMAGE_TYPES = [
-  'image/jpeg', 'image/png', 'image/gif', 'image/webp'
-];
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 /**
  * Validate image file before upload
@@ -19,7 +17,10 @@ const validateImageFile = (file) => {
     return { valid: false, error: `File size exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit` };
   }
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-    return { valid: false, error: `File type "${file.type}" is not allowed. Only images are supported.` };
+    return {
+      valid: false,
+      error: `File type "${file.type}" is not allowed. Only images are supported.`,
+    };
   }
   return { valid: true };
 };
@@ -71,10 +72,13 @@ export function useTeamChat() {
     try {
       setLoading(true);
       const [chatsData, projectsData, usersData, user] = await Promise.all([
-        db.entities.TeamChat.filter({ workspace_id: currentWorkspaceId, status: 'active' }, '-last_activity'),
+        db.entities.TeamChat.filter(
+          { workspace_id: currentWorkspaceId, status: 'active' },
+          '-last_activity'
+        ),
         db.entities.Project.filter({ workspace_id: currentWorkspaceId }, '-updated_date'),
         db.entities.User.list(),
-        db.auth.me()
+        db.auth.me(),
       ]);
 
       setChats(chatsData || []);
@@ -99,10 +103,13 @@ export function useTeamChat() {
     }
 
     try {
-      const messagesData = await db.entities.TeamChatMessage.filter({
-        workspace_id: currentWorkspaceId,
-        team_chat_id: currentChat.id
-      }, 'created_date');
+      const messagesData = await db.entities.TeamChatMessage.filter(
+        {
+          workspace_id: currentWorkspaceId,
+          team_chat_id: currentChat.id,
+        },
+        'created_date'
+      );
 
       setMessages(messagesData || []);
     } catch (error) {
@@ -146,21 +153,19 @@ export function useTeamChat() {
           event: '*',
           schema: 'public',
           table: 'team_chat_messages',
-          filter: `team_chat_id=eq.${currentChat.id}`
+          filter: `team_chat_id=eq.${currentChat.id}`,
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            setMessages(prev => {
-              const exists = prev.some(m => m.id === payload.new.id);
+            setMessages((prev) => {
+              const exists = prev.some((m) => m.id === payload.new.id);
               if (exists) return prev;
               return [...prev, payload.new];
             });
           } else if (payload.eventType === 'UPDATE') {
-            setMessages(prev => prev.map(m =>
-              m.id === payload.new.id ? payload.new : m
-            ));
+            setMessages((prev) => prev.map((m) => (m.id === payload.new.id ? payload.new : m)));
           } else if (payload.eventType === 'DELETE') {
-            setMessages(prev => prev.filter(m => m.id !== payload.old.id));
+            setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
           }
         }
       )
@@ -220,34 +225,27 @@ export function useTeamChat() {
     channel.on('presence', { event: 'sync' }, () => {
       if (!isMounted) return;
       const state = channel.presenceState();
-      const users = Object.values(state).flat().filter(
-        (user) => user.email !== currentUser.email && user.isTyping
-      );
+      const users = Object.values(state)
+        .flat()
+        .filter((user) => user.email !== currentUser.email && user.isTyping);
       setTypingUsers(users);
     });
 
     channel.on('presence', { event: 'join' }, ({ newPresences }) => {
       if (!isMounted) return;
-      setTypingUsers(prev => {
-        const newUsers = newPresences.filter(
-          p => p.email !== currentUser.email && p.isTyping
-        );
-        return [...prev.filter(u => !newUsers.find(n => n.email === u.email)), ...newUsers];
+      setTypingUsers((prev) => {
+        const newUsers = newPresences.filter((p) => p.email !== currentUser.email && p.isTyping);
+        return [...prev.filter((u) => !newUsers.find((n) => n.email === u.email)), ...newUsers];
       });
     });
 
     channel.on('presence', { event: 'leave' }, ({ leftPresences }) => {
       if (!isMounted) return;
-      setTypingUsers(prev =>
-        prev.filter(u => !leftPresences.find(l => l.email === u.email))
-      );
+      setTypingUsers((prev) => prev.filter((u) => !leftPresences.find((l) => l.email === u.email)));
     });
 
-    channel.subscribe(async (status) => {
-      if (!isMounted) {
-        channel.unsubscribe();
-        return;
-      }
+    channel.subscribe((status) => {
+      if (!isMounted) return;
       if (status === 'SUBSCRIBED') {
         typingChannelRef.current = channel;
       }
@@ -293,7 +291,7 @@ export function useTeamChat() {
       const newChat = await db.entities.TeamChat.create(chatData);
 
       if (newChat) {
-        setChats(prev => [newChat, ...prev]);
+        setChats((prev) => [newChat, ...prev]);
         toast.success('Chat created!');
         return newChat;
       }
@@ -330,7 +328,7 @@ export function useTeamChat() {
 
       if (newMessage) {
         // Optimistically add to local state
-        setMessages(prev => [...prev, newMessage]);
+        setMessages((prev) => [...prev, newMessage]);
 
         // Update chat last activity
         await db.entities.TeamChat.update(currentChat.id, {
@@ -392,7 +390,7 @@ export function useTeamChat() {
       const newMessage = await db.entities.TeamChatMessage.create(messageData);
 
       if (newMessage) {
-        setMessages(prev => [...prev, newMessage]);
+        setMessages((prev) => [...prev, newMessage]);
 
         await db.entities.TeamChat.update(currentChat.id, {
           last_activity: new Date().toISOString(),
@@ -425,13 +423,13 @@ export function useTeamChat() {
       if (!mentionName) continue;
 
       const mentionLower = mentionName.toLowerCase();
-      let mentionedUser = users.find(m =>
-        m.full_name?.toLowerCase() === mentionLower ||
-        m.email?.toLowerCase() === mentionLower
+      let mentionedUser = users.find(
+        (m) =>
+          m.full_name?.toLowerCase() === mentionLower || m.email?.toLowerCase() === mentionLower
       );
 
       if (!mentionedUser) {
-        mentionedUser = users.find(m => {
+        mentionedUser = users.find((m) => {
           const fullName = m.full_name?.toLowerCase() || '';
           return fullName.includes(mentionLower);
         });
@@ -488,7 +486,7 @@ export function useTeamChat() {
         status: 'archived',
       });
 
-      setChats(prev => prev.filter(c => c.id !== currentChat.id));
+      setChats((prev) => prev.filter((c) => c.id !== currentChat.id));
       setCurrentChat(null);
       setMessages([]);
       setShowArchiveConfirmation(false);
@@ -511,7 +509,7 @@ export function useTeamChat() {
         default_project_id: projectId,
       });
 
-      setCurrentChat(prev => ({ ...prev, default_project_id: projectId }));
+      setCurrentChat((prev) => ({ ...prev, default_project_id: projectId }));
       toast.success('Default project updated');
     } catch (error) {
       console.error('Error updating default project:', error);
@@ -533,7 +531,7 @@ export function useTeamChat() {
   const deleteMessage = async (messageId) => {
     if (!messageId || !currentUser) return;
 
-    const message = messages.find(m => m.id === messageId);
+    const message = messages.find((m) => m.id === messageId);
     if (!message || message.author_email !== currentUser.email) {
       toast.error('Cannot delete this message');
       return;
@@ -541,7 +539,7 @@ export function useTeamChat() {
 
     try {
       await db.entities.TeamChatMessage.delete(messageId);
-      setMessages(prev => prev.filter(m => m.id !== messageId));
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
       toast.success('Message deleted');
     } catch (error) {
       console.error('Error deleting message:', error);

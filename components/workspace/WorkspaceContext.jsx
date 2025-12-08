@@ -116,11 +116,12 @@ export function WorkspaceProvider({ children }) {
           },
         });
 
-        // Add creator to workspace_members table
+        // Add creator to workspace_members table for RLS to work
+        // Use lowercase email for consistent matching with RLS policies
         try {
           await db.entities.WorkspaceMember.create({
             workspace_id: newWorkspace.id,
-            user_email: user.email,
+            user_email: user.email?.toLowerCase(),
             role: 'owner',
           });
         } catch (memberError) {

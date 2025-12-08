@@ -103,11 +103,12 @@ export default function WorkspacesPage() {
         },
       });
 
-      // Add creator to workspace_members table
+      // Add creator to workspace_members table for RLS to work
+      // Use lowercase email for consistent matching with RLS policies
       try {
         await db.entities.WorkspaceMember.create({
           workspace_id: createdWorkspace.id,
-          user_email: currentUser.email,
+          user_email: currentUser.email?.toLowerCase(),
           role: 'owner',
         });
       } catch (memberError) {
@@ -209,20 +210,17 @@ export default function WorkspacesPage() {
         members: updatedMembers,
       });
 
-      // Try to add to workspace_members table if user exists
+      // Always add to workspace_members table for RLS to work
+      // Use lowercase email for consistent matching with RLS policies
       try {
-        // Look up user by email to get their ID
-        const users = await db.entities.User.list();
-        const invitedUser = users.find((u) => u.email?.toLowerCase() === email);
-        if (invitedUser) {
-          await db.entities.WorkspaceMember.create({
-            workspace_id: inviteWorkspace.id,
-            user_email: invitedUser.email,
-            role: 'member',
-            invited_by: currentUser?.email,
-          });
-        }
+        await db.entities.WorkspaceMember.create({
+          workspace_id: inviteWorkspace.id,
+          user_email: email.toLowerCase(),
+          role: 'member',
+          invited_by: currentUser?.email?.toLowerCase(),
+        });
       } catch (memberError) {
+        // May fail if already exists (unique constraint) - that's OK
         console.warn('Could not add workspace member record:', memberError);
       }
 

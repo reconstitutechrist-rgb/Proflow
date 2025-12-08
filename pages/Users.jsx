@@ -120,18 +120,17 @@ export default function UsersPage() {
         members: updatedMembers,
       });
 
-      // Try to add to workspace_members table if user exists
+      // Always add to workspace_members table for RLS to work
+      // Use lowercase email for consistent matching with RLS policies
       try {
-        const invitedUser = users.find((u) => u.email?.toLowerCase() === email);
-        if (invitedUser) {
-          await db.entities.WorkspaceMember.create({
-            workspace_id: currentWorkspace.id,
-            user_email: invitedUser.email,
-            role: 'member',
-            invited_by: currentUser?.email,
-          });
-        }
+        await db.entities.WorkspaceMember.create({
+          workspace_id: currentWorkspace.id,
+          user_email: email.toLowerCase(),
+          role: 'member',
+          invited_by: currentUser?.email?.toLowerCase(),
+        });
       } catch (memberError) {
+        // May fail if already exists (unique constraint) - that's OK
         console.warn('Could not add workspace member record:', memberError);
       }
 

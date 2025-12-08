@@ -288,6 +288,10 @@ DROP POLICY IF EXISTS "Users can view team chats in their workspace" ON team_cha
 DROP POLICY IF EXISTS "Users can create team chats in their workspace" ON team_chats;
 DROP POLICY IF EXISTS "Users can update team chats in their workspace" ON team_chats;
 DROP POLICY IF EXISTS "Users can delete team chats they created" ON team_chats;
+DROP POLICY IF EXISTS "team_chats_select" ON team_chats;
+DROP POLICY IF EXISTS "team_chats_insert" ON team_chats;
+DROP POLICY IF EXISTS "team_chats_update" ON team_chats;
+DROP POLICY IF EXISTS "team_chats_delete" ON team_chats;
 
 CREATE POLICY "team_chats_select" ON team_chats
     FOR SELECT USING (
@@ -330,6 +334,10 @@ DROP POLICY IF EXISTS "Users can view messages in their workspace chats" ON team
 DROP POLICY IF EXISTS "Users can send messages in their workspace chats" ON team_chat_messages;
 DROP POLICY IF EXISTS "Users can update their own messages" ON team_chat_messages;
 DROP POLICY IF EXISTS "Users can delete their own messages" ON team_chat_messages;
+DROP POLICY IF EXISTS "team_chat_messages_select" ON team_chat_messages;
+DROP POLICY IF EXISTS "team_chat_messages_insert" ON team_chat_messages;
+DROP POLICY IF EXISTS "team_chat_messages_update" ON team_chat_messages;
+DROP POLICY IF EXISTS "team_chat_messages_delete" ON team_chat_messages;
 
 CREATE POLICY "team_chat_messages_select" ON team_chat_messages
     FOR SELECT USING (
@@ -362,6 +370,7 @@ CREATE POLICY "team_chat_messages_delete" ON team_chat_messages
 -- ============================================
 
 DROP POLICY IF EXISTS "Users can access conversation threads in their workspaces" ON conversation_threads;
+DROP POLICY IF EXISTS "conversation_threads_all" ON conversation_threads;
 
 CREATE POLICY "conversation_threads_all" ON conversation_threads
     FOR ALL USING (
@@ -422,12 +431,12 @@ UPDATE team_chat_messages SET author_email = lower(author_email) WHERE author_em
 -- BACKFILL WORKSPACE_MEMBERS - Ensure all workspace owners are in the table
 -- ============================================
 
-INSERT INTO workspace_members (workspace_id, user_email, role, created_at)
+INSERT INTO workspace_members (workspace_id, user_email, role, created_date)
 SELECT
     w.id as workspace_id,
     lower(w.owner_email) as user_email,
     'owner' as role,
-    COALESCE(w.created_date, now()) as created_at
+    COALESCE(w.created_date, now()) as created_date
 FROM workspaces w
 WHERE w.owner_email IS NOT NULL
   AND w.owner_email != ''
@@ -439,12 +448,12 @@ WHERE w.owner_email IS NOT NULL
 ON CONFLICT (workspace_id, user_email) DO UPDATE SET role = 'owner';
 
 -- Backfill from workspace members arrays
-INSERT INTO workspace_members (workspace_id, user_email, role, created_at)
+INSERT INTO workspace_members (workspace_id, user_email, role, created_date)
 SELECT
     w.id as workspace_id,
     lower(member_email) as user_email,
     'member' as role,
-    COALESCE(w.created_date, now()) as created_at
+    COALESCE(w.created_date, now()) as created_date
 FROM workspaces w,
      unnest(w.members) as member_email
 WHERE w.members IS NOT NULL

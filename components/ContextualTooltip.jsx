@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import './ContextualTooltip.css';
 
 const ContextualTooltip = ({ children, content, position = 'top', delay = 300 }) => {

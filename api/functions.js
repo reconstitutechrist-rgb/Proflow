@@ -1,4 +1,4 @@
-import { InvokeLLM } from './integrations';
+// InvokeLLM available from './integrations' when needed
 
 // Research function - stub implementation
 // Can be replaced with actual research API integration
@@ -23,8 +23,8 @@ export const ragHelper = async (params) => {
     endpoint,
     query,
     documents,
-    context,
-    documentId,
+    context: _context,
+    documentId: _documentId,
     content,
     fileName,
     chunkingStrategy,

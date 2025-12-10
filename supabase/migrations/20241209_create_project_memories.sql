@@ -64,10 +64,8 @@ DROP POLICY IF EXISTS "project_memories_delete" ON project_memories;
 CREATE POLICY "project_memories_select" ON project_memories
     FOR SELECT USING (
         workspace_id IN (
-            SELECT id FROM workspaces
-            WHERE LOWER(auth.jwt()->>'email') = ANY(
-                SELECT LOWER(jsonb_array_elements_text(members))
-            )
+            SELECT workspace_id FROM workspace_members
+            WHERE LOWER(user_email) = LOWER(auth.jwt()->>'email')
         )
     );
 
@@ -75,10 +73,8 @@ CREATE POLICY "project_memories_select" ON project_memories
 CREATE POLICY "project_memories_insert" ON project_memories
     FOR INSERT WITH CHECK (
         workspace_id IN (
-            SELECT id FROM workspaces
-            WHERE LOWER(auth.jwt()->>'email') = ANY(
-                SELECT LOWER(jsonb_array_elements_text(members))
-            )
+            SELECT workspace_id FROM workspace_members
+            WHERE LOWER(user_email) = LOWER(auth.jwt()->>'email')
         )
     );
 
@@ -86,10 +82,8 @@ CREATE POLICY "project_memories_insert" ON project_memories
 CREATE POLICY "project_memories_update" ON project_memories
     FOR UPDATE USING (
         workspace_id IN (
-            SELECT id FROM workspaces
-            WHERE LOWER(auth.jwt()->>'email') = ANY(
-                SELECT LOWER(jsonb_array_elements_text(members))
-            )
+            SELECT workspace_id FROM workspace_members
+            WHERE LOWER(user_email) = LOWER(auth.jwt()->>'email')
         )
     );
 
@@ -97,9 +91,7 @@ CREATE POLICY "project_memories_update" ON project_memories
 CREATE POLICY "project_memories_delete" ON project_memories
     FOR DELETE USING (
         workspace_id IN (
-            SELECT id FROM workspaces
-            WHERE LOWER(auth.jwt()->>'email') = ANY(
-                SELECT LOWER(jsonb_array_elements_text(members))
-            )
+            SELECT workspace_id FROM workspace_members
+            WHERE LOWER(user_email) = LOWER(auth.jwt()->>'email')
         )
     );

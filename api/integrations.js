@@ -3,7 +3,12 @@ import { db } from './db';
 // LLM Integration - stub that can be replaced with actual API
 // To use a real LLM, replace this with your preferred provider (OpenAI, Anthropic, etc.)
 export const InvokeLLM = async (params) => {
-  const { prompt, system_prompt, response_json_schema, add_context_from_internet } = params;
+  const {
+    prompt,
+    system_prompt,
+    response_json_schema,
+    add_context_from_internet: _add_context_from_internet,
+  } = params;
 
   // This is a stub implementation
   // In production, replace with actual LLM API call

@@ -713,7 +713,7 @@ const findTeamMember = (identifier, teamMembers) => {
 };
 
 // Generate AI response with full CRUD capabilities
-const generateAIResponse = async (userMessage, conversation) => {
+const generateAIResponse = async (userMessage, _conversation) => {
   const lowercaseMsg = userMessage.toLowerCase();
   const context = parseContextFromMessage(userMessage);
   const teamMembers = parseTeamMembers(userMessage);
@@ -1058,7 +1058,7 @@ Or simply say: "Create a note called Meeting Notes"`;
           const entityManager = createEntityManager(
             entityType.charAt(0).toUpperCase() + entityType.slice(1)
           );
-          const updated = await entityManager.update(entityId, updateFields);
+          await entityManager.update(entityId, updateFields);
 
           return `✅ **${entityType.charAt(0).toUpperCase() + entityType.slice(1)} updated successfully!**
 
@@ -1205,7 +1205,7 @@ Would you like me to create something or provide more details?`;
   // ==================== DEFAULT RESPONSE ====================
 
   const userInputMatch = userMessage.match(/User Input:\s*(.+)/is);
-  const actualUserInput = userInputMatch ? userInputMatch[1].trim() : userMessage;
+  const _actualUserInput = userInputMatch ? userInputMatch[1].trim() : userMessage;
 
   return `Thanks for your message! I'm your ProjectFlow AI Assistant.
 
@@ -1268,7 +1268,7 @@ const integrations = {
 // Functions registry for invoking custom functions
 const functionsRegistry = {
   anthropicResearch: async (params) => {
-    const { question, assignment, documents, useWebSearch } = params;
+    const { question, assignment, documents: _documents, useWebSearch } = params;
 
     console.log('anthropicResearch invoked with:', {
       question,
@@ -1301,7 +1301,7 @@ const functionsRegistry = {
   },
 
   ragHelper: async (params) => {
-    const { query, documents, context } = params;
+    const { query, documents, context: _context } = params;
     console.log('ragHelper invoked with:', { query, documentsCount: documents?.length });
 
     return {

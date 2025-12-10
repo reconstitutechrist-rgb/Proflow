@@ -25,7 +25,6 @@ import {
   Clock,
   Brain,
   Upload,
-  CheckCircle,
   X,
   FileUp,
   Check,
@@ -35,7 +34,6 @@ import RichTextEditor from '@/components/editor/RichTextEditor';
 import { Checkbox } from '@/components/ui/checkbox';
 
 import OutlineGenerator from '@/features/ai/OutlineGenerator';
-import AIReviewPanel from '@/features/ai/AIReviewPanel';
 import ExportOptions from '@/features/documents/ExportOptions';
 import AIImageGenerator from '@/features/ai/AIImageGenerator';
 import ConversationalAssistant from '@/features/ai/ConversationalAssistant';
@@ -578,14 +576,10 @@ export default function DocumentEditor({
       {/* AI Sidebar */}
       <div className="w-[380px] border-l bg-white dark:bg-gray-900 overflow-hidden flex flex-col">
         <Tabs value={activeAITab} onValueChange={setActiveAITab} className="flex flex-col h-full">
-          <TabsList className="w-full grid grid-cols-3 border-b rounded-none flex-shrink-0">
+          <TabsList className="w-full grid grid-cols-2 border-b rounded-none flex-shrink-0">
             <TabsTrigger value="assistant">
               <Brain className="w-4 h-4 mr-1" />
               AI
-            </TabsTrigger>
-            <TabsTrigger value="review">
-              <CheckCircle className="w-4 h-4 mr-1" />
-              Review
             </TabsTrigger>
             <TabsTrigger value="tools">
               <FileUp className="w-4 h-4 mr-1" />
@@ -607,18 +601,6 @@ export default function DocumentEditor({
                 setIsOutlineDialogOpen={setIsOutlineDialogOpen}
                 onApplyOutline={handleApplyOutline}
                 referenceDocumentUrls={getAllReferenceDocuments()}
-              />
-            </TabsContent>
-
-            <TabsContent value="review" className="mt-0 space-y-6">
-              <AIReviewPanel
-                content={content}
-                title={title}
-                description={description}
-                selectedAssignment={selectedAssignments[0]}
-                selectedTask={selectedTask}
-                assignments={assignments}
-                tasks={tasks}
               />
             </TabsContent>
 

@@ -83,11 +83,6 @@ export default function TaskForm({ task, assignmentId, currentUser, onSubmit, on
       return;
     }
 
-    if (!taskData.assigned_to) {
-      toast.error('Please assign the task to someone');
-      return;
-    }
-
     try {
       // Generate AI keywords before saving
       const aiKeywords = await generateAIKeywords(taskData.title, taskData.description);

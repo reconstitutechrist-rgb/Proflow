@@ -1,25 +1,54 @@
+import { useMemo } from 'react';
 import { useElementSelector } from '../hooks/useElementSelector';
 import { SelectionHighlight } from './SelectionHighlight';
+import { useBugReporter } from '../BugReporterProvider';
 
 /**
  * Full-screen overlay for element selection mode
  * Shows highlight and instructions - mouse events are handled by useElementSelector hook
  */
 export function ElementSelector({ isActive, onSelect, onCancel }) {
+  const { selectedElements } = useBugReporter();
   const { hoveredRect, isSelecting } = useElementSelector({
     isActive,
     onSelect,
     onCancel,
   });
 
+  // Get bounding rects for all selected elements
+  const selectedRects = useMemo(() => {
+    return selectedElements
+      .map((el) => {
+        if (el.node && document.contains(el.node)) {
+          return el.node.getBoundingClientRect();
+        }
+        // Fallback to stored dimensions if node is no longer in DOM
+        return el.dimensions?.x !== undefined
+          ? {
+              left: el.dimensions.x,
+              top: el.dimensions.y,
+              width: el.dimensions.width,
+              height: el.dimensions.height,
+            }
+          : null;
+      })
+      .filter(Boolean);
+  }, [selectedElements]);
+
   if (!isActive) {
     return null;
   }
 
+  const hasSelections = selectedElements.length > 0;
+
   return (
     <>
       {/* Highlight overlay - pointer-events: none so it doesn't block clicks */}
-      <SelectionHighlight rect={hoveredRect} isVisible={isSelecting} />
+      <SelectionHighlight
+        rect={hoveredRect}
+        isVisible={isSelecting}
+        selectedRects={selectedRects}
+      />
 
       {/* Instructions tooltip */}
       <div
@@ -43,7 +72,7 @@ export function ElementSelector({ isActive, onSelect, onCancel }) {
           pointerEvents: 'none',
         }}
       >
-        <span>Click an element to select it</span>
+        <span>Click to select</span>
         <span
           style={{
             opacity: 0.7,
@@ -53,7 +82,31 @@ export function ElementSelector({ isActive, onSelect, onCancel }) {
             borderRadius: '4px',
           }}
         >
-          ESC to cancel
+          Ctrl+Click to add
+        </span>
+        {hasSelections && (
+          <span
+            style={{
+              fontSize: '12px',
+              padding: '2px 8px',
+              backgroundColor: 'rgba(34, 197, 94, 0.3)',
+              borderRadius: '4px',
+              color: '#86efac',
+            }}
+          >
+            {selectedElements.length} selected
+          </span>
+        )}
+        <span
+          style={{
+            opacity: 0.7,
+            fontSize: '12px',
+            padding: '2px 8px',
+            backgroundColor: 'rgba(255,255,255,0.15)',
+            borderRadius: '4px',
+          }}
+        >
+          ESC to finish
         </span>
       </div>
     </>

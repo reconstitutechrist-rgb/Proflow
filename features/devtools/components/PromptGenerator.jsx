@@ -13,6 +13,8 @@ import { formatBugReportPrompt } from '../utils/promptFormatter';
 export function PromptGenerator({
   route,
   selectedElement,
+  selectedElements = [],
+  elementGroups = [],
   screenshot,
   issueDescription,
   requestedChange,
@@ -28,16 +30,29 @@ export function PromptGenerator({
     return formatBugReportPrompt({
       description: issueDescription,
       route,
-      componentPath: selectedElement.componentPath,
-      componentName: selectedElement.componentName,
-      selector: selectedElement.selector,
-      dimensions: selectedElement.dimensions,
+      // Single element for backwards compatibility
+      componentPath: selectedElement?.componentPath,
+      componentName: selectedElement?.componentName,
+      selector: selectedElement?.selector,
+      dimensions: selectedElement?.dimensions,
+      // Multi-element support
+      elements: selectedElements,
+      groups: elementGroups,
       viewportSize,
       requestedChange,
       hasAnnotatedScreenshot: !!screenshot.dataUrl,
       annotationCount: screenshot.annotations?.length || 0,
     });
-  }, [issueDescription, route, selectedElement, viewportSize, requestedChange, screenshot]);
+  }, [
+    issueDescription,
+    route,
+    selectedElement,
+    selectedElements,
+    elementGroups,
+    viewportSize,
+    requestedChange,
+    screenshot,
+  ]);
 
   // Copy prompt to clipboard
   const handleCopy = async () => {
@@ -52,7 +67,11 @@ export function PromptGenerator({
   };
 
   // Check if we have enough info to generate a useful prompt
-  const hasContent = issueDescription || selectedElement.selector || screenshot.dataUrl;
+  const hasContent =
+    issueDescription ||
+    selectedElements.length > 0 ||
+    selectedElement?.selector ||
+    screenshot.dataUrl;
 
   return (
     <div className="flex flex-col h-full">
@@ -95,26 +114,49 @@ export function PromptGenerator({
               <p>
                 <span className="font-medium">Page:</span> {route}
               </p>
-              {selectedElement.selector && (
-                <p>
-                  <span className="font-medium">Element:</span>{' '}
-                  <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded text-[11px]">
-                    {selectedElement.selector.length > 40
-                      ? selectedElement.selector.substring(0, 40) + '...'
-                      : selectedElement.selector}
-                  </code>
-                </p>
-              )}
-              {selectedElement.componentName && (
-                <p>
-                  <span className="font-medium">Component:</span> {selectedElement.componentName}
-                </p>
-              )}
-              {selectedElement.componentPath && (
-                <p>
-                  <span className="font-medium">File:</span> {selectedElement.componentPath}
-                </p>
-              )}
+              {/* Multiple elements display */}
+              {selectedElements.length > 0 ? (
+                <div>
+                  <span className="font-medium">Elements:</span> {selectedElements.length} selected
+                  {elementGroups.length > 0 && (
+                    <span className="ml-2 text-purple-600 dark:text-purple-400">
+                      ({elementGroups.length} group{elementGroups.length > 1 ? 's' : ''})
+                    </span>
+                  )}
+                  <ul className="mt-1 ml-3 space-y-0.5">
+                    {selectedElements.slice(0, 3).map((el, i) => (
+                      <li key={i} className="truncate">
+                        {i + 1}. {el.componentName || el.selector?.substring(0, 30) || 'Unknown'}
+                      </li>
+                    ))}
+                    {selectedElements.length > 3 && (
+                      <li className="text-gray-500">...and {selectedElements.length - 3} more</li>
+                    )}
+                  </ul>
+                </div>
+              ) : selectedElement?.selector ? (
+                <>
+                  <p>
+                    <span className="font-medium">Element:</span>{' '}
+                    <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded text-[11px]">
+                      {selectedElement.selector.length > 40
+                        ? selectedElement.selector.substring(0, 40) + '...'
+                        : selectedElement.selector}
+                    </code>
+                  </p>
+                  {selectedElement.componentName && (
+                    <p>
+                      <span className="font-medium">Component:</span>{' '}
+                      {selectedElement.componentName}
+                    </p>
+                  )}
+                  {selectedElement.componentPath && (
+                    <p>
+                      <span className="font-medium">File:</span> {selectedElement.componentPath}
+                    </p>
+                  )}
+                </>
+              ) : null}
               <p>
                 <span className="font-medium">Viewport:</span> {viewportSize.width}x
                 {viewportSize.height}

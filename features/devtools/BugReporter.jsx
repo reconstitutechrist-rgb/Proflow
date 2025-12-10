@@ -84,9 +84,12 @@ function BugReporterContent() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [currentMode, exitMode, setIsPanelOpen]);
 
-  const handleElementSelected = (elementInfo) => {
-    updateSelectedElement(elementInfo);
-    setIsPanelOpen(true);
+  const handleElementSelected = (elementInfo, isMultiSelect = false) => {
+    updateSelectedElement(elementInfo, isMultiSelect);
+    // Only reopen panel on single-select, not multi-select (so user can continue selecting)
+    if (!isMultiSelect) {
+      setIsPanelOpen(true);
+    }
   };
 
   const handleSelectionCancel = () => {

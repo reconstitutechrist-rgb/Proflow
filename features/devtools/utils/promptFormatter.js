@@ -8,6 +8,8 @@ export function formatBugReportPrompt({
   componentName,
   selector,
   dimensions,
+  elements = [],
+  groups = [],
   viewportSize,
   requestedChange,
   hasAnnotatedScreenshot,
@@ -26,20 +28,78 @@ export function formatBugReportPrompt({
   prompt += `**Location**:\n`;
   prompt += `- Page: ${route}\n`;
 
-  if (componentPath) {
-    prompt += `- Component: ${componentPath}\n`;
-  }
+  // Handle multiple elements
+  if (elements.length > 1) {
+    // Multiple elements selected
+    prompt += `\n**Elements** (${elements.length} selected):\n`;
 
-  if (componentName && componentName !== componentPath) {
-    prompt += `- Component Name: ${componentName}\n`;
-  }
+    // Show grouped elements first
+    if (groups.length > 0) {
+      groups.forEach((group, groupIndex) => {
+        prompt += `\n*Group ${groupIndex + 1} (related elements):*\n`;
+        group.forEach((elementIndex) => {
+          const el = elements[elementIndex];
+          if (el) {
+            prompt += `  ${elementIndex + 1}. ${el.componentName || 'Unknown Component'}\n`;
+            prompt += `     - Selector: \`${el.selector}\`\n`;
+            if (el.dimensions?.width) {
+              prompt += `     - Size: ${el.dimensions.width}x${el.dimensions.height}px\n`;
+            }
+          }
+        });
+      });
+    }
 
-  if (selector) {
-    prompt += `- Element: \`${selector}\`\n`;
-  }
+    // Show ungrouped elements
+    const groupedIndices = new Set(groups.flat());
+    const ungroupedElements = elements
+      .map((el, i) => ({ el, index: i }))
+      .filter(({ index }) => !groupedIndices.has(index));
 
-  if (dimensions && (dimensions.width || dimensions.height)) {
-    prompt += `- Element Size: ${dimensions.width}x${dimensions.height}px\n`;
+    if (ungroupedElements.length > 0) {
+      if (groups.length > 0) {
+        prompt += `\n*Individual elements:*\n`;
+      }
+      ungroupedElements.forEach(({ el, index }) => {
+        prompt += `${index + 1}. ${el.componentName || 'Unknown Component'}\n`;
+        prompt += `   - Selector: \`${el.selector}\`\n`;
+        if (el.componentPath) {
+          prompt += `   - File: ${el.componentPath}\n`;
+        }
+        if (el.dimensions?.width) {
+          prompt += `   - Size: ${el.dimensions.width}x${el.dimensions.height}px\n`;
+        }
+      });
+    }
+  } else if (elements.length === 1) {
+    // Single element from array
+    const el = elements[0];
+    if (el.componentPath) {
+      prompt += `- Component: ${el.componentPath}\n`;
+    }
+    if (el.componentName && el.componentName !== el.componentPath) {
+      prompt += `- Component Name: ${el.componentName}\n`;
+    }
+    if (el.selector) {
+      prompt += `- Element: \`${el.selector}\`\n`;
+    }
+    if (el.dimensions?.width) {
+      prompt += `- Element Size: ${el.dimensions.width}x${el.dimensions.height}px\n`;
+    }
+  } else {
+    // Fallback to single element props (backwards compatibility)
+    if (componentPath) {
+      prompt += `- Component: ${componentPath}\n`;
+    }
+    if (componentName && componentName !== componentPath) {
+      prompt += `- Component Name: ${componentName}\n`;
+    }
+    if (selector) {
+      prompt += `- Element: \`${selector}\`\n`;
+    }
+    if (dimensions && (dimensions.width || dimensions.height)) {
+      prompt += `- Element Size: ${dimensions.width}x${dimensions.height}px\n`;
+    }
   }
 
   prompt += '\n';

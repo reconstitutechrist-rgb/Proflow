@@ -20,14 +20,20 @@ export const BugReporterProvider = ({ children }) => {
   // Current mode: 'idle' | 'select' | 'annotate'
   const [currentMode, setCurrentMode] = useState('idle');
 
-  // Selected element info
-  const [selectedElement, setSelectedElement] = useState({
+  // Selected elements info (supports multi-select)
+  const [selectedElements, setSelectedElements] = useState([]);
+
+  // Element groups (array of arrays of element indices)
+  const [elementGroups, setElementGroups] = useState([]);
+
+  // Backwards compatibility: derive single selectedElement from first element
+  const selectedElement = selectedElements[0] || {
     node: null,
     selector: '',
     componentPath: null,
     componentName: null,
     dimensions: { width: 0, height: 0, x: 0, y: 0 },
-  });
+  };
 
   // Screenshot and annotations
   const [screenshot, setScreenshot] = useState({
@@ -75,19 +81,54 @@ export const BugReporterProvider = ({ children }) => {
     setCurrentMode('idle');
   }, []);
 
-  const updateSelectedElement = useCallback((elementInfo) => {
-    setSelectedElement(elementInfo);
-    setCurrentMode('idle');
+  // Add element to selection (multi-select with Ctrl+Click)
+  const addSelectedElement = useCallback((elementInfo) => {
+    setSelectedElements((prev) => [...prev, elementInfo]);
   }, []);
 
-  const clearSelectedElement = useCallback(() => {
-    setSelectedElement({
-      node: null,
-      selector: '',
-      componentPath: null,
-      componentName: null,
-      dimensions: { width: 0, height: 0, x: 0, y: 0 },
-    });
+  // Remove element from selection by index
+  const removeSelectedElement = useCallback((index) => {
+    setSelectedElements((prev) => prev.filter((_, i) => i !== index));
+    // Also remove from any groups
+    setElementGroups((prev) =>
+      prev
+        .map((group) => group.filter((i) => i !== index).map((i) => (i > index ? i - 1 : i)))
+        .filter((group) => group.length > 1)
+    );
+  }, []);
+
+  // Update selected element - handles both single and multi-select
+  const updateSelectedElement = useCallback((elementInfo, isMultiSelect = false) => {
+    if (isMultiSelect) {
+      // Add to existing selection, stay in select mode for more selections
+      setSelectedElements((prev) => [...prev, elementInfo]);
+      // Don't change mode - stay in select mode for continued multi-select
+    } else {
+      // Replace selection with single element
+      setSelectedElements([elementInfo]);
+      setElementGroups([]);
+      setCurrentMode('idle');
+    }
+  }, []);
+
+  // Clear all selected elements
+  const clearSelectedElements = useCallback(() => {
+    setSelectedElements([]);
+    setElementGroups([]);
+  }, []);
+
+  // Backwards compat alias
+  const clearSelectedElement = clearSelectedElements;
+
+  // Create a group from selected element indices
+  const createElementGroup = useCallback((indices) => {
+    if (indices.length < 2) return;
+    setElementGroups((prev) => [...prev, indices]);
+  }, []);
+
+  // Remove a group (ungroup elements)
+  const removeElementGroup = useCallback((groupIndex) => {
+    setElementGroups((prev) => prev.filter((_, i) => i !== groupIndex));
   }, []);
 
   const updateScreenshot = useCallback((dataUrl) => {
@@ -124,13 +165,8 @@ export const BugReporterProvider = ({ children }) => {
 
   const resetAll = useCallback(() => {
     setCurrentMode('idle');
-    setSelectedElement({
-      node: null,
-      selector: '',
-      componentPath: null,
-      componentName: null,
-      dimensions: { width: 0, height: 0, x: 0, y: 0 },
-    });
+    setSelectedElements([]);
+    setElementGroups([]);
     setScreenshot({
       dataUrl: null,
       annotations: [],
@@ -143,7 +179,9 @@ export const BugReporterProvider = ({ children }) => {
     // State
     isPanelOpen,
     currentMode,
-    selectedElement,
+    selectedElement, // Backwards compat: first element
+    selectedElements, // New: full array
+    elementGroups, // New: grouping info
     screenshot,
     issueDescription,
     requestedChange,
@@ -158,7 +196,12 @@ export const BugReporterProvider = ({ children }) => {
     startAnnotateMode,
     exitMode,
     updateSelectedElement,
+    addSelectedElement,
+    removeSelectedElement,
     clearSelectedElement,
+    clearSelectedElements,
+    createElementGroup,
+    removeElementGroup,
     updateScreenshot,
     addAnnotation,
     undoAnnotation,

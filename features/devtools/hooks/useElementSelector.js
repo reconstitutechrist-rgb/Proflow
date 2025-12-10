@@ -88,7 +88,9 @@ export function useElementSelector({
           dimensions,
         };
 
-        onSelect(elementInfo);
+        // Check for multi-select (Ctrl+Click or Cmd+Click on Mac)
+        const isMultiSelect = event.ctrlKey || event.metaKey;
+        onSelect(elementInfo, isMultiSelect);
       }
 
       // Clear hover state

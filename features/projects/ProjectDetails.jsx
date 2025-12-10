@@ -13,6 +13,7 @@ import {
   DollarSign,
   Tag as TagIcon,
   Trash2,
+  LayoutDashboard,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -22,6 +23,7 @@ export default function ProjectDetails({
   onEdit,
   onDelete,
   onNavigateToAssignments,
+  onNavigateToDashboard,
   currentUser,
 }) {
   const getStatusColor = (status) => {
@@ -131,10 +133,18 @@ export default function ProjectDetails({
                 Quick Actions
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
+              <Button
+                onClick={() => onNavigateToDashboard(project.id)}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl"
+              >
+                <LayoutDashboard className="w-4 h-4 mr-2" />
+                Open Project Dashboard
+              </Button>
               <Button
                 onClick={() => onNavigateToAssignments(project.id)}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl"
+                variant="outline"
+                className="w-full rounded-xl"
               >
                 <FolderOpen className="w-4 h-4 mr-2" />
                 View All Assignments

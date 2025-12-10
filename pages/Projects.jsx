@@ -137,6 +137,10 @@ export default function ProjectsPage() {
     navigate(createPageUrl('Assignments') + `?project=${projectId}`);
   };
 
+  const handleNavigateToDashboard = (projectId) => {
+    navigate(`/projects/${projectId}/dashboard`);
+  };
+
   const filteredProjects = projects.filter((project) => {
     const matchesSearch =
       searchQuery === '' ||
@@ -286,6 +290,7 @@ export default function ProjectsPage() {
               onEdit={handleEditProject}
               onDelete={handleDeleteProject}
               onNavigateToAssignments={handleNavigateToAssignments}
+              onNavigateToDashboard={handleNavigateToDashboard}
               currentUser={currentUser}
             />
           )}

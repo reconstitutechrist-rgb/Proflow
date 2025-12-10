@@ -35,7 +35,7 @@ const savePosition = (position) => {
   }
 };
 
-export default function TeamChatBubble() {
+export default function TeamChatBubble({ projectFilter = null }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [position, setPosition] = useState(loadPosition);
@@ -48,12 +48,17 @@ export default function TeamChatBubble() {
 
   const teamChat = useTeamChat();
 
+  // Filter chats based on projectFilter prop
+  const filteredChats = projectFilter
+    ? teamChat.chats?.filter((chat) => chat.default_project_id === projectFilter) || []
+    : teamChat.chats || [];
+
   // Calculate unread count (simplified - could be enhanced)
   useEffect(() => {
-    // For now, just show count of active chats
-    const activeChats = teamChat.chats?.length || 0;
+    // Show count of active chats (filtered if projectFilter is set)
+    const activeChats = filteredChats.length;
     setUnreadCount(activeChats > 0 ? activeChats : 0);
-  }, [teamChat.chats]);
+  }, [filteredChats]);
 
   /**
    * Track if this was a drag vs a click
@@ -311,7 +316,13 @@ export default function TeamChatBubble() {
         </div>
 
         {/* Chat Window Content */}
-        {!isMinimized && <TeamChatWindow teamChat={teamChat} onResetPosition={resetPosition} />}
+        {!isMinimized && (
+          <TeamChatWindow
+            teamChat={teamChat}
+            onResetPosition={resetPosition}
+            projectFilter={projectFilter}
+          />
+        )}
       </Card>
     </div>
   );

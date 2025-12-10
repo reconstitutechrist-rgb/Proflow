@@ -32,7 +32,7 @@ import ArchiveConfirmationDialog from './ArchiveConfirmationDialog';
 import TaskExtractionPanel from './TaskExtractionPanel';
 import { useTeamChatAI } from './useTeamChatAI';
 
-export default function TeamChatWindow({ teamChat, onResetPosition }) {
+export default function TeamChatWindow({ teamChat, onResetPosition, projectFilter = null }) {
   const [messageInput, setMessageInput] = useState('');
   const [showNewChatForm, setShowNewChatForm] = useState(false);
   const [newChatName, setNewChatName] = useState('');
@@ -45,7 +45,7 @@ export default function TeamChatWindow({ teamChat, onResetPosition }) {
   const { summarizing, summary, summarizeConversation, clearSummary } = useTeamChatAI();
 
   const {
-    chats,
+    chats: allChats,
     currentChat,
     messages,
     projects,
@@ -68,6 +68,11 @@ export default function TeamChatWindow({ teamChat, onResetPosition }) {
     updateDefaultProject,
     dismissArchiveConfirmation,
   } = teamChat;
+
+  // Filter chats based on projectFilter prop
+  const chats = projectFilter
+    ? allChats?.filter((chat) => chat.default_project_id === projectFilter) || []
+    : allChats || [];
 
   /**
    * Handle sending a message

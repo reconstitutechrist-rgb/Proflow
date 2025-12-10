@@ -20,12 +20,14 @@ const AIHub = React.lazy(() => import('@/pages/AIHub'));
 const Preferences = React.lazy(() => import('@/pages/Preferences'));
 const Workspaces = React.lazy(() => import('@/pages/Workspaces'));
 const Documentation = React.lazy(() => import('@/pages/Documentation'));
+const ProjectDashboard = React.lazy(() => import('@/pages/ProjectDashboard'));
 
 // Preload other pages after initial render for faster subsequent navigation
 const preloadPages = () => {
   import('@/pages/Users');
   import('@/pages/Chat');
   import('@/pages/AIHub');
+  import('@/pages/ProjectDashboard');
 };
 
 const PAGES = {
@@ -135,6 +137,7 @@ function ProtectedContent() {
           <Route path="/AIHub" element={<AIHub />} />
           <Route path="/Preferences" element={<Preferences />} />
           <Route path="/Projects" element={<Projects />} />
+          <Route path="/projects/:projectId/dashboard" element={<ProjectDashboard />} />
           <Route path="/Workspaces" element={<Workspaces />} />
           <Route path="/Documentation" element={<Documentation />} />
           {/* Redirect old document routes to unified DocumentsHub */}

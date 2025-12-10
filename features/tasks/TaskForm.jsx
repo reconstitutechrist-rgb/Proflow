@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 export default function TaskForm({ task, assignmentId, currentUser, onSubmit, onCancel }) {
   // Changed assignment to assignmentId, onSave to onSubmit. Removed 'assignments' and 'users' props.
   const [users, setUsers] = React.useState([]); // State to hold fetched users
+  const [workspaceMembers, setWorkspaceMembers] = React.useState([]); // Workspace members for assignment
   const [assignmentsList, setAssignmentsList] = React.useState([]); // State to hold fetched assignments
 
   const [taskData, setTaskData] = React.useState(
@@ -35,7 +36,7 @@ export default function TaskForm({ task, assignmentId, currentUser, onSubmit, on
 
   const [isGeneratingKeywords, setIsGeneratingKeywords] = React.useState(false);
 
-  const { currentWorkspaceId } = useWorkspace(); // Get current workspace ID from context
+  const { currentWorkspaceId, currentWorkspace } = useWorkspace(); // Get current workspace from context
 
   // Effect to load users and assignments when currentWorkspaceId changes
   useEffect(() => {
@@ -43,12 +44,26 @@ export default function TaskForm({ task, assignmentId, currentUser, onSubmit, on
       loadUsers();
       loadAssignments();
     }
-  }, [currentWorkspaceId]);
+  }, [currentWorkspaceId, currentWorkspace]);
 
   const loadUsers = async () => {
     try {
       const usersData = await db.entities.User.list();
       setUsers(usersData);
+
+      // Build workspace members list from workspace.members array
+      // This ensures we show all workspace members even if they don't have a user record
+      const members = currentWorkspace?.members || [];
+      const membersList = members.map((email) => {
+        // Find if this member has a user record
+        const userRecord = usersData.find((u) => u.email?.toLowerCase() === email?.toLowerCase());
+        return {
+          email: email,
+          full_name: userRecord?.full_name || null,
+          id: userRecord?.id || email,
+        };
+      });
+      setWorkspaceMembers(membersList);
     } catch (error) {
       console.error('Error loading users:', error);
       toast.error('Failed to load users.');
@@ -173,19 +188,15 @@ export default function TaskForm({ task, assignmentId, currentUser, onSubmit, on
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Unassigned</SelectItem>
-                {users &&
-                  users.map(
-                    (
-                      user // Using local state 'users'
-                    ) => (
-                      <SelectItem key={user.email} value={user.email}>
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4" />
-                          {user.full_name || user.email}
-                        </div>
-                      </SelectItem>
-                    )
-                  )}
+                {workspaceMembers &&
+                  workspaceMembers.map((member) => (
+                    <SelectItem key={member.email} value={member.email}>
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        {member.full_name || member.email}
+                      </div>
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>

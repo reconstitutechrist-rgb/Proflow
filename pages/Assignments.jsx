@@ -319,6 +319,7 @@ export default function AssignmentsPage() {
           <AssignmentForm
             assignment={editingAssignment}
             projects={projects}
+            users={users}
             onSubmit={handleSubmit}
             onCancel={() => {
               setIsFormOpen(false);

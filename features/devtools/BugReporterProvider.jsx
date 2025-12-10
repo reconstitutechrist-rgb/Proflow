@@ -97,18 +97,14 @@ export const BugReporterProvider = ({ children }) => {
     );
   }, []);
 
-  // Update selected element - handles both single and multi-select
-  const updateSelectedElement = useCallback((elementInfo, isMultiSelect = false) => {
-    if (isMultiSelect) {
-      // Add to existing selection, stay in select mode for more selections
-      setSelectedElements((prev) => [...prev, elementInfo]);
-      // Don't change mode - stay in select mode for continued multi-select
-    } else {
-      // Replace selection with single element
-      setSelectedElements([elementInfo]);
-      setElementGroups([]);
+  // Update selected element - always adds to selection, stays in select mode
+  const updateSelectedElement = useCallback((elementInfo, exitAfterSelect = false) => {
+    setSelectedElements((prev) => [...prev, elementInfo]);
+    // Only exit select mode if explicitly requested (e.g., double-click or shift+click)
+    if (exitAfterSelect) {
       setCurrentMode('idle');
     }
+    // Stay in select mode for continued selection
   }, []);
 
   // Clear all selected elements

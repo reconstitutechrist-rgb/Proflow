@@ -72,18 +72,7 @@ export function ElementSelector({ isActive, onSelect, onCancel }) {
           pointerEvents: 'none',
         }}
       >
-        <span>Click to select</span>
-        <span
-          style={{
-            opacity: 0.7,
-            fontSize: '12px',
-            padding: '2px 8px',
-            backgroundColor: 'rgba(255,255,255,0.15)',
-            borderRadius: '4px',
-          }}
-        >
-          Ctrl+Click to add
-        </span>
+        <span>Click to add elements</span>
         {hasSelections && (
           <span
             style={{
@@ -106,7 +95,18 @@ export function ElementSelector({ isActive, onSelect, onCancel }) {
             borderRadius: '4px',
           }}
         >
-          ESC to finish
+          Shift+Click to finish
+        </span>
+        <span
+          style={{
+            opacity: 0.7,
+            fontSize: '12px',
+            padding: '2px 8px',
+            backgroundColor: 'rgba(255,255,255,0.15)',
+            borderRadius: '4px',
+          }}
+        >
+          ESC to cancel
         </span>
       </div>
     </>

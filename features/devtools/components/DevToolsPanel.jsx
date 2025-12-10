@@ -403,7 +403,7 @@ export function DevToolsPanel() {
                       Start by selecting an element or capturing a screenshot
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                      Tip: Use Ctrl+Click to select multiple elements
+                      Click to add multiple elements, Shift+Click or ESC when done
                     </p>
                   </div>
                 )}

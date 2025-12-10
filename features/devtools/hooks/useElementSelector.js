@@ -88,9 +88,9 @@ export function useElementSelector({
           dimensions,
         };
 
-        // Check for multi-select (Ctrl+Click or Cmd+Click on Mac)
-        const isMultiSelect = event.ctrlKey || event.metaKey;
-        onSelect(elementInfo, isMultiSelect);
+        // Shift+Click to select and finish, normal click to add and continue
+        const exitAfterSelect = event.shiftKey;
+        onSelect(elementInfo, exitAfterSelect);
       }
 
       // Clear hover state

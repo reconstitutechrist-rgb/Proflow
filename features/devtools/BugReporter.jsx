@@ -84,12 +84,13 @@ function BugReporterContent() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [currentMode, exitMode, setIsPanelOpen]);
 
-  const handleElementSelected = (elementInfo, isMultiSelect = false) => {
-    updateSelectedElement(elementInfo, isMultiSelect);
-    // Only reopen panel on single-select, not multi-select (so user can continue selecting)
-    if (!isMultiSelect) {
+  const handleElementSelected = (elementInfo, exitAfterSelect = false) => {
+    updateSelectedElement(elementInfo, exitAfterSelect);
+    // Only reopen panel if exiting selection mode (shift+click or explicit exit)
+    if (exitAfterSelect) {
       setIsPanelOpen(true);
     }
+    // Otherwise stay in selection mode - user will press ESC when done
   };
 
   const handleSelectionCancel = () => {

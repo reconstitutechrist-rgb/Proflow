@@ -16,6 +16,7 @@ export const ChatSession = db.entities.ChatSession;
 export const Note = db.entities.Note;
 export const Folder = db.entities.Folder;
 export const AIResearchChat = db.entities.AIResearchChat;
+export const ProjectMemory = db.entities.ProjectMemory;
 
 export default {
   Task,
@@ -32,4 +33,5 @@ export default {
   Note,
   Folder,
   AIResearchChat,
+  ProjectMemory,
 };

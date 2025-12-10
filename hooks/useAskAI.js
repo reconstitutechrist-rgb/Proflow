@@ -5,6 +5,11 @@ import { ragHelper } from '@/api/functions';
 import { exportSessionToPdf } from '@/api/functions';
 import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 import { toast } from 'sonner';
+import {
+  getProjectMemory,
+  updateProjectMemoryFromChat,
+  buildProjectMemoryPrompt,
+} from '@/api/projectMemory';
 
 const MEMORY_LIMITS = {
   MAX_DOCUMENTS: 50,
@@ -38,6 +43,10 @@ export function useAskAI() {
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const [sessionName, setSessionName] = useState('');
   const [sessionDescription, setSessionDescription] = useState('');
+
+  // Project Memory state
+  const [projectMemory, setProjectMemory] = useState(null);
+  const [isLoadingMemory, setIsLoadingMemory] = useState(false);
 
   // RAG state
   const [useRAG, setUseRAG] = useState(true);
@@ -95,6 +104,27 @@ export function useAskAI() {
       localStorage.setItem('askAI_hasVisited', 'true');
     }
   }, []);
+
+  // Load project memory when project is selected
+  useEffect(() => {
+    const loadProjectMemory = async () => {
+      if (selectedProject && currentWorkspaceId) {
+        setIsLoadingMemory(true);
+        try {
+          const memory = await getProjectMemory(selectedProject.id, currentWorkspaceId);
+          setProjectMemory(memory);
+        } catch (error) {
+          console.error('Error loading project memory:', error);
+          setProjectMemory(null);
+        } finally {
+          setIsLoadingMemory(false);
+        }
+      } else {
+        setProjectMemory(null);
+      }
+    };
+    loadProjectMemory();
+  }, [selectedProject, currentWorkspaceId]);
 
   const clearDraftFromStorage = useCallback(() => {
     try {
@@ -1023,7 +1053,8 @@ export function useAskAI() {
         });
       }
 
-      const conversationHistory = activeMessages.slice(-20).map((msg) => ({
+      // Increased from 20 to 50 for better context retention
+      const conversationHistory = activeMessages.slice(-50).map((msg) => ({
         role: msg.type === 'user' ? 'user' : 'assistant',
         content: msg.content,
       }));
@@ -1035,6 +1066,11 @@ export function useAskAI() {
         systemPrompt += `\n\nCurrent Project: ${selectedProject.name}`;
         if (selectedProject.description)
           systemPrompt += `\nDescription: ${selectedProject.description}`;
+
+        // Add project memory bank if available
+        if (projectMemory) {
+          systemPrompt += buildProjectMemoryPrompt(projectMemory);
+        }
       }
 
       if (selectedAssignment) {
@@ -1159,6 +1195,26 @@ export function useAskAI() {
       setIsSaveDialogOpen(false);
       setSessionName('');
       setSessionDescription('');
+
+      // Update project memory bank after saving session
+      if (selectedProject && currentWorkspaceId) {
+        try {
+          const sessionId = currentSession?.id || null;
+          await updateProjectMemoryFromChat(
+            selectedProject.id,
+            currentWorkspaceId,
+            messages,
+            uploadedDocuments,
+            sessionId
+          );
+          // Reload project memory to reflect updates
+          const updatedMemory = await getProjectMemory(selectedProject.id, currentWorkspaceId);
+          setProjectMemory(updatedMemory);
+        } catch (memoryError) {
+          console.error('Error updating project memory:', memoryError);
+          // Don't show error to user - memory update is a background enhancement
+        }
+      }
     } catch (error) {
       console.error('Error saving session:', error);
       toast.error('Failed to save session');
@@ -1449,6 +1505,8 @@ export function useAskAI() {
     showSessionTemplates,
     showCostEstimator,
     costEstimatorData,
+    projectMemory,
+    isLoadingMemory,
 
     // Refs
     messagesEndRef,

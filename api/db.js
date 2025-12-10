@@ -30,6 +30,7 @@ const entityToTableName = (entityName) => {
     AIResearchChat: 'ai_research_chats',
     TeamChat: 'team_chats',
     TeamChatMessage: 'team_chat_messages',
+    ProjectMemory: 'project_memories',
   };
 
   return tableMap[entityName] || entityName.toLowerCase();

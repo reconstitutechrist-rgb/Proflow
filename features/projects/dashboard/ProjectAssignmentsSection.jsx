@@ -66,10 +66,6 @@ export default function ProjectAssignmentsSection({
     });
   };
 
-  const getStatusColor = (status) => {
-    return STATUS_OPTIONS.find((s) => s.value === status)?.color || STATUS_OPTIONS[0].color;
-  };
-
   return (
     <div>
       <div className="flex items-center justify-between mb-3">

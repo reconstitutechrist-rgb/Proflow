@@ -110,6 +110,10 @@ function LayoutContent({ children, currentPageName }) {
   const [isKeyboardShortcutsOpen, setIsKeyboardShortcutsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
+  // Route-aware project filter for TeamChatBubble
+  const projectDashboardMatch = location.pathname.match(/^\/projects\/([^/]+)\/dashboard/);
+  const projectFilterId = projectDashboardMatch ? projectDashboardMatch[1] : null;
+
   const loadEssentialNotifications = useCallback(async () => {
     if (!user || !user.email) {
       setNotifications([]);
@@ -1008,9 +1012,9 @@ function LayoutContent({ children, currentPageName }) {
       {/* Unified AI Assistant */}
       <UnifiedAIAssistant />
 
-      {/* Team Chat Bubble - wrapped in ErrorBoundary to prevent crashes */}
+      {/* Team Chat Bubble - route-aware, auto-filters on project dashboard */}
       <ErrorBoundary showDetails>
-        <TeamChatBubble />
+        <TeamChatBubble projectFilter={projectFilterId} />
       </ErrorBoundary>
 
       {/* Visual Bug Reporter - Development Only */}

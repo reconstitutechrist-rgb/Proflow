@@ -35,7 +35,6 @@ import { db } from '@/api/db';
 import { getProjectMemory } from '@/api/projectMemory';
 import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import TeamChatBubble from '@/features/teamchat/TeamChatBubble';
 
 // Dashboard section components
 import ProjectDashboardHeader from '@/features/projects/dashboard/ProjectDashboardHeader';
@@ -341,9 +340,6 @@ export default function ProjectDashboard() {
             />
           </Panel>
         </PanelGroup>
-
-        {/* Team Chat Bubble - Filtered to this project */}
-        <TeamChatBubble projectFilter={projectId} />
       </div>
     </ErrorBoundary>
   );

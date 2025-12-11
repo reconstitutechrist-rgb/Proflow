@@ -204,30 +204,52 @@ export default function ProjectDashboard() {
     navigate('/Projects');
   };
 
-  const handleAssignmentClick = (assignment) => {
-    navigate(`/Assignments?id=${assignment.id}`);
+  // Assignment handlers
+  const handleAssignmentStatusChange = async (assignmentId, newStatus) => {
+    try {
+      await db.entities.Assignment.update(assignmentId, { status: newStatus });
+      loadProjectData();
+      toast.success('Assignment status updated');
+    } catch (err) {
+      console.error('Error updating assignment status:', err);
+      toast.error('Failed to update assignment status');
+    }
   };
 
-  const handleTaskClick = (task) => {
-    navigate(`/Tasks?id=${task.id}`);
+  const handleAssignmentPriorityChange = async (assignmentId, newPriority) => {
+    try {
+      await db.entities.Assignment.update(assignmentId, { priority: newPriority });
+      loadProjectData();
+      toast.success('Assignment priority updated');
+    } catch (err) {
+      console.error('Error updating assignment priority:', err);
+      toast.error('Failed to update assignment priority');
+    }
   };
 
-  const handleDocumentClick = (document) => {
-    navigate(`/DocumentsHub?doc=${document.id}`);
-  };
-
+  // Task handlers
   const handleTaskStatusChange = async (taskId, newStatus) => {
     try {
       await db.entities.Task.update(taskId, {
         status: newStatus,
         ...(newStatus === 'completed' ? { completed_date: new Date().toISOString() } : {}),
       });
-      // Reload data to reflect changes
       loadProjectData();
       toast.success('Task status updated');
     } catch (err) {
       console.error('Error updating task status:', err);
       toast.error('Failed to update task status');
+    }
+  };
+
+  const handleTaskPriorityChange = async (taskId, newPriority) => {
+    try {
+      await db.entities.Task.update(taskId, { priority: newPriority });
+      loadProjectData();
+      toast.success('Task priority updated');
+    } catch (err) {
+      console.error('Error updating task priority:', err);
+      toast.error('Failed to update task priority');
     }
   };
 
@@ -300,22 +322,20 @@ export default function ProjectDashboard() {
                   {/* Assignments Section */}
                   <ProjectAssignmentsSection
                     assignments={filteredAssignments}
-                    onAssignmentClick={handleAssignmentClick}
+                    onStatusChange={handleAssignmentStatusChange}
+                    onPriorityChange={handleAssignmentPriorityChange}
                   />
 
                   {/* Tasks Section */}
                   <ProjectTasksSection
                     tasks={filteredTasks}
                     assignments={assignments}
-                    onTaskClick={handleTaskClick}
                     onStatusChange={handleTaskStatusChange}
+                    onPriorityChange={handleTaskPriorityChange}
                   />
 
                   {/* Documents Section */}
-                  <ProjectDocumentsSection
-                    documents={filteredDocuments}
-                    onDocumentClick={handleDocumentClick}
-                  />
+                  <ProjectDocumentsSection documents={filteredDocuments} />
                 </div>
               </ScrollArea>
             </div>

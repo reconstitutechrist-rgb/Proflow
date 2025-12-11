@@ -1,13 +1,13 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   CheckSquare,
   Circle,
@@ -16,41 +16,45 @@ import {
   CheckCircle2,
   Calendar,
   User,
-  MoreHorizontal,
   AlertCircle,
 } from 'lucide-react';
 
-const STATUS_CONFIG = {
-  todo: {
-    icon: Circle,
-    color: 'text-gray-500',
-    bgColor: 'bg-gray-100 dark:bg-gray-800',
-  },
-  in_progress: {
-    icon: ArrowRight,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-100 dark:bg-blue-900/30',
-  },
-  review: {
-    icon: Clock,
-    color: 'text-purple-500',
-    bgColor: 'bg-purple-100 dark:bg-purple-900/30',
-  },
-  completed: {
-    icon: CheckCircle2,
-    color: 'text-green-500',
-    bgColor: 'bg-green-100 dark:bg-green-900/30',
-  },
-};
+const STATUS_OPTIONS = [
+  { value: 'todo', label: 'To Do', icon: Circle, color: 'text-gray-500' },
+  { value: 'in_progress', label: 'In Progress', icon: ArrowRight, color: 'text-blue-500' },
+  { value: 'review', label: 'Review', icon: Clock, color: 'text-purple-500' },
+  { value: 'completed', label: 'Completed', icon: CheckCircle2, color: 'text-green-500' },
+];
 
-const PRIORITY_COLORS = {
-  low: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
-  medium: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
-  high: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
-  urgent: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
-};
+const PRIORITY_OPTIONS = [
+  {
+    value: 'low',
+    label: 'Low',
+    color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+  },
+  {
+    value: 'medium',
+    label: 'Medium',
+    color: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+  },
+  {
+    value: 'high',
+    label: 'High',
+    color: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
+  },
+  {
+    value: 'urgent',
+    label: 'Urgent',
+    color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+  },
+];
 
-export default function ProjectTasksSection({ tasks, assignments, onTaskClick, onStatusChange }) {
+export default function ProjectTasksSection({
+  tasks,
+  assignments,
+  onStatusChange,
+  onPriorityChange,
+}) {
   const getAssignmentName = (assignmentId) => {
     const assignment = assignments?.find((a) => a.id === assignmentId);
     return assignment?.name || null;
@@ -61,6 +65,7 @@ export default function ProjectTasksSection({ tasks, assignments, onTaskClick, o
     return new Date(dateStr).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
+      year: 'numeric',
     });
   };
 
@@ -73,7 +78,7 @@ export default function ProjectTasksSection({ tasks, assignments, onTaskClick, o
   };
 
   const StatusIcon = ({ status }) => {
-    const config = STATUS_CONFIG[status] || STATUS_CONFIG.todo;
+    const config = STATUS_OPTIONS.find((s) => s.value === status) || STATUS_OPTIONS[0];
     const Icon = config.icon;
     return <Icon className={`w-4 h-4 ${config.color}`} />;
   };
@@ -98,29 +103,25 @@ export default function ProjectTasksSection({ tasks, assignments, onTaskClick, o
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {tasks.map((task) => {
             const overdue = isOverdue(task);
             const assignmentName = getAssignmentName(task.assignment_id);
 
             return (
-              <Card
-                key={task.id}
-                className={`cursor-pointer hover:shadow-md transition-all duration-200 ${
-                  task.status === 'completed' ? 'opacity-70' : ''
-                }`}
-                onClick={() => onTaskClick(task)}
-              >
+              <Card key={task.id} className={task.status === 'completed' ? 'opacity-70' : ''}>
                 <CardContent className="p-4">
+                  {/* Header row: Status icon, Title, Dropdowns */}
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5">
+                    <div className="mt-1">
                       <StatusIcon status={task.status} />
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      {/* Title + Overdue badge */}
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <h3
-                          className={`font-medium truncate ${
+                          className={`font-medium ${
                             task.status === 'completed'
                               ? 'text-gray-500 line-through'
                               : 'text-gray-900 dark:text-white'
@@ -128,12 +129,6 @@ export default function ProjectTasksSection({ tasks, assignments, onTaskClick, o
                         >
                           {task.title}
                         </h3>
-
-                        {task.priority && (
-                          <Badge className={`text-xs ${PRIORITY_COLORS[task.priority]}`}>
-                            {task.priority}
-                          </Badge>
-                        )}
 
                         {overdue && (
                           <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-xs">
@@ -143,13 +138,15 @@ export default function ProjectTasksSection({ tasks, assignments, onTaskClick, o
                         )}
                       </div>
 
+                      {/* Description - Full display */}
                       {task.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1 mb-2">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 whitespace-pre-wrap">
                           {task.description}
                         </p>
                       )}
 
-                      <div className="flex items-center gap-3 flex-wrap text-xs text-gray-500 dark:text-gray-400">
+                      {/* Metadata row */}
+                      <div className="flex items-center gap-4 flex-wrap text-xs text-gray-500 dark:text-gray-400">
                         {task.due_date && (
                           <span
                             className={`flex items-center gap-1 ${
@@ -157,7 +154,7 @@ export default function ProjectTasksSection({ tasks, assignments, onTaskClick, o
                             }`}
                           >
                             <Calendar className="w-3 h-3" />
-                            {formatDate(task.due_date)}
+                            Due: {formatDate(task.due_date)}
                           </span>
                         )}
 
@@ -177,51 +174,48 @@ export default function ProjectTasksSection({ tasks, assignments, onTaskClick, o
                       </div>
                     </div>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onStatusChange(task.id, 'todo');
-                          }}
-                        >
-                          <Circle className="w-4 h-4 mr-2 text-gray-500" />
-                          To Do
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onStatusChange(task.id, 'in_progress');
-                          }}
-                        >
-                          <ArrowRight className="w-4 h-4 mr-2 text-blue-500" />
-                          In Progress
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onStatusChange(task.id, 'review');
-                          }}
-                        >
-                          <Clock className="w-4 h-4 mr-2 text-purple-500" />
-                          Review
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onStatusChange(task.id, 'completed');
-                          }}
-                        >
-                          <CheckCircle2 className="w-4 h-4 mr-2 text-green-500" />
-                          Completed
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {/* Dropdowns */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {/* Status Dropdown */}
+                      <Select
+                        value={task.status || 'todo'}
+                        onValueChange={(value) => onStatusChange(task.id, value)}
+                      >
+                        <SelectTrigger className="h-7 w-[110px] text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STATUS_OPTIONS.map((status) => {
+                            const Icon = status.icon;
+                            return (
+                              <SelectItem key={status.value} value={status.value}>
+                                <div className="flex items-center gap-2">
+                                  <Icon className={`w-3 h-3 ${status.color}`} />
+                                  <span>{status.label}</span>
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+
+                      {/* Priority Dropdown */}
+                      <Select
+                        value={task.priority || 'medium'}
+                        onValueChange={(value) => onPriorityChange(task.id, value)}
+                      >
+                        <SelectTrigger className="h-7 w-[90px] text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PRIORITY_OPTIONS.map((priority) => (
+                            <SelectItem key={priority.value} value={priority.value}>
+                              <span className={priority.color}>{priority.label}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

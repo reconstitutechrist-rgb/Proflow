@@ -8,14 +8,12 @@
       "Bash(node verify-db-connection.js:*)",
       "Bash(node verify-db-node.js:*)",
       "Bash(npm run build:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nrefactor: update API layer and component imports for Supabase migration\n\n- Remove base44Client.js and base44.js integration files\n- Update entity imports across 60+ components to use new API structure\n- Add api/db.js for database connection handling\n- Clean up deprecated integration references\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push:*)",
       "Bash(cat:*)",
       "Bash(git checkout:*)",
       "Bash(npm update:*)",
       "Bash(npx @tailwindcss/upgrade@next)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nchore: upgrade to Tailwind CSS v4\n\n- Install tailwindcss@4 and @tailwindcss/vite\n- Update vite.config.js to use Tailwind Vite plugin\n- Migrate index.css to use @import \"tailwindcss\" and @theme directive\n- Remove tailwindcss from PostCSS config (now using Vite plugin)\n- Update react-day-picker to latest version\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(npm ls:*)",
       "Bash(npm uninstall:*)",
       "Bash(git branch:*)",
@@ -24,15 +22,29 @@
       "Bash(git commit:*)",
       "Bash(git reset:*)",
       "Bash(npm run lint:*)",
-      "Bash(for dir in features/*/)",
-      "Bash(done)",
-      "Bash(Remove-Item \"c:\\Users\\willi\\Projects\\Proflow\\components\\DocumentSidebar.jsx\" -Force)",
-      "Bash(Remove-Item \"c:\\Users\\willi\\Projects\\Proflow\\hooks\\useData.js\" -Force)",
-      "Bash(del /f \"c:\\Users\\willi\\Projects\\Proflow\\components\\DocumentSidebar.jsx\")",
-      "Bash(del /f \"c:\\Users\\willi\\Projects\\Proflow\\hooks\\useData.js\")",
-      "Bash(start http://localhost:5173/documents)"
+      "Bash(npm run test:run:*)",
+      "Bash(npm run format:check:*)",
+      "Bash(npm run format:*)",
+      "Bash(npx commitlint:*)",
+      "Bash(npx prettier:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)",
+      "Bash(timeout:*)",
+      "Bash(dir:*)"
     ],
-    "deny": [],
-    "ask": []
+    "deny": ["Read(./.env)", "Read(./.env.*)", "Read(./.env.local)"]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -Command \"$p='$file_path'; if ($p -match '\\.(js|jsx|json|css|md)$' -and $p -notmatch 'node_modules') { npx prettier --write $p 2>$null }\""
+          }
+        ]
+      }
+    ]
   }
 }

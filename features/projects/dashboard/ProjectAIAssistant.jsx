@@ -2,17 +2,38 @@ import React, { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Brain, Target, AlertCircle, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Brain,
+  Target,
+  AlertCircle,
+  Loader2,
+  History,
+  Save,
+  Search,
+  ArrowUpDown,
+  FolderOpen,
+  MessageSquare,
+  FileText,
+  Clock,
+  DollarSign,
+  Trash2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 // Import AI hook and components
 import { useAskAI, MEMORY_LIMITS } from '@/hooks/useAskAI';
-import {
-  AskAIHeader,
-  AskAIDocumentSidebar,
-  AskAIChatArea,
-  AskAIDialogs,
-} from '@/features/ai/askAI';
+import { AskAIDocumentSidebar, AskAIChatArea, AskAIDialogs } from '@/features/ai/askAI';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 // Enhancement components
@@ -74,64 +95,178 @@ export default function ProjectAIAssistant({
   return (
     <ErrorBoundary>
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-white dark:bg-gray-900">
-        {/* Header with Project Context Badge */}
+        {/* Header with Project Context and Session Controls */}
         <div className="flex-shrink-0 border-b bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg shadow">
-              <Brain className="w-5 h-5 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg shadow">
+                <Brain className="w-5 h-5 text-white" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="font-semibold text-gray-900 dark:text-white">AI Assistant</h2>
+                {project && (
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <Target className="w-3 h-3 text-indigo-600" />
+                    <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                      Context: {project.name}
+                    </span>
+                    {projectMemory && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-indigo-50 dark:bg-indigo-900/30"
+                      >
+                        Memory Active
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="font-semibold text-gray-900 dark:text-white">AI Assistant</h2>
-              {project && (
-                <div className="flex items-center gap-2 mt-0.5">
-                  <Target className="w-3 h-3 text-indigo-600" />
-                  <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                    Context: {project.name}
-                  </span>
-                  {projectMemory && (
-                    <Badge variant="outline" className="text-xs bg-indigo-50 dark:bg-indigo-900/30">
-                      Memory Active
-                    </Badge>
-                  )}
-                </div>
+
+            {/* Session Controls - Sessions & Save only */}
+            <div className="flex items-center gap-2">
+              <Sheet open={askAI.isSessionsSheetOpen} onOpenChange={askAI.setIsSessionsSheetOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="rounded-xl">
+                    <History className="w-4 h-4 mr-2" />
+                    Sessions ({askAI.sessions.length})
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[500px] sm:w-[600px] flex flex-col p-6">
+                  <SheetHeader className="mb-4">
+                    <SheetTitle>Saved Sessions</SheetTitle>
+                  </SheetHeader>
+
+                  <div className="space-y-3 mb-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input
+                        placeholder="Search sessions..."
+                        value={askAI.sessionSearchQuery}
+                        onChange={(e) => askAI.setSessionSearchQuery(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+
+                    <Select value={askAI.sessionSortBy} onValueChange={askAI.setSessionSortBy}>
+                      <SelectTrigger>
+                        <ArrowUpDown className="w-4 h-4 mr-2" />
+                        <SelectValue placeholder="Sort by..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="recent">Most Recent</SelectItem>
+                        <SelectItem value="oldest">Oldest First</SelectItem>
+                        <SelectItem value="name">Name (A-Z)</SelectItem>
+                        <SelectItem value="messages">Most Messages</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <ScrollArea className="flex-1 pr-2">
+                    {askAI.loading || askAI.loadingSessions ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+                      </div>
+                    ) : askAI.sortedSessions.length === 0 ? (
+                      <div className="text-center py-12">
+                        <FolderOpen className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                        <p className="text-sm text-gray-500">
+                          {askAI.sessionSearchQuery ? 'No sessions found' : 'No saved sessions yet'}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {askAI.sortedSessions.map((session) => (
+                          <div
+                            key={session.id}
+                            className={`p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
+                              askAI.currentSession?.id === session.id
+                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                            }`}
+                            onClick={() => askAI.handleLoadSession(session)}
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate text-gray-900 dark:text-white">
+                                  {session.name}
+                                </p>
+                                {session.description && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    {session.description}
+                                  </p>
+                                )}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  askAI.setDeleteConfirmSession(session);
+                                }}
+                                className="flex-shrink-0 text-gray-500 hover:text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+
+                            <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                              <div className="flex items-center gap-1">
+                                <MessageSquare className="w-3 h-3" />
+                                <span>{session.message_count || 0} messages</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <FileText className="w-3 h-3" />
+                                <span>{session.documents?.length || 0} docs</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                <span>
+                                  {new Date(
+                                    session.last_activity ||
+                                      session.updated_date ||
+                                      session.created_date
+                                  ).toLocaleDateString()}
+                                </span>
+                              </div>
+                              {session.total_embedding_cost > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <DollarSign className="w-3 h-3" />
+                                  <span>${session.total_embedding_cost.toFixed(4)}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </SheetContent>
+              </Sheet>
+
+              {(askAI.messages.length > 0 || askAI.uploadedDocuments.length > 0) && (
+                <Button
+                  variant={askAI.sessionModified ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    if (askAI.currentSession) {
+                      askAI.setSessionName(askAI.currentSession.name);
+                      askAI.setSessionDescription(askAI.currentSession.description || '');
+                    } else {
+                      askAI.setSessionName('');
+                      askAI.setSessionDescription('');
+                    }
+                    askAI.setIsSaveDialogOpen(true);
+                  }}
+                  className="rounded-xl"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {askAI.currentSession ? 'Update' : 'Save'}
+                </Button>
               )}
             </div>
           </div>
         </div>
-
-        {/* AskAI Header (session controls, RAG toggle, etc.) */}
-        <AskAIHeader
-          useRAG={askAI.useRAG}
-          setUseRAG={askAI.setUseRAG}
-          isProcessing={askAI.isProcessing}
-          isProcessingEmbeddings={askAI.isProcessingEmbeddings}
-          docsWithRealEmbeddings={askAI.docsWithRealEmbeddings}
-          totalEmbeddingCost={askAI.totalEmbeddingCost}
-          messages={askAI.messages}
-          sessions={askAI.sessions}
-          sortedSessions={askAI.sortedSessions}
-          loading={askAI.loading}
-          loadingSessions={askAI.loadingSessions}
-          isSessionsSheetOpen={askAI.isSessionsSheetOpen}
-          setIsSessionsSheetOpen={askAI.setIsSessionsSheetOpen}
-          sessionSearchQuery={askAI.sessionSearchQuery}
-          setSessionSearchQuery={askAI.setSessionSearchQuery}
-          sessionSortBy={askAI.sessionSortBy}
-          setSessionSortBy={askAI.setSessionSortBy}
-          currentSession={askAI.currentSession}
-          sessionModified={askAI.sessionModified}
-          uploadedDocuments={askAI.uploadedDocuments}
-          setDeleteConfirmSession={askAI.setDeleteConfirmSession}
-          handleLoadSession={askAI.handleLoadSession}
-          setIsSaveDialogOpen={askAI.setIsSaveDialogOpen}
-          setSessionName={askAI.setSessionName}
-          setSessionDescription={askAI.setSessionDescription}
-          handleNewConversation={askAI.handleNewConversation}
-          setIsExportDialogOpen={askAI.setIsExportDialogOpen}
-          setExportFormat={askAI.setExportFormat}
-          setShowSessionTemplates={askAI.setShowSessionTemplates}
-          setShowKeyboardShortcuts={askAI.setShowKeyboardShortcuts}
-        />
 
         {/* Capacity Warnings */}
         {(askAI.showDocumentWarning || askAI.showMessageWarning) && (

@@ -15,6 +15,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -35,6 +36,10 @@ import {
   Trash2,
   MoreVertical,
   FolderKanban,
+  RotateCcw,
+  Archive,
+  FolderInput,
+  Edit3,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -42,6 +47,11 @@ import DocumentUploader from '@/features/documents/DocumentUploader';
 import FolderStructure from '@/components/common/FolderStructure';
 import ProjectAssignmentStructure from '@/components/common/ProjectAssignmentStructure';
 import DocumentViewToggle from '@/components/common/DocumentViewToggle';
+import OutdatedDocumentBadge from '@/components/documents/OutdatedDocumentBadge';
+import DocumentRestoreDialog from '@/features/documents/DocumentRestoreDialog';
+import MoveToFolderDialog from '@/components/dialogs/MoveToFolderDialog';
+import DocumentPreview from '@/features/documents/DocumentPreview';
+import { OUTDATED_FOLDER } from '@/hooks';
 
 export default function DocumentLibrary({
   documents,
@@ -71,6 +81,10 @@ export default function DocumentLibrary({
     id: null,
   });
   const [selectedFolderPath, setSelectedFolderPath] = useState(null);
+  const [restoreDialogDoc, setRestoreDialogDoc] = useState(null); // NEW: Document to restore
+  const [showOutdated, setShowOutdated] = useState(false); // NEW: Toggle to show outdated docs
+  const [moveDialogDoc, setMoveDialogDoc] = useState(null); // Document to move to folder
+  const [previewDoc, setPreviewDoc] = useState(null); // Document to preview
 
   // Persist sidebar view mode
   useEffect(() => {
@@ -83,9 +97,23 @@ export default function DocumentLibrary({
     return project?.name || null;
   };
 
+  // Check if viewing the Outdated folder
+  const isViewingOutdatedFolder = selectedFolderPath === OUTDATED_FOLDER;
+
   // Filter documents
   const filteredDocuments = documents.filter((doc) => {
     if (doc.document_type === 'folder_placeholder') return false;
+
+    // NEW: Handle outdated documents filter
+    // Show outdated docs only when viewing the Outdated folder or when showOutdated is true
+    if (doc.is_outdated && !isViewingOutdatedFolder && !showOutdated) {
+      return false;
+    }
+    // When viewing Outdated folder, only show outdated docs
+    if (isViewingOutdatedFolder && !doc.is_outdated) {
+      return false;
+    }
+
     const matchesSearch =
       !searchQuery ||
       doc.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -102,7 +130,9 @@ export default function DocumentLibrary({
     const matchesType = typeFilter === 'all' || doc.document_type === typeFilter;
 
     // Sidebar filter: Folder path filter (when in folders view)
+    // Skip folder path check when viewing Outdated folder (docs have different original paths)
     const matchesFolderPath =
+      isViewingOutdatedFolder ||
       !selectedFolderPath ||
       sidebarViewMode !== 'folders' ||
       (doc.folder_path || '/') === selectedFolderPath ||
@@ -328,7 +358,7 @@ export default function DocumentLibrary({
                   >
                     <Card
                       className="cursor-pointer hover:shadow-lg hover:border-indigo-300 transition-all group relative"
-                      onClick={() => onEditDocument(doc)}
+                      onClick={() => setPreviewDoc(doc)}
                     >
                       <CardContent
                         className={viewMode === 'grid' ? 'p-4' : 'p-3 flex items-center gap-4'}
@@ -357,9 +387,43 @@ export default function DocumentLibrary({
                                       onEditDocument(doc);
                                     }}
                                   >
-                                    <Eye className="w-4 h-4 mr-2" />
-                                    Open
+                                    <Edit3 className="w-4 h-4 mr-2" />
+                                    Edit in Studio
                                   </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPreviewDoc(doc);
+                                    }}
+                                  >
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    Quick Preview
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setMoveDialogDoc(doc);
+                                    }}
+                                  >
+                                    <FolderInput className="w-4 h-4 mr-2" />
+                                    Move to Folder
+                                  </DropdownMenuItem>
+                                  {doc.is_outdated && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setRestoreDialogDoc(doc);
+                                        }}
+                                        className="text-green-600 focus:text-green-600"
+                                      >
+                                        <RotateCcw className="w-4 h-4 mr-2" />
+                                        Restore
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                  <DropdownMenuSeparator />
                                   <DropdownMenuItem
                                     onClick={(e) => onDeleteDocument(e, doc)}
                                     className="text-red-600 focus:text-red-600"
@@ -371,10 +435,15 @@ export default function DocumentLibrary({
                               </DropdownMenu>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                                {doc.title}
-                              </h3>
-                              <div className="flex items-center gap-2 mt-1">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                                  {doc.title}
+                                </h3>
+                                {doc.is_outdated && (
+                                  <OutdatedDocumentBadge document={doc} size="small" />
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
                                 <p className="text-xs text-gray-500">
                                   {new Date(doc.created_date).toLocaleDateString()}
                                 </p>
@@ -399,10 +468,15 @@ export default function DocumentLibrary({
                               <FileText className="w-5 h-5 text-gray-500" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                                {doc.title}
-                              </h3>
-                              <div className="flex items-center gap-2 mt-0.5">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                                  {doc.title}
+                                </h3>
+                                {doc.is_outdated && (
+                                  <OutdatedDocumentBadge document={doc} size="small" />
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                 <p className="text-xs text-gray-500">
                                   {new Date(doc.created_date).toLocaleDateString()}
                                 </p>
@@ -435,9 +509,43 @@ export default function DocumentLibrary({
                                     onEditDocument(doc);
                                   }}
                                 >
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  Open
+                                  <Edit3 className="w-4 h-4 mr-2" />
+                                  Edit in Studio
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPreviewDoc(doc);
+                                  }}
+                                >
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  Quick Preview
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMoveDialogDoc(doc);
+                                  }}
+                                >
+                                  <FolderInput className="w-4 h-4 mr-2" />
+                                  Move to Folder
+                                </DropdownMenuItem>
+                                {doc.is_outdated && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setRestoreDialogDoc(doc);
+                                      }}
+                                      className="text-green-600 focus:text-green-600"
+                                    >
+                                      <RotateCcw className="w-4 h-4 mr-2" />
+                                      Restore
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={(e) => onDeleteDocument(e, doc)}
                                   className="text-red-600 focus:text-red-600"
@@ -476,6 +584,48 @@ export default function DocumentLibrary({
           />
         </DialogContent>
       </Dialog>
+
+      {/* Restore Document Dialog */}
+      <DocumentRestoreDialog
+        document={restoreDialogDoc}
+        isOpen={!!restoreDialogDoc}
+        onClose={() => setRestoreDialogDoc(null)}
+        onSuccess={() => {
+          setRestoreDialogDoc(null);
+          if (onRefresh) onRefresh();
+        }}
+      />
+
+      {/* Move to Folder Dialog */}
+      <MoveToFolderDialog
+        document={moveDialogDoc}
+        documents={documents}
+        isOpen={!!moveDialogDoc}
+        onClose={() => setMoveDialogDoc(null)}
+        onSuccess={() => {
+          setMoveDialogDoc(null);
+          if (onRefresh) onRefresh();
+        }}
+      />
+
+      {/* Document Preview Dialog */}
+      {previewDoc && (
+        <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
+            <DocumentPreview
+              document={previewDoc}
+              assignments={assignments}
+              currentUser={currentUser}
+              onClose={() => setPreviewDoc(null)}
+              onUpdate={onRefresh}
+              onDelete={(e, doc) => {
+                setPreviewDoc(null);
+                onDeleteDocument(e, doc);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

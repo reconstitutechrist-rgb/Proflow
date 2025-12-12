@@ -21,13 +21,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
-import LinkDocumentToAssignmentDialog from '@/components/dialogs/LinkDocumentToAssignmentDialog';
+import LinkDocumentToAssignmentDialog from '@/features/assignments/LinkDocumentToAssignmentDialog';
 import AISummaryButton from '@/features/ai/AISummaryButton';
 import DocumentVersionHistory from '@/features/documents/DocumentVersionHistory';
 import DocumentComments from '@/features/documents/DocumentComments';
 
 import { useWorkspace } from '@/features/workspace/WorkspaceContext';
-import { validateWorkspaceAccess } from '@/lib/CrossWorkspaceValidator';
+import { validateWorkspaceAccess } from '@/features/workspace/CrossWorkspaceValidator';
 import { db } from '@/api/db';
 
 export default function DocumentPreview({

@@ -182,9 +182,8 @@ export default function FolderStructure({
     return (
       <div key={path}>
         <div
-          className={`flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer group ${
-            level > 0 ? `ml-${level * 4}` : '' // Dynamic left margin for indentation
-          }`}
+          className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer group"
+          style={{ marginLeft: level > 0 ? `${level * 1}rem` : 0 }}
           onClick={() => handleFolderClick(path)}
         >
           {folderData.folders.length > 0 ? ( // Show chevron only if there are subfolders
@@ -203,7 +202,7 @@ export default function FolderStructure({
               )}
             </button>
           ) : (
-            <div className="w-6 h-6 flex-shrink-0" /> // Placeholder for consistent spacing if no chevron
+            <div className="w-6 h-6 shrink-0" /> // Placeholder for consistent spacing if no chevron
           )}
 
           {isExpanded ? (
@@ -212,7 +211,7 @@ export default function FolderStructure({
             <Folder className="w-5 h-5 text-gray-400" />
           )}
 
-          <span className="flex-1 text-sm font-medium text-gray-900 dark:text-white truncate">
+          <span className="flex-1 min-w-0 text-sm font-medium text-gray-900 dark:text-white truncate">
             {folderName}
           </span>
 

@@ -82,8 +82,19 @@ export function useWorkspaceValidation(currentWorkspaceId) {
   };
 }
 
+/**
+ * Simple synchronous check if entity belongs to the specified workspace
+ * Returns true if access is allowed, false otherwise
+ */
+export function validateWorkspaceAccess(entity, expectedWorkspaceId) {
+  if (!entity || !expectedWorkspaceId) return false;
+  // Allow access if entity has no workspace (legacy data) or matches current workspace
+  return !entity.workspace_id || entity.workspace_id === expectedWorkspaceId;
+}
+
 export default {
   validateWorkspaceOwnership,
   validateSameWorkspace,
   useWorkspaceValidation,
+  validateWorkspaceAccess,
 };

@@ -229,8 +229,19 @@ export default function DocumentPreview({
       };
     }
 
-    // Rich text documents created in Studio (have content but no file_url)
-    if (document.content && document.document_type === 'document' && !document.file_url) {
+    // Rich text documents created in Studio
+    // These have content field with HTML and document_type === 'document'
+    // They may have file_type 'text/html' or no file_type at all
+    if (document.content && document.document_type === 'document') {
+      return {
+        type: 'richtext',
+        canPreview: true,
+        icon: FileText,
+      };
+    }
+
+    // Also handle text/html file type as richtext (studio documents with file_url)
+    if (fileType === 'text/html' && document.content) {
       return {
         type: 'richtext',
         canPreview: true,

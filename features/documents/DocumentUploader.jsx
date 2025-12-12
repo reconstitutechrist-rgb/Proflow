@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { db } from '@/api/db';
 import { UploadFile } from '@/api/integrations'; // Keep this for clarity, though `db.integrations.Core.UploadFile` will be used
 import { Button } from '@/components/ui/button';
@@ -24,12 +24,17 @@ import {
   Loader2,
   File,
   RefreshCw,
-  FileType, // NEW import
-  Zap, // NEW import
+  FileType,
+  Zap,
+  Sparkles,
+  Archive,
 } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox'; // NEW import
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { useDocumentOutdating } from '@/hooks';
+import RelatedDocumentsSuggestionPanel from './RelatedDocumentsSuggestionPanel';
 
 // File size limit: 100 MB
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
@@ -53,8 +58,66 @@ export default function DocumentUploader({
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({}); // Keep existing for multi-file UI
+  const [isUpdateMode, setIsUpdateMode] = useState(false); // NEW: Update mode toggle
+  const [showSuggestions, setShowSuggestions] = useState(false); // NEW: Show suggestions panel
 
   const { currentWorkspaceId } = useWorkspace(); // ADDED: Get current workspace ID
+
+  // NEW: Hook for document outdating functionality
+  const {
+    suggestions,
+    isSearching,
+    selectedDocuments,
+    searchError,
+    findRelatedDocuments,
+    toggleDocumentSelection,
+    selectAllSuggestions,
+    clearSelections,
+    markAsOutdated,
+    reset: resetOutdating,
+  } = useDocumentOutdating(currentWorkspaceId);
+
+  // NEW: Extract text content from a file for AI search
+  const extractFileContent = useCallback(async (file) => {
+    // For text-based files, read the content
+    const textTypes = ['text/plain', 'text/html', 'text/markdown', 'application/json', 'text/csv'];
+
+    if (textTypes.includes(file.type) || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+      try {
+        const text = await file.text();
+        return text.substring(0, 10000); // Limit to first 10k chars for search
+      } catch (error) {
+        console.warn('Could not read file as text:', error);
+      }
+    }
+
+    // For other files, use the filename as a proxy for content
+    return file.name;
+  }, []);
+
+  // NEW: Trigger AI search for related documents
+  const triggerRelatedDocumentSearch = useCallback(
+    async (fileDataList) => {
+      if (!isUpdateMode || fileDataList.length === 0) return;
+
+      // Get the first file's info for the search (or combine titles for multiple files)
+      const titles = fileDataList.map((f) => f.title).join(', ');
+      const contents = await Promise.all(fileDataList.map((f) => extractFileContent(f.file)));
+      const combinedContent = contents.join('\n\n');
+
+      await findRelatedDocuments({
+        content: combinedContent,
+        title: titles,
+        fileName: fileDataList[0]?.file?.name || '',
+        projectId: fileDataList[0]?.assigned_to_project || projectId,
+        assignmentIds:
+          fileDataList[0]?.assigned_to_assignments || (assignmentId ? [assignmentId] : []),
+      });
+
+      setShowSuggestions(true);
+    },
+    [isUpdateMode, findRelatedDocuments, extractFileContent, projectId, assignmentId]
+  );
 
   const handleFileSelect = (e) => {
     const selectedFiles = Array.from(e.target.files);
@@ -186,6 +249,11 @@ export default function DocumentUploader({
     }
     if (largeFiles.length > 0) {
       toast.info(`${largeFiles.length} large file(s) detected. Upload may take several minutes.`);
+    }
+
+    // NEW: Trigger AI search for related documents in update mode
+    if (isUpdateMode && newFiles.length > 0) {
+      triggerRelatedDocumentSearch(newFiles);
     }
   };
 
@@ -570,6 +638,22 @@ export default function DocumentUploader({
 
     if (allSuccessful && files.length > 0) {
       toast.success(`All ${files.length} document(s) uploaded successfully`);
+
+      // NEW: Mark selected documents as outdated if in update mode
+      if (isUpdateMode && selectedDocuments.size > 0) {
+        const lastUploadedDoc = files[files.length - 1];
+        // Note: We don't have the saved doc ID here, so we pass null
+        // The replacement reason will reference the uploaded document title
+        await markAsOutdated(
+          Array.from(selectedDocuments),
+          null, // replacementDocId - would need to track this from the create response
+          `Replaced by "${lastUploadedDoc?.title || 'new document'}"`,
+          currentUser?.email
+        );
+        resetOutdating();
+        setShowSuggestions(false);
+      }
+
       if (onUploadComplete) {
         onUploadComplete();
       }
@@ -698,6 +782,34 @@ export default function DocumentUploader({
         </div>
       )}
 
+      {/* Update Mode Toggle */}
+      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-xl border border-amber-200 dark:border-amber-800 shrink-0 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-lg">
+            <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div>
+            <p className="font-medium text-gray-900 dark:text-white">
+              Find &amp; Replace Outdated Documents
+            </p>
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              AI will search for related documents to mark as outdated
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={isUpdateMode}
+          onCheckedChange={(checked) => {
+            setIsUpdateMode(checked);
+            if (!checked) {
+              resetOutdating();
+              setShowSuggestions(false);
+            }
+          }}
+          disabled={uploading}
+        />
+      </div>
+
       {/* File Input */}
       <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-6 text-center hover:border-blue-400 dark:hover:border-blue-600 transition-colors bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 shrink-0">
         <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
@@ -721,6 +833,28 @@ export default function DocumentUploader({
           ⚠️ Files over {LARGE_FILE_THRESHOLD / 1024 / 1024} MB may take several minutes to upload
         </p>
       </div>
+
+      {/* Related Documents Suggestions Panel */}
+      {isUpdateMode && showSuggestions && (
+        <div className="mt-4">
+          <RelatedDocumentsSuggestionPanel
+            suggestions={suggestions}
+            isLoading={isSearching}
+            selectedDocuments={selectedDocuments}
+            onToggleDocument={toggleDocumentSelection}
+            onSelectAll={selectAllSuggestions}
+            onDeselectAll={clearSelections}
+            onMarkOutdated={async () => {
+              // This will be called when user clicks "Mark as Outdated" in the panel
+              // But we defer actual marking until upload is complete
+              toast.info(
+                `${selectedDocuments.size} document(s) will be marked as outdated after upload`
+              );
+            }}
+            error={searchError}
+          />
+        </div>
+      )}
 
       {/* File List with Progress */}
       {files.length > 0 && (

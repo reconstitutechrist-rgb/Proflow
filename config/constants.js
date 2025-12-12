@@ -152,3 +152,20 @@ export const KEYBOARD_SHORTCUTS = {
   SEARCH: 'ctrl+k',
   ESCAPE: 'escape',
 };
+
+// Document outdating configuration
+export const DOCUMENT_OUTDATING = {
+  OUTDATED_FOLDER: '/Outdated',
+  MIN_CONTENT_SIMILARITY: 0.3,
+  MIN_TITLE_SIMILARITY: 0.5,
+  MIN_OVERALL_SCORE: 0.35,
+  MAX_SUGGESTIONS: 10,
+};
+
+// Similarity weights for document matching
+export const SIMILARITY_WEIGHTS = {
+  CONTENT_MATCH: 0.5,
+  TITLE_MATCH: 0.25,
+  PROJECT_MATCH: 0.15,
+  ASSIGNMENT_MATCH: 0.1,
+};

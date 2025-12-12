@@ -226,7 +226,7 @@ export default function ProjectsPage() {
           <ProjectGrid
             projects={filteredProjects}
             assignments={assignments}
-            onProjectClick={setSelectedProject}
+            onProjectClick={(project) => handleNavigateToDashboard(project.id)}
             onEditProject={handleEditProject}
             onDeleteProject={handleDeleteProject}
           />

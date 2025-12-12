@@ -1414,9 +1414,9 @@ export function useAskAI() {
   const addLinkedDocuments = useCallback((linkedDocs) => {
     if (!linkedDocs || linkedDocs.length === 0) return;
 
-    // Filter out folder placeholders and docs without file_url
+    // Filter out folder placeholders, docs without file_url, and outdated documents
     const validDocs = linkedDocs.filter(
-      (d) => d.document_type !== 'folder_placeholder' && d.file_url
+      (d) => d.document_type !== 'folder_placeholder' && d.file_url && !d.is_outdated
     );
 
     if (validDocs.length === 0) return;

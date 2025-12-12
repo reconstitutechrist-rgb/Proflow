@@ -229,6 +229,15 @@ export default function DocumentPreview({
       };
     }
 
+    // Rich text documents created in Studio (have content but no file_url)
+    if (document.content && document.document_type === 'document' && !document.file_url) {
+      return {
+        type: 'richtext',
+        canPreview: true,
+        icon: FileText,
+      };
+    }
+
     const textExtensions = ['txt', 'csv', 'json', 'xml', 'log'];
     if (fileType.startsWith('text/') || textExtensions.includes(fileExtension)) {
       return {
@@ -529,6 +538,20 @@ export default function DocumentPreview({
             <div className="prose prose-gray dark:prose-invert max-w-none prose-headings:font-semibold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-base prose-p:leading-relaxed prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800 prose-pre:p-4 prose-pre:rounded-lg">
               <ReactMarkdown>{textContent}</ReactMarkdown>
             </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Rich text documents created in Studio
+    if (fileInfo.type === 'richtext') {
+      return (
+        <div className="h-full w-full bg-white dark:bg-gray-900 overflow-auto">
+          <div className="max-w-4xl mx-auto p-8">
+            <div
+              className="prose prose-gray dark:prose-invert max-w-none prose-headings:font-semibold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-base prose-p:leading-relaxed prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-img:rounded-lg prose-img:shadow-md"
+              dangerouslySetInnerHTML={{ __html: document.content }}
+            />
           </div>
         </div>
       );

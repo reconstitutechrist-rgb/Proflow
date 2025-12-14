@@ -507,6 +507,10 @@ export function useAskAI() {
                       token_count: data.tokenCount,
                       estimated_cost: data.estimatedCost,
                     },
+                    // Set AI processing status flags
+                    ai_processed: true,
+                    ai_processed_date: new Date().toISOString(),
+                    ai_processed_model: data.embeddingModel,
                   };
                   await db.entities.Document.create(docRecord);
                 } catch (cacheError) {
@@ -1395,6 +1399,7 @@ export function useAskAI() {
   const docsWithSemanticChunking = uploadedDocuments.filter(
     (d) => d.chunkingStrategy === 'semantic'
   );
+  const docsNeedingProcessing = uploadedDocuments.filter((d) => d.needsProcessing === true);
 
   const handleSessionTemplateSelect = (template) => {
     setUseRAG(template.settings.ragEnabled);
@@ -1421,28 +1426,35 @@ export function useAskAI() {
 
     if (validDocs.length === 0) return;
 
-    // Convert to format expected by useAskAI, marking them as auto-loaded
-    const docsForContext = validDocs.map((doc) => ({
-      id: doc.id,
-      name: doc.title || doc.file_name || 'Untitled Document',
-      file_url: doc.file_url,
-      content: doc.extracted_text || '',
-      size: doc.file_size || 0,
-      type: doc.file_type || 'application/octet-stream',
-      includedInContext: true,
-      autoLoaded: true, // Flag to distinguish from manually uploaded
-      linkedDocumentId: doc.id, // Reference to original document
-      // Initialize embedding fields (will need processing if RAG is needed)
-      chunks: [],
-      embeddings: [],
-      embeddingModel: null,
-      chunkingStrategy: null,
-      structureAnalysis: null,
-      tokenCount: 0,
-      estimatedCost: 0,
-      contentHash: null,
-      fromCache: false,
-    }));
+    // Convert to format expected by useAskAI, using cached embeddings when available
+    const docsForContext = validDocs.map((doc) => {
+      // Check if document has existing AI processing data
+      const hasEmbeddings = doc.ai_processed && doc.embedding_cache;
+      const cache = doc.embedding_cache || {};
+
+      return {
+        id: doc.id,
+        name: doc.title || doc.file_name || 'Untitled Document',
+        file_url: doc.file_url,
+        content: doc.extracted_text || '',
+        size: doc.file_size || 0,
+        type: doc.file_type || 'application/octet-stream',
+        includedInContext: true,
+        autoLoaded: true, // Flag to distinguish from manually uploaded
+        linkedDocumentId: doc.id, // Reference to original document
+        // Use cached embeddings if available, otherwise mark for processing
+        chunks: hasEmbeddings ? cache.chunks || [] : [],
+        embeddings: hasEmbeddings ? cache.embeddings || [] : [],
+        embeddingModel: hasEmbeddings ? cache.model || null : null,
+        chunkingStrategy: hasEmbeddings ? cache.chunking_strategy || null : null,
+        structureAnalysis: hasEmbeddings ? cache.structure_analysis || null : null,
+        tokenCount: hasEmbeddings ? cache.token_count || 0 : 0,
+        estimatedCost: 0, // Already processed, no new cost
+        contentHash: doc.contentHash || null,
+        fromCache: hasEmbeddings,
+        needsProcessing: !hasEmbeddings, // Flag for documents that need embedding generation
+      };
+    });
 
     setUploadedDocuments((prev) => {
       // Remove previous auto-loaded docs, keep manually uploaded ones
@@ -1454,9 +1466,21 @@ export function useAskAI() {
     });
 
     if (docsForContext.length > 0) {
-      toast.info(`${docsForContext.length} linked document(s) added to context`, {
-        duration: 3000,
-      });
+      const withCache = docsForContext.filter((d) => d.fromCache).length;
+      const needsProcessing = docsForContext.filter((d) => d.needsProcessing).length;
+
+      if (needsProcessing > 0 && withCache > 0) {
+        toast.info(
+          `${docsForContext.length} linked doc(s): ${withCache} cached, ${needsProcessing} need processing`,
+          { duration: 3000 }
+        );
+      } else if (withCache > 0) {
+        toast.info(`${withCache} linked doc(s) loaded with cached embeddings`, { duration: 3000 });
+      } else {
+        toast.info(`${docsForContext.length} linked document(s) added to context`, {
+          duration: 3000,
+        });
+      }
     }
   }, []);
 
@@ -1464,6 +1488,92 @@ export function useAskAI() {
   const clearAutoLoadedDocuments = useCallback(() => {
     setUploadedDocuments((prev) => prev.filter((d) => !d.autoLoaded));
   }, []);
+
+  // Process linked documents that don't have cached embeddings
+  const processLinkedDocuments = useCallback(async () => {
+    const docsNeedingProcessing = uploadedDocuments.filter(
+      (d) => d.autoLoaded && d.needsProcessing && d.content
+    );
+
+    if (docsNeedingProcessing.length === 0) {
+      toast.info('All linked documents already have cached embeddings');
+      return;
+    }
+
+    setIsProcessingEmbeddings(true);
+    setEmbeddingProgress({ current: 0, total: docsNeedingProcessing.length });
+
+    let processedCount = 0;
+    let totalCost = 0;
+
+    for (const doc of docsNeedingProcessing) {
+      try {
+        const { data } = await ragHelper({
+          endpoint: 'generateEmbeddings',
+          documentId: doc.id,
+          content: doc.content,
+          fileName: doc.name,
+          chunkingStrategy: 'auto',
+        });
+
+        if (data) {
+          // Update local state with new embeddings
+          setUploadedDocuments((prev) =>
+            prev.map((d) =>
+              d.id === doc.id
+                ? {
+                    ...d,
+                    chunks: data.chunks || [],
+                    embeddings: data.embeddings || [],
+                    embeddingModel: data.embeddingModel,
+                    chunkingStrategy: data.chunkingStrategy,
+                    structureAnalysis: data.structureAnalysis,
+                    tokenCount: data.tokenCount,
+                    estimatedCost: data.estimatedCost,
+                    fromCache: false,
+                    needsProcessing: false,
+                  }
+                : d
+            )
+          );
+
+          // Update the source document in database with embeddings
+          if (doc.linkedDocumentId) {
+            await db.entities.Document.update(doc.linkedDocumentId, {
+              ai_processed: true,
+              ai_processed_date: new Date().toISOString(),
+              ai_processed_model: data.embeddingModel,
+              embedding_cache: {
+                chunks: data.chunks,
+                embeddings: data.embeddings,
+                model: data.embeddingModel,
+                chunking_strategy: data.chunkingStrategy,
+                structure_analysis: data.structureAnalysis,
+                created_at: new Date().toISOString(),
+                token_count: data.tokenCount,
+                estimated_cost: data.estimatedCost,
+              },
+            });
+          }
+
+          totalCost += data.estimatedCost || 0;
+        }
+      } catch (error) {
+        console.error(`Error processing linked document ${doc.name}:`, error);
+        toast.error(`Failed to process ${doc.name}`);
+      }
+
+      processedCount++;
+      setEmbeddingProgress({ current: processedCount, total: docsNeedingProcessing.length });
+    }
+
+    setIsProcessingEmbeddings(false);
+    setTotalEmbeddingCost((prev) => prev + totalCost);
+
+    if (processedCount > 0) {
+      toast.success(`Processed ${processedCount} document(s) (cost: $${totalCost.toFixed(4)})`);
+    }
+  }, [uploadedDocuments]);
 
   return {
     // State
@@ -1524,6 +1634,7 @@ export function useAskAI() {
     docsWithRealEmbeddings,
     docsWithSimulatedEmbeddings,
     docsWithSemanticChunking,
+    docsNeedingProcessing,
 
     // Setters
     setSelectedAssignment,
@@ -1568,5 +1679,6 @@ export function useAskAI() {
     loadInitialData,
     addLinkedDocuments,
     clearAutoLoadedDocuments,
+    processLinkedDocuments,
   };
 }

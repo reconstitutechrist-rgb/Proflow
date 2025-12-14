@@ -131,7 +131,7 @@ export function useDocumentOutdating(workspaceId) {
               throw new Error(`Document ${docId} not found`);
             }
 
-            // Update the document
+            // Update the document and clear AI processing data
             await db.entities.Document.update(docId, {
               is_outdated: true,
               outdated_date: new Date().toISOString(),
@@ -140,6 +140,11 @@ export function useDocumentOutdating(workspaceId) {
               replacement_reason: reason || `Replaced by newer document`,
               outdated_from_folder: doc.folder_path || '/',
               folder_path: OUTDATED_FOLDER,
+              // Clear AI processing data so outdated docs aren't used in AI context
+              ai_processed: false,
+              ai_processed_date: null,
+              ai_processed_model: null,
+              embedding_cache: null,
             });
 
             return doc.title;

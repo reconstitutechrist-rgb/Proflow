@@ -23,13 +23,11 @@ import {
   Users,
   Settings,
   Menu,
-  Search,
   Bell,
   LogOut,
   User as UserIcon,
   HelpCircle,
   ChevronDown,
-  Command,
   CheckCircle,
   X,
   Brain,
@@ -767,29 +765,6 @@ function LayoutContent({ children, currentPageName }) {
             <div className="flex items-center gap-3">
               {/* Workspace Switcher */}
               <WorkspaceSwitcher />
-
-              <div className="hidden md:block">
-                <Button
-                  variant="outline"
-                  className="w-64 justify-start text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl transition-all"
-                  onClick={() => setIsGlobalSearchOpen(true)}
-                >
-                  <Search className="w-4 h-4 mr-3" />
-                  <span>Search assignments, docs...</span>
-                  <kbd className="ml-auto px-2 py-1 text-xs font-mono bg-gray-100 dark:bg-gray-700/50 rounded border border-gray-200 dark:border-gray-600">
-                    <Command className="w-3 h-3 inline mr-1" />K
-                  </kbd>
-                </Button>
-              </div>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl"
-                onClick={() => setIsGlobalSearchOpen(true)}
-              >
-                <Search className="w-5 h-5" />
-              </Button>
 
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>

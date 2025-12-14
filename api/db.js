@@ -41,17 +41,29 @@ const createEntityManager = (entityName) => {
   const tableName = entityToTableName(entityName);
 
   return {
-    // List all items with optional filtering
-    list: async (filters = {}) => {
+    // List all items with optional filtering, sorting, and limit
+    list: async (filters = {}, sortOrder, limit) => {
       let query = supabase.from(tableName).select('*');
 
       // Apply filters if provided
-      if (filters && Object.keys(filters).length > 0) {
+      if (filters && typeof filters === 'object' && Object.keys(filters).length > 0) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
             query = query.eq(key, value);
           }
         });
+      }
+
+      // Apply sorting if provided (format: "-field" for desc, "field" for asc)
+      if (sortOrder && typeof sortOrder === 'string') {
+        const isDescending = sortOrder.startsWith('-');
+        const field = isDescending ? sortOrder.slice(1) : sortOrder;
+        query = query.order(field, { ascending: !isDescending });
+      }
+
+      // Apply limit if provided
+      if (limit && typeof limit === 'number') {
+        query = query.limit(limit);
       }
 
       const { data, error } = await query;

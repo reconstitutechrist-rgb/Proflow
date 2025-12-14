@@ -39,6 +39,7 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 // Dashboard section components
 import ProjectDashboardHeader from '@/features/projects/dashboard/ProjectDashboardHeader';
 import ProjectSearchFilter from '@/features/projects/dashboard/ProjectSearchFilter';
+import ProjectTeamNotes from '@/features/projects/dashboard/ProjectTeamNotes';
 import ProjectAssignmentsSection from '@/features/projects/dashboard/ProjectAssignmentsSection';
 import ProjectTasksSection from '@/features/projects/dashboard/ProjectTasksSection';
 import ProjectDocumentsSection from '@/features/projects/dashboard/ProjectDocumentsSection';
@@ -319,6 +320,9 @@ export default function ProjectDashboard() {
               {/* Scrollable Content */}
               <ScrollArea className="flex-1">
                 <div className="p-4 space-y-6">
+                  {/* Team Notes Section */}
+                  <ProjectTeamNotes projectId={projectId} workspaceId={currentWorkspaceId} />
+
                   {/* Assignments Section */}
                   <ProjectAssignmentsSection
                     assignments={filteredAssignments}

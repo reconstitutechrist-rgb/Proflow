@@ -1,6 +1,13 @@
-import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Select,
   SelectContent,
@@ -103,24 +110,37 @@ export default function ProjectTasksSection({
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
-          {tasks.map((task) => {
-            const overdue = isOverdue(task);
-            const assignmentName = getAssignmentName(task.assignment_id);
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50 dark:bg-gray-800/50">
+                <TableHead className="w-[40px]"></TableHead>
+                <TableHead>Task</TableHead>
+                <TableHead className="w-[120px]">Status</TableHead>
+                <TableHead className="w-[100px]">Priority</TableHead>
+                <TableHead className="w-[120px]">Due Date</TableHead>
+                <TableHead className="w-[140px]">Assignee</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tasks.map((task) => {
+                const overdue = isOverdue(task);
+                const assignmentName = getAssignmentName(task.assignment_id);
 
-            return (
-              <Card key={task.id} className={task.status === 'completed' ? 'opacity-70' : ''}>
-                <CardContent className="p-4">
-                  {/* Header row: Status icon, Title, Dropdowns */}
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1">
+                return (
+                  <TableRow
+                    key={task.id}
+                    className={`${task.status === 'completed' ? 'opacity-60 bg-gray-50/50 dark:bg-gray-800/30' : ''} hover:bg-gray-50 dark:hover:bg-gray-800/50`}
+                  >
+                    {/* Status Icon */}
+                    <TableCell className="py-2">
                       <StatusIcon status={task.status} />
-                    </div>
+                    </TableCell>
 
-                    <div className="min-w-0 flex-1">
-                      {/* Title + Overdue badge */}
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <h3
+                    {/* Task Title + Assignment */}
+                    <TableCell className="py-2">
+                      <div className="flex items-center gap-2">
+                        <span
                           className={`font-medium ${
                             task.status === 'completed'
                               ? 'text-gray-500 line-through'
@@ -128,60 +148,29 @@ export default function ProjectTasksSection({
                           }`}
                         >
                           {task.title}
-                        </h3>
-
+                        </span>
                         {overdue && (
-                          <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-xs">
-                            <AlertCircle className="w-3 h-3 mr-1" />
+                          <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-xs px-1.5 py-0">
+                            <AlertCircle className="w-3 h-3 mr-0.5" />
                             Overdue
                           </Badge>
                         )}
                       </div>
-
-                      {/* Description - Full display */}
-                      {task.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 whitespace-pre-wrap">
-                          {task.description}
-                        </p>
+                      {assignmentName && (
+                        <span className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-1 mt-0.5">
+                          <CheckSquare className="w-3 h-3" />
+                          {assignmentName}
+                        </span>
                       )}
+                    </TableCell>
 
-                      {/* Metadata row */}
-                      <div className="flex items-center gap-4 flex-wrap text-xs text-gray-500 dark:text-gray-400">
-                        {task.due_date && (
-                          <span
-                            className={`flex items-center gap-1 ${
-                              overdue ? 'text-red-600 dark:text-red-400' : ''
-                            }`}
-                          >
-                            <Calendar className="w-3 h-3" />
-                            Due: {formatDate(task.due_date)}
-                          </span>
-                        )}
-
-                        {task.assigned_to && (
-                          <span className="flex items-center gap-1">
-                            <User className="w-3 h-3" />
-                            {task.assigned_to}
-                          </span>
-                        )}
-
-                        {assignmentName && (
-                          <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
-                            <CheckSquare className="w-3 h-3" />
-                            {assignmentName}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Dropdowns */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {/* Status Dropdown */}
+                    {/* Status Dropdown */}
+                    <TableCell className="py-2">
                       <Select
                         value={task.status || 'todo'}
                         onValueChange={(value) => onStatusChange(task.id, value)}
                       >
-                        <SelectTrigger className="h-7 w-[110px] text-xs">
+                        <SelectTrigger className="h-7 w-full text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -198,13 +187,15 @@ export default function ProjectTasksSection({
                           })}
                         </SelectContent>
                       </Select>
+                    </TableCell>
 
-                      {/* Priority Dropdown */}
+                    {/* Priority Dropdown */}
+                    <TableCell className="py-2">
                       <Select
                         value={task.priority || 'medium'}
                         onValueChange={(value) => onPriorityChange(task.id, value)}
                       >
-                        <SelectTrigger className="h-7 w-[90px] text-xs">
+                        <SelectTrigger className="h-7 w-full text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -215,12 +206,42 @@ export default function ProjectTasksSection({
                           ))}
                         </SelectContent>
                       </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                    </TableCell>
+
+                    {/* Due Date */}
+                    <TableCell className="py-2">
+                      {task.due_date ? (
+                        <span
+                          className={`text-xs flex items-center gap-1 ${
+                            overdue
+                              ? 'text-red-600 dark:text-red-400 font-medium'
+                              : 'text-gray-600 dark:text-gray-400'
+                          }`}
+                        >
+                          <Calendar className="w-3 h-3" />
+                          {formatDate(task.due_date)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </TableCell>
+
+                    {/* Assignee */}
+                    <TableCell className="py-2">
+                      {task.assigned_to ? (
+                        <span className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          {task.assigned_to}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">Unassigned</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

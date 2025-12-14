@@ -1,8 +1,7 @@
-import React from 'react';
 import { Droppable } from '@hello-pangea/dnd';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Folder, FolderPlus, Tag, Building, ChevronRight } from 'lucide-react';
+import { Folder, FolderPlus } from 'lucide-react';
 
 export default function DroppableZone({
   droppableId,
@@ -45,7 +44,6 @@ export default function DroppableZone({
   };
 
   const styles = getZoneStyles();
-  const isActive = isOver && canDrop;
 
   return (
     <Droppable droppableId={droppableId} type="DOCUMENT">

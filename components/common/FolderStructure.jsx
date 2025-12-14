@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'; // Removed useEffect, useCallback as they are no longer used
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Folder, FolderOpen, ChevronRight, ChevronDown, Plus, Trash2 } from 'lucide-react';
@@ -12,9 +12,9 @@ import CreateFolderDialog from '@/components/dialogs/CreateFolderDialog';
 
 export default function FolderStructure({
   documents,
-  onFolderSelect, // New prop
-  onDocumentMove, // New prop
-  onRefresh, // New prop
+  onFolderSelect,
+  onDocumentMove: _onDocumentMove, // Reserved for future drag-and-drop
+  onRefresh,
 }) {
   // Initial state for expanded folders - starts with root expanded
   const [expandedFolders, setExpandedFolders] = useState(new Set(['/']));

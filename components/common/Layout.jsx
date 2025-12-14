@@ -104,7 +104,7 @@ const AISpotlight = React.lazy(() =>
   }))
 );
 
-function LayoutContent({ children, currentPageName }) {
+function LayoutContent({ children, currentPageName: _currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user: authUser, signOut } = useAuth();

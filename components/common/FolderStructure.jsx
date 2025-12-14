@@ -211,7 +211,7 @@ export default function FolderStructure({
             <Folder className="w-5 h-5 text-gray-400" />
           )}
 
-          <span className="flex-1 min-w-0 text-sm font-medium text-gray-900 dark:text-white truncate">
+          <span className="flex-1 text-sm font-medium text-gray-900 dark:text-white">
             {folderName}
           </span>
 

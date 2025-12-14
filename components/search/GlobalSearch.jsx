@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import { db } from '@/api/db';
 import {
   CommandDialog,
@@ -18,10 +19,65 @@ import {
   CheckSquare,
   Loader2,
   Target,
+  Plus,
+  Brain,
+  LayoutDashboard,
+  Users,
+  Clock,
+  ArrowRight,
 } from 'lucide-react';
 import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { createPageUrl } from '@/lib/utils';
+
+const RECENT_SEARCHES_KEY = 'proflow_recent_searches';
+const MAX_RECENT_SEARCHES = 5;
+
+// Quick actions available from command palette
+const QUICK_ACTIONS = [
+  {
+    id: 'new-task',
+    label: 'Create New Task',
+    icon: Plus,
+    shortcut: 'T',
+    route: '/Tasks?create=true',
+    color: 'text-orange-500',
+  },
+  {
+    id: 'new-document',
+    label: 'Create New Document',
+    icon: FileText,
+    shortcut: 'O',
+    route: '/DocumentsHub?tab=studio',
+    color: 'text-green-500',
+  },
+  {
+    id: 'ai-hub',
+    label: 'Open AI Hub',
+    icon: Brain,
+    shortcut: 'Q',
+    route: '/AIHub',
+    color: 'text-purple-500',
+  },
+  {
+    id: 'dashboard',
+    label: 'Go to Dashboard',
+    icon: LayoutDashboard,
+    shortcut: 'D',
+    route: '/Dashboard',
+    color: 'text-blue-500',
+  },
+  {
+    id: 'team',
+    label: 'View Team Members',
+    icon: Users,
+    shortcut: 'U',
+    route: '/Users',
+    color: 'text-indigo-500',
+  },
+];
 
 export default function GlobalSearch({ isOpen, onClose }) {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState({
     projects: [],
@@ -32,8 +88,61 @@ export default function GlobalSearch({ isOpen, onClose }) {
   });
   const [loading, setLoading] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState(null);
+  const [recentSearches, setRecentSearches] = useState([]);
 
   const { currentWorkspaceId } = useWorkspace();
+
+  // Load recent searches from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(RECENT_SEARCHES_KEY);
+      if (saved) {
+        setRecentSearches(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error('Error loading recent searches:', e);
+    }
+  }, []);
+
+  // Save a search to recent searches
+  const saveRecentSearch = useCallback((query) => {
+    if (!query || query.trim().length < 2) return;
+
+    setRecentSearches((prev) => {
+      const filtered = prev.filter((s) => s.toLowerCase() !== query.toLowerCase());
+      const updated = [query, ...filtered].slice(0, MAX_RECENT_SEARCHES);
+      try {
+        localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+      } catch (e) {
+        console.error('Error saving recent searches:', e);
+      }
+      return updated;
+    });
+  }, []);
+
+  // Clear recent searches
+  const clearRecentSearches = useCallback(() => {
+    setRecentSearches([]);
+    try {
+      localStorage.removeItem(RECENT_SEARCHES_KEY);
+    } catch (e) {
+      console.error('Error clearing recent searches:', e);
+    }
+  }, []);
+
+  // Handle quick action selection
+  const handleQuickAction = useCallback(
+    (action) => {
+      onClose();
+      navigate(action.route);
+    },
+    [navigate, onClose]
+  );
+
+  // Handle recent search selection
+  const handleRecentSearch = useCallback((query) => {
+    setSearchQuery(query);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -174,6 +283,11 @@ export default function GlobalSearch({ isOpen, onClose }) {
   };
 
   const handleResultClick = (result, type) => {
+    // Save the search query to recent searches
+    if (searchQuery.trim().length >= 2) {
+      saveRecentSearch(searchQuery.trim());
+    }
+
     onClose();
     // Navigation will be handled by the parent via onResultClick callback
     if (typeof window !== 'undefined') {
@@ -191,10 +305,12 @@ export default function GlobalSearch({ isOpen, onClose }) {
     results.tasks.length +
     results.messages.length;
 
+  const showQuickActionsAndRecent = !loading && searchQuery.trim().length < 2;
+
   return (
     <CommandDialog open={isOpen} onOpenChange={onClose}>
       <CommandInput
-        placeholder="Search projects, assignments, documents, tasks..."
+        placeholder="Search or type a command..."
         value={searchQuery}
         onValueChange={setSearchQuery}
       />
@@ -203,6 +319,63 @@ export default function GlobalSearch({ isOpen, onClose }) {
           <div className="flex items-center justify-center py-6">
             <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
           </div>
+        )}
+
+        {/* Quick Actions - shown when no query */}
+        {showQuickActionsAndRecent && (
+          <>
+            <CommandGroup heading="Quick Actions">
+              {QUICK_ACTIONS.map((action) => (
+                <CommandItem
+                  key={action.id}
+                  onSelect={() => handleQuickAction(action)}
+                  className="flex items-center gap-3 cursor-pointer"
+                >
+                  <action.icon className={`w-4 h-4 ${action.color}`} />
+                  <span className="flex-1">{action.label}</span>
+                  <kbd className="px-2 py-0.5 text-xs font-mono bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                    ⌘{action.shortcut}
+                  </kbd>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
+
+        {/* Recent Searches - shown when no query and have recent searches */}
+        {showQuickActionsAndRecent && recentSearches.length > 0 && (
+          <>
+            <CommandGroup
+              heading={
+                <div className="flex items-center justify-between">
+                  <span>Recent Searches</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearRecentSearches();
+                    }}
+                    className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    Clear
+                  </button>
+                </div>
+              }
+            >
+              {recentSearches.map((query, index) => (
+                <CommandItem
+                  key={`recent-${index}`}
+                  onSelect={() => handleRecentSearch(query)}
+                  className="flex items-center gap-3 cursor-pointer"
+                >
+                  <Clock className="w-4 h-4 text-gray-400" />
+                  <span className="flex-1">{query}</span>
+                  <ArrowRight className="w-3 h-3 text-gray-400" />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
         )}
 
         {!loading && searchQuery.trim().length >= 2 && totalResults === 0 && (
@@ -328,6 +501,28 @@ export default function GlobalSearch({ isOpen, onClose }) {
           </CommandGroup>
         )}
       </CommandList>
+
+      {/* Keyboard Hints Footer */}
+      <div className="flex items-center justify-center gap-4 px-4 py-2 border-t text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">
+        <span className="flex items-center gap-1">
+          <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 font-mono">
+            ↑↓
+          </kbd>
+          navigate
+        </span>
+        <span className="flex items-center gap-1">
+          <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 font-mono">
+            ↵
+          </kbd>
+          select
+        </span>
+        <span className="flex items-center gap-1">
+          <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 font-mono">
+            esc
+          </kbd>
+          close
+        </span>
+      </div>
     </CommandDialog>
   );
 }

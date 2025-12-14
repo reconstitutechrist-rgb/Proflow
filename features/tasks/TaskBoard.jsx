@@ -1,8 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -18,6 +19,8 @@ import {
   MoreVertical,
   AlertCircle as AlertCircleIcon,
   ArrowRightLeft,
+  Plus,
+  X,
 } from 'lucide-react';
 import TaskHandoff from '@/features/tasks/TaskHandoff';
 import {
@@ -121,6 +124,12 @@ export default function TaskBoard({
   });
   const [deleteConfirmTask, setDeleteConfirmTask] = useState(null);
   const [handoffTask, setHandoffTask] = useState(null); // Task handoff state
+
+  // Inline task creation state
+  const [showInlineCreate, setShowInlineCreate] = useState(false);
+  const [inlineTaskTitle, setInlineTaskTitle] = useState('');
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
+  const inlineInputRef = useRef(null);
 
   const { currentWorkspaceId } = useWorkspace(); // NEW USAGE
 
@@ -342,6 +351,69 @@ export default function TaskBoard({
     }
   };
 
+  // Focus inline input when shown
+  useEffect(() => {
+    if (showInlineCreate && inlineInputRef.current) {
+      inlineInputRef.current.focus();
+    }
+  }, [showInlineCreate]);
+
+  // Handle inline task creation
+  const handleInlineCreate = async (e) => {
+    e?.preventDefault();
+
+    const title = inlineTaskTitle.trim();
+    if (!title || isCreatingTask) return;
+
+    setIsCreatingTask(true);
+    try {
+      const newTask = {
+        title,
+        status: activeTab === 'all' ? 'todo' : activeTab,
+        priority: 'medium',
+        workspace_id: currentWorkspaceId,
+        assigned_to: currentUser?.email,
+        order: filteredTasks.length,
+      };
+
+      // Add assignment_id if available
+      if (assignmentId) {
+        newTask.assignment_id = assignmentId;
+      }
+
+      await db.entities.Task.create(newTask);
+
+      setInlineTaskTitle('');
+      setShowInlineCreate(false);
+      loadTasks();
+      if (onTaskUpdate) {
+        onTaskUpdate();
+      }
+      toast.success('Task created');
+    } catch (error) {
+      console.error('Error creating task:', error);
+      toast.error('Failed to create task');
+    } finally {
+      setIsCreatingTask(false);
+    }
+  };
+
+  // Cancel inline creation
+  const cancelInlineCreate = () => {
+    setShowInlineCreate(false);
+    setInlineTaskTitle('');
+  };
+
+  // Handle keyboard events for inline input
+  const handleInlineKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleInlineCreate();
+    } else if (e.key === 'Escape') {
+      cancelInlineCreate();
+    }
+  };
+
   const currentConfig = statusConfig[activeTab];
   const StatusIcon = currentConfig.icon;
 
@@ -525,6 +597,53 @@ export default function TaskBoard({
                 )}
 
                 {provided.placeholder}
+
+                {/* Inline Task Creation */}
+                {!showInlineCreate ? (
+                  <button
+                    onClick={() => setShowInlineCreate(true)}
+                    className="flex items-center gap-2 w-full p-3 mt-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add task</span>
+                  </button>
+                ) : (
+                  <div className="mt-2 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <form onSubmit={handleInlineCreate}>
+                      <Input
+                        ref={inlineInputRef}
+                        value={inlineTaskTitle}
+                        onChange={(e) => setInlineTaskTitle(e.target.value)}
+                        onKeyDown={handleInlineKeyDown}
+                        placeholder="Enter task title..."
+                        className="mb-2"
+                        disabled={isCreatingTask}
+                      />
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="submit"
+                          size="sm"
+                          disabled={!inlineTaskTitle.trim() || isCreatingTask}
+                          className="flex-1"
+                        >
+                          {isCreatingTask ? 'Creating...' : 'Add Task'}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={cancelInlineCreate}
+                          disabled={isCreatingTask}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </form>
+                    <p className="text-xs text-gray-400 mt-2">
+                      Press Enter to create, Esc to cancel
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </Droppable>

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import {
   Select,
   SelectContent,
@@ -40,6 +41,8 @@ import {
   Archive,
   FolderInput,
   Edit3,
+  Calendar,
+  User,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -85,6 +88,37 @@ export default function DocumentLibrary({
   const [showOutdated, setShowOutdated] = useState(false); // NEW: Toggle to show outdated docs
   const [moveDialogDoc, setMoveDialogDoc] = useState(null); // Document to move to folder
   const [previewDoc, setPreviewDoc] = useState(null); // Document to preview
+  const [hoverPreviewEnabled, setHoverPreviewEnabled] = useState(true); // Enable/disable hover preview
+
+  // Helper to get preview text from document content
+  const getPreviewText = useCallback((doc) => {
+    if (!doc) return '';
+
+    // If there's HTML content, strip tags and get first ~200 chars
+    if (doc.content) {
+      const textContent = doc.content
+        .replace(/<[^>]*>/g, ' ') // Remove HTML tags
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .trim();
+      return textContent.slice(0, 200) + (textContent.length > 200 ? '...' : '');
+    }
+
+    // If there's a description, use that
+    if (doc.description) {
+      return doc.description.slice(0, 200) + (doc.description.length > 200 ? '...' : '');
+    }
+
+    return 'No preview available';
+  }, []);
+
+  // Get assignment name by ID
+  const getAssignmentName = useCallback(
+    (assignmentId) => {
+      const assignment = assignments.find((a) => a.id === assignmentId);
+      return assignment?.name || assignment?.title || null;
+    },
+    [assignments]
+  );
 
   // Persist sidebar view mode
   useEffect(() => {
@@ -356,210 +390,281 @@ export default function DocumentLibrary({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
                   >
-                    <Card
-                      className="cursor-pointer hover:shadow-lg hover:border-indigo-300 transition-all group relative"
-                      onClick={() => setPreviewDoc(doc)}
-                    >
-                      <CardContent
-                        className={viewMode === 'grid' ? 'p-4' : 'p-3 flex items-center gap-4'}
-                      >
-                        {/* Grid view layout */}
-                        {viewMode === 'grid' && (
-                          <>
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
-                                <FileText className="w-5 h-5 text-gray-500" />
-                              </div>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  >
-                                    <MoreVertical className="w-4 h-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onEditDocument(doc);
-                                    }}
-                                  >
-                                    <Edit3 className="w-4 h-4 mr-2" />
-                                    Edit in Studio
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setPreviewDoc(doc);
-                                    }}
-                                  >
-                                    <Eye className="w-4 h-4 mr-2" />
-                                    Quick Preview
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setMoveDialogDoc(doc);
-                                    }}
-                                  >
-                                    <FolderInput className="w-4 h-4 mr-2" />
-                                    Move to Folder
-                                  </DropdownMenuItem>
-                                  {doc.is_outdated && (
-                                    <>
-                                      <DropdownMenuSeparator />
+                    <HoverCard openDelay={400} closeDelay={100}>
+                      <HoverCardTrigger asChild>
+                        <Card
+                          className="cursor-pointer hover:shadow-lg hover:border-indigo-300 transition-all group relative"
+                          onClick={() => setPreviewDoc(doc)}
+                        >
+                          <CardContent
+                            className={viewMode === 'grid' ? 'p-4' : 'p-3 flex items-center gap-4'}
+                          >
+                            {/* Grid view layout */}
+                            {viewMode === 'grid' && (
+                              <>
+                                <div className="flex items-start justify-between mb-3">
+                                  <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                                    <FileText className="w-5 h-5 text-gray-500" />
+                                  </div>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger
+                                      asChild
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >
+                                        <MoreVertical className="w-4 h-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
                                       <DropdownMenuItem
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          setRestoreDialogDoc(doc);
+                                          onEditDocument(doc);
                                         }}
-                                        className="text-green-600 focus:text-green-600"
                                       >
-                                        <RotateCcw className="w-4 h-4 mr-2" />
-                                        Restore
+                                        <Edit3 className="w-4 h-4 mr-2" />
+                                        Edit in Studio
                                       </DropdownMenuItem>
-                                    </>
-                                  )}
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={(e) => onDeleteDocument(e, doc)}
-                                    className="text-red-600 focus:text-red-600"
-                                  >
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                                  {doc.title}
-                                </h3>
-                                {doc.is_outdated && (
-                                  <OutdatedDocumentBadge document={doc} size="small" />
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                <p className="text-xs text-gray-500">
-                                  {new Date(doc.created_date).toLocaleDateString()}
-                                </p>
-                                {doc.assigned_to_project &&
-                                  getProjectName(doc.assigned_to_project) && (
-                                    <Badge
-                                      variant="secondary"
-                                      className="text-xs px-1.5 py-0 h-5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setPreviewDoc(doc);
+                                        }}
+                                      >
+                                        <Eye className="w-4 h-4 mr-2" />
+                                        Quick Preview
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setMoveDialogDoc(doc);
+                                        }}
+                                      >
+                                        <FolderInput className="w-4 h-4 mr-2" />
+                                        Move to Folder
+                                      </DropdownMenuItem>
+                                      {doc.is_outdated && (
+                                        <>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuItem
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setRestoreDialogDoc(doc);
+                                            }}
+                                            className="text-green-600 focus:text-green-600"
+                                          >
+                                            <RotateCcw className="w-4 h-4 mr-2" />
+                                            Restore
+                                          </DropdownMenuItem>
+                                        </>
+                                      )}
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        onClick={(e) => onDeleteDocument(e, doc)}
+                                        className="text-red-600 focus:text-red-600"
+                                      >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                                      {doc.title}
+                                    </h3>
+                                    {doc.is_outdated && (
+                                      <OutdatedDocumentBadge document={doc} size="small" />
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                    <p className="text-xs text-gray-500">
+                                      {new Date(doc.created_date).toLocaleDateString()}
+                                    </p>
+                                    {doc.assigned_to_project &&
+                                      getProjectName(doc.assigned_to_project) && (
+                                        <Badge
+                                          variant="secondary"
+                                          className="text-xs px-1.5 py-0 h-5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                                        >
+                                          <FolderKanban className="w-3 h-3 mr-1" />
+                                          {getProjectName(doc.assigned_to_project)}
+                                        </Badge>
+                                      )}
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                            {/* List view layout */}
+                            {viewMode === 'list' && (
+                              <>
+                                <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                                  <FileText className="w-5 h-5 text-gray-500" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                                      {doc.title}
+                                    </h3>
+                                    {doc.is_outdated && (
+                                      <OutdatedDocumentBadge document={doc} size="small" />
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                    <p className="text-xs text-gray-500">
+                                      {new Date(doc.created_date).toLocaleDateString()}
+                                    </p>
+                                    {doc.assigned_to_project &&
+                                      getProjectName(doc.assigned_to_project) && (
+                                        <Badge
+                                          variant="secondary"
+                                          className="text-xs px-1.5 py-0 h-5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                                        >
+                                          <FolderKanban className="w-3 h-3 mr-1" />
+                                          {getProjectName(doc.assigned_to_project)}
+                                        </Badge>
+                                      )}
+                                  </div>
+                                </div>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
-                                      <FolderKanban className="w-3 h-3 mr-1" />
-                                      {getProjectName(doc.assigned_to_project)}
-                                    </Badge>
-                                  )}
-                              </div>
-                            </div>
-                          </>
-                        )}
-                        {/* List view layout */}
-                        {viewMode === 'list' && (
-                          <>
-                            <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
-                              <FileText className="w-5 h-5 text-gray-500" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                                  {doc.title}
-                                </h3>
-                                {doc.is_outdated && (
-                                  <OutdatedDocumentBadge document={doc} size="small" />
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                <p className="text-xs text-gray-500">
-                                  {new Date(doc.created_date).toLocaleDateString()}
-                                </p>
-                                {doc.assigned_to_project &&
-                                  getProjectName(doc.assigned_to_project) && (
-                                    <Badge
-                                      variant="secondary"
-                                      className="text-xs px-1.5 py-0 h-5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                                    >
-                                      <FolderKanban className="w-3 h-3 mr-1" />
-                                      {getProjectName(doc.assigned_to_project)}
-                                    </Badge>
-                                  )}
-                              </div>
-                            </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <MoreVertical className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onEditDocument(doc);
-                                  }}
-                                >
-                                  <Edit3 className="w-4 h-4 mr-2" />
-                                  Edit in Studio
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setPreviewDoc(doc);
-                                  }}
-                                >
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  Quick Preview
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setMoveDialogDoc(doc);
-                                  }}
-                                >
-                                  <FolderInput className="w-4 h-4 mr-2" />
-                                  Move to Folder
-                                </DropdownMenuItem>
-                                {doc.is_outdated && (
-                                  <>
-                                    <DropdownMenuSeparator />
+                                      <MoreVertical className="w-4 h-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
                                     <DropdownMenuItem
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setRestoreDialogDoc(doc);
+                                        onEditDocument(doc);
                                       }}
-                                      className="text-green-600 focus:text-green-600"
                                     >
-                                      <RotateCcw className="w-4 h-4 mr-2" />
-                                      Restore
+                                      <Edit3 className="w-4 h-4 mr-2" />
+                                      Edit in Studio
                                     </DropdownMenuItem>
-                                  </>
-                                )}
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={(e) => onDeleteDocument(e, doc)}
-                                  className="text-red-600 focus:text-red-600"
-                                >
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                            <ChevronRight className="w-5 h-5 text-gray-400" />
-                          </>
-                        )}
-                      </CardContent>
-                    </Card>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPreviewDoc(doc);
+                                      }}
+                                    >
+                                      <Eye className="w-4 h-4 mr-2" />
+                                      Quick Preview
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setMoveDialogDoc(doc);
+                                      }}
+                                    >
+                                      <FolderInput className="w-4 h-4 mr-2" />
+                                      Move to Folder
+                                    </DropdownMenuItem>
+                                    {doc.is_outdated && (
+                                      <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setRestoreDialogDoc(doc);
+                                          }}
+                                          className="text-green-600 focus:text-green-600"
+                                        >
+                                          <RotateCcw className="w-4 h-4 mr-2" />
+                                          Restore
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={(e) => onDeleteDocument(e, doc)}
+                                      className="text-red-600 focus:text-red-600"
+                                    >
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                                <ChevronRight className="w-5 h-5 text-gray-400" />
+                              </>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </HoverCardTrigger>
+
+                      {/* Hover Preview Content */}
+                      <HoverCardContent
+                        side="right"
+                        align="start"
+                        className="w-80 p-0 overflow-hidden"
+                        sideOffset={8}
+                      >
+                        <div className="p-4 border-b bg-gray-50 dark:bg-gray-900">
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center shrink-0">
+                              <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-gray-900 dark:text-white truncate">
+                                {doc.title}
+                              </h4>
+                              <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(doc.created_date).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="p-4">
+                          {/* Document preview text */}
+                          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                            {getPreviewText(doc)}
+                          </p>
+
+                          {/* Metadata */}
+                          <div className="mt-4 pt-3 border-t space-y-2">
+                            {doc.assigned_to_project && getProjectName(doc.assigned_to_project) && (
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <FolderKanban className="w-3 h-3 text-blue-500" />
+                                <span>{getProjectName(doc.assigned_to_project)}</span>
+                              </div>
+                            )}
+                            {doc.assigned_to_assignments?.length > 0 && (
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <Target className="w-3 h-3 text-purple-500" />
+                                <span>
+                                  {doc.assigned_to_assignments.length} assignment
+                                  {doc.assigned_to_assignments.length !== 1 ? 's' : ''}
+                                </span>
+                              </div>
+                            )}
+                            {doc.created_by && (
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <User className="w-3 h-3 text-green-500" />
+                                <span>{doc.created_by}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Quick actions hint */}
+                          <div className="mt-3 pt-3 border-t">
+                            <p className="text-xs text-gray-400 text-center">
+                              Click to open full preview
+                            </p>
+                          </div>
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
                   </motion.div>
                 ))}
               </AnimatePresence>

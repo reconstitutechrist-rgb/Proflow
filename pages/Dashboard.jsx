@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Assignment } from '@/api/entities';
 import { Task } from '@/api/entities';
 import { Document } from '@/api/entities';
@@ -7,6 +7,7 @@ import { db } from '@/api/db';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   LayoutDashboard,
   FolderOpen,
@@ -24,6 +25,8 @@ import {
   Target,
   ArrowRight,
   Zap,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Link } from 'react-router';
 import { createPageUrl } from '@/lib/utils';
@@ -34,6 +37,41 @@ import DashboardNotes from '@/components/dashboard/DashboardNotes';
 import PartnerActivity from '@/components/dashboard/PartnerActivity';
 import SharedNotes from '@/components/dashboard/SharedNotes';
 import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+
+const DASHBOARD_PREFS_KEY = 'proflow_dashboard_prefs';
+
+// Default widget visibility preferences
+const DEFAULT_WIDGET_PREFS = {
+  needsAttention: true,
+  todaysFocus: true,
+  stats: true,
+  notes: true,
+  partnerActivity: true,
+  upcomingTasks: true,
+  sharedNotes: true,
+  quickActions: true,
+};
+
+// Collapsible section header component
+function CollapsibleHeader({ title, icon: Icon, isOpen, onToggle, badge, className = '' }) {
+  return (
+    <button
+      onClick={onToggle}
+      className={`flex items-center justify-between w-full text-left ${className}`}
+    >
+      <div className="flex items-center gap-2">
+        {Icon && <Icon className="w-5 h-5" />}
+        <span>{title}</span>
+        {badge}
+      </div>
+      {isOpen ? (
+        <ChevronUp className="w-4 h-4 text-gray-400" />
+      ) : (
+        <ChevronDown className="w-4 h-4 text-gray-400" />
+      )}
+    </button>
+  );
+}
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -56,6 +94,32 @@ export default function DashboardPage() {
     blocked: 0,
   });
   const [error, setError] = useState(null);
+
+  // Widget visibility preferences (persisted to localStorage)
+  const [widgetPrefs, setWidgetPrefs] = useState(() => {
+    try {
+      const saved = localStorage.getItem(DASHBOARD_PREFS_KEY);
+      if (saved) {
+        return { ...DEFAULT_WIDGET_PREFS, ...JSON.parse(saved) };
+      }
+    } catch (e) {
+      console.error('Error loading dashboard preferences:', e);
+    }
+    return DEFAULT_WIDGET_PREFS;
+  });
+
+  // Toggle widget visibility and save to localStorage
+  const toggleWidget = useCallback((widgetKey) => {
+    setWidgetPrefs((prev) => {
+      const updated = { ...prev, [widgetKey]: !prev[widgetKey] };
+      try {
+        localStorage.setItem(DASHBOARD_PREFS_KEY, JSON.stringify(updated));
+      } catch (e) {
+        console.error('Error saving dashboard preferences:', e);
+      }
+      return updated;
+    });
+  }, []);
 
   const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
 
@@ -389,58 +453,77 @@ export default function DashboardPage() {
       )}
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Collapsible open={widgetPrefs.stats} onOpenChange={() => toggleWidget('stats')}>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Assignments</CardTitle>
-            <FolderOpen className="h-4 w-4 text-blue-600" />
+          <CardHeader className="pb-2">
+            <CollapsibleTrigger asChild>
+              <CollapsibleHeader
+                title="Overview"
+                icon={TrendingUp}
+                isOpen={widgetPrefs.stats}
+                onToggle={() => toggleWidget('stats')}
+                className="font-semibold"
+              />
+            </CollapsibleTrigger>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.activeAssignments}</div>
-            <p className="text-xs text-gray-500 mt-1">{stats.totalAssignments} total assignments</p>
-          </CardContent>
-        </Card>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Active Assignments
+                    </span>
+                    <FolderOpen className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div className="text-2xl font-bold">{stats.activeAssignments}</div>
+                  <p className="text-xs text-gray-500 mt-1">{stats.totalAssignments} total</p>
+                </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Your Tasks</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.completedTasks}/{stats.totalTasks}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              {stats.totalTasks > 0
-                ? Math.round((stats.completedTasks / stats.totalTasks) * 100)
-                : 0}
-              % completed
-            </p>
-          </CardContent>
-        </Card>
+                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Your Tasks
+                    </span>
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div className="text-2xl font-bold">
+                    {stats.completedTasks}/{stats.totalTasks}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {stats.totalTasks > 0
+                      ? Math.round((stats.completedTasks / stats.totalTasks) * 100)
+                      : 0}
+                    % completed
+                  </p>
+                </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Documents</CardTitle>
-            <FileText className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalDocuments}</div>
-            <p className="text-xs text-gray-500 mt-1">Across all assignments</p>
-          </CardContent>
-        </Card>
+                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Documents
+                    </span>
+                    <FileText className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <div className="text-2xl font-bold">{stats.totalDocuments}</div>
+                  <p className="text-xs text-gray-500 mt-1">Across all assignments</p>
+                </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recent Messages</CardTitle>
-            <MessageSquare className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.recentMessages}</div>
-            <p className="text-xs text-gray-500 mt-1">In the last 24 hours</p>
-          </CardContent>
+                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Recent Messages
+                    </span>
+                    <MessageSquare className="h-4 w-4 text-orange-600" />
+                  </div>
+                  <div className="text-2xl font-bold">{stats.recentMessages}</div>
+                  <p className="text-xs text-gray-500 mt-1">In the last 24 hours</p>
+                </div>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
         </Card>
-      </div>
+      </Collapsible>
 
       {/* Notes Section */}
       <DashboardNotes currentUser={user} />
@@ -451,67 +534,82 @@ export default function DashboardPage() {
         <PartnerActivity currentUser={user} />
 
         {/* Upcoming Tasks */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Upcoming Tasks</CardTitle>
-              <Link to={createPageUrl('Tasks')}>
-                <Button variant="outline" size="sm">
-                  View All
-                </Button>
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {upcomingTasks.length > 0 ? (
-              <div className="space-y-3">
-                {upcomingTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-start gap-3 p-3 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                  >
-                    <div
-                      className={`w-2 h-2 rounded-full mt-2 ${
-                        task.priority === 'urgent'
-                          ? 'bg-red-500'
-                          : task.priority === 'high'
-                            ? 'bg-orange-500'
-                            : task.priority === 'medium'
-                              ? 'bg-yellow-500'
-                              : 'bg-green-500'
-                      }`}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{task.title}</p>
-                      {task.description && (
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-1">
-                          {task.description}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-3 mt-2">
-                        {task.due_date && (
-                          <div className="flex items-center gap-1 text-xs text-gray-500">
-                            <Calendar className="w-3 h-3" />
-                            {new Date(task.due_date).toLocaleDateString()}
+        <Collapsible
+          open={widgetPrefs.upcomingTasks}
+          onOpenChange={() => toggleWidget('upcomingTasks')}
+        >
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CollapsibleTrigger asChild>
+                  <CollapsibleHeader
+                    title="Upcoming Tasks"
+                    icon={Clock}
+                    isOpen={widgetPrefs.upcomingTasks}
+                    onToggle={() => toggleWidget('upcomingTasks')}
+                    className="font-semibold flex-1"
+                  />
+                </CollapsibleTrigger>
+                <Link to={createPageUrl('Tasks')} className="ml-2">
+                  <Button variant="outline" size="sm">
+                    View All
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CollapsibleContent>
+              <CardContent className="pt-0">
+                {upcomingTasks.length > 0 ? (
+                  <div className="space-y-3">
+                    {upcomingTasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className="flex items-start gap-3 p-3 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <div
+                          className={`w-2 h-2 rounded-full mt-2 ${
+                            task.priority === 'urgent'
+                              ? 'bg-red-500'
+                              : task.priority === 'high'
+                                ? 'bg-orange-500'
+                                : task.priority === 'medium'
+                                  ? 'bg-yellow-500'
+                                  : 'bg-green-500'
+                          }`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm">{task.title}</p>
+                          {task.description && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-1">
+                              {task.description}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-3 mt-2">
+                            {task.due_date && (
+                              <div className="flex items-center gap-1 text-xs text-gray-500">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(task.due_date).toLocaleDateString()}
+                              </div>
+                            )}
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {task.status.replace('_', ' ')}
+                            </Badge>
                           </div>
-                        )}
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {task.status.replace('_', ' ')}
-                        </Badge>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <CheckCircle2 className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                <p className="text-gray-500">No upcoming tasks</p>
-                <p className="text-sm text-gray-400 mt-1">You're all caught up!</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                ) : (
+                  <div className="text-center py-12">
+                    <CheckCircle2 className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                    <p className="text-gray-500">No upcoming tasks</p>
+                    <p className="text-sm text-gray-400 mt-1">You're all caught up!</p>
+                  </div>
+                )}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
       </div>
 
       {/* Team Collaboration Row */}
@@ -522,51 +620,66 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Link to={createPageUrl('Assignments')}>
-              <Button
-                variant="outline"
-                className="w-full h-auto py-4 flex flex-col items-center gap-2"
-              >
-                <FolderOpen className="w-6 h-6" />
-                <span className="text-sm">New Assignment</span>
-              </Button>
-            </Link>
-            <Link to={createPageUrl('Tasks')}>
-              <Button
-                variant="outline"
-                className="w-full h-auto py-4 flex flex-col items-center gap-2"
-              >
-                <CheckCircle2 className="w-6 h-6" />
-                <span className="text-sm">Add Task</span>
-              </Button>
-            </Link>
-            <Link to={createPageUrl('Documents')}>
-              <Button
-                variant="outline"
-                className="w-full h-auto py-4 flex flex-col items-center gap-2"
-              >
-                <FileText className="w-6 h-6" />
-                <span className="text-sm">Upload Document</span>
-              </Button>
-            </Link>
-            <Link to={createPageUrl('Chat')}>
-              <Button
-                variant="outline"
-                className="w-full h-auto py-4 flex flex-col items-center gap-2"
-              >
-                <MessageSquare className="w-6 h-6" />
-                <span className="text-sm">Team Chat</span>
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+      <Collapsible
+        open={widgetPrefs.quickActions}
+        onOpenChange={() => toggleWidget('quickActions')}
+      >
+        <Card>
+          <CardHeader className="pb-2">
+            <CollapsibleTrigger asChild>
+              <CollapsibleHeader
+                title="Quick Actions"
+                icon={Zap}
+                isOpen={widgetPrefs.quickActions}
+                onToggle={() => toggleWidget('quickActions')}
+                className="font-semibold"
+              />
+            </CollapsibleTrigger>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Link to={createPageUrl('Assignments')}>
+                  <Button
+                    variant="outline"
+                    className="w-full h-auto py-4 flex flex-col items-center gap-2"
+                  >
+                    <FolderOpen className="w-6 h-6" />
+                    <span className="text-sm">New Assignment</span>
+                  </Button>
+                </Link>
+                <Link to={`${createPageUrl('Tasks')}?create=true`}>
+                  <Button
+                    variant="outline"
+                    className="w-full h-auto py-4 flex flex-col items-center gap-2"
+                  >
+                    <CheckCircle2 className="w-6 h-6" />
+                    <span className="text-sm">Add Task</span>
+                  </Button>
+                </Link>
+                <Link to={`${createPageUrl('DocumentsHub')}?tab=studio`}>
+                  <Button
+                    variant="outline"
+                    className="w-full h-auto py-4 flex flex-col items-center gap-2"
+                  >
+                    <FileText className="w-6 h-6" />
+                    <span className="text-sm">New Document</span>
+                  </Button>
+                </Link>
+                <Link to={createPageUrl('Chat')}>
+                  <Button
+                    variant="outline"
+                    className="w-full h-auto py-4 flex flex-col items-center gap-2"
+                  >
+                    <MessageSquare className="w-6 h-6" />
+                    <span className="text-sm">Team Chat</span>
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
     </div>
   );
 }

@@ -102,6 +102,10 @@ export default function TasksPage() {
     if (viewParam && ['kanban', 'list', 'calendar'].includes(viewParam)) {
       setViewMode(viewParam);
     }
+    // Open task form if ?create=true is in URL
+    if (urlParams.get('create') === 'true') {
+      setIsTaskFormOpen(true);
+    }
   }, [presetParam, viewParam]);
 
   useEffect(() => {

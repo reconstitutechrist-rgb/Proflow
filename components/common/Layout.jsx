@@ -69,6 +69,7 @@ import WorkspacePerformanceMonitor from '@/features/workspace/WorkspacePerforman
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'; // Import shared ErrorBoundary
 import { useAuth } from '@/components/auth/AuthProvider'; // Import auth hook
 import MobileBottomNav from '@/components/common/MobileBottomNav'; // Mobile navigation
+import ConnectionStatus from '@/components/common/ConnectionStatus'; // Connection status indicator
 import WhatsNewModal from '@/features/onboarding/WhatsNewModal'; // Feature discovery
 import BugReporter from '@/features/devtools/BugReporter'; // Visual Bug Reporter (dev only)
 import TeamChatBubble from '@/features/teamchat/TeamChatBubble'; // Team Chat Bubble
@@ -88,6 +89,21 @@ const GlobalSearch = React.lazy(() =>
   }))
 );
 
+const AISpotlight = React.lazy(() =>
+  import('@/components/ai/AISpotlight').catch(() => ({
+    default: ({ isOpen, onClose }) => (
+      <CommandDialog open={isOpen} onOpenChange={onClose}>
+        <div className="p-8 text-center">
+          <p>AI Spotlight is not available</p>
+          <Button onClick={() => onClose()} className="mt-4">
+            Close
+          </Button>
+        </div>
+      </CommandDialog>
+    ),
+  }))
+);
+
 function LayoutContent({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -98,6 +114,7 @@ function LayoutContent({ children, currentPageName }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
+  const [isAISpotlightOpen, setIsAISpotlightOpen] = useState(false);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -320,11 +337,16 @@ function LayoutContent({ children, currentPageName }) {
               navigate(createPageUrl('Users'));
             }
             break;
+          case 'j':
+            event.preventDefault();
+            setIsAISpotlightOpen(true);
+            break;
         }
       }
 
       if (event.key === 'Escape') {
         setIsGlobalSearchOpen(false);
+        setIsAISpotlightOpen(false);
         setIsKeyboardShortcutsOpen(false);
       }
     };
@@ -681,6 +703,9 @@ function LayoutContent({ children, currentPageName }) {
 
   return (
     <div className={`flex flex-col h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-white'}`}>
+      {/* Connection Status Banner */}
+      <ConnectionStatus />
+
       {/* Add Performance Monitor */}
       <WorkspacePerformanceMonitor />
 
@@ -1007,6 +1032,11 @@ function LayoutContent({ children, currentPageName }) {
       {/* Global Search Dialog */}
       <React.Suspense fallback={null}>
         <GlobalSearch isOpen={isGlobalSearchOpen} onClose={() => setIsGlobalSearchOpen(false)} />
+      </React.Suspense>
+
+      {/* AI Spotlight Dialog (Cmd+J) */}
+      <React.Suspense fallback={null}>
+        <AISpotlight isOpen={isAISpotlightOpen} onClose={() => setIsAISpotlightOpen(false)} />
       </React.Suspense>
 
       {/* Unified AI Assistant */}

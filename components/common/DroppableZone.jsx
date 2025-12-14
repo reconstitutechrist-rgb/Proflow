@@ -10,8 +10,8 @@ export default function DroppableZone({
   count = 0,
   icon: Icon = Folder,
   children,
-  isOver = false,
-  canDrop = false,
+  isOver: _isOver = false, // Reserved for external drag state
+  canDrop: _canDrop = false, // Reserved for external drop validation
   isEmpty = false,
 }) {
   const getZoneStyles = () => {

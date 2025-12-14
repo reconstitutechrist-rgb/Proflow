@@ -1,14 +1,11 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { createPageUrl } from '@/lib/utils';
-import { User } from '@/api/entities';
 import { Task } from '@/api/entities';
 import { Assignment } from '@/api/entities';
 import { db } from '@/api/db';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuItem,
@@ -17,20 +14,11 @@ import {
   DropdownMenuContent,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { CommandDialog } from '@/components/ui/command';
 import {
   LayoutDashboard,
   FolderOpen,
   FileEdit,
-  FileSearch,
   MessageSquare,
   Users,
   Settings,
@@ -39,23 +27,18 @@ import {
   Bell,
   LogOut,
   User as UserIcon,
-  Zap,
   HelpCircle,
-  Plus,
   ChevronDown,
-  Lightbulb,
   Command,
   CheckCircle,
   X,
   Brain,
   ChevronRight,
-  ChevronLeft,
   AlertTriangle,
   Clock,
   Eye,
-  GraduationCap,
   FileText,
-  Target, // Added Target icon
+  Target,
 } from 'lucide-react';
 
 import { TutorialProvider } from '@/features/tutorial/TutorialProvider';
@@ -104,17 +87,28 @@ const AISpotlight = React.lazy(() =>
   }))
 );
 
-function LayoutContent({ children, currentPageName: _currentPageName }) {
+function LayoutContent({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user: authUser, signOut } = useAuth();
-  const { currentWorkspaceId } = useWorkspace();
+  const { signOut } = useAuth();
+  useWorkspace(); // Initialize workspace context
   const [user, setUser] = useState(null);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
   const [isAISpotlightOpen, setIsAISpotlightOpen] = useState(false);
+
+  // Derive page title from currentPageName prop or location
+  const pageTitle = useMemo(() => {
+    if (currentPageName) return currentPageName;
+
+    // Fallback: derive from pathname
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    if (pathParts.length === 0) return 'Dashboard';
+
+    // Capitalize and format the first path segment
+    const pageName = pathParts[0];
+    return pageName.charAt(0).toUpperCase() + pageName.slice(1).replace(/-/g, ' ');
+  }, [currentPageName, location.pathname]);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -124,7 +118,8 @@ function LayoutContent({ children, currentPageName: _currentPageName }) {
     return false;
   });
 
-  const [isKeyboardShortcutsOpen, setIsKeyboardShortcutsOpen] = useState(false);
+  // TODO: Implement keyboard shortcuts modal
+  const [_isKeyboardShortcutsOpen, setIsKeyboardShortcutsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
   // Route-aware project filter for TeamChatBubble
@@ -406,11 +401,12 @@ function LayoutContent({ children, currentPageName: _currentPageName }) {
     }
   };
 
-  const handleSearchFocus = useCallback(() => {
+  // These handlers are reserved for GlobalSearch integration
+  const _handleSearchFocus = useCallback(() => {
     setIsGlobalSearchOpen(true);
   }, []);
 
-  const handleSearchResult = useCallback(
+  const _handleSearchResult = useCallback(
     (result) => {
       setIsGlobalSearchOpen(false);
       switch (result.type) {
@@ -586,7 +582,7 @@ function LayoutContent({ children, currentPageName: _currentPageName }) {
     },
   ];
 
-  const SidebarContent = ({ isMobile = false }) => (
+  const SidebarContent = ({ isMobile: _isMobile = false }) => (
     <div className="flex flex-col h-full">
       <div className="p-6 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-3">
@@ -755,6 +751,16 @@ function LayoutContent({ children, currentPageName: _currentPageName }) {
                   AssignmentHub
                 </span>
               </div>
+
+              {/* Current Page Title - visible on larger screens */}
+              {pageTitle && (
+                <div className="hidden lg:flex items-center gap-2 ml-4 pl-4 border-l border-gray-200 dark:border-gray-700">
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                    {pageTitle}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Workspace Switcher, Search & User Menu */}

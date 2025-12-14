@@ -40,7 +40,7 @@ export function useConnectionStatus() {
   const checkSupabaseConnection = useCallback(async () => {
     try {
       // Simple query to check if connection is alive
-      const { error } = await supabase.from('User').select('id').limit(1).maybeSingle();
+      const { error } = await supabase.from('workspaces').select('id').limit(1).maybeSingle();
 
       if (error && error.code === 'PGRST116') {
         // This is actually fine - just means no rows returned

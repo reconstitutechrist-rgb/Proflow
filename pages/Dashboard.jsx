@@ -4,16 +4,16 @@ import { Task } from '@/api/entities';
 import { Document } from '@/api/entities';
 import { Message } from '@/api/entities';
 import { db } from '@/api/db';
+import { formatDistanceToNow } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import {
-  LayoutDashboard,
   FolderOpen,
   FileText,
   Users,
-  TrendingUp,
   AlertCircle,
   Clock,
   CheckCircle2,
@@ -22,7 +22,6 @@ import {
   Activity,
   Sparkles,
   AlertTriangle,
-  Target,
   ArrowRight,
   Zap,
   ChevronDown,
@@ -30,12 +29,8 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router';
 import { createPageUrl } from '@/lib/utils';
-import StatsOverview from '@/components/dashboard/StatsOverview';
-import RecentActivity from '@/components/dashboard/RecentActivity';
-import AssignmentProgress from '@/features/assignments/AssignmentProgress';
 import DashboardNotes from '@/components/dashboard/DashboardNotes';
 import PartnerActivity from '@/components/dashboard/PartnerActivity';
-import SharedNotes from '@/components/dashboard/SharedNotes';
 import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 
 const DASHBOARD_PREFS_KEY = 'proflow_dashboard_prefs';
@@ -45,11 +40,9 @@ const DEFAULT_WIDGET_PREFS = {
   needsAttention: true,
   todaysFocus: true,
   stats: true,
-  notes: true,
+  notes: false, // collapsed by default
   partnerActivity: true,
   upcomingTasks: true,
-  sharedNotes: true,
-  quickActions: true,
 };
 
 // Collapsible section header component
@@ -76,16 +69,7 @@ function CollapsibleHeader({ title, icon: Icon, isOpen, onToggle, badge, classNa
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [stats, setStats] = useState({
-    totalAssignments: 0,
-    activeAssignments: 0,
-    totalTasks: 0,
-    completedTasks: 0,
-    totalDocuments: 0,
-    recentMessages: 0,
-  });
   const [upcomingTasks, setUpcomingTasks] = useState([]);
-  const [overdueTasks, setOverdueTasks] = useState([]);
   const [todaysFocus, setTodaysFocus] = useState([]);
   const [needsAttention, setNeedsAttention] = useState({
     overdue: 0,
@@ -94,6 +78,14 @@ export default function DashboardPage() {
     blocked: 0,
   });
   const [error, setError] = useState(null);
+
+  // Teammate activity for the Overview section
+  const [teamActivity, setTeamActivity] = useState({
+    tasks: [],
+    documents: [],
+    messages: [],
+    assignments: [],
+  });
 
   // Widget visibility preferences (persisted to localStorage)
   const [widgetPrefs, setWidgetPrefs] = useState(() => {
@@ -147,13 +139,9 @@ export default function DashboardPage() {
       ]);
 
       const assignmentData = assignments.status === 'fulfilled' ? assignments.value : [];
-      const activeAssignments = assignmentData.filter(
-        (a) => a.status === 'in_progress' || a.status === 'planning'
-      );
 
       const taskData = tasks.status === 'fulfilled' ? tasks.value : [];
       const userTasks = taskData.filter((t) => t.assigned_to === currentUser.email);
-      const completedTasks = userTasks.filter((t) => t.status === 'completed');
 
       // Calculate today's date without time
       const today = new Date();
@@ -218,7 +206,6 @@ export default function DashboardPage() {
         })
         .slice(0, 3);
 
-      setOverdueTasks(overdueTasksList);
       setTodaysFocus(focusTasks);
       setNeedsAttention({
         overdue: overdueTasksList.length,
@@ -234,15 +221,81 @@ export default function DashboardPage() {
 
       const documentData = documents.status === 'fulfilled' ? documents.value : [];
       const messageData = messages.status === 'fulfilled' ? messages.value : [];
-      const recentMessages = messageData.slice(0, 10);
 
-      setStats({
-        totalAssignments: assignmentData.length,
-        activeAssignments: activeAssignments.length,
-        totalTasks: userTasks.length,
-        completedTasks: completedTasks.length,
-        totalDocuments: documentData.length,
-        recentMessages: recentMessages.length,
+      // Calculate teammate activity (last 24 hours, not from current user)
+      const oneDayAgo = new Date();
+      oneDayAgo.setHours(oneDayAgo.getHours() - 24);
+
+      const teammateTaskActivity = taskData
+        .filter((t) => {
+          const updateDate = new Date(t.updated_date || t.created_date);
+          const isRecent = updateDate >= oneDayAgo;
+          const isTeammate =
+            t.created_by !== currentUser.email && t.assigned_to !== currentUser.email;
+          return isRecent && isTeammate;
+        })
+        .slice(0, 5)
+        .map((t) => ({
+          id: t.id,
+          title: t.title,
+          by: t.created_by,
+          date: t.updated_date || t.created_date,
+          action: t.status === 'completed' ? 'completed' : 'updated',
+        }));
+
+      const teammateDocActivity = documentData
+        .filter((d) => {
+          const updateDate = new Date(d.updated_date || d.created_date);
+          const isRecent = updateDate >= oneDayAgo;
+          const isTeammate = d.created_by !== currentUser.email;
+          return isRecent && isTeammate;
+        })
+        .slice(0, 5)
+        .map((d) => ({
+          id: d.id,
+          title: d.title || d.file_name,
+          by: d.created_by,
+          date: d.updated_date || d.created_date,
+          action: 'added',
+        }));
+
+      const teammateMessageActivity = messageData
+        .filter((m) => {
+          const createDate = new Date(m.created_date);
+          const isRecent = createDate >= oneDayAgo;
+          const isTeammate = m.author_email !== currentUser.email;
+          return isRecent && isTeammate;
+        })
+        .slice(0, 5)
+        .map((m) => ({
+          id: m.id,
+          title: m.content?.substring(0, 50) + (m.content?.length > 50 ? '...' : ''),
+          by: m.author_email,
+          date: m.created_date,
+          action: 'sent',
+        }));
+
+      const teammateAssignmentActivity = assignmentData
+        .filter((a) => {
+          const updateDate = new Date(a.updated_date || a.created_date);
+          const isRecent = updateDate >= oneDayAgo;
+          const isTeammate = a.created_by !== currentUser.email;
+          return isRecent && isTeammate;
+        })
+        .slice(0, 5)
+        .map((a) => ({
+          id: a.id,
+          title: a.name,
+          by: a.created_by,
+          date: a.updated_date || a.created_date,
+          action: 'updated',
+        }));
+
+      setTeamActivity({
+        tasks: teammateTaskActivity,
+        documents: teammateDocActivity,
+        messages: teammateMessageActivity,
+        assignments: teammateAssignmentActivity,
       });
 
       setUpcomingTasks(pendingTasks);
@@ -452,73 +505,185 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {/* Stats Overview */}
+      {/* Team Activity */}
       <Collapsible open={widgetPrefs.stats} onOpenChange={() => toggleWidget('stats')}>
         <Card>
           <CardHeader className="pb-2">
             <CollapsibleTrigger asChild>
               <CollapsibleHeader
-                title="Overview"
-                icon={TrendingUp}
+                title="Team Activity"
+                icon={Users}
                 isOpen={widgetPrefs.stats}
                 onToggle={() => toggleWidget('stats')}
                 className="font-semibold"
+                badge={<span className="text-xs text-gray-500 ml-2">Last 24 hours</span>}
               />
             </CollapsibleTrigger>
           </CardHeader>
           <CollapsibleContent>
             <CardContent className="pt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      Active Assignments
-                    </span>
-                    <FolderOpen className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <div className="text-2xl font-bold">{stats.activeAssignments}</div>
-                  <p className="text-xs text-gray-500 mt-1">{stats.totalAssignments} total</p>
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {/* Tasks */}
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+                        {teamActivity.tasks.length > 0 ? `+${teamActivity.tasks.length}` : '—'}
+                      </div>
+                      <p className="text-xs text-green-600 dark:text-green-500">Tasks</p>
+                    </div>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-72">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">Recent Task Activity</h4>
+                      {teamActivity.tasks.length > 0 ? (
+                        teamActivity.tasks.map((item) => (
+                          <div key={item.id} className="text-sm border-l-2 border-green-400 pl-2">
+                            <p className="font-medium truncate">{item.title}</p>
+                            <p className="text-xs text-gray-500">
+                              {item.by?.split('@')[0]} •{' '}
+                              {formatDistanceToNow(new Date(item.date), { addSuffix: true })}
+                            </p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500">No recent task activity</p>
+                      )}
+                      <Link
+                        to={createPageUrl('Tasks')}
+                        className="text-xs text-blue-600 hover:underline block mt-2"
+                      >
+                        View all tasks →
+                      </Link>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
 
-                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      Your Tasks
-                    </span>
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  </div>
-                  <div className="text-2xl font-bold">
-                    {stats.completedTasks}/{stats.totalTasks}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {stats.totalTasks > 0
-                      ? Math.round((stats.completedTasks / stats.totalTasks) * 100)
-                      : 0}
-                    % completed
-                  </p>
-                </div>
+                {/* Documents */}
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
+                        <FileText className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <div className="text-2xl font-bold text-purple-700 dark:text-purple-400">
+                        {teamActivity.documents.length > 0
+                          ? `+${teamActivity.documents.length}`
+                          : '—'}
+                      </div>
+                      <p className="text-xs text-purple-600 dark:text-purple-500">Documents</p>
+                    </div>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-72">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">Recent Document Activity</h4>
+                      {teamActivity.documents.length > 0 ? (
+                        teamActivity.documents.map((item) => (
+                          <div key={item.id} className="text-sm border-l-2 border-purple-400 pl-2">
+                            <p className="font-medium truncate">{item.title}</p>
+                            <p className="text-xs text-gray-500">
+                              {item.by?.split('@')[0]} •{' '}
+                              {formatDistanceToNow(new Date(item.date), { addSuffix: true })}
+                            </p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500">No recent document activity</p>
+                      )}
+                      <Link
+                        to={createPageUrl('Documents')}
+                        className="text-xs text-blue-600 hover:underline block mt-2"
+                      >
+                        View all documents →
+                      </Link>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
 
-                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      Documents
-                    </span>
-                    <FileText className="h-4 w-4 text-purple-600" />
-                  </div>
-                  <div className="text-2xl font-bold">{stats.totalDocuments}</div>
-                  <p className="text-xs text-gray-500 mt-1">Across all assignments</p>
-                </div>
+                {/* Messages */}
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
+                        <MessageSquare className="h-5 w-5 text-orange-600" />
+                      </div>
+                      <div className="text-2xl font-bold text-orange-700 dark:text-orange-400">
+                        {teamActivity.messages.length > 0
+                          ? `+${teamActivity.messages.length}`
+                          : '—'}
+                      </div>
+                      <p className="text-xs text-orange-600 dark:text-orange-500">Messages</p>
+                    </div>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-72">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">Recent Messages</h4>
+                      {teamActivity.messages.length > 0 ? (
+                        teamActivity.messages.map((item) => (
+                          <div key={item.id} className="text-sm border-l-2 border-orange-400 pl-2">
+                            <p className="font-medium truncate">{item.title}</p>
+                            <p className="text-xs text-gray-500">
+                              {item.by?.split('@')[0]} •{' '}
+                              {formatDistanceToNow(new Date(item.date), { addSuffix: true })}
+                            </p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500">No recent messages</p>
+                      )}
+                      <Link
+                        to={createPageUrl('Chat')}
+                        className="text-xs text-blue-600 hover:underline block mt-2"
+                      >
+                        View chat →
+                      </Link>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
 
-                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      Recent Messages
-                    </span>
-                    <MessageSquare className="h-4 w-4 text-orange-600" />
-                  </div>
-                  <div className="text-2xl font-bold">{stats.recentMessages}</div>
-                  <p className="text-xs text-gray-500 mt-1">In the last 24 hours</p>
-                </div>
+                {/* Assignments */}
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
+                        <FolderOpen className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+                        {teamActivity.assignments.length > 0
+                          ? `+${teamActivity.assignments.length}`
+                          : '—'}
+                      </div>
+                      <p className="text-xs text-blue-600 dark:text-blue-500">Assignments</p>
+                    </div>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-72">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">Recent Assignment Activity</h4>
+                      {teamActivity.assignments.length > 0 ? (
+                        teamActivity.assignments.map((item) => (
+                          <div key={item.id} className="text-sm border-l-2 border-blue-400 pl-2">
+                            <p className="font-medium truncate">{item.title}</p>
+                            <p className="text-xs text-gray-500">
+                              {item.by?.split('@')[0]} •{' '}
+                              {formatDistanceToNow(new Date(item.date), { addSuffix: true })}
+                            </p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500">No recent assignment activity</p>
+                      )}
+                      <Link
+                        to={createPageUrl('Assignments')}
+                        className="text-xs text-blue-600 hover:underline block mt-2"
+                      >
+                        View all assignments →
+                      </Link>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
               </div>
             </CardContent>
           </CollapsibleContent>
@@ -611,75 +776,6 @@ export default function DashboardPage() {
           </Card>
         </Collapsible>
       </div>
-
-      {/* Team Collaboration Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <SharedNotes compact={true} />
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <Collapsible
-        open={widgetPrefs.quickActions}
-        onOpenChange={() => toggleWidget('quickActions')}
-      >
-        <Card>
-          <CardHeader className="pb-2">
-            <CollapsibleTrigger asChild>
-              <CollapsibleHeader
-                title="Quick Actions"
-                icon={Zap}
-                isOpen={widgetPrefs.quickActions}
-                onToggle={() => toggleWidget('quickActions')}
-                className="font-semibold"
-              />
-            </CollapsibleTrigger>
-          </CardHeader>
-          <CollapsibleContent>
-            <CardContent className="pt-0">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Link to={createPageUrl('Assignments')}>
-                  <Button
-                    variant="outline"
-                    className="w-full h-auto py-4 flex flex-col items-center gap-2"
-                  >
-                    <FolderOpen className="w-6 h-6" />
-                    <span className="text-sm">New Assignment</span>
-                  </Button>
-                </Link>
-                <Link to={`${createPageUrl('Tasks')}?create=true`}>
-                  <Button
-                    variant="outline"
-                    className="w-full h-auto py-4 flex flex-col items-center gap-2"
-                  >
-                    <CheckCircle2 className="w-6 h-6" />
-                    <span className="text-sm">Add Task</span>
-                  </Button>
-                </Link>
-                <Link to={`${createPageUrl('DocumentsHub')}?tab=studio`}>
-                  <Button
-                    variant="outline"
-                    className="w-full h-auto py-4 flex flex-col items-center gap-2"
-                  >
-                    <FileText className="w-6 h-6" />
-                    <span className="text-sm">New Document</span>
-                  </Button>
-                </Link>
-                <Link to={createPageUrl('Chat')}>
-                  <Button
-                    variant="outline"
-                    className="w-full h-auto py-4 flex flex-col items-center gap-2"
-                  >
-                    <MessageSquare className="w-6 h-6" />
-                    <span className="text-sm">Team Chat</span>
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
     </div>
   );
 }

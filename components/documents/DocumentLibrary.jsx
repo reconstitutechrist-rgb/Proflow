@@ -84,11 +84,9 @@ export default function DocumentLibrary({
     id: null,
   });
   const [selectedFolderPath, setSelectedFolderPath] = useState(null);
-  const [restoreDialogDoc, setRestoreDialogDoc] = useState(null); // NEW: Document to restore
-  const [showOutdated, setShowOutdated] = useState(false); // NEW: Toggle to show outdated docs
+  const [restoreDialogDoc, setRestoreDialogDoc] = useState(null); // Document to restore
   const [moveDialogDoc, setMoveDialogDoc] = useState(null); // Document to move to folder
   const [previewDoc, setPreviewDoc] = useState(null); // Document to preview
-  const [hoverPreviewEnabled, setHoverPreviewEnabled] = useState(true); // Enable/disable hover preview
 
   // Helper to get preview text from document content
   const getPreviewText = useCallback((doc) => {
@@ -138,9 +136,8 @@ export default function DocumentLibrary({
   const filteredDocuments = documents.filter((doc) => {
     if (doc.document_type === 'folder_placeholder') return false;
 
-    // NEW: Handle outdated documents filter
-    // Show outdated docs only when viewing the Outdated folder or when showOutdated is true
-    if (doc.is_outdated && !isViewingOutdatedFolder && !showOutdated) {
+    // Handle outdated documents filter - only show when viewing Outdated folder
+    if (doc.is_outdated && !isViewingOutdatedFolder) {
       return false;
     }
     // When viewing Outdated folder, only show outdated docs

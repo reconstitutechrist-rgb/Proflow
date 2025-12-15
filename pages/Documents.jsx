@@ -35,7 +35,6 @@ export default function DocumentsPage() {
   const [selectedAssignment, setSelectedAssignment] = useState('all');
   const [selectedProject, setSelectedProject] = useState('all');
 
-  const [, setRetryAttempt] = useState(0); // Used internally for retry logic reset
   const MAX_RETRIES = 3;
   const retryTimeoutRef = useRef(null); // Ref to store the timeout ID for rate limit retries
 
@@ -105,9 +104,6 @@ export default function DocumentsPage() {
         );
 
         setDocuments(uniqueDocs);
-
-        // Success - reset retry attempt
-        setRetryAttempt(0);
       } catch (error) {
         console.error('Error loading data:', error);
 
@@ -166,7 +162,7 @@ export default function DocumentsPage() {
   };
 
   const handleEditDocument = (doc) => {
-    navigate(`${createPageUrl('DocumentStudio')}?id=${doc.id}`);
+    navigate(`${createPageUrl('DocumentsHub')}?tab=studio&id=${doc.id}`);
   };
 
   const getAssignmentNames = (assignmentIds) => {

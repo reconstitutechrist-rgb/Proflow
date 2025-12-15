@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router';
 import { db } from '@/api/db';
 import { Document } from '@/api/entities';
@@ -10,6 +10,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   FileText,
   Loader2,
@@ -97,15 +107,12 @@ export default function DocumentsHub() {
   // Editor State Hand-off
   const [pendingDocumentData, setPendingDocumentData] = useState(null);
 
-  // Load data
-  useEffect(() => {
-    if (currentWorkspaceId && !workspaceLoading) {
-      loadData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentWorkspaceId, workspaceLoading, documentId]);
+  // Delete confirmation state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState(null);
 
-  const loadData = async () => {
+  // Load data
+  const loadData = useCallback(async () => {
     if (!currentWorkspaceId) return;
 
     try {
@@ -163,7 +170,13 @@ export default function DocumentsHub() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentWorkspaceId]);
+
+  useEffect(() => {
+    if (currentWorkspaceId && !workspaceLoading) {
+      loadData();
+    }
+  }, [currentWorkspaceId, workspaceLoading, documentId, loadData]);
 
   const createNewDocument = () => {
     setPendingDocumentData(null); // Clear any pending data
@@ -176,16 +189,23 @@ export default function DocumentsHub() {
     setSearchParams({ tab: 'studio', id: doc.id });
   };
 
-  const handleDeleteDocument = async (e, doc) => {
+  const handleDeleteDocument = (e, doc) => {
     e.stopPropagation();
-    if (confirm(`Are you sure you want to delete "${doc.title}"?`)) {
-      try {
-        await Document.delete(doc.id);
-        toast.success('Document deleted');
-        loadData();
-      } catch {
-        toast.error('Failed to delete document');
-      }
+    setDocumentToDelete(doc);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!documentToDelete) return;
+    try {
+      await Document.delete(documentToDelete.id);
+      toast.success('Document deleted');
+      loadData();
+    } catch {
+      toast.error('Failed to delete document');
+    } finally {
+      setDeleteDialogOpen(false);
+      setDocumentToDelete(null);
     }
   };
 
@@ -429,6 +449,28 @@ export default function DocumentsHub() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Document</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{documentToDelete?.title}"? This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDocumentToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

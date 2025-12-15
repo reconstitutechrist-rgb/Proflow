@@ -83,6 +83,11 @@ export default function DocumentEditor({
   const [isOutlineDialogOpen, setIsOutlineDialogOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
+  // Change notes dialog state (for versioning)
+  const [isChangeNotesOpen, setIsChangeNotesOpen] = useState(false);
+  const [pendingChangeNotes, setPendingChangeNotes] = useState('');
+  const [pendingSaveData, setPendingSaveData] = useState(null);
+
   // Refs
   const autosaveTimerRef = useRef(null);
 
@@ -196,7 +201,7 @@ export default function DocumentEditor({
     }
   };
 
-  const handleSave = async (overrideData = null) => {
+  const handleSave = async (overrideData = null, changeNotes = null) => {
     const saveTitle = overrideData?.title ?? title;
     const saveDescription = overrideData?.description ?? description;
     const saveContent = overrideData?.content ?? content;
@@ -207,6 +212,14 @@ export default function DocumentEditor({
     }
     if (!currentWorkspaceId) {
       toast.error('No active workspace selected');
+      return;
+    }
+
+    // If updating an existing document and no change notes provided, open dialog
+    if (documentId && changeNotes === null) {
+      setPendingSaveData(overrideData);
+      setPendingChangeNotes('');
+      setIsChangeNotesOpen(true);
       return;
     }
 
@@ -266,7 +279,7 @@ export default function DocumentEditor({
 
       let savedDoc;
       if (documentId) {
-        const changeNotes = prompt('Describe changes (optional):', '') || 'Updates';
+        const notes = changeNotes || 'Updates';
         const existingDoc = await Document.get(documentId);
 
         const newVersion = {
@@ -274,13 +287,13 @@ export default function DocumentEditor({
           file_url: existingDoc.file_url,
           version: existingDoc.version || '1.0',
           created_date: existingDoc.updated_date,
-          change_notes: changeNotes,
+          change_notes: notes,
           updated_date: new Date().toISOString(),
         };
 
         const versionHistory = [...(existingDoc.version_history || []), newVersion];
         const [major, minor] = (existingDoc.version || '1.0').split('.').map(Number);
-        const newVersionNumber = changeNotes.toLowerCase().includes('major')
+        const newVersionNumber = notes.toLowerCase().includes('major')
           ? `${major + 1}.0`
           : `${major}.${minor + 1}`;
 
@@ -319,6 +332,13 @@ export default function DocumentEditor({
       setIsSaving(false);
       setIsConverting(false);
     }
+  };
+
+  const handleChangeNotesSave = () => {
+    setIsChangeNotesOpen(false);
+    handleSave(pendingSaveData, pendingChangeNotes || 'Updates');
+    setPendingSaveData(null);
+    setPendingChangeNotes('');
   };
 
   const handleInsertContent = useCallback((newContent) => {
@@ -726,6 +746,47 @@ export default function DocumentEditor({
         tasks={tasks}
         referenceDocumentUrls={getAllReferenceDocuments()}
       />
+
+      {/* Change Notes Dialog */}
+      <Dialog open={isChangeNotesOpen} onOpenChange={setIsChangeNotesOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Describe Your Changes</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-gray-500">
+              Add a note about what changed in this version. Include "major" for a major version
+              bump.
+            </p>
+            <Input
+              placeholder="e.g., Updated project timeline, Fixed typos..."
+              value={pendingChangeNotes}
+              onChange={(e) => setPendingChangeNotes(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleChangeNotesSave();
+                }
+              }}
+              autoFocus
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsChangeNotesOpen(false);
+                setPendingSaveData(null);
+                setPendingChangeNotes('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleChangeNotesSave} className="bg-indigo-600 hover:bg-indigo-700">
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

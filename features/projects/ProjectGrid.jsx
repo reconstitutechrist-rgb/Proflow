@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChevronRight } from 'lucide-react';
@@ -19,6 +19,17 @@ const lightenColor = (hex, percent) => {
 };
 
 export default function ProjectGrid({ projects, onProjectClick }) {
+  // PERFORMANCE: Memoize color calculations to avoid recomputing on every render
+  const projectGradients = useMemo(() => {
+    const gradients = {};
+    projects.forEach((project) => {
+      const baseColor = project.color || '#3B82F6';
+      gradients[project.id] =
+        `linear-gradient(to right, ${baseColor}, ${lightenColor(baseColor, 40)})`;
+    });
+    return gradients;
+  }, [projects]);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {projects.map((project) => (
@@ -30,7 +41,7 @@ export default function ProjectGrid({ projects, onProjectClick }) {
           <div
             className="h-3"
             style={{
-              background: `linear-gradient(to right, ${project.color || '#3B82F6'}, ${lightenColor(project.color || '#3B82F6', 40)})`,
+              background: projectGradients[project.id],
             }}
           />
           <CardHeader className="pb-3">

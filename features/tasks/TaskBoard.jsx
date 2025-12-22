@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -133,9 +133,12 @@ export default function TaskBoard({
 
   const { currentWorkspaceId } = useWorkspace(); // NEW USAGE
 
-  // Persist active tab whenever it changes
+  // Persist active tab whenever it changes (debounced to prevent thrashing)
   useEffect(() => {
-    localStorage.setItem('taskBoardActiveTab', activeTab);
+    const timeoutId = setTimeout(() => {
+      localStorage.setItem('taskBoardActiveTab', activeTab);
+    }, 300);
+    return () => clearTimeout(timeoutId);
   }, [activeTab]);
 
   // Load tasks based on assignmentId and currentWorkspaceId

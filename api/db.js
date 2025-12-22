@@ -230,21 +230,16 @@ const auth = {
     } = await supabase.auth.getUser();
 
     if (error || !user) {
-      // SECURITY: Do not return fake user in production
-      // Components should handle null user appropriately
+      // SECURITY: Always return null when no authenticated user
+      // Components must handle null user state gracefully
       if (import.meta.env.DEV) {
-        console.warn('Auth Warning: No authenticated user. Using development fallback.');
-        return {
-          id: '00000000-0000-0000-0000-000000000000',
-          email: 'dev@proflow.local',
-          full_name: 'Development User',
-          active_workspace_id: null,
-          created_date: new Date().toISOString(),
-          _isDevelopmentFallback: true, // Flag to identify fake user
-        };
+        console.warn(
+          'Auth Warning: No authenticated user. Components should handle null user state.'
+        );
       }
-      // In production, return null to indicate no authenticated user
-      console.error('Error getting user:', error);
+      if (error) {
+        console.error('Error getting user:', error);
+      }
       return null;
     }
 
@@ -1240,7 +1235,6 @@ const integrations = {
   Core: {
     InvokeLLM: async (params) => {
       const { prompt, system_prompt, response_json_schema } = params;
-      console.log('InvokeLLM called with:', { prompt, system_prompt });
       return {
         success: true,
         message: 'LLM integration not configured.',
@@ -1282,12 +1276,6 @@ const functionsRegistry = {
   anthropicResearch: async (params) => {
     const { question, assignment, documents: _documents, useWebSearch } = params;
 
-    console.log('anthropicResearch invoked with:', {
-      question,
-      assignment: assignment?.name,
-      useWebSearch,
-    });
-
     // Stub implementation - returns structured research response
     // Replace with actual Anthropic API integration
     return {
@@ -1314,7 +1302,6 @@ const functionsRegistry = {
 
   ragHelper: async (params) => {
     const { query, documents, context: _context } = params;
-    console.log('ragHelper invoked with:', { query, documentsCount: documents?.length });
 
     return {
       data: {
@@ -1327,11 +1314,6 @@ const functionsRegistry = {
 
   exportSessionToPdf: async (params) => {
     const { session, messages, title } = params;
-    console.log('exportSessionToPdf invoked with:', {
-      session,
-      messagesCount: messages?.length,
-      title,
-    });
 
     return {
       data: {

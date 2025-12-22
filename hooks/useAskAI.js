@@ -10,14 +10,7 @@ import {
   updateProjectMemoryFromChat,
   buildProjectMemoryPrompt,
 } from '@/api/projectMemory';
-
-const MEMORY_LIMITS = {
-  MAX_DOCUMENTS: 50,
-  MAX_MESSAGES: 200,
-  MAX_FILE_SIZE: 10 * 1024 * 1024,
-  WARNING_DOCUMENTS: 30,
-  WARNING_MESSAGES: 150,
-};
+import { MEMORY_LIMITS } from '@/config/constants';
 
 const DRAFT_STORAGE_KEY = 'askAI_draft_v1';
 const AUTO_SAVE_INTERVAL = 60000;

@@ -29,6 +29,8 @@ import {
   Zap,
   CheckCircle,
   Plus,
+  Target,
+  Bell,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -61,7 +63,7 @@ const DOCUMENT_TEMPLATES = [
     id: 'project-plan',
     title: 'Project Plan',
     description: 'Tasks, milestones, and risk management',
-    icon: Target, // Target needs import if used
+    icon: Target,
     color: 'from-green-500 to-teal-500',
     prompt:
       'Develop a project plan with executive summary, goals, work breakdown, resource allocation, and risk mitigation.',
@@ -70,15 +72,12 @@ const DOCUMENT_TEMPLATES = [
     id: 'status-report',
     title: 'Status Report',
     description: 'Progress, achievements, and next steps',
-    icon: Bell, // Bell needs import if used
+    icon: Bell,
     color: 'from-orange-500 to-red-500',
     prompt:
       'Generate a status report covering progress, completed tasks, upcoming tasks, blockers, and overall health.',
   },
 ];
-
-// Re-import icons needed for templates array
-import { Target, Bell } from 'lucide-react';
 
 export default function DocumentsHub() {
   const [searchParams, setSearchParams] = useSearchParams();

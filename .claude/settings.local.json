@@ -30,7 +30,8 @@
       "Bash(git pull:*)",
       "Bash(git stash:*)",
       "Bash(timeout:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(npx eslint:*)"
     ],
     "deny": ["Read(./.env)", "Read(./.env.*)", "Read(./.env.local)"]
   },

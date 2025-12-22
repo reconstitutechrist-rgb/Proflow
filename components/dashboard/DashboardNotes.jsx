@@ -50,6 +50,7 @@ import { Label } from '@/components/ui/label';
 import RichTextEditor from '@/components/ui/rich-text-editor';
 import { toast } from 'sonner';
 import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import { useDebouncedValue } from '@/hooks';
 
 const NOTES_COLLAPSED_KEY = 'proflow_notes_collapsed';
 
@@ -78,6 +79,7 @@ export default function DashboardNotes({ currentUser }) {
     });
   };
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 500);
   const [searching, setSearching] = useState(false);
   const [filteredNotes, setFilteredNotes] = useState([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -124,23 +126,24 @@ export default function DashboardNotes({ currentUser }) {
   }, [currentWorkspaceId]);
 
   useEffect(() => {
-    if (searchQuery.trim()) {
+    if (debouncedSearchQuery.trim()) {
       performSearch();
     } else {
       setFilteredNotes(notes);
     }
-  }, [searchQuery, notes]);
+  }, [debouncedSearchQuery, notes]);
 
   const loadData = async () => {
     try {
       setLoading(true);
+      // PERFORMANCE: Reduced initial load limits to improve mount performance
       const [notesData, sharedNotesData, assignmentsData, tasksData, documentsData] =
         await Promise.all([
-          Note.filter({ workspace_id: currentWorkspaceId }, '-updated_date', 100),
-          Note.filter({ workspace_id: currentWorkspaceId, is_shared: true }, '-updated_date'),
-          Assignment.filter({ workspace_id: currentWorkspaceId }, '-updated_date', 50),
-          Task.filter({ workspace_id: currentWorkspaceId }, '-updated_date', 50),
-          Document.filter({ workspace_id: currentWorkspaceId }, '-updated_date', 50),
+          Note.filter({ workspace_id: currentWorkspaceId }, '-updated_date', 20),
+          Note.filter({ workspace_id: currentWorkspaceId, is_shared: true }, '-updated_date', 10),
+          Assignment.filter({ workspace_id: currentWorkspaceId }, '-updated_date', 20),
+          Task.filter({ workspace_id: currentWorkspaceId }, '-updated_date', 20),
+          Document.filter({ workspace_id: currentWorkspaceId }, '-updated_date', 20),
         ]);
 
       // Filter out shared notes from personal notes list

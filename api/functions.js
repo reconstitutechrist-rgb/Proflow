@@ -129,8 +129,6 @@ function generateSimpleEmbedding(text) {
 export const anthropicResearch = async (params) => {
   const { query, context } = params;
 
-  console.log('anthropicResearch called with:', { query, context });
-
   // Stub implementation - returns placeholder data
   return {
     success: true,
@@ -156,13 +154,6 @@ export const ragHelper = async (params) => {
     topK,
     cachedEmbeddings,
   } = params;
-
-  console.log('ragHelper called with:', {
-    endpoint,
-    query,
-    documentsCount: documents?.length,
-    fileName,
-  });
 
   // Handle different RAG endpoints
   if (endpoint === 'generateEmbeddings') {
@@ -252,14 +243,6 @@ export const ragHelper = async (params) => {
       minOverallScore = SIMILARITY_THRESHOLDS.MIN_OVERALL_SCORE,
       maxSuggestions = SIMILARITY_THRESHOLDS.MAX_SUGGESTIONS,
     } = params;
-
-    console.log('findRelatedDocuments called with:', {
-      titleLength: newDocumentTitle?.length,
-      contentLength: newDocumentContent?.length,
-      existingDocsCount: existingDocuments.length,
-      projectId,
-      assignmentIds,
-    });
 
     if (!existingDocuments || existingDocuments.length === 0) {
       return {
@@ -386,12 +369,6 @@ export const ragHelper = async (params) => {
  */
 export const exportSessionToPdf = async (params) => {
   const { session, messages, title } = params;
-
-  console.log('exportSessionToPdf called with:', {
-    session,
-    messagesCount: messages?.length,
-    title,
-  });
 
   // Stub implementation
   return {

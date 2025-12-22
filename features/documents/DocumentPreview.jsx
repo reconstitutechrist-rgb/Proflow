@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import DOMPurify from 'dompurify';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -561,7 +562,7 @@ export default function DocumentPreview({
           <div className="max-w-4xl mx-auto p-8">
             <div
               className="prose prose-gray dark:prose-invert max-w-none prose-headings:font-semibold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-base prose-p:leading-relaxed prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-img:rounded-lg prose-img:shadow-md"
-              dangerouslySetInnerHTML={{ __html: document.content }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(document.content) }}
             />
           </div>
         </div>

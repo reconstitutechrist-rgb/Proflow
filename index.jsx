@@ -3,6 +3,20 @@ import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'r
 import Layout from '@/components/common/Layout';
 import { AuthProvider, useAuth } from '@/components/auth/AuthProvider';
 import AuthPage from '@/pages/AuthPage';
+import { toast } from 'sonner';
+
+/**
+ * Redirect component that notifies users about page location changes
+ */
+function RedirectWithNotice({ to, message }) {
+  useEffect(() => {
+    toast.info(message || `This page has moved to a new location.`, {
+      duration: 3000,
+    });
+  }, [message]);
+
+  return <Navigate to={to} replace />;
+}
 
 // Eagerly load core pages for instant navigation
 import Dashboard from '@/pages/Dashboard';
@@ -129,9 +143,25 @@ function ProtectedContent() {
           <Route path="/Chat" element={<Chat />} />
           <Route path="/Tasks" element={<Tasks />} />
           {/* Redirect Generate to DocumentsHub templates */}
-          <Route path="/Generate" element={<Navigate to="/DocumentsHub?tab=templates" replace />} />
+          <Route
+            path="/Generate"
+            element={
+              <RedirectWithNotice
+                to="/DocumentsHub?tab=templates"
+                message="Generate has moved to Documents → Templates"
+              />
+            }
+          />
           {/* Redirect old Research route to AIHub research tab */}
-          <Route path="/Research" element={<Navigate to="/AIHub?tab=research" replace />} />
+          <Route
+            path="/Research"
+            element={
+              <RedirectWithNotice
+                to="/AIHub?tab=research"
+                message="Research has moved to AI Hub → Research"
+              />
+            }
+          />
           <Route path="/Assignments" element={<Assignments />} />
           <Route path="/AskAI" element={<AskAI />} />
           <Route path="/AIHub" element={<AIHub />} />
@@ -141,9 +171,33 @@ function ProtectedContent() {
           <Route path="/Workspaces" element={<Workspaces />} />
           <Route path="/Documentation" element={<Documentation />} />
           {/* Redirect old document routes to unified DocumentsHub */}
-          <Route path="/DocumentCreator" element={<DocumentsHub />} />
-          <Route path="/DocumentStudio" element={<DocumentsHub />} />
-          <Route path="/DocumentWorkshop" element={<DocumentsHub />} />
+          <Route
+            path="/DocumentCreator"
+            element={
+              <RedirectWithNotice
+                to="/DocumentsHub"
+                message="Document Creator has moved to Documents Hub"
+              />
+            }
+          />
+          <Route
+            path="/DocumentStudio"
+            element={
+              <RedirectWithNotice
+                to="/DocumentsHub?tab=studio"
+                message="Document Studio has moved to Documents Hub → Studio"
+              />
+            }
+          />
+          <Route
+            path="/DocumentWorkshop"
+            element={
+              <RedirectWithNotice
+                to="/DocumentsHub"
+                message="Document Workshop has moved to Documents Hub"
+              />
+            }
+          />
         </Routes>
       </Suspense>
     </Layout>

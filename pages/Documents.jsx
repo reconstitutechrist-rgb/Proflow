@@ -128,7 +128,20 @@ export default function DocumentsPage() {
             });
           }
         } else {
-          toast.error('Failed to load documents');
+          // Provide helpful error message with context
+          const errorMessage = error.message?.includes('network')
+            ? 'Network error. Check your internet connection and try again.'
+            : error.message?.includes('permission') || error.message?.includes('access')
+              ? 'You may not have permission to view these documents. Contact your workspace admin.'
+              : 'Failed to load documents. Please try refreshing the page.';
+
+          toast.error(errorMessage, {
+            duration: 5000,
+            action: {
+              label: 'Retry',
+              onClick: () => loadDocuments(0),
+            },
+          });
         }
       } finally {
         setLoading(false);

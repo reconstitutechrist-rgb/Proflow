@@ -12,7 +12,6 @@ export const InvokeLLM = async (params) => {
 
   // This is a stub implementation
   // In production, replace with actual LLM API call
-  console.log('InvokeLLM called with:', { prompt, system_prompt });
 
   // Return a placeholder response
   return {
@@ -98,7 +97,6 @@ export const ExtractDataFromUploadedFile = async (params) => {
   const { file_url, json_schema } = params;
 
   // This is a stub implementation
-  console.log('ExtractDataFromUploadedFile called with:', { file_url, json_schema });
 
   return {
     success: true,

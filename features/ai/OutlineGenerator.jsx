@@ -8,6 +8,19 @@ import { InvokeLLM } from '@/api/integrations';
 import { toast } from 'sonner';
 import DOMPurify from 'dompurify';
 
+/**
+ * Sanitize user input for safe inclusion in AI prompts
+ * Prevents prompt injection by removing/escaping potentially dangerous patterns
+ */
+const sanitizePromptInput = (input, maxLength = 500) => {
+  if (!input || typeof input !== 'string') return '';
+  return input
+    .slice(0, maxLength) // Limit length
+    .replace(/[`${}]/g, '') // Remove template literal chars
+    .replace(/\n{3,}/g, '\n\n') // Collapse multiple newlines
+    .trim();
+};
+
 export default function OutlineGenerator({
   title,
   description,
@@ -80,21 +93,34 @@ export default function OutlineGenerator({
 
       const taskContext = selectedTask ? tasks.find((t) => t.id === selectedTask) : null;
 
+      // SECURITY: Sanitize all user inputs to prevent prompt injection
+      const safeTitle = sanitizePromptInput(title, 200) || 'Untitled';
+      const safeDescription = sanitizePromptInput(description, 500);
+      const safeCustomPrompt = sanitizePromptInput(customPrompt, 1000);
+      const safeAssignmentName = assignmentContext
+        ? sanitizePromptInput(assignmentContext.name, 200)
+        : '';
+      const safeAssignmentDesc = assignmentContext
+        ? sanitizePromptInput(assignmentContext.description, 500)
+        : '';
+      const safeTaskTitle = taskContext ? sanitizePromptInput(taskContext.title, 200) : '';
+      const safeTaskDesc = taskContext ? sanitizePromptInput(taskContext.description, 500) : '';
+
       const prompt = `Generate a detailed document outline in HTML format.
 
-Document Title: ${title || 'Untitled'}
-${description ? `Description: ${description}` : ''}
-${assignmentContext ? `Assignment Context: ${assignmentContext.name} - ${assignmentContext.description}` : ''}
-${taskContext ? `Specific Task Context: ${taskContext.title} - ${taskContext.description || ''} (Status: ${taskContext.status}, Priority: ${taskContext.priority})` : ''}
+Document Title: ${safeTitle}
+${safeDescription ? `Description: ${safeDescription}` : ''}
+${assignmentContext ? `Assignment Context: ${safeAssignmentName} - ${safeAssignmentDesc}` : ''}
+${taskContext ? `Specific Task Context: ${safeTaskTitle} - ${safeTaskDesc} (Status: ${taskContext.status}, Priority: ${taskContext.priority})` : ''}
 ${typePrompt ? `Document Type: ${typePrompt}` : ''}
-${customPrompt ? `Additional Requirements: ${customPrompt}` : ''}
+${safeCustomPrompt ? `Additional Requirements: ${safeCustomPrompt}` : ''}
 
 Create a well-structured outline with:
 1. Clear section headings (use <h2>, <h3> tags)
 2. Brief descriptions under each heading
 3. Subsections where appropriate
 4. Placeholder text to guide writing
-${taskContext ? `5. Content specifically relevant to the task: ${taskContext.title}` : ''}
+${taskContext ? `5. Content specifically relevant to the task: ${safeTaskTitle}` : ''}
 
 Format the output as clean HTML with proper heading hierarchy.
 Make it comprehensive but concise.

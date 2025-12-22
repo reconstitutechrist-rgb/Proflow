@@ -69,7 +69,7 @@ export default defineConfig(({ mode }) => ({
         },
       },
     },
-    // Increase the chunk size warning limit
-    chunkSizeWarningLimit: 600,
+    // Chunk size warning limit (200KB is recommended for good performance)
+    chunkSizeWarningLimit: 200,
   },
 }));

@@ -47,8 +47,7 @@ export function AuthProvider({ children }) {
       if (newSession?.user) {
         syncUserToLocalStorage(newSession.user);
       } else if (event === 'SIGNED_OUT') {
-        // Clear localStorage on sign out
-        localStorage.removeItem('proflow_current_user');
+        // Clear workspace preference on sign out - Supabase handles session cleanup
         localStorage.removeItem('active_workspace_id');
       }
 
@@ -60,19 +59,16 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  // Sync Supabase user to localStorage format expected by WorkspaceContext
+  // Sync user preference to localStorage (minimal data - no sensitive info)
+  // SECURITY: Only store workspace preference, not email/id (use Supabase session for auth data)
   const syncUserToLocalStorage = (supabaseUser) => {
     if (!supabaseUser) return;
 
-    const userInfo = {
-      id: supabaseUser.id,
-      email: supabaseUser.email,
-      full_name:
-        supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
-      active_workspace_id: supabaseUser.user_metadata?.active_workspace_id || null,
-    };
-
-    localStorage.setItem('proflow_current_user', JSON.stringify(userInfo));
+    // Only store workspace preference - user identity comes from Supabase session
+    const activeWorkspaceId = supabaseUser.user_metadata?.active_workspace_id || null;
+    if (activeWorkspaceId) {
+      localStorage.setItem('active_workspace_id', activeWorkspaceId);
+    }
   };
 
   // Sign out
@@ -84,7 +80,7 @@ export function AuthProvider({ children }) {
 
       setUser(null);
       setSession(null);
-      localStorage.removeItem('proflow_current_user');
+      // Only remove workspace preference - Supabase handles session cleanup
       localStorage.removeItem('active_workspace_id');
     } catch (error) {
       console.error('Error signing out:', error);

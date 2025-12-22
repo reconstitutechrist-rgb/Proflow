@@ -12,29 +12,30 @@ import { db } from '@/api/db';
 
 const WorkspaceContext = createContext();
 
-// Get current user from localStorage (set by AuthProvider on login)
-const getCurrentUser = () => {
-  const stored = localStorage.getItem('proflow_current_user');
-  if (stored) {
-    try {
-      const user = JSON.parse(stored);
-      // Skip fake/development users
-      if (user.email && !user.email.includes('@proflow.local')) {
-        return user;
-      }
-    } catch (e) {
-      console.error('Error parsing stored user:', e);
+// SECURITY: Get current user from Supabase session (not localStorage)
+// This prevents sensitive user data from being exposed to XSS attacks
+const getCurrentUserAsync = async () => {
+  try {
+    const user = await db.auth.me();
+    if (user && user.email && !user.email.includes('@proflow.local')) {
+      return {
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+        active_workspace_id: localStorage.getItem('active_workspace_id') || null,
+      };
     }
+  } catch (error) {
+    console.error('Error getting current user:', error);
   }
-  // Return null if no valid user - AuthProvider should handle authentication
   return null;
 };
 
-const updateCurrentUser = (updates) => {
-  const user = getCurrentUser();
-  const updated = { ...user, ...updates };
-  localStorage.setItem('proflow_current_user', JSON.stringify(updated));
-  return updated;
+// Only update workspace preference in localStorage (no sensitive data)
+const updateWorkspacePreference = (workspaceId) => {
+  if (workspaceId) {
+    localStorage.setItem('active_workspace_id', workspaceId);
+  }
 };
 
 /**
@@ -78,7 +79,8 @@ export function OptimizedWorkspaceProvider({ children }) {
       setLoading(true);
       setError(null);
 
-      const user = getCurrentUser();
+      // SECURITY: Get user from Supabase session, not localStorage
+      const user = await getCurrentUserAsync();
       setCurrentUser(user);
 
       // If no user is logged in, skip workspace loading
@@ -177,11 +179,8 @@ export function OptimizedWorkspaceProvider({ children }) {
 
       setCurrentWorkspace(activeWorkspace);
 
-      // Sync to storage
-      localStorage.setItem('active_workspace_id', activeWorkspace.id);
-      if (user.active_workspace_id !== activeWorkspace.id) {
-        updateCurrentUser({ active_workspace_id: activeWorkspace.id });
-      }
+      // Sync workspace preference to storage (no sensitive data)
+      updateWorkspacePreference(activeWorkspace.id);
     } catch (err) {
       console.error('Error loading workspaces:', err);
       setError(err.message || 'Failed to load workspaces');
@@ -206,18 +205,15 @@ export function OptimizedWorkspaceProvider({ children }) {
       localStorage.setItem('active_workspace_id', workspaceId);
 
       try {
-        // Update user preference
-        updateCurrentUser({ active_workspace_id: workspaceId });
-
-        // Reload page for fresh data
+        // Reload page for fresh data (workspace preference already saved in localStorage above)
         window.location.reload();
       } catch (error) {
-        console.error('Error updating workspace preference:', error);
+        console.error('Error switching workspace:', error);
 
         // Rollback on error
         setCurrentWorkspace(previousWorkspace);
         if (previousWorkspace) {
-          localStorage.setItem('active_workspace_id', previousWorkspace.id);
+          updateWorkspacePreference(previousWorkspace.id);
         }
       }
     },

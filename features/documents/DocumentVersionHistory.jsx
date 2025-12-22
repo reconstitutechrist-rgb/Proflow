@@ -71,6 +71,9 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
   const [selectedVersion, setSelectedVersion] = useState(null); // Used for both restore target and preview target
   const [showPreview, setShowPreview] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  // PERFORMANCE: Pagination to avoid rendering all versions at once
+  const [visibleCount, setVisibleCount] = useState(10);
+  const LOAD_MORE_COUNT = 10;
 
   const { currentWorkspaceId } = useWorkspace();
 
@@ -124,6 +127,8 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
       });
 
       setVersions(combinedVersions);
+      // Reset pagination when loading new versions
+      setVisibleCount(LOAD_MORE_COUNT);
     } catch (error) {
       console.error('Error loading version history:', error);
       toast.error('Failed to load version history');
@@ -131,6 +136,10 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
       setLoading(false);
     }
   };
+
+  // PERFORMANCE: Only render visible versions
+  const visibleVersions = versions.slice(0, visibleCount);
+  const hasMoreVersions = versions.length > visibleCount;
 
   // Get display version (remove timestamp for cleaner UI)
   const getDisplayVersion = (version) => {
@@ -260,7 +269,7 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
             </div>
           ) : (
             <div className="space-y-3">
-              {versions.map((versionData, index) => (
+              {visibleVersions.map((versionData, index) => (
                 <Card
                   key={index}
                   className={`${versionData.is_current ? 'border-2 border-blue-500 dark:border-blue-400' : 'border border-gray-200 dark:border-gray-700'}`}
@@ -340,6 +349,19 @@ function DocumentVersionHistoryContent({ document, isOpen, onClose }) {
                   </CardContent>
                 </Card>
               ))}
+              {/* Load More button for performance */}
+              {hasMoreVersions && (
+                <div className="pt-2 text-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setVisibleCount((prev) => prev + LOAD_MORE_COUNT)}
+                    className="w-full"
+                  >
+                    Load more ({versions.length - visibleCount} remaining)
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -32,7 +32,8 @@ const isTouchDevice = () => {
   return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 };
 
-export default function EnhancedMessage({
+// PERFORMANCE: Memoize to prevent re-renders when parent message list updates
+const EnhancedMessage = React.memo(function EnhancedMessage({
   message,
   previousMessage,
   currentUser,
@@ -341,4 +342,6 @@ export default function EnhancedMessage({
       </div>
     </div>
   );
-}
+});
+
+export default EnhancedMessage;

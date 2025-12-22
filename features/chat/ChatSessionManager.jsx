@@ -56,6 +56,9 @@ export default function ChatSessionManager({
   const [newSessionName, setNewSessionName] = useState('');
   const [newSessionDescription, setNewSessionDescription] = useState('');
   const [filterStatus, setFilterStatus] = useState('active');
+  // PERFORMANCE: Limit visible sessions to prevent DOM bloat
+  const [visibleCount, setVisibleCount] = useState(20);
+  const LOAD_MORE_COUNT = 20;
 
   const { currentWorkspaceId } = useWorkspace(); // Get currentWorkspaceId from context
 
@@ -135,7 +138,13 @@ export default function ChatSessionManager({
     }
 
     setFilteredSessions(filtered);
+    // Reset visible count when filters change
+    setVisibleCount(LOAD_MORE_COUNT);
   }, [sessions, filterStatus, currentAssignment, searchQuery]);
+
+  // PERFORMANCE: Only render visible sessions
+  const visibleSessions = filteredSessions.slice(0, visibleCount);
+  const hasMoreSessions = filteredSessions.length > visibleCount;
 
   // Internal function to create a new session (as per outline)
   const handleCreateSession = async (name, description, assignmentId) => {
@@ -451,7 +460,7 @@ export default function ChatSessionManager({
               </div>
             ) : (
               <div className="space-y-2 p-4">
-                {filteredSessions.map((session) => (
+                {visibleSessions.map((session) => (
                   <div
                     key={session.id}
                     className={`group relative p-4 rounded-lg border transition-all cursor-pointer hover:shadow-md ${
@@ -570,6 +579,19 @@ export default function ChatSessionManager({
                     )}
                   </div>
                 ))}
+                {/* Load More button for performance */}
+                {hasMoreSessions && (
+                  <div className="pt-2 text-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setVisibleCount((prev) => prev + LOAD_MORE_COUNT)}
+                      className="w-full"
+                    >
+                      Load more ({filteredSessions.length - visibleCount} remaining)
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </ScrollArea>

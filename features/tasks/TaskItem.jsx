@@ -37,7 +37,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import RelatedContentSuggestions from '@/features/documents/RelatedContentSuggestions';
 
-export default function TaskItem({
+// PERFORMANCE: Memoize to prevent re-renders when parent list updates
+const TaskItem = React.memo(function TaskItem({
   task,
   assignment,
   assignedUser,
@@ -348,4 +349,6 @@ export default function TaskItem({
       </AlertDialog>
     </>
   );
-}
+});
+
+export default TaskItem;

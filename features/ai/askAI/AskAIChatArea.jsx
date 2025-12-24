@@ -1,14 +1,26 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, Brain, Sparkles, Eye, EyeOff, XCircle, Layers } from 'lucide-react';
+import {
+  Loader2,
+  Send,
+  Brain,
+  Sparkles,
+  Eye,
+  EyeOff,
+  XCircle,
+  Layers,
+  Mic,
+  MicOff,
+} from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 import MessageActions from '@/components/MessageActions';
 import SuggestedQuestions from '@/components/SuggestedQuestions';
+import VoiceInput from '@/components/common/VoiceInput';
 import { MEMORY_LIMITS } from '@/hooks/useAskAI';
 
 export function AskAIChatArea({
@@ -31,6 +43,20 @@ export function AskAIChatArea({
   setShowOnboardingTutorial,
   setShowSessionTemplates,
 }) {
+  // Voice input state
+  const [isVoiceRecording, setIsVoiceRecording] = useState(false);
+
+  // Voice input handler - receives transcribed text
+  const handleVoiceTranscription = useCallback(
+    (text) => {
+      if (text && text.trim()) {
+        setInputMessage(text.trim());
+        setIsVoiceRecording(false);
+      }
+    },
+    [setInputMessage]
+  );
+
   const handleMessageEdit = (messageIndex) => {
     const message = messages[messageIndex];
     if (message.type === 'user') {
@@ -263,6 +289,17 @@ export function AskAIChatArea({
           className="border-t p-4 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0"
           id="message-input"
         >
+          {/* Voice Input Panel - shown when recording */}
+          {isVoiceRecording && (
+            <div className="mb-3 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-xl">
+              <VoiceInput
+                isActive={isVoiceRecording}
+                onToggle={() => setIsVoiceRecording(false)}
+                onTranscription={handleVoiceTranscription}
+              />
+            </div>
+          )}
+
           <div className="flex gap-3">
             <Textarea
               value={inputMessage}
@@ -273,32 +310,57 @@ export function AskAIChatArea({
                   handleSendMessage();
                 }
               }}
-              placeholder="Type your question here... (Shift+Enter for new line)"
+              placeholder={
+                isVoiceRecording
+                  ? 'Listening...'
+                  : 'Type your question or speak... (Shift+Enter for new line)'
+              }
               className="resize-none rounded-xl"
               rows={3}
-              disabled={isProcessing || isProcessingEmbeddings}
+              disabled={isProcessing || isProcessingEmbeddings || isVoiceRecording}
             />
-            <Button
-              onClick={handleSendMessage}
-              disabled={
-                isProcessing ||
-                isProcessingEmbeddings ||
-                (!inputMessage.trim() &&
-                  uploadedDocuments.filter((d) => d.includedInContext !== false).length === 0)
-              }
-              className="px-6 bg-purple-600 hover:bg-purple-700 rounded-xl"
-            >
-              {isProcessing ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Send className="w-5 h-5" />
-              )}
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsVoiceRecording(!isVoiceRecording)}
+                disabled={isProcessing || isProcessingEmbeddings}
+                className={`rounded-xl transition-colors ${
+                  isVoiceRecording ? 'text-red-500 bg-red-100 dark:bg-red-900/30 animate-pulse' : ''
+                }`}
+                aria-label={isVoiceRecording ? 'Stop recording' : 'Start voice input'}
+                title={isVoiceRecording ? 'Stop recording' : 'Voice input'}
+              >
+                {isVoiceRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              </Button>
+              <Button
+                onClick={handleSendMessage}
+                disabled={
+                  isProcessing ||
+                  isProcessingEmbeddings ||
+                  isVoiceRecording ||
+                  (!inputMessage.trim() &&
+                    uploadedDocuments.filter((d) => d.includedInContext !== false).length === 0)
+                }
+                className="px-6 bg-purple-600 hover:bg-purple-700 rounded-xl"
+              >
+                {isProcessing ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </Button>
+            </div>
           </div>
           {isProcessing && (
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-2">
               <Loader2 className="w-3 h-3 animate-spin" />
               AI is thinking...
+            </p>
+          )}
+          {isVoiceRecording && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+              Speak now - click mic again to stop
             </p>
           )}
         </div>

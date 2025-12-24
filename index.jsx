@@ -31,6 +31,7 @@ const Chat = React.lazy(() => import('@/pages/Chat'));
 // const Generate = React.lazy(() => import("@/pages/Generate")); // Deprecated
 const AskAI = React.lazy(() => import('@/pages/AskAI'));
 const AIHub = React.lazy(() => import('@/pages/AIHub'));
+const GitHubHub = React.lazy(() => import('@/pages/GitHubHub'));
 const Preferences = React.lazy(() => import('@/pages/Preferences'));
 const Workspaces = React.lazy(() => import('@/pages/Workspaces'));
 const Documentation = React.lazy(() => import('@/pages/Documentation'));
@@ -41,6 +42,7 @@ const preloadPages = () => {
   import('@/pages/Users');
   import('@/pages/Chat');
   import('@/pages/AIHub');
+  import('@/pages/GitHubHub');
   import('@/pages/ProjectDashboard');
 };
 
@@ -55,6 +57,8 @@ const PAGES = {
   Assignments,
   AskAI,
   AIHub,
+  GitHub: GitHubHub,
+  GitHubHub,
   Preferences,
   Projects,
   Workspaces,
@@ -165,6 +169,8 @@ function ProtectedContent() {
           <Route path="/Assignments" element={<Assignments />} />
           <Route path="/AskAI" element={<AskAI />} />
           <Route path="/AIHub" element={<AIHub />} />
+          <Route path="/GitHub" element={<GitHubHub />} />
+          <Route path="/GitHubHub" element={<GitHubHub />} />
           <Route path="/Preferences" element={<Preferences />} />
           <Route path="/Projects" element={<Projects />} />
           <Route path="/projects/:projectId/dashboard" element={<ProjectDashboard />} />

@@ -37,6 +37,7 @@ import {
   Eye,
   FileText,
   Target,
+  Github,
 } from 'lucide-react';
 
 import { TutorialProvider } from '@/features/tutorial/TutorialProvider';
@@ -553,6 +554,14 @@ function LayoutContent({ children, currentPageName }) {
           icon: Brain,
           description: 'Chat, Research & Generate',
           shortcut: 'Q',
+          badge: null,
+        },
+        {
+          title: 'GitHub',
+          url: createPageUrl('GitHub'),
+          icon: Github,
+          description: 'Dual-AI repo analysis',
+          shortcut: null,
           badge: 'New',
         },
       ],

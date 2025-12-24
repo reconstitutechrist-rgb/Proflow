@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router';
 import { db } from '@/api/db';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -30,15 +32,26 @@ import {
   MapPin,
   Briefcase,
   RefreshCw,
+  Link2,
+  Github,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { GitHubConnectionCard } from '@/features/github';
 
 export default function PreferencesPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profile');
+
+  // Handle tab changes and URL sync
+  const handleTabChange = (value) => {
+    setActiveTab(value);
+    setSearchParams({ tab: value });
+  };
 
   // Form data
   const [formData, setFormData] = useState({
@@ -147,12 +160,12 @@ export default function PreferencesPage() {
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
           <Settings className="w-8 h-8 text-blue-600" />
           Preferences
         </h1>
-        <p className="text-base text-gray-600">
-          Manage your account settings and notification preferences
+        <p className="text-base text-gray-600 dark:text-gray-400">
+          Manage your account settings, notifications, and integrations
         </p>
       </div>
 
@@ -173,129 +186,209 @@ export default function PreferencesPage() {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Profile Section */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserIcon className="w-5 h-5" />
-                Profile Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Profile Picture */}
-              <div className="flex items-center gap-6">
-                <Avatar className="w-20 h-20">
-                  <AvatarFallback className="bg-blue-100 text-blue-600 text-xl font-semibold">
-                    {user?.full_name
-                      ?.split(' ')
-                      .map((n) => n[0])
-                      .join('') || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="font-medium text-gray-900">{user?.full_name}</h3>
-                  <p className="text-sm text-gray-500">{user?.email}</p>
-                  <Badge className="mt-2 bg-blue-100 text-blue-800">
-                    {user?.user_role?.replace('_', ' ') || 'team member'}
-                  </Badge>
-                </div>
-              </div>
+      {/* Tabs Navigation */}
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+          <TabsTrigger value="profile" className="flex items-center gap-2">
+            <UserIcon className="w-4 h-4" />
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="w-4 h-4" />
+            Notifications
+          </TabsTrigger>
+          <TabsTrigger value="integrations" className="flex items-center gap-2">
+            <Link2 className="w-4 h-4" />
+            Integrations
+          </TabsTrigger>
+        </TabsList>
 
-              <Separator />
+        {/* Profile Tab */}
+        <TabsContent value="profile">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <UserIcon className="w-5 h-5" />
+                    Profile Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Profile Picture */}
+                  <div className="flex items-center gap-6">
+                    <Avatar className="w-20 h-20">
+                      <AvatarFallback className="bg-blue-100 text-blue-600 text-xl font-semibold">
+                        {user?.full_name
+                          ?.split(' ')
+                          .map((n) => n[0])
+                          .join('') || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-medium text-gray-900 dark:text-white">
+                        {user?.full_name}
+                      </h3>
+                      <p className="text-sm text-gray-500">{user?.email}</p>
+                      <Badge className="mt-2 bg-blue-100 text-blue-800">
+                        {user?.user_role?.replace('_', ' ') || 'team member'}
+                      </Badge>
+                    </div>
+                  </div>
 
-              {/* Basic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="full_name">Full Name</Label>
-                  <Input
-                    id="full_name"
-                    value={formData.full_name}
-                    onChange={(e) => handleInputChange('full_name', e.target.value)}
-                    placeholder="Your full name"
-                    disabled // Built-in field, typically can't be changed
-                    className="bg-gray-50"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Contact your administrator to change your name
-                  </p>
-                </div>
+                  <Separator />
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    placeholder="your.email@company.com"
-                    type="email"
-                    disabled // Built-in field, typically can't be changed
-                    className="bg-gray-50"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Contact your administrator to change your email
-                  </p>
-                </div>
+                  {/* Basic Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="full_name">Full Name</Label>
+                      <Input
+                        id="full_name"
+                        value={formData.full_name}
+                        onChange={(e) => handleInputChange('full_name', e.target.value)}
+                        placeholder="Your full name"
+                        disabled
+                        className="bg-gray-50"
+                      />
+                      <p className="text-xs text-gray-500">
+                        Contact your administrator to change your name
+                      </p>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
-                  <Input
-                    id="department"
-                    value={formData.department}
-                    onChange={(e) => handleInputChange('department', e.target.value)}
-                    placeholder="e.g., Engineering, Marketing"
-                    className="focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input
+                        id="email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        placeholder="your.email@company.com"
+                        type="email"
+                        disabled
+                        className="bg-gray-50"
+                      />
+                      <p className="text-xs text-gray-500">
+                        Contact your administrator to change your email
+                      </p>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="job_title">Job Title</Label>
-                  <Input
-                    id="job_title"
-                    value={formData.job_title}
-                    onChange={(e) => handleInputChange('job_title', e.target.value)}
-                    placeholder="e.g., Senior Developer, Product Manager"
-                    className="focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="department">Department</Label>
+                      <Input
+                        id="department"
+                        value={formData.department}
+                        onChange={(e) => handleInputChange('department', e.target.value)}
+                        placeholder="e.g., Engineering, Marketing"
+                      />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    placeholder="+1 (555) 123-4567"
-                    type="tel"
-                    className="focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="job_title">Job Title</Label>
+                      <Input
+                        id="job_title"
+                        value={formData.job_title}
+                        onChange={(e) => handleInputChange('job_title', e.target.value)}
+                        placeholder="e.g., Senior Developer, Product Manager"
+                      />
+                    </div>
 
-              {/* Bio */}
-              <div className="space-y-2">
-                <Label htmlFor="bio">Biography</Label>
-                <Textarea
-                  id="bio"
-                  value={formData.bio}
-                  onChange={(e) => handleInputChange('bio', e.target.value)}
-                  placeholder="Tell us about yourself, your expertise, and interests..."
-                  rows={4}
-                  className="focus:ring-2 focus:ring-blue-500"
-                />
-                <p className="text-xs text-gray-500">This will be visible to other team members</p>
-              </div>
-            </CardContent>
-          </Card>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input
+                        id="phone"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        placeholder="+1 (555) 123-4567"
+                        type="tel"
+                      />
+                    </div>
+                  </div>
 
-          {/* Notification Preferences */}
+                  {/* Bio */}
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">Biography</Label>
+                    <Textarea
+                      id="bio"
+                      value={formData.bio}
+                      onChange={(e) => handleInputChange('bio', e.target.value)}
+                      placeholder="Tell us about yourself, your expertise, and interests..."
+                      rows={4}
+                    />
+                    <p className="text-xs text-gray-500">
+                      This will be visible to other team members
+                    </p>
+                  </div>
+
+                  {/* Save Button */}
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {saving ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          Save Changes
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="w-5 h-5" />
+                    Account Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Role</span>
+                    <Badge variant="outline" className="bg-blue-50 text-blue-800">
+                      {user?.user_role?.replace('_', ' ') || 'team member'}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Member Since</span>
+                    <span className="text-sm font-medium">
+                      {user?.created_date
+                        ? new Date(user.created_date).toLocaleDateString()
+                        : 'Unknown'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Last Active</span>
+                    <span className="text-sm font-medium">
+                      {user?.last_active
+                        ? new Date(user.last_active).toLocaleDateString()
+                        : 'Today'}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Notifications Tab */}
+        <TabsContent value="notifications">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="w-5 h-5" />
                 Notification Preferences
               </CardTitle>
+              <CardDescription>Choose how and when you want to be notified</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
@@ -366,78 +459,67 @@ export default function PreferencesPage() {
                   />
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Account Summary */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Account Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Role</span>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-800">
-                    {user?.user_role?.replace('_', ' ') || 'team member'}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Member Since</span>
-                  <span className="text-sm font-medium">
-                    {user?.created_date
-                      ? new Date(user.created_date).toLocaleDateString()
-                      : 'Unknown'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Last Active</span>
-                  <span className="text-sm font-medium">
-                    {user?.last_active ? new Date(user.last_active).toLocaleDateString() : 'Today'}
-                  </span>
-                </div>
+              {/* Save Button */}
+              <div className="flex justify-end pt-4 border-t">
+                <Button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {saving ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
 
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button
-                onClick={handleSave}
-                disabled={saving}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                {saving ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Changes
-                  </>
-                )}
-              </Button>
+        {/* Integrations Tab */}
+        <TabsContent value="integrations">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Link2 className="w-5 h-5" />
+                  Connected Services
+                </CardTitle>
+                <CardDescription>
+                  Connect external services to enhance your Proflow experience
+                </CardDescription>
+              </CardHeader>
+            </Card>
 
-              <Button variant="outline" onClick={loadUserData} className="w-full">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Reset Changes
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            {/* GitHub Integration */}
+            <GitHubConnectionCard />
+
+            {/* Future integrations placeholder */}
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+                  <Link2 className="w-6 h-6 text-gray-400" />
+                </div>
+                <h3 className="font-medium text-gray-900 dark:text-white mb-2">
+                  More Integrations Coming Soon
+                </h3>
+                <p className="text-sm text-gray-500 max-w-md">
+                  We're working on adding more integrations including Slack, Jira, and more. Stay
+                  tuned!
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

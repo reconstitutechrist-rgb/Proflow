@@ -257,7 +257,9 @@ export default function TaskExtractionPanel({
                           {/* Project */}
                           <Select
                             value={task.project_id || '__none__'}
-                            onValueChange={(v) => updateTask(index, 'project_id', v === '__none__' ? null : v)}
+                            onValueChange={(v) =>
+                              updateTask(index, 'project_id', v === '__none__' ? null : v)
+                            }
                           >
                             <SelectTrigger className="h-7 text-xs w-auto max-w-[140px]">
                               <div className="flex items-center gap-1">
@@ -278,7 +280,9 @@ export default function TaskExtractionPanel({
                           {/* Assignee */}
                           <Select
                             value={task.assigned_to || '__none__'}
-                            onValueChange={(v) => updateTask(index, 'assigned_to', v === '__none__' ? null : v)}
+                            onValueChange={(v) =>
+                              updateTask(index, 'assigned_to', v === '__none__' ? null : v)
+                            }
                           >
                             <SelectTrigger className="h-7 text-xs w-auto max-w-[140px]">
                               <div className="flex items-center gap-1">

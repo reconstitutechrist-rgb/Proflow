@@ -20,6 +20,8 @@ import {
   Trash2,
   Check,
   CheckSquare,
+  Mic,
+  MicOff,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -37,6 +39,7 @@ import { InvokeLLM } from '@/api/integrations';
 import MessageBubble from './AIMessageBubble';
 import SmartContextDetector from './SmartContextDetector';
 import TaskProposalPanel from './TaskProposalPanel';
+import VoiceInput from '@/components/common/VoiceInput';
 import {
   parseDateString,
   validateTaskStructure,
@@ -75,6 +78,7 @@ export default function AIAssistantWidget({ currentPageName, workspaceId }) {
   const [showSearch, setShowSearch] = useState(false);
   const [highlightedMessageId, setHighlightedMessageId] = useState(null);
   const [copiedMessageId, setCopiedMessageId] = useState(null);
+  const [isVoiceRecording, setIsVoiceRecording] = useState(false);
 
   // Task proposal workflow state
   const [proposedTasks, setProposedTasks] = useState([]);
@@ -1108,6 +1112,16 @@ Return a JSON response with analysis and tasks array.`;
     }
   };
 
+  // Voice input handler - receives transcribed text and puts it in the input
+  const handleVoiceTranscription = useCallback((text) => {
+    if (text && text.trim()) {
+      setInputValue(text.trim());
+      setIsVoiceRecording(false);
+      // Focus input so user can review/edit before sending
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, []);
+
   const handleClose = () => {
     setIsOpen(false);
     setShowSearch(false);
@@ -1534,20 +1548,51 @@ Return a JSON response with analysis and tasks array.`;
                     Tips
                   </Button>
                 </div>
+                {/* Voice Input Panel - shown when recording */}
+                {isVoiceRecording && (
+                  <div className="mb-3 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <VoiceInput
+                      isActive={isVoiceRecording}
+                      onToggle={() => setIsVoiceRecording(false)}
+                      onTranscription={handleVoiceTranscription}
+                    />
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   <Input
                     ref={inputRef}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Create projects, tasks, assignments, or ask anything..."
+                    placeholder={
+                      isVoiceRecording ? 'Listening...' : 'Create projects, tasks, or speak...'
+                    }
                     className="flex-1 bg-white dark:bg-gray-800"
-                    disabled={isLoading}
+                    disabled={isLoading || isVoiceRecording}
                     aria-label="Message input"
                   />
                   <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsVoiceRecording(!isVoiceRecording)}
+                    disabled={isLoading || isTaskCreating}
+                    className={classNames(
+                      'shrink-0 transition-colors',
+                      isVoiceRecording && 'text-red-500 bg-red-100 dark:bg-red-900/30 animate-pulse'
+                    )}
+                    aria-label={isVoiceRecording ? 'Stop recording' : 'Start voice input'}
+                    title={isVoiceRecording ? 'Stop recording' : 'Voice input'}
+                  >
+                    {isVoiceRecording ? (
+                      <MicOff className="w-4 h-4" />
+                    ) : (
+                      <Mic className="w-4 h-4" />
+                    )}
+                  </Button>
+                  <Button
                     onClick={() => handleSendWithTaskDetection()}
-                    disabled={!inputValue.trim() || isLoading || isTaskCreating}
+                    disabled={!inputValue.trim() || isLoading || isTaskCreating || isVoiceRecording}
                     className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shrink-0"
                     aria-label="Send message"
                   >
@@ -1555,7 +1600,9 @@ Return a JSON response with analysis and tasks array.`;
                   </Button>
                 </div>
                 <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 text-center">
-                  AI can make mistakes. Verify important information.
+                  {isVoiceRecording
+                    ? 'Speak now - click mic again to stop'
+                    : 'AI can make mistakes. Verify important information.'}
                 </p>
               </div>
             </>

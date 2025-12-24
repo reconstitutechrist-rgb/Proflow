@@ -18,6 +18,12 @@ export const Folder = db.entities.Folder;
 export const AIResearchChat = db.entities.AIResearchChat;
 export const ProjectMemory = db.entities.ProjectMemory;
 
+// GitHub Integration entities
+export const GitHubConnection = db.entities.GitHubConnection;
+export const WorkspaceRepository = db.entities.WorkspaceRepository;
+export const GitHubDebateSession = db.entities.GitHubDebateSession;
+export const GitHubDebateMessage = db.entities.GitHubDebateMessage;
+
 export default {
   Task,
   Document,
@@ -34,4 +40,9 @@ export default {
   Folder,
   AIResearchChat,
   ProjectMemory,
+  // GitHub Integration
+  GitHubConnection,
+  WorkspaceRepository,
+  GitHubDebateSession,
+  GitHubDebateMessage,
 };

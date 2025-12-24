@@ -139,6 +139,7 @@ export const ROUTES = {
   PROJECTS: '/Projects',
   CHAT: '/Chat',
   AI_HUB: '/AIHub',
+  GITHUB: '/GitHub',
   GENERATE: '/Generate',
   ASK_AI: '/AskAI',
   USERS: '/Users',

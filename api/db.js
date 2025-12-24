@@ -31,6 +31,11 @@ const entityToTableName = (entityName) => {
     TeamChat: 'team_chats',
     TeamChatMessage: 'team_chat_messages',
     ProjectMemory: 'project_memories',
+    // GitHub Integration
+    GitHubConnection: 'github_connections',
+    WorkspaceRepository: 'workspace_repositories',
+    GitHubDebateSession: 'github_debate_sessions',
+    GitHubDebateMessage: 'github_debate_messages',
   };
 
   return tableMap[entityName] || entityName.toLowerCase();

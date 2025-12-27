@@ -36,6 +36,7 @@ const entityToTableName = (entityName) => {
     WorkspaceRepository: 'workspace_repositories',
     GitHubDebateSession: 'github_debate_sessions',
     GitHubDebateMessage: 'github_debate_messages',
+    RepositoryMemory: 'repository_memories',
   };
 
   return tableMap[entityName] || entityName.toLowerCase();

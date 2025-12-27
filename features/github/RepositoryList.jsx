@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { useGitHubRepos } from './useGitHubRepos';
 import { RepositoryPicker } from './RepositoryPicker';
+import { RepositoryAnalysisStatus } from './RepositoryAnalysisStatus';
 import { toast } from 'sonner';
 
 /**
@@ -133,6 +134,10 @@ export function RepositoryList({ onSelectRepository }) {
                           Public
                         </Badge>
                       )}
+                      <RepositoryAnalysisStatus
+                        repositoryId={repo.id}
+                        repoFullName={repo.github_repo_full_name}
+                      />
                     </div>
                     {repo.github_repo_description && (
                       <p className="text-sm text-gray-500 mt-1 line-clamp-2">

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { github } from '@/api/github';
 import { db } from '@/api/db';
 import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import repositoryAnalyzer from '@/api/repositoryAnalyzer';
 
 /**
  * Hook for managing GitHub repositories
@@ -100,6 +101,16 @@ export function useGitHubRepos() {
       });
 
       setLinkedRepos((prev) => [...prev, linkedRepo]);
+
+      // Trigger background analysis for the repository
+      // This runs asynchronously and doesn't block the UI
+      repositoryAnalyzer
+        .startAnalysis(linkedRepo.id, currentWorkspaceId, repo.full_name)
+        .catch((err) => {
+          console.warn('Background analysis failed to start:', err);
+          // Non-blocking - user can still use the repo
+        });
+
       return linkedRepo;
     },
     [currentWorkspaceId, currentUser, linkedRepos]

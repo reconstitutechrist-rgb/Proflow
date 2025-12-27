@@ -23,6 +23,7 @@ export const GitHubConnection = db.entities.GitHubConnection;
 export const WorkspaceRepository = db.entities.WorkspaceRepository;
 export const GitHubDebateSession = db.entities.GitHubDebateSession;
 export const GitHubDebateMessage = db.entities.GitHubDebateMessage;
+export const RepositoryMemory = db.entities.RepositoryMemory;
 
 export default {
   Task,
@@ -45,4 +46,5 @@ export default {
   WorkspaceRepository,
   GitHubDebateSession,
   GitHubDebateMessage,
+  RepositoryMemory,
 };

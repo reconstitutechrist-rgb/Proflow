@@ -2,9 +2,12 @@ import { useState, useCallback, useRef } from 'react';
 import { db } from '@/api/db';
 import { github } from '@/api/github';
 import { useWorkspace } from '@/features/workspace/WorkspaceContext';
+import repositoryAnalyzer from '@/api/repositoryAnalyzer';
 import {
   createInitialContext,
   setRepoContext,
+  setRepositoryMemory,
+  smartSummarize,
   calculateConsensusScore,
   hasReachedConsensus,
 } from './contextManager';
@@ -34,9 +37,24 @@ export function useDebateSession() {
    * TODO: Integrate with OpenAI and Anthropic APIs
    */
   const invokeAI = useCallback(
-    async ({ provider, model, systemPrompt, messages: aiMessages }) => {
+    async ({ provider, model, systemPrompt: _systemPrompt, messages: _aiMessages }) => {
       // Simulate API delay
       await new Promise((resolve) => setTimeout(resolve, 1500 + Math.random() * 1000));
+
+      // Handle summarization requests (for smart context summarization)
+      if (provider === 'summarizer') {
+        return {
+          content: JSON.stringify({
+            agreedPoints: [],
+            contestedPoints: [],
+            decisions: [],
+            keyFindings: [],
+            narrativeSummary:
+              'Discussion summary: The AIs have been analyzing the repository structure and patterns.',
+          }),
+          usage: { promptTokens: 500, completionTokens: 200, totalTokens: 700 },
+        };
+      }
 
       // For now, return mock responses
       // In production, this would call the actual APIs
@@ -86,7 +104,7 @@ export function useDebateSession() {
         const [owner, repo] = repoFullName.split('/');
 
         // Fetch repository context
-        const [repoData, readme, languages, issues, prs] = await Promise.all([
+        const [_repoData, readme, languages, issues, prs] = await Promise.all([
           github.getRepo(owner, repo),
           github.getReadme(owner, repo).catch(() => null),
           github.getLanguages(owner, repo),
@@ -124,6 +142,20 @@ export function useDebateSession() {
           github_repo_full_name: repoFullName,
         });
         const linkedRepo = linkedRepos[0];
+
+        // Fetch repository memory (deep analysis) if available
+        if (linkedRepo) {
+          try {
+            const repoMemory = await repositoryAnalyzer.getRepositoryMemory(linkedRepo.id);
+            if (repoMemory && repoMemory.analysis_status === 'completed') {
+              newContext = setRepositoryMemory(newContext, repoMemory);
+              console.log('Repository memory loaded successfully');
+            }
+          } catch (memErr) {
+            console.warn('Failed to load repository memory:', memErr);
+            // Non-blocking - continue without memory
+          }
+        }
 
         // Create session in database
         const dbSession = await db.entities.GitHubDebateSession.create({
@@ -208,6 +240,17 @@ export function useDebateSession() {
       };
 
       setMessages((prev) => [...prev, criticMessage]);
+
+      // Run smart summarization if needed
+      if (updatedContext.needsSummarization) {
+        try {
+          updatedContext = await smartSummarize(updatedContext, invokeAI);
+        } catch (sumErr) {
+          console.warn('Smart summarization failed:', sumErr);
+          // Continue with existing context
+        }
+      }
+
       setContext(updatedContext);
 
       // Calculate consensus

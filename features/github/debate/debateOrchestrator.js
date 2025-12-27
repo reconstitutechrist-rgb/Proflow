@@ -31,46 +31,65 @@ const AI_MODELS = {
   },
 };
 
-// System prompts for each role
+// System prompts for each role (enhanced with memory awareness)
 const SYSTEM_PROMPTS = {
   analyst: `You are an expert code analyst working as part of a dual-AI system. Your role is to provide thorough, well-reasoned analysis of GitHub repositories based on the user's questions.
 
+CRITICAL: You may have access to VERIFIED Repository Knowledge from deep code analysis. This is real, verified information extracted from the codebase. USE IT as your primary source of truth.
+
 Your approach:
-1. Analyze the repository context provided (README, structure, issues, PRs)
-2. Provide clear, structured answers with specific examples from the codebase
-3. Identify key patterns, potential issues, and recommendations
-4. Be open to critique and willing to revise your analysis
+1. Analyze the VERIFIED repository knowledge first (if provided)
+2. Reference specific functions, classes, and patterns from the verified context
+3. Provide clear, structured answers with specific examples from the codebase
+4. Identify key patterns, potential issues, and recommendations
+5. Be open to critique and willing to revise your analysis
+
+IMPORTANT RULES:
+- If the context shows "Already Agreed" points, DO NOT re-debate them
+- If you see "Key Decisions Made", acknowledge and build upon them
+- NEVER hallucinate or assume about code not in your context
+- If asked about something not covered, say "I don't have that information"
 
 When the Critic provides feedback:
 - Consider their points carefully
 - Acknowledge valid criticisms
-- Defend your position with evidence when appropriate
+- Defend your position with evidence FROM THE CONTEXT
 - Synthesize both perspectives into improved analysis
 
 Format your response with:
 - Clear headings for different aspects of your analysis
-- Code references where applicable
+- Specific references to verified code (file paths, function names)
 - Confidence levels for your conclusions
 - Key points that you believe are well-supported`,
 
-  critic: `You are an expert code reviewer working as part of a dual-AI system. Your role is to critically evaluate the Analyst's responses and provide constructive feedback.
+  critic: `You are an expert code reviewer working as part of a dual-AI system. Your role is to critically evaluate the Analyst's responses and ensure accuracy against verified repository knowledge.
+
+CRITICAL: You may have access to VERIFIED Repository Knowledge from deep code analysis. Use this to verify the Analyst's claims. Call out any hallucinations or unsupported claims.
 
 Your approach:
-1. Carefully review the Analyst's analysis
+1. Verify the Analyst's claims against the VERIFIED repository knowledge
 2. Identify gaps, errors, or alternative interpretations
-3. Provide specific, actionable feedback
-4. Acknowledge strong points while highlighting areas for improvement
+3. Provide specific, actionable feedback with evidence
+4. Acknowledge strong points while highlighting inaccuracies
+
+IMPORTANT RULES:
+- If the context shows "Already Agreed" points, DO NOT re-debate them
+- Focus on NEW points and unresolved issues
+- If you see "Key Decisions Made", acknowledge they're settled
+- NEVER hallucinate or assume about code not in your context
+- Verify ALL claims against the provided context
 
 When reviewing:
 - Point out any missed considerations
+- Flag any claims that aren't supported by the verified context
 - Suggest alternative approaches or interpretations
-- Verify claims against the repository context
 - Help refine the analysis toward consensus
 
 At the end of your response, include:
 ## Agreement Assessment
-- Points you AGREE with (list them clearly)
-- Points you DISAGREE with or want to refine
+- Points I AGREE with (list them clearly with evidence)
+- Points I DISAGREE with or want to refine (explain why)
+- Points that are UNVERIFIABLE from context (flag these)
 - Suggested revisions
 - Overall agreement level: [Strong/Moderate/Weak]`,
 };
@@ -96,7 +115,7 @@ export const runDebateRound = async (context, role, invokeAI) => {
     userMessage = `Please analyze this repository based on the user's question. Use the repository context provided above.`;
   } else if (role === 'analyst') {
     // Subsequent rounds - analyst responds to critic
-    const lastCriticMessage = context.recentMessages.filter((m) => m.role === 'critic').pop();
+    const _lastCriticMessage = context.recentMessages.filter((m) => m.role === 'critic').pop();
     userMessage = `The Critic has provided feedback on your previous analysis. Please review their points and provide a refined analysis that addresses their concerns while maintaining well-supported conclusions.`;
   } else {
     // Critic reviews analyst's response
@@ -130,7 +149,10 @@ export const runDebateRound = async (context, role, invokeAI) => {
 
   // If this is a critic response, extract agreement info
   if (role === 'critic') {
-    const { agreedPoints, contestedPoints } = extractAgreementInfo(response.content);
+    const { agreedPoints, contestedPoints } = extractAgreementInfo(
+      response.content,
+      context.currentRound
+    );
     updatedContext = updateAgreedPoints(updatedContext, agreedPoints);
     updatedContext = updateContestedPoints(updatedContext, contestedPoints);
   }
@@ -143,8 +165,9 @@ export const runDebateRound = async (context, role, invokeAI) => {
 
 /**
  * Extract agreement information from critic's response
+ * Enhanced to return structured data for better tracking
  */
-const extractAgreementInfo = (content) => {
+const extractAgreementInfo = (content, currentRound) => {
   const agreedPoints = [];
   const contestedPoints = [];
 
@@ -153,36 +176,58 @@ const extractAgreementInfo = (content) => {
   if (agreementMatch) {
     const agreementSection = agreementMatch[1];
 
-    // Extract agreed points
-    const agreeMatch = agreementSection.match(
-      /(?:agree with|points? (?:I )?agree)[\s\S]*?(?=-|\n\n|$)/gi
+    // Extract agreed points with structured format
+    const agreeSection = agreementSection.match(
+      /Points I AGREE with[:\s]*([\s\S]*?)(?=Points I DISAGREE|Points that are|Suggested|Overall|$)/i
     );
-    if (agreeMatch) {
-      const bulletPoints = agreementSection.match(/(?:agree[\s\S]*?)[-•]\s*([^\n]+)/gi);
-      if (bulletPoints) {
-        bulletPoints.forEach((point) => {
-          const cleanPoint = point.replace(/^[-•]\s*/, '').trim();
-          if (cleanPoint.length > 10) {
-            agreedPoints.push(cleanPoint.substring(0, 200));
-          }
-        });
-      }
+    if (agreeSection) {
+      const lines = agreeSection[1].split('\n');
+      lines.forEach((line) => {
+        const cleanLine = line.replace(/^[-•*]\s*/, '').trim();
+        if (cleanLine.length > 10 && !cleanLine.toLowerCase().startsWith('point')) {
+          agreedPoints.push({
+            point: cleanLine.substring(0, 200),
+            round: currentRound,
+            confidence: 'high',
+          });
+        }
+      });
     }
 
-    // Extract disagreed/contested points
-    const disagreeMatch = agreementSection.match(
-      /(?:disagree|refine|concern|issue)[\s\S]*?(?=-|\n\n|$)/gi
+    // Extract disagreed/contested points with structured format
+    const disagreeSection = agreementSection.match(
+      /Points I DISAGREE with[:\s]*([\s\S]*?)(?=Points that are|Suggested|Overall|$)/i
     );
-    if (disagreeMatch) {
-      const bulletPoints = agreementSection.match(/(?:disagree[\s\S]*?)[-•]\s*([^\n]+)/gi);
-      if (bulletPoints) {
-        bulletPoints.forEach((point) => {
-          const cleanPoint = point.replace(/^[-•]\s*/, '').trim();
-          if (cleanPoint.length > 10) {
-            contestedPoints.push(cleanPoint.substring(0, 200));
-          }
-        });
-      }
+    if (disagreeSection) {
+      const lines = disagreeSection[1].split('\n');
+      lines.forEach((line) => {
+        const cleanLine = line.replace(/^[-•*]\s*/, '').trim();
+        if (cleanLine.length > 10 && !cleanLine.toLowerCase().startsWith('point')) {
+          contestedPoints.push({
+            point: cleanLine.substring(0, 200),
+            status: 'open',
+            round: currentRound,
+          });
+        }
+      });
+    }
+
+    // Also check for unverifiable points
+    const unverifiableSection = agreementSection.match(
+      /Points that are UNVERIFIABLE[:\s]*([\s\S]*?)(?=Suggested|Overall|$)/i
+    );
+    if (unverifiableSection) {
+      const lines = unverifiableSection[1].split('\n');
+      lines.forEach((line) => {
+        const cleanLine = line.replace(/^[-•*]\s*/, '').trim();
+        if (cleanLine.length > 10) {
+          contestedPoints.push({
+            point: cleanLine.substring(0, 200),
+            status: 'unverifiable',
+            round: currentRound,
+          });
+        }
+      });
     }
   }
 

@@ -746,8 +746,179 @@ function safeJsonParse(str) {
   }
 }
 
+/**
+ * Perform incremental analysis on changed files
+ * More efficient than full re-analysis when only a few files changed
+ *
+ * @param {string} repositoryId - The repository ID
+ * @param {string} workspaceId - The workspace ID
+ * @param {string} owner - Repository owner
+ * @param {string} repo - Repository name
+ * @returns {Promise<Object>} Analysis result
+ */
+export async function incrementalAnalysis(repositoryId, workspaceId, owner, repo) {
+  const memory = await getRepositoryMemory(repositoryId);
+
+  // If no existing memory or no last commit, do full analysis
+  if (!memory || !memory.last_commit_sha) {
+    console.log('No existing memory, starting full analysis');
+    return startAnalysis(repositoryId, workspaceId, `${owner}/${repo}`);
+  }
+
+  try {
+    // Get commits since last analysis
+    const commits = await github.listCommits(owner, repo, {
+      since: memory.analysis_completed_at || undefined,
+      perPage: 50,
+    });
+
+    if (!commits || commits.length === 0) {
+      console.log('No new commits since last analysis');
+      return { status: 'up_to_date', filesUpdated: 0 };
+    }
+
+    // If too many commits, suggest full re-analysis
+    if (commits.length > 30) {
+      console.log('Too many commits for incremental analysis, triggering full re-analysis');
+      return startAnalysis(repositoryId, workspaceId, `${owner}/${repo}`);
+    }
+
+    console.log(`Found ${commits.length} commits since last analysis`);
+
+    // Get changed files from recent commits
+    const changedFiles = new Set();
+    for (const commit of commits.slice(0, 10)) {
+      try {
+        const details = await github.getCommit(owner, repo, commit.sha);
+        details.files?.forEach((f) => {
+          if (f.filename && !codeParser.shouldSkipFile(f.filename)) {
+            changedFiles.add(f.filename);
+          }
+        });
+      } catch (e) {
+        console.warn(`Could not get details for commit ${commit.sha}:`, e.message);
+      }
+    }
+
+    if (changedFiles.size === 0) {
+      console.log('No relevant file changes found');
+      // Update commit sha anyway
+      await db.entities.RepositoryMemory.update(memory.id, {
+        last_commit_sha: commits[0].sha,
+        last_incremental_at: new Date().toISOString(),
+      });
+      return { status: 'up_to_date', filesUpdated: 0 };
+    }
+
+    console.log(`Analyzing ${changedFiles.size} changed files`);
+
+    // Analyze only changed files (limit to 20)
+    const filesToAnalyze = Array.from(changedFiles)
+      .slice(0, 20)
+      .map((path) => ({ path, size: 0 }));
+
+    const deltaAnalysis = await analyzeKeyFiles(owner, repo, filesToAnalyze);
+
+    // Build delta context
+    const deltaContext = buildDeltaContext(deltaAnalysis, commits);
+
+    // Update memory with delta
+    await db.entities.RepositoryMemory.update(memory.id, {
+      delta_context: deltaContext,
+      last_incremental_at: new Date().toISOString(),
+      commits_since_full_analysis: (memory.commits_since_full_analysis || 0) + commits.length,
+      last_commit_sha: commits[0].sha,
+    });
+
+    console.log(`Incremental analysis complete: ${filesToAnalyze.length} files updated`);
+
+    return {
+      status: 'incremental_update',
+      filesUpdated: filesToAnalyze.length,
+      commitsProcessed: commits.length,
+    };
+  } catch (error) {
+    console.error('Incremental analysis failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Build delta context from incremental analysis
+ */
+function buildDeltaContext(analysis, commits) {
+  const parts = ['## Recent Changes'];
+
+  // Commit summary
+  parts.push(`\n${commits.length} commits since last full analysis.`);
+
+  if (commits.length > 0) {
+    parts.push('\n### Recent Commit Messages:');
+    commits.slice(0, 5).forEach((c) => {
+      const message = c.commit?.message?.split('\n')[0] || 'No message';
+      parts.push(`- ${message.substring(0, 80)}`);
+    });
+  }
+
+  // New/modified APIs
+  if (analysis.exportedApis?.length > 0) {
+    parts.push('\n### New/Modified APIs:');
+    analysis.exportedApis.forEach((api) => {
+      parts.push(`- \`${api.name}\` (${api.type}) in \`${api.file}\``);
+    });
+  }
+
+  // New/modified classes
+  if (analysis.keyClasses?.length > 0) {
+    parts.push('\n### New/Modified Classes:');
+    analysis.keyClasses.forEach((cls) => {
+      const ext = cls.extends ? ` extends ${cls.extends}` : '';
+      parts.push(`- \`class ${cls.name}${ext}\` in \`${cls.file}\``);
+    });
+  }
+
+  // New hooks (React)
+  if (analysis.hooks?.length > 0) {
+    parts.push('\n### New/Modified Hooks:');
+    analysis.hooks.forEach((hook) => {
+      parts.push(`- \`${hook.name}\` in \`${hook.file}\``);
+    });
+  }
+
+  // New dependencies
+  if (analysis.externalPackages?.length > 0) {
+    parts.push('\n### New Dependencies:');
+    analysis.externalPackages.slice(0, 10).forEach((pkg) => {
+      parts.push(`- ${pkg.name}${pkg.version ? ` (${pkg.version})` : ''}`);
+    });
+  }
+
+  return parts.join('\n');
+}
+
+/**
+ * Trigger refresh if needed based on staleness
+ * Convenience method that checks freshness and triggers appropriate analysis
+ */
+export async function refreshIfNeeded(repositoryId, workspaceId, owner, repo) {
+  const freshness = await checkAnalysisFreshness(repositoryId, owner, repo);
+
+  if (!freshness.needsRefresh) {
+    return { status: 'fresh', reason: freshness.reason };
+  }
+
+  // Decide between incremental and full analysis
+  if (freshness.reason === 'new_commits') {
+    return incrementalAnalysis(repositoryId, workspaceId, owner, repo);
+  } else {
+    return startAnalysis(repositoryId, workspaceId, `${owner}/${repo}`);
+  }
+}
+
 export default {
   startAnalysis,
   checkAnalysisFreshness,
   getRepositoryMemory,
+  incrementalAnalysis,
+  refreshIfNeeded,
 };

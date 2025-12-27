@@ -1,6 +1,10 @@
 /**
  * Debate Orchestrator
  * Manages the debate flow between GPT-5.2 (Analyst) and Claude Opus 4.5 (Critic)
+ *
+ * Enhanced with persistent debate memory:
+ * - Saves insights after debate consensus
+ * - Tracks agreed points for future sessions
  */
 
 import {
@@ -10,6 +14,8 @@ import {
   buildContextPrompt,
   hasReachedConsensus,
 } from './contextManager';
+
+import { saveDebateInsights, extractInsightsFromDebate } from '@/api/debateMemory';
 
 // AI Model configurations
 const AI_MODELS = {
@@ -243,7 +249,9 @@ export const runFullDebate = async (initialContext, invokeAI, options = {}) => {
     onMessage,
     onRoundComplete,
     onConsensus,
+    onDebateComplete,
     shouldStop = () => false,
+    sessionInfo = null, // { sessionId, workspaceId, repositoryId }
   } = options;
 
   let context = { ...initialContext, currentRound: 1 };
@@ -274,13 +282,54 @@ export const runFullDebate = async (initialContext, invokeAI, options = {}) => {
     context.currentRound++;
   }
 
+  const reachedConsensus = hasReachedConsensus(context);
+
+  // Save insights when debate completes (if session info provided)
+  if (sessionInfo && (reachedConsensus || context.currentRound >= maxRounds)) {
+    try {
+      await persistDebateInsights(context, sessionInfo);
+      onDebateComplete?.(context, { insightsSaved: true });
+    } catch (error) {
+      console.error('Failed to save debate insights:', error);
+      onDebateComplete?.(context, { insightsSaved: false, error });
+    }
+  }
+
   return {
     context,
     messages,
-    reachedConsensus: hasReachedConsensus(context),
+    reachedConsensus,
     totalRounds: context.currentRound,
   };
 };
+
+/**
+ * Persist debate insights to the database
+ * @param {Object} context - The final debate context
+ * @param {Object} sessionInfo - Session metadata
+ */
+async function persistDebateInsights(context, sessionInfo) {
+  const { sessionId, workspaceId, repositoryId } = sessionInfo;
+
+  if (!sessionId || !workspaceId || !repositoryId) {
+    console.warn('Missing session info for saving insights');
+    return;
+  }
+
+  // Extract insights from the debate context
+  const insights = extractInsightsFromDebate(context);
+
+  if (insights.length === 0) {
+    console.log('No insights to save from debate');
+    return;
+  }
+
+  // Save to database with embeddings
+  const saved = await saveDebateInsights(sessionId, insights, workspaceId, repositoryId);
+  console.log(`Saved ${saved.length} insights from debate session ${sessionId}`);
+
+  return saved;
+}
 
 /**
  * Generate final agreed response from debate

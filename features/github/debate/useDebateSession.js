@@ -7,11 +7,14 @@ import {
   createInitialContext,
   setRepoContext,
   setRepositoryMemory,
+  setPastInsights,
+  loadPastContext,
   smartSummarize,
   calculateConsensusScore,
   hasReachedConsensus,
 } from './contextManager';
 import { runDebateRound, generateFinalResponse, AI_MODELS } from './debateOrchestrator';
+import { saveDebateInsights, extractInsightsFromDebate } from '@/api/debateMemory';
 
 /**
  * Hook for managing a GitHub repository debate session
@@ -155,6 +158,36 @@ export function useDebateSession() {
             console.warn('Failed to load repository memory:', memErr);
             // Non-blocking - continue without memory
           }
+
+          // Load past debate insights using semantic search
+          try {
+            const pastContext = await loadPastContext(linkedRepo.id, query);
+            if (
+              pastContext.relevantInsights.length > 0 ||
+              pastContext.establishedFacts.length > 0
+            ) {
+              newContext = setPastInsights(
+                newContext,
+                pastContext.relevantInsights,
+                pastContext.establishedFacts
+              );
+              console.log(
+                `Loaded ${pastContext.relevantInsights.length} relevant insights, ${pastContext.establishedFacts.length} established facts`
+              );
+
+              // Pre-populate agreed points from established facts
+              if (pastContext.establishedFacts.length > 0) {
+                newContext.agreedPoints = pastContext.establishedFacts.map((f) => ({
+                  point: f.insight_text,
+                  round: 'established',
+                  confidence: 'high',
+                }));
+              }
+            }
+          } catch (insightErr) {
+            console.warn('Failed to load past insights:', insightErr);
+            // Non-blocking - continue without past insights
+          }
         }
 
         // Create session in database
@@ -279,16 +312,38 @@ export function useDebateSession() {
       });
 
       // Check for consensus
-      if (hasReachedConsensus(updatedContext)) {
-        setStatus('consensus');
-        await db.entities.GitHubDebateSession.update(session.id, {
-          status: 'consensus',
-        });
-      } else if (nextRound >= 5) {
-        setStatus('max_rounds');
-        await db.entities.GitHubDebateSession.update(session.id, {
-          status: 'max_rounds',
-        });
+      const reachedConsensus = hasReachedConsensus(updatedContext);
+      const reachedMaxRounds = nextRound >= 5;
+
+      if (reachedConsensus || reachedMaxRounds) {
+        // Save debate insights when debate completes
+        try {
+          const insights = extractInsightsFromDebate(updatedContext);
+          if (insights.length > 0 && session.repository_id) {
+            await saveDebateInsights(
+              session.id,
+              insights,
+              currentWorkspaceId,
+              session.repository_id
+            );
+            console.log(`Saved ${insights.length} insights from debate`);
+          }
+        } catch (saveErr) {
+          console.warn('Failed to save debate insights:', saveErr);
+          // Non-blocking - continue with status update
+        }
+
+        if (reachedConsensus) {
+          setStatus('consensus');
+          await db.entities.GitHubDebateSession.update(session.id, {
+            status: 'consensus',
+          });
+        } else {
+          setStatus('max_rounds');
+          await db.entities.GitHubDebateSession.update(session.id, {
+            status: 'max_rounds',
+          });
+        }
       } else {
         setStatus('paused');
       }

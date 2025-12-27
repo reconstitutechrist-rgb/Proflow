@@ -6,7 +6,14 @@
  * - LLM-powered smart summarization (replaces dumb truncation)
  * - Repository memory integration for verified knowledge
  * - Structured tracking of decisions, findings, and agreements
+ * - Persistent debate insights with semantic retrieval
  */
+
+import {
+  findRelevantInsights,
+  getEstablishedInsights,
+  formatInsightsForContext,
+} from '@/api/debateMemory';
 
 // Configuration
 const MAX_FULL_MESSAGES = 6; // Keep last 6 messages in full detail
@@ -42,6 +49,10 @@ export const createInitialContext = () => ({
 
   // Repository memory (deep analysis from Part 1)
   repositoryMemory: null,
+
+  // Past debate insights (semantic retrieval)
+  pastInsights: [], // Semantically relevant insights from past debates
+  establishedFacts: [], // High-confidence agreed points from past sessions
 
   // User's original query
   originalQuery: '',
@@ -304,6 +315,45 @@ export const setRepositoryMemory = (context, memory) => {
 };
 
 /**
+ * Load past insights and established facts for a repository
+ * Called before starting a new debate session
+ *
+ * @param {string} repositoryId - The repository ID
+ * @param {string} query - The user's query (for semantic search)
+ * @returns {Promise<Object>} Object with relevantInsights and establishedFacts
+ */
+export async function loadPastContext(repositoryId, query) {
+  try {
+    const [relevantInsights, establishedFacts] = await Promise.all([
+      findRelevantInsights(query, repositoryId, { limit: 10, threshold: 0.7 }),
+      getEstablishedInsights(repositoryId, { minConfidence: 0.85, limit: 15 }),
+    ]);
+
+    return {
+      relevantInsights: relevantInsights || [],
+      establishedFacts: establishedFacts || [],
+    };
+  } catch (error) {
+    console.warn('Failed to load past context:', error.message);
+    return {
+      relevantInsights: [],
+      establishedFacts: [],
+    };
+  }
+}
+
+/**
+ * Set past insights in context
+ */
+export const setPastInsights = (context, pastInsights, establishedFacts) => {
+  return {
+    ...context,
+    pastInsights: pastInsights || [],
+    establishedFacts: establishedFacts || [],
+  };
+};
+
+/**
  * Update agreed points based on AI response analysis
  */
 export const updateAgreedPoints = (context, newPoints) => {
@@ -371,6 +421,26 @@ export const buildContextPrompt = (context, maxTokens = 8000) => {
     parts.push(`## VERIFIED Repository Knowledge\n${context.repositoryMemory.accumulated_context}`);
     parts.push(
       '\n⚠️ USE THE ABOVE VERIFIED KNOWLEDGE. Do not assume or hallucinate about code not described above.'
+    );
+  }
+
+  // 0.5 Past Debate Insights (from previous sessions)
+  if (context.pastInsights?.length > 0) {
+    const insightsText = formatInsightsForContext(context.pastInsights, { maxLength: 2000 });
+    if (insightsText) {
+      parts.push(
+        `## Previously Established Insights\nThese were discovered in past debates about this repository:\n${insightsText}`
+      );
+    }
+  }
+
+  if (context.establishedFacts?.length > 0) {
+    const facts = context.establishedFacts
+      .slice(0, 10)
+      .map((f) => `- ${f.insight_text}`)
+      .join('\n');
+    parts.push(
+      `## Established Facts (High Confidence)\nThese facts were agreed upon by both AIs in previous debates:\n${facts}`
     );
   }
 
@@ -539,6 +609,8 @@ export default {
   addMessageToContext,
   smartSummarize,
   setRepositoryMemory,
+  loadPastContext,
+  setPastInsights,
   updateAgreedPoints,
   updateContestedPoints,
   addDecision,

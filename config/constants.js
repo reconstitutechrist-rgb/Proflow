@@ -120,13 +120,13 @@ export const TOAST_DURATION = {
   LONG: 6000,
 };
 
-// Memory limits for AskAI
+// Memory limits for AskAI (doubled for better context retention)
 export const MEMORY_LIMITS = {
-  MAX_DOCUMENTS: 50,
-  MAX_MESSAGES: 200,
+  MAX_DOCUMENTS: 100,
+  MAX_MESSAGES: 400,
   MAX_FILE_SIZE: 10 * 1024 * 1024, // 10 MB
-  WARNING_DOCUMENTS: 30,
-  WARNING_MESSAGES: 150,
+  WARNING_DOCUMENTS: 60,
+  WARNING_MESSAGES: 300,
 };
 
 // Route paths

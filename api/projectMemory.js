@@ -103,7 +103,7 @@ INSTRUCTIONS:
 1. Extract any NEW key insights from this conversation (things learned, discoveries, important facts)
 2. Extract any NEW technical decisions made (choices, rationales, approaches decided)
 3. Create an updated summary of the project's current state
-4. Create a comprehensive accumulated context that combines the old context with new information (max 10000 characters)
+4. Create a comprehensive accumulated context that combines the old context with new information (max 20000 characters)
 
 The accumulated_context should be a coherent narrative that the AI can use in future conversations to understand the full project history.
 
@@ -112,7 +112,7 @@ Return a JSON object with this exact structure:
   "new_insights": ["insight 1", "insight 2"],
   "new_decisions": ["decision 1: rationale", "decision 2: rationale"],
   "updated_summary": "Brief 2-3 sentence summary of project state",
-  "accumulated_context": "Full narrative context combining old and new information (max 10000 chars)"
+  "accumulated_context": "Full narrative context combining old and new information (max 20000 chars)"
 }
 
 Return ONLY valid JSON, no other text.`;
@@ -155,8 +155,8 @@ Return ONLY valid JSON, no other text.`;
       const existingInsights = JSON.parse(memory.key_insights || '[]');
       const existingDecisions = JSON.parse(memory.technical_decisions || '[]');
 
-      const updatedInsights = [...existingInsights, ...(parsed.new_insights || [])].slice(-50);
-      const updatedDecisions = [...existingDecisions, ...(parsed.new_decisions || [])].slice(-30);
+      const updatedInsights = [...existingInsights, ...(parsed.new_insights || [])].slice(-100);
+      const updatedDecisions = [...existingDecisions, ...(parsed.new_decisions || [])].slice(-60);
 
       // Update the memory
       if (memory.id) {
@@ -164,7 +164,7 @@ Return ONLY valid JSON, no other text.`;
           summary: parsed.updated_summary || memory.summary,
           key_insights: JSON.stringify(updatedInsights),
           technical_decisions: JSON.stringify(updatedDecisions),
-          accumulated_context: (parsed.accumulated_context || '').substring(0, 10000),
+          accumulated_context: (parsed.accumulated_context || '').substring(0, 20000),
           conversation_count: (memory.conversation_count || 0) + 1,
           document_count: (memory.document_count || 0) + (documents?.length || 0),
           last_chat_session_id: sessionId,

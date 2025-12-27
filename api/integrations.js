@@ -1,22 +1,59 @@
 import { db } from './db';
+import {
+  invokeLLM as anthropicInvokeLLM,
+  isAnthropicConfigured,
+  LLM_CONFIG,
+} from './anthropicClient';
 
-// LLM Integration - stub that can be replaced with actual API
-// To use a real LLM, replace this with your preferred provider (OpenAI, Anthropic, etc.)
+/**
+ * LLM Integration - Invokes Claude LLM for chat completions
+ *
+ * When VITE_ANTHROPIC_API_KEY is configured, uses Anthropic's Claude models.
+ * Falls back to stub responses when not configured.
+ *
+ * @param {Object} params - LLM parameters
+ * @param {string} params.prompt - User prompt
+ * @param {string} [params.system_prompt] - System prompt
+ * @param {Object} [params.response_json_schema] - JSON schema for structured output
+ * @param {string} [params.model] - Model to use (default: claude-sonnet-4-5-20250514)
+ * @returns {Promise<string|Object>} LLM response
+ */
 export const InvokeLLM = async (params) => {
   const {
     prompt,
     system_prompt,
     response_json_schema,
+    model,
     add_context_from_internet: _add_context_from_internet,
   } = params;
 
-  // This is a stub implementation
-  // In production, replace with actual LLM API call
+  // Check if Anthropic is configured
+  if (isAnthropicConfigured()) {
+    try {
+      const response = await anthropicInvokeLLM({
+        prompt,
+        system_prompt,
+        response_json_schema,
+        model: model || LLM_CONFIG.default,
+      });
 
-  // Return a placeholder response
+      // If JSON schema was requested, the response is already parsed
+      if (response_json_schema && typeof response === 'object') {
+        return response;
+      }
+
+      return response;
+    } catch (error) {
+      console.error('Anthropic LLM error:', error);
+      // Fall through to stub response on error
+    }
+  }
+
+  // Stub fallback when Anthropic is not configured or errors occur
+  console.warn('LLM not configured. Set VITE_ANTHROPIC_API_KEY in .env');
   return {
-    success: true,
-    message: 'LLM integration not configured. Please set up your preferred LLM provider.',
+    success: false,
+    message: 'LLM integration not configured. Please set VITE_ANTHROPIC_API_KEY in .env file.',
     response: response_json_schema ? {} : 'LLM response placeholder',
   };
 };
@@ -94,7 +131,7 @@ export const GetFile = async (fileId) => {
  * });
  */
 export const ExtractDataFromUploadedFile = async (params) => {
-  const { file_url, json_schema } = params;
+  const { file_url: _file_url, json_schema } = params;
 
   // This is a stub implementation
 

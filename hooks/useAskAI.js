@@ -511,11 +511,37 @@ export function useAskAI() {
                 }
               }
 
+              // Generate summary for large documents (>5000 chars)
+              if (contentForRAG.length > 5000) {
+                try {
+                  const summaryResponse = await InvokeLLM({
+                    prompt: `Summarize this document in 300-500 words, preserving:
+- Key facts and data points
+- Important decisions or conclusions
+- Action items if any
+- Critical dates or deadlines
+
+Document content:
+${contentForRAG.substring(0, 30000)}`,
+                    system_prompt:
+                      'You are a document summarizer. Create concise, comprehensive summaries that capture the essential information.',
+                  });
+
+                  if (summaryResponse && typeof summaryResponse === 'string') {
+                    newDoc.summary = summaryResponse;
+                  }
+                } catch (summaryError) {
+                  console.warn('Document summarization failed:', summaryError);
+                  // Don't fail the upload if summarization fails
+                }
+              }
+
               const cacheStatus = newDoc.fromCache ? ' (cached)' : ' (new)';
               const modelInfo =
-                newDoc.embeddingModel === 'text-embedding-ada-002' ? 'OpenAI' : 'Simulated';
+                newDoc.embeddingModel === 'text-embedding-3-small' ? 'OpenAI' : 'Simulated';
+              const summaryInfo = newDoc.summary ? ' + summary' : '';
               toast.success(
-                `${file.name}: ${modelInfo}${cacheStatus} • $${newDoc.estimatedCost.toFixed(4)}`,
+                `${file.name}: ${modelInfo}${cacheStatus}${summaryInfo} • $${newDoc.estimatedCost.toFixed(4)}`,
                 { duration: 3000 }
               );
             } else {
@@ -1009,7 +1035,7 @@ export function useAskAI() {
               endpoint: 'findSimilarChunks',
               query: inputMessage,
               chunks: allChunks,
-              topK: 5,
+              topK: 15, // Increased from 5 for better context coverage
             });
 
             if (data && Array.isArray(data.chunks)) {
@@ -1045,13 +1071,13 @@ export function useAskAI() {
         fullTextContextDocs.forEach((doc) => {
           contextData.push({
             documentName: doc.name,
-            text: doc.content.substring(0, 2000),
+            text: doc.content.substring(0, 4000),
           });
         });
       }
 
-      // Increased from 20 to 50 for better context retention
-      const conversationHistory = activeMessages.slice(-50).map((msg) => ({
+      // Increased to 100 for better context retention
+      const conversationHistory = activeMessages.slice(-100).map((msg) => ({
         role: msg.type === 'user' ? 'user' : 'assistant',
         content: msg.content,
       }));

@@ -1,4 +1,10 @@
 // InvokeLLM available from './integrations' when needed
+import {
+  generateEmbedding,
+  generateEmbeddings as generateOpenAIEmbeddings,
+  isOpenAIConfigured,
+  EMBEDDING_CONFIG,
+} from './openaiClient';
 
 // Similarity weights for document matching
 const SIMILARITY_WEIGHTS = {
@@ -124,6 +130,78 @@ function generateSimpleEmbedding(text) {
   return embedding;
 }
 
+/**
+ * Semantic chunking - splits text at sentence boundaries with overlap
+ * This preserves context better than fixed-size chunking
+ * @param {string} text - Text to chunk
+ * @param {number} maxChunkSize - Maximum chunk size (default 1000 chars)
+ * @param {number} overlap - Overlap between chunks (default 200 chars)
+ * @returns {Array} Array of chunk objects
+ */
+function semanticChunk(text, maxChunkSize = 1000, overlap = 200) {
+  if (!text || text.trim().length === 0) {
+    return [];
+  }
+
+  // Split by sentence-ending punctuation while keeping the punctuation
+  const sentencePattern = /([^.!?]+[.!?]+\s*)/g;
+  const sentences = text.match(sentencePattern) || [text];
+
+  const chunks = [];
+  let currentChunk = '';
+  let chunkIndex = 0;
+
+  for (const sentence of sentences) {
+    // If adding this sentence exceeds max size and we have content, save current chunk
+    if ((currentChunk + sentence).length > maxChunkSize && currentChunk.trim().length > 0) {
+      chunks.push({
+        text: currentChunk.trim(),
+        chunkType: 'semantic',
+        index: chunkIndex++,
+      });
+
+      // Keep overlap from previous chunk (approximately overlap chars worth of words)
+      const words = currentChunk.split(' ');
+      const overlapWordCount = Math.ceil(overlap / 6); // ~6 chars per word average
+      currentChunk = words.slice(-overlapWordCount).join(' ') + ' ';
+    }
+    currentChunk += sentence;
+  }
+
+  // Add remaining content
+  if (currentChunk.trim().length > 0) {
+    chunks.push({
+      text: currentChunk.trim(),
+      chunkType: 'semantic',
+      index: chunkIndex,
+    });
+  }
+
+  return chunks;
+}
+
+/**
+ * Simple fixed-size chunking (fallback for when semantic chunking isn't suitable)
+ * @param {string} text - Text to chunk
+ * @param {number} chunkSize - Size of each chunk (default 500 chars)
+ * @returns {Array} Array of chunk objects
+ */
+function simpleChunk(text, chunkSize = 500) {
+  if (!text || text.trim().length === 0) {
+    return [];
+  }
+
+  const chunks = [];
+  for (let i = 0; i < text.length; i += chunkSize) {
+    chunks.push({
+      text: text.substring(i, i + chunkSize),
+      chunkType: 'simple',
+      index: chunks.length,
+    });
+  }
+  return chunks;
+}
+
 // Research function - stub implementation
 // Can be replaced with actual research API integration
 export const anthropicResearch = async (params) => {
@@ -173,61 +251,123 @@ export const ragHelper = async (params) => {
       };
     }
 
-    // Generate simulated embeddings for the document
     const textContent = content || '';
-    const chunkSize = 500;
-    const generatedChunks = [];
+    const tokenCount = Math.ceil(textContent.length / 4); // Rough token estimate
 
-    // Simple chunking by splitting text
-    for (let i = 0; i < textContent.length; i += chunkSize) {
-      generatedChunks.push({
-        text: textContent.substring(i, i + chunkSize),
-        chunkType: 'text',
-        index: generatedChunks.length,
-      });
+    // Use semantic chunking for better context preservation
+    const useSemanticChunking = chunkingStrategy !== 'simple';
+    const generatedChunks = useSemanticChunking
+      ? semanticChunk(textContent, 1000, 200) // 1000 char chunks with 200 char overlap
+      : simpleChunk(textContent, 500);
+
+    // Check if OpenAI is configured for real embeddings
+    if (isOpenAIConfigured()) {
+      try {
+        // Generate real embeddings using OpenAI
+        const chunkTexts = generatedChunks.map((c) => c.text);
+        const realEmbeddings = await generateOpenAIEmbeddings(chunkTexts);
+
+        // Cost: $0.02 per 1M tokens for text-embedding-3-small
+        const estimatedCost = (tokenCount * 0.02) / 1000000;
+
+        return {
+          data: {
+            chunks: generatedChunks,
+            embeddings: realEmbeddings,
+            embeddingModel: EMBEDDING_CONFIG.model, // 'text-embedding-3-small'
+            chunkingStrategy: useSemanticChunking ? 'semantic' : 'simple',
+            structureAnalysis: null,
+            tokenCount: tokenCount,
+            estimatedCost: estimatedCost,
+            fromCache: false,
+            dimensions: EMBEDDING_CONFIG.dimensions, // 1536
+          },
+        };
+      } catch (error) {
+        console.error('OpenAI embedding error, falling back to simulated:', error);
+        // Fall through to simulated embeddings
+      }
     }
 
-    // Simulate embeddings (would be real vectors in production)
-    const simulatedEmbeddings = generatedChunks.map(() =>
-      Array(384)
-        .fill(0)
-        .map(() => Math.random() - 0.5)
-    );
+    // Fallback: Generate simulated embeddings
+    const simulatedEmbeddings = generatedChunks.map((chunk) => generateSimpleEmbedding(chunk.text));
 
-    const tokenCount = Math.ceil(textContent.length / 4); // Rough token estimate
     const estimatedCost = (tokenCount * 0.0001) / 1000; // Simulated cost
 
     return {
       data: {
         chunks: generatedChunks,
         embeddings: simulatedEmbeddings,
-        embeddingModel: 'simulated', // Would be 'text-embedding-ada-002' with real OpenAI
-        chunkingStrategy: chunkingStrategy || 'simple',
+        embeddingModel: 'simulated',
+        chunkingStrategy: useSemanticChunking ? 'semantic' : 'simple',
         structureAnalysis: null,
         tokenCount: tokenCount,
         estimatedCost: estimatedCost,
         fromCache: false,
+        dimensions: 384, // Simulated dimensions
       },
     };
   }
 
   if (endpoint === 'findSimilarChunks') {
-    // Simulate finding similar chunks based on query
     const inputChunks = chunks || [];
-    const k = topK || 5;
+    const k = topK || 15; // Increased default from 5 to 15 for better coverage
 
-    // In production, this would use cosine similarity with real embeddings
-    // For now, return random chunks as "relevant"
-    const shuffled = [...inputChunks].sort(() => Math.random() - 0.5);
-    const selectedChunks = shuffled.slice(0, Math.min(k, inputChunks.length)).map((chunk, idx) => ({
-      ...chunk,
-      score: 0.9 - idx * 0.1, // Simulated relevance scores
-    }));
+    if (inputChunks.length === 0) {
+      return { data: { chunks: [], usingRealEmbeddings: false } };
+    }
+
+    // Check if we should use real embeddings
+    const hasRealEmbeddings = inputChunks[0]?.embedding?.length === EMBEDDING_CONFIG.dimensions;
+
+    if (isOpenAIConfigured() && hasRealEmbeddings) {
+      try {
+        // Generate query embedding
+        const queryEmbedding = await generateEmbedding(query || '');
+
+        // Score all chunks by cosine similarity with the query
+        const scoredChunks = inputChunks.map((chunk) => ({
+          ...chunk,
+          score: cosineSimilarity(queryEmbedding, chunk.embedding),
+        }));
+
+        // Sort by score descending and take top K
+        const topChunks = scoredChunks
+          .sort((a, b) => b.score - a.score)
+          .slice(0, Math.min(k, inputChunks.length))
+          .filter((chunk) => chunk.score > 0.1); // Filter out very low relevance
+
+        return {
+          data: {
+            chunks: topChunks,
+            usingRealEmbeddings: true,
+            queryEmbeddingDimensions: queryEmbedding.length,
+          },
+        };
+      } catch (error) {
+        console.error('OpenAI similarity search error, falling back to simulated:', error);
+        // Fall through to simulated search
+      }
+    }
+
+    // Fallback: Use simulated embeddings with cosine similarity
+    const queryEmbedding = generateSimpleEmbedding(query || '');
+    const scoredChunks = inputChunks.map((chunk) => {
+      const chunkEmbedding = chunk.embedding || generateSimpleEmbedding(chunk.text);
+      return {
+        ...chunk,
+        score: cosineSimilarity(queryEmbedding, chunkEmbedding),
+      };
+    });
+
+    const topChunks = scoredChunks
+      .sort((a, b) => b.score - a.score)
+      .slice(0, Math.min(k, inputChunks.length));
 
     return {
       data: {
-        chunks: selectedChunks,
-        usingRealEmbeddings: false, // Would be true with real OpenAI embeddings
+        chunks: topChunks,
+        usingRealEmbeddings: false,
       },
     };
   }

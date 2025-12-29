@@ -7,13 +7,28 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 
-// Initialize Anthropic client
-// Note: dangerouslyAllowBrowser is needed for client-side usage
-// In production, consider proxying through a backend for security
-const anthropic = new Anthropic({
-  apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
-  dangerouslyAllowBrowser: true,
-});
+// Lazy-initialized Anthropic client
+// Only created when actually needed and API key is available
+let anthropic = null;
+
+/**
+ * Get or create the Anthropic client instance
+ * @returns {Anthropic} Anthropic client
+ * @throws {Error} If API key is not configured
+ */
+function getAnthropicClient() {
+  if (!anthropic) {
+    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      throw new Error('Anthropic API key not configured. Set VITE_ANTHROPIC_API_KEY in .env');
+    }
+    anthropic = new Anthropic({
+      apiKey,
+      dangerouslyAllowBrowser: true,
+    });
+  }
+  return anthropic;
+}
 
 // LLM model configuration
 export const LLM_CONFIG = {
@@ -62,7 +77,7 @@ export async function invokeLLM({ prompt, system_prompt, response_json_schema, m
       : jsonInstruction;
   }
 
-  const response = await anthropic.messages.create(requestParams);
+  const response = await getAnthropicClient().messages.create(requestParams);
 
   // Safety check for response content
   if (!response.content || response.content.length === 0) {

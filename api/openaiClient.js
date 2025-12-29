@@ -10,13 +10,28 @@
 
 import OpenAI from 'openai';
 
-// Initialize OpenAI client
-// Note: dangerouslyAllowBrowser is needed for client-side usage
-// In production, consider proxying through a backend for security
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true,
-});
+// Lazy-initialized OpenAI client
+// Only created when actually needed and API key is available
+let openai = null;
+
+/**
+ * Get or create the OpenAI client instance
+ * @returns {OpenAI} OpenAI client
+ * @throws {Error} If API key is not configured
+ */
+function getOpenAIClient() {
+  if (!openai) {
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('OpenAI API key not configured. Set VITE_OPENAI_API_KEY in .env');
+    }
+    openai = new OpenAI({
+      apiKey,
+      dangerouslyAllowBrowser: true,
+    });
+  }
+  return openai;
+}
 
 // Embedding model configuration
 export const EMBEDDING_CONFIG = {
@@ -51,7 +66,7 @@ export async function generateEmbedding(text) {
   // Truncate text if too long (max ~8000 tokens for embedding model)
   const truncatedText = text.substring(0, 30000);
 
-  const response = await openai.embeddings.create({
+  const response = await getOpenAIClient().embeddings.create({
     model: EMBEDDING_CONFIG.model,
     input: truncatedText,
   });
@@ -88,7 +103,7 @@ export async function generateEmbeddings(texts) {
   for (let i = 0; i < truncatedTexts.length; i += batchSize) {
     const batch = truncatedTexts.slice(i, i + batchSize);
 
-    const response = await openai.embeddings.create({
+    const response = await getOpenAIClient().embeddings.create({
       model: EMBEDDING_CONFIG.model,
       input: batch,
     });
@@ -138,7 +153,7 @@ export async function invokeLLM({ prompt, system_prompt, response_json_schema, m
     }
   }
 
-  const response = await openai.chat.completions.create(requestParams);
+  const response = await getOpenAIClient().chat.completions.create(requestParams);
 
   const content = response.choices[0].message.content;
 

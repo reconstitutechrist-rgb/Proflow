@@ -35,11 +35,12 @@ export const checkGitHubConnection = async () => {
 
 /**
  * Connect GitHub account via Supabase OAuth
+ * Uses signInWithOAuth to get a provider_token for GitHub API access
  * @param {string} redirectTo - URL to redirect to after OAuth
  * @returns {Promise<{data: object, error: object|null}>}
  */
 export const connectGitHub = async (redirectTo = window.location.href) => {
-  const { data, error } = await supabase.auth.linkIdentity({
+  const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'github',
     options: {
       scopes: 'repo read:org read:user',

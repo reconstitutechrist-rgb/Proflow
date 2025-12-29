@@ -1,0 +1,14 @@
+# Nixpacks configuration for Railway deployment
+# Explicitly specify Node.js provider to ensure npm is available
+
+[phases.setup]
+nixPkgs = ["nodejs_20", "npm"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "node node_modules/serve/build/main.js dist -s -l $PORT"

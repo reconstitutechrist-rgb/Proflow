@@ -3,6 +3,10 @@
 
 import { supabase } from './supabaseClient';
 
+// Use Edge Function proxy in production to avoid CORS issues
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const USE_PROXY = import.meta.env.PROD; // Use proxy in production only
+const GITHUB_PROXY_URL = `${SUPABASE_URL}/functions/v1/github-proxy`;
 const GITHUB_API_BASE = 'https://api.github.com';
 
 /**
@@ -71,6 +75,7 @@ export const connectGitHub = async (redirectTo = window.location.href) => {
 
 /**
  * Make authenticated GitHub API request
+ * Uses Edge Function proxy in production to avoid CORS issues
  * @param {string} endpoint - API endpoint (e.g., '/user/repos')
  * @param {object} options - Fetch options
  * @returns {Promise<object>} API response data
@@ -83,15 +88,32 @@ export const githubFetch = async (endpoint, options = {}) => {
     throw new Error('GitHub not connected. Please connect your GitHub account.');
   }
 
-  const response = await fetch(`${GITHUB_API_BASE}${endpoint}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github.v3+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      ...options.headers,
-    },
-  });
+  let response;
+
+  if (USE_PROXY) {
+    // In production, use the Edge Function proxy to avoid CORS issues
+    const proxyUrl = `${GITHUB_PROXY_URL}?endpoint=${encodeURIComponent(endpoint)}`;
+    response = await fetch(proxyUrl, {
+      method: options.method || 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-github-token': token,
+        ...options.headers,
+      },
+      body: options.body,
+    });
+  } else {
+    // In development, call GitHub API directly
+    response = await fetch(`${GITHUB_API_BASE}${endpoint}`, {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github.v3+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        ...options.headers,
+      },
+    });
+  }
 
   if (!response.ok) {
     if (response.status === 401) {

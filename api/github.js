@@ -6,14 +6,27 @@ import { supabase } from './supabaseClient';
 const GITHUB_API_BASE = 'https://api.github.com';
 
 /**
- * Get the current user's GitHub access token from Supabase session
+ * Get the current user's GitHub access token
+ * First tries Supabase session, then falls back to localStorage
  * @returns {Promise<string|null>} GitHub access token or null if not connected
  */
 export const getGitHubToken = async () => {
+  // First try to get from current session (available right after OAuth)
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  return session?.provider_token || null;
+
+  if (session?.provider_token) {
+    // Also store it for future use
+    const githubIdentity = session.user?.identities?.find((id) => id.provider === 'github');
+    if (githubIdentity) {
+      localStorage.setItem('github_provider_token', session.provider_token);
+    }
+    return session.provider_token;
+  }
+
+  // Fall back to stored token
+  return localStorage.getItem('github_provider_token');
 };
 
 /**
@@ -26,10 +39,15 @@ export const checkGitHubConnection = async () => {
   } = await supabase.auth.getSession();
   const githubIdentity = session?.user?.identities?.find((id) => id.provider === 'github');
 
+  // Check for token in session or localStorage
+  const hasSessionToken = !!session?.provider_token;
+  const hasStoredToken = !!localStorage.getItem('github_provider_token');
+  const hasToken = hasSessionToken || hasStoredToken;
+
   return {
-    connected: !!githubIdentity && !!session?.provider_token,
+    connected: !!githubIdentity && hasToken,
     identity: githubIdentity || null,
-    hasToken: !!session?.provider_token,
+    hasToken,
   };
 };
 

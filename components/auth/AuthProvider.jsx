@@ -46,9 +46,25 @@ export function AuthProvider({ children }) {
 
       if (newSession?.user) {
         syncUserToLocalStorage(newSession.user);
+
+        // Store GitHub provider token if available (for GitHub API access)
+        if (newSession.provider_token) {
+          const githubIdentity = newSession.user.identities?.find((id) => id.provider === 'github');
+          if (githubIdentity) {
+            localStorage.setItem('github_provider_token', newSession.provider_token);
+            if (newSession.provider_refresh_token) {
+              localStorage.setItem(
+                'github_provider_refresh_token',
+                newSession.provider_refresh_token
+              );
+            }
+          }
+        }
       } else if (event === 'SIGNED_OUT') {
         // Clear workspace preference on sign out - Supabase handles session cleanup
         localStorage.removeItem('active_workspace_id');
+        localStorage.removeItem('github_provider_token');
+        localStorage.removeItem('github_provider_refresh_token');
       }
 
       setLoading(false);

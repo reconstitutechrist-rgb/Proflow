@@ -34,7 +34,7 @@ export default function GitHubHub() {
   if (!isConnected) {
     return (
       <ErrorBoundary>
-        <div className="flex flex-col h-full -m-8">
+        <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex-shrink-0 border-b bg-gradient-to-r from-gray-800 to-gray-900 p-6">
             <div className="flex items-center gap-4">
@@ -87,7 +87,7 @@ export default function GitHubHub() {
   // Connected state - main interface
   return (
     <ErrorBoundary>
-      <div className="flex flex-col h-full -m-8 h-[calc(100vh-56px)]">
+      <div className="flex flex-col h-full h-[calc(100vh-56px)]">
         {/* Header */}
         <div className="flex-shrink-0 border-b bg-gradient-to-r from-gray-800 to-gray-900 p-6">
           <div className="flex items-center justify-between">

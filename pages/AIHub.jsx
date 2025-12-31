@@ -250,7 +250,7 @@ export default function AIHub() {
 
   return (
     <ErrorBoundary>
-      <div className="flex flex-col overflow-hidden -m-8 h-[calc(100vh-56px)]">
+      <div className="flex flex-col overflow-hidden h-[calc(100vh-56px)]">
         {/* Header */}
         <div className="flex-shrink-0 border-b bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 p-6">
           <div className="flex items-center justify-between">

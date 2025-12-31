@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { DragDropContext } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -198,210 +199,346 @@ export default function DocumentLibrary({
     if (onRefresh) onRefresh();
   };
 
+  // Handle drag end for document moving
+  const handleDragEnd = (result) => {
+    // For now, just log the result - actual moving logic can be added later
+    if (!result.destination) return;
+    console.log('Document drag end:', result);
+  };
+
   return (
-    <div className="h-full flex">
-      {/* Sidebar */}
-      <div className="w-72 flex-shrink-0 border-r bg-gray-50 dark:bg-gray-900/50 flex flex-col overflow-hidden">
-        <div className="p-4 border-b bg-white dark:bg-gray-900">
-          <DocumentViewToggle
-            value={sidebarViewMode}
-            onChange={(v) => {
-              setSidebarViewMode(v);
-              // Clear filters when switching views
-              setSelectedFolderPath(null);
-              setProjectAssignmentFilter({ type: null, id: null });
-            }}
-          />
-        </div>
-        <div className="flex-1 overflow-auto p-4">
-          {sidebarViewMode === 'folders' ? (
-            <FolderStructure
-              documents={documents}
-              onFolderSelect={(path) => setSelectedFolderPath(path)}
-              onRefresh={onRefresh}
-            />
-          ) : (
-            <ProjectAssignmentStructure
-              documents={documents}
-              projects={projects}
-              assignments={assignments}
-              selectedItem={projectAssignmentFilter}
-              onItemSelect={(type, id) => setProjectAssignmentFilter({ type, id })}
-            />
-          )}
-        </div>
-        {/* Clear Filter Button */}
-        {(selectedFolderPath || projectAssignmentFilter.type) && (
-          <div className="p-4 border-t bg-white dark:bg-gray-900">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => {
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <div className="h-full flex">
+        {/* Sidebar */}
+        <div className="w-72 flex-shrink-0 border-r bg-gray-50 dark:bg-gray-900/50 flex flex-col overflow-hidden">
+          <div className="p-4 border-b bg-white dark:bg-gray-900">
+            <DocumentViewToggle
+              value={sidebarViewMode}
+              onChange={(v) => {
+                setSidebarViewMode(v);
+                // Clear filters when switching views
                 setSelectedFolderPath(null);
                 setProjectAssignmentFilter({ type: null, id: null });
               }}
-            >
-              <X className="w-4 h-4 mr-2" />
-              Clear Filter
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col p-6 overflow-hidden">
-        {/* Active Filter Indicator */}
-        {(selectedFolderPath || projectAssignmentFilter.type) && (
-          <div className="mb-4 flex items-center gap-2">
-            <Badge variant="secondary" className="px-3 py-1">
-              {sidebarViewMode === 'folders' && selectedFolderPath && (
-                <>
-                  <Folder className="w-3 h-3 mr-2" />
-                  {selectedFolderPath === '/' ? 'Root' : selectedFolderPath.split('/').pop()}
-                </>
-              )}
-              {sidebarViewMode === 'projects' && projectAssignmentFilter.type === 'project' && (
-                <>
-                  <FolderKanban className="w-3 h-3 mr-2" />
-                  {projects.find((p) => p.id === projectAssignmentFilter.id)?.name || 'Project'}
-                </>
-              )}
-              {sidebarViewMode === 'projects' && projectAssignmentFilter.type === 'assignment' && (
-                <>
-                  <Target className="w-3 h-3 mr-2" />
-                  {assignments.find((a) => a.id === projectAssignmentFilter.id)?.title ||
-                    assignments.find((a) => a.id === projectAssignmentFilter.id)?.name ||
-                    'Assignment'}
-                </>
-              )}
-              {sidebarViewMode === 'projects' && projectAssignmentFilter.type === 'unlinked' && (
-                <>
-                  <FileText className="w-3 h-3 mr-2" />
-                  Unlinked Documents
-                </>
-              )}
-            </Badge>
-            <span className="text-sm text-gray-500">
-              {filteredDocuments.length} document{filteredDocuments.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-        )}
-
-        {/* Filters */}
-        <div className="flex flex-wrap gap-3 mb-6">
-          <div className="relative flex-1 min-w-[200px] max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              placeholder="Search documents..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
             />
           </div>
-          <Select value={selectedProjectFilter} onValueChange={setSelectedProjectFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Projects" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Projects</SelectItem>
-              <SelectItem value="unassigned">No Project</SelectItem>
-              {projects.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={selectedAssignmentFilter} onValueChange={setSelectedAssignmentFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Assignments" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Assignments</SelectItem>
-              <SelectItem value="unassigned">No Assignment</SelectItem>
-              {assignments.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.name || a.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="contract">Contract</SelectItem>
-              <SelectItem value="specification">Specification</SelectItem>
-              <SelectItem value="report">Report</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            variant="outline"
-            onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-          >
-            {viewMode === 'grid' ? (
-              <List className="w-4 h-4" />
+          <div className="flex-1 overflow-auto p-4">
+            {sidebarViewMode === 'folders' ? (
+              <FolderStructure
+                documents={documents}
+                onFolderSelect={(path) => setSelectedFolderPath(path)}
+                onRefresh={onRefresh}
+              />
             ) : (
-              <LayoutGrid className="w-4 h-4" />
+              <ProjectAssignmentStructure
+                documents={documents}
+                projects={projects}
+                assignments={assignments}
+                selectedItem={projectAssignmentFilter}
+                onItemSelect={(type, id) => setProjectAssignmentFilter({ type, id })}
+              />
             )}
-          </Button>
-          <Button variant="outline" onClick={() => setIsUploadOpen(true)}>
-            <Upload className="w-4 h-4 mr-2" />
-            Upload
-          </Button>
-        </div>
-
-        {/* Documents Grid/List */}
-        <ScrollArea className="flex-1">
-          {filteredDocuments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-center">
-              <FileText className="w-12 h-12 text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                No documents found
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">
-                Try adjusting filters or create a new document
-              </p>
-              <Button onClick={onCreateDocument} variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Create Document
+          </div>
+          {/* Clear Filter Button */}
+          {(selectedFolderPath || projectAssignmentFilter.type) && (
+            <div className="p-4 border-t bg-white dark:bg-gray-900">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  setSelectedFolderPath(null);
+                  setProjectAssignmentFilter({ type: null, id: null });
+                }}
+              >
+                <X className="w-4 h-4 mr-2" />
+                Clear Filter
               </Button>
             </div>
-          ) : (
-            <div
-              className={
-                viewMode === 'grid'
-                  ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
-                  : 'space-y-2'
-              }
+          )}
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col p-6 overflow-hidden">
+          {/* Active Filter Indicator */}
+          {(selectedFolderPath || projectAssignmentFilter.type) && (
+            <div className="mb-4 flex items-center gap-2">
+              <Badge variant="secondary" className="px-3 py-1">
+                {sidebarViewMode === 'folders' && selectedFolderPath && (
+                  <>
+                    <Folder className="w-3 h-3 mr-2" />
+                    {selectedFolderPath === '/' ? 'Root' : selectedFolderPath.split('/').pop()}
+                  </>
+                )}
+                {sidebarViewMode === 'projects' && projectAssignmentFilter.type === 'project' && (
+                  <>
+                    <FolderKanban className="w-3 h-3 mr-2" />
+                    {projects.find((p) => p.id === projectAssignmentFilter.id)?.name || 'Project'}
+                  </>
+                )}
+                {sidebarViewMode === 'projects' &&
+                  projectAssignmentFilter.type === 'assignment' && (
+                    <>
+                      <Target className="w-3 h-3 mr-2" />
+                      {assignments.find((a) => a.id === projectAssignmentFilter.id)?.title ||
+                        assignments.find((a) => a.id === projectAssignmentFilter.id)?.name ||
+                        'Assignment'}
+                    </>
+                  )}
+                {sidebarViewMode === 'projects' && projectAssignmentFilter.type === 'unlinked' && (
+                  <>
+                    <FileText className="w-3 h-3 mr-2" />
+                    Unlinked Documents
+                  </>
+                )}
+              </Badge>
+              <span className="text-sm text-gray-500">
+                {filteredDocuments.length} document{filteredDocuments.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+          )}
+
+          {/* Filters */}
+          <div className="flex flex-wrap gap-3 mb-6">
+            <div className="relative flex-1 min-w-[200px] max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Search documents..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={selectedProjectFilter} onValueChange={setSelectedProjectFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Projects" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
+                <SelectItem value="unassigned">No Project</SelectItem>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedAssignmentFilter} onValueChange={setSelectedAssignmentFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Assignments" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Assignments</SelectItem>
+                <SelectItem value="unassigned">No Assignment</SelectItem>
+                {assignments.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.name || a.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="contract">Contract</SelectItem>
+                <SelectItem value="specification">Specification</SelectItem>
+                <SelectItem value="report">Report</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
             >
-              <AnimatePresence mode="popLayout">
-                {filteredDocuments.map((doc) => (
-                  <motion.div
-                    key={doc.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <HoverCard openDelay={400} closeDelay={100}>
-                      <HoverCardTrigger asChild>
-                        <Card
-                          className="cursor-pointer hover:shadow-lg hover:border-indigo-300 transition-all group relative"
-                          onClick={() => setPreviewDoc(doc)}
-                        >
-                          <CardContent
-                            className={viewMode === 'grid' ? 'p-4' : 'p-3 flex items-center gap-4'}
+              {viewMode === 'grid' ? (
+                <List className="w-4 h-4" />
+              ) : (
+                <LayoutGrid className="w-4 h-4" />
+              )}
+            </Button>
+            <Button variant="outline" onClick={() => setIsUploadOpen(true)}>
+              <Upload className="w-4 h-4 mr-2" />
+              Upload
+            </Button>
+          </div>
+
+          {/* Documents Grid/List */}
+          <ScrollArea className="flex-1">
+            {filteredDocuments.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-64 text-center">
+                <FileText className="w-12 h-12 text-gray-300 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  No documents found
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Try adjusting filters or create a new document
+                </p>
+                <Button onClick={onCreateDocument} variant="outline">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Document
+                </Button>
+              </div>
+            ) : (
+              <div
+                className={
+                  viewMode === 'grid'
+                    ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
+                    : 'space-y-2'
+                }
+              >
+                <AnimatePresence mode="popLayout">
+                  {filteredDocuments.map((doc) => (
+                    <motion.div
+                      key={doc.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      <HoverCard openDelay={400} closeDelay={100}>
+                        <HoverCardTrigger asChild>
+                          <Card
+                            className="cursor-pointer hover:shadow-lg hover:border-indigo-300 transition-all group relative"
+                            onClick={() => setPreviewDoc(doc)}
                           >
-                            {/* Grid view layout */}
-                            {viewMode === 'grid' && (
-                              <>
-                                <div className="flex items-start justify-between mb-3">
+                            <CardContent
+                              className={
+                                viewMode === 'grid' ? 'p-4' : 'p-3 flex items-center gap-4'
+                              }
+                            >
+                              {/* Grid view layout */}
+                              {viewMode === 'grid' && (
+                                <>
+                                  <div className="flex items-start justify-between mb-3">
+                                    <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                                      <FileText className="w-5 h-5 text-gray-500" />
+                                    </div>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger
+                                        asChild
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                          <MoreVertical className="w-4 h-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onEditDocument(doc);
+                                          }}
+                                        >
+                                          <Edit3 className="w-4 h-4 mr-2" />
+                                          Edit in Studio
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setPreviewDoc(doc);
+                                          }}
+                                        >
+                                          <Eye className="w-4 h-4 mr-2" />
+                                          Quick Preview
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setMoveDialogDoc(doc);
+                                          }}
+                                        >
+                                          <FolderInput className="w-4 h-4 mr-2" />
+                                          Move to Folder
+                                        </DropdownMenuItem>
+                                        {doc.is_outdated && (
+                                          <>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setRestoreDialogDoc(doc);
+                                              }}
+                                              className="text-green-600 focus:text-green-600"
+                                            >
+                                              <RotateCcw className="w-4 h-4 mr-2" />
+                                              Restore
+                                            </DropdownMenuItem>
+                                          </>
+                                        )}
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                          onClick={(e) => onDeleteDocument(e, doc)}
+                                          className="text-red-600 focus:text-red-600"
+                                        >
+                                          <Trash2 className="w-4 h-4 mr-2" />
+                                          Delete
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                                        {doc.title}
+                                      </h3>
+                                      {doc.is_outdated && (
+                                        <OutdatedDocumentBadge document={doc} size="small" />
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                      <p className="text-xs text-gray-500">
+                                        {new Date(doc.created_date).toLocaleDateString()}
+                                      </p>
+                                      {doc.assigned_to_project &&
+                                        getProjectName(doc.assigned_to_project) && (
+                                          <Badge
+                                            variant="secondary"
+                                            className="text-xs px-1.5 py-0 h-5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                                          >
+                                            <FolderKanban className="w-3 h-3 mr-1" />
+                                            {getProjectName(doc.assigned_to_project)}
+                                          </Badge>
+                                        )}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                              {/* List view layout */}
+                              {viewMode === 'list' && (
+                                <>
                                   <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
                                     <FileText className="w-5 h-5 text-gray-500" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                                        {doc.title}
+                                      </h3>
+                                      {doc.is_outdated && (
+                                        <OutdatedDocumentBadge document={doc} size="small" />
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                      <p className="text-xs text-gray-500">
+                                        {new Date(doc.created_date).toLocaleDateString()}
+                                      </p>
+                                      {doc.assigned_to_project &&
+                                        getProjectName(doc.assigned_to_project) && (
+                                          <Badge
+                                            variant="secondary"
+                                            className="text-xs px-1.5 py-0 h-5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                                          >
+                                            <FolderKanban className="w-3 h-3 mr-1" />
+                                            {getProjectName(doc.assigned_to_project)}
+                                          </Badge>
+                                        )}
+                                    </div>
                                   </div>
                                   <DropdownMenu>
                                     <DropdownMenuTrigger
@@ -469,265 +606,145 @@ export default function DocumentLibrary({
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
                                   </DropdownMenu>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                                      {doc.title}
-                                    </h3>
-                                    {doc.is_outdated && (
-                                      <OutdatedDocumentBadge document={doc} size="small" />
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                    <p className="text-xs text-gray-500">
-                                      {new Date(doc.created_date).toLocaleDateString()}
-                                    </p>
-                                    {doc.assigned_to_project &&
-                                      getProjectName(doc.assigned_to_project) && (
-                                        <Badge
-                                          variant="secondary"
-                                          className="text-xs px-1.5 py-0 h-5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                                        >
-                                          <FolderKanban className="w-3 h-3 mr-1" />
-                                          {getProjectName(doc.assigned_to_project)}
-                                        </Badge>
-                                      )}
-                                  </div>
-                                </div>
-                              </>
-                            )}
-                            {/* List view layout */}
-                            {viewMode === 'list' && (
-                              <>
-                                <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
-                                  <FileText className="w-5 h-5 text-gray-500" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                                      {doc.title}
-                                    </h3>
-                                    {doc.is_outdated && (
-                                      <OutdatedDocumentBadge document={doc} size="small" />
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                    <p className="text-xs text-gray-500">
-                                      {new Date(doc.created_date).toLocaleDateString()}
-                                    </p>
-                                    {doc.assigned_to_project &&
-                                      getProjectName(doc.assigned_to_project) && (
-                                        <Badge
-                                          variant="secondary"
-                                          className="text-xs px-1.5 py-0 h-5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                                        >
-                                          <FolderKanban className="w-3 h-3 mr-1" />
-                                          {getProjectName(doc.assigned_to_project)}
-                                        </Badge>
-                                      )}
-                                  </div>
-                                </div>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                      <MoreVertical className="w-4 h-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        onEditDocument(doc);
-                                      }}
-                                    >
-                                      <Edit3 className="w-4 h-4 mr-2" />
-                                      Edit in Studio
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setPreviewDoc(doc);
-                                      }}
-                                    >
-                                      <Eye className="w-4 h-4 mr-2" />
-                                      Quick Preview
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setMoveDialogDoc(doc);
-                                      }}
-                                    >
-                                      <FolderInput className="w-4 h-4 mr-2" />
-                                      Move to Folder
-                                    </DropdownMenuItem>
-                                    {doc.is_outdated && (
-                                      <>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setRestoreDialogDoc(doc);
-                                          }}
-                                          className="text-green-600 focus:text-green-600"
-                                        >
-                                          <RotateCcw className="w-4 h-4 mr-2" />
-                                          Restore
-                                        </DropdownMenuItem>
-                                      </>
-                                    )}
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                      onClick={(e) => onDeleteDocument(e, doc)}
-                                      className="text-red-600 focus:text-red-600"
-                                    >
-                                      <Trash2 className="w-4 h-4 mr-2" />
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                                <ChevronRight className="w-5 h-5 text-gray-400" />
-                              </>
-                            )}
-                          </CardContent>
-                        </Card>
-                      </HoverCardTrigger>
+                                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                                </>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </HoverCardTrigger>
 
-                      {/* Hover Preview Content */}
-                      <HoverCardContent
-                        side="right"
-                        align="start"
-                        className="w-80 p-0 overflow-hidden"
-                        sideOffset={8}
-                      >
-                        <div className="p-4 border-b bg-gray-50 dark:bg-gray-900">
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center shrink-0">
-                              <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-gray-900 dark:text-white truncate">
-                                {doc.title}
-                              </h4>
-                              <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
-                                <Calendar className="w-3 h-3" />
-                                {new Date(doc.created_date).toLocaleDateString()}
+                        {/* Hover Preview Content */}
+                        <HoverCardContent
+                          side="right"
+                          align="start"
+                          className="w-80 p-0 overflow-hidden"
+                          sideOffset={8}
+                        >
+                          <div className="p-4 border-b bg-gray-50 dark:bg-gray-900">
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center shrink-0">
+                                <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-gray-900 dark:text-white truncate">
+                                  {doc.title}
+                                </h4>
+                                <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                                  <Calendar className="w-3 h-3" />
+                                  {new Date(doc.created_date).toLocaleDateString()}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="p-4">
-                          {/* Document preview text */}
-                          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                            {getPreviewText(doc)}
-                          </p>
-
-                          {/* Metadata */}
-                          <div className="mt-4 pt-3 border-t space-y-2">
-                            {doc.assigned_to_project && getProjectName(doc.assigned_to_project) && (
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <FolderKanban className="w-3 h-3 text-blue-500" />
-                                <span>{getProjectName(doc.assigned_to_project)}</span>
-                              </div>
-                            )}
-                            {doc.assigned_to_assignments?.length > 0 && (
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <Target className="w-3 h-3 text-purple-500" />
-                                <span>
-                                  {doc.assigned_to_assignments.length} assignment
-                                  {doc.assigned_to_assignments.length !== 1 ? 's' : ''}
-                                </span>
-                              </div>
-                            )}
-                            {doc.created_by && (
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <User className="w-3 h-3 text-green-500" />
-                                <span>{doc.created_by}</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Quick actions hint */}
-                          <div className="mt-3 pt-3 border-t">
-                            <p className="text-xs text-gray-400 text-center">
-                              Click to open full preview
+                          <div className="p-4">
+                            {/* Document preview text */}
+                            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                              {getPreviewText(doc)}
                             </p>
+
+                            {/* Metadata */}
+                            <div className="mt-4 pt-3 border-t space-y-2">
+                              {doc.assigned_to_project &&
+                                getProjectName(doc.assigned_to_project) && (
+                                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    <FolderKanban className="w-3 h-3 text-blue-500" />
+                                    <span>{getProjectName(doc.assigned_to_project)}</span>
+                                  </div>
+                                )}
+                              {doc.assigned_to_assignments?.length > 0 && (
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  <Target className="w-3 h-3 text-purple-500" />
+                                  <span>
+                                    {doc.assigned_to_assignments.length} assignment
+                                    {doc.assigned_to_assignments.length !== 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                              )}
+                              {doc.created_by && (
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  <User className="w-3 h-3 text-green-500" />
+                                  <span>{doc.created_by}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Quick actions hint */}
+                            <div className="mt-3 pt-3 border-t">
+                              <p className="text-xs text-gray-400 text-center">
+                                Click to open full preview
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      </HoverCardContent>
-                    </HoverCard>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          )}
-        </ScrollArea>
-      </div>
+                        </HoverCardContent>
+                      </HoverCard>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+          </ScrollArea>
+        </div>
 
-      {/* Upload Dialog */}
-      <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Upload Documents</DialogTitle>
-          </DialogHeader>
-          <DocumentUploader
-            assignments={assignments}
-            projects={projects}
-            currentUser={currentUser}
-            selectedFolderPath="/"
-            onUploadComplete={handleUploadComplete}
-            existingDocuments={documents}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Restore Document Dialog */}
-      <DocumentRestoreDialog
-        document={restoreDialogDoc}
-        isOpen={!!restoreDialogDoc}
-        onClose={() => setRestoreDialogDoc(null)}
-        onSuccess={() => {
-          setRestoreDialogDoc(null);
-          if (onRefresh) onRefresh();
-        }}
-      />
-
-      {/* Move to Folder Dialog */}
-      <MoveToFolderDialog
-        document={moveDialogDoc}
-        documents={documents}
-        isOpen={!!moveDialogDoc}
-        onClose={() => setMoveDialogDoc(null)}
-        onSuccess={() => {
-          setMoveDialogDoc(null);
-          if (onRefresh) onRefresh();
-        }}
-      />
-
-      {/* Document Preview Dialog */}
-      {previewDoc && (
-        <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
-          <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
-            <DocumentPreview
-              document={previewDoc}
+        {/* Upload Dialog */}
+        <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Upload Documents</DialogTitle>
+            </DialogHeader>
+            <DocumentUploader
               assignments={assignments}
+              projects={projects}
               currentUser={currentUser}
-              onClose={() => setPreviewDoc(null)}
-              onUpdate={onRefresh}
-              onDelete={(e, doc) => {
-                setPreviewDoc(null);
-                onDeleteDocument(e, doc);
-              }}
+              selectedFolderPath="/"
+              onUploadComplete={handleUploadComplete}
+              existingDocuments={documents}
             />
           </DialogContent>
         </Dialog>
-      )}
-    </div>
+
+        {/* Restore Document Dialog */}
+        <DocumentRestoreDialog
+          document={restoreDialogDoc}
+          isOpen={!!restoreDialogDoc}
+          onClose={() => setRestoreDialogDoc(null)}
+          onSuccess={() => {
+            setRestoreDialogDoc(null);
+            if (onRefresh) onRefresh();
+          }}
+        />
+
+        {/* Move to Folder Dialog */}
+        <MoveToFolderDialog
+          document={moveDialogDoc}
+          documents={documents}
+          isOpen={!!moveDialogDoc}
+          onClose={() => setMoveDialogDoc(null)}
+          onSuccess={() => {
+            setMoveDialogDoc(null);
+            if (onRefresh) onRefresh();
+          }}
+        />
+
+        {/* Document Preview Dialog */}
+        {previewDoc && (
+          <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
+            <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
+              <DocumentPreview
+                document={previewDoc}
+                assignments={assignments}
+                currentUser={currentUser}
+                onClose={() => setPreviewDoc(null)}
+                onUpdate={onRefresh}
+                onDelete={(e, doc) => {
+                  setPreviewDoc(null);
+                  onDeleteDocument(e, doc);
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+    </DragDropContext>
   );
 }

@@ -170,7 +170,7 @@ export default function ProjectAssignmentsSection({
 
                 {/* Team members detail */}
                 {assignment.team_members?.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                  <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
                     <div className="flex flex-wrap gap-2">
                       {assignment.team_members.map((member, idx) => (
                         <Badge

@@ -167,7 +167,7 @@ export default function ProjectTeamNotes({ projectId, workspaceId }) {
       </CardHeader>
       <CardContent className="pt-0">
         {loading ? (
-          <div className="flex items-center justify-center py-8">
+          <div className="flex items-center justify-center py-4">
             <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
           </div>
         ) : sortedNotes.length > 0 ? (

@@ -74,7 +74,7 @@ export default function ProjectDashboardHeader({ project, onNavigateBack }) {
               </p>
             )}
 
-            <div className="flex items-center gap-3 mt-3 ml-12 flex-wrap">
+            <div className="flex items-center gap-3 mt-2 ml-12 flex-wrap">
               <Badge className={STATUS_COLORS[project.status] || STATUS_COLORS.planning}>
                 {formatStatus(project.status)}
               </Badge>

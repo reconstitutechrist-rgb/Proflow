@@ -40,7 +40,7 @@ export default function ProjectSearchFilter({
   hasActiveFilters,
 }) {
   return (
-    <div className="flex-shrink-0 border-b bg-white dark:bg-gray-900 p-4">
+    <div className="flex-shrink-0 border-b bg-white dark:bg-gray-900 p-3">
       <div className="flex flex-wrap items-center gap-3">
         {/* Search Input */}
         <div className="relative flex-1 min-w-[200px]">

@@ -591,7 +591,7 @@ function LayoutContent({ children, currentPageName }) {
 
   const SidebarContent = ({ isMobile: _isMobile = false }) => (
     <div className="flex flex-col h-full">
-      <div className="p-6 border-b border-gray-200 dark:border-gray-800">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-3">
           <div className="relative w-10 h-10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 animate-gradient-shift"></div>
@@ -613,7 +613,7 @@ function LayoutContent({ children, currentPageName }) {
         role="navigation"
         aria-label="Main navigation"
       >
-        <div className="space-y-6">
+        <div className="space-y-3">
           {navigationGroups.map((group) => (
             <div key={group.title} className="space-y-1">
               <h3 className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 mb-2">
@@ -877,7 +877,7 @@ function LayoutContent({ children, currentPageName }) {
                   </div>
 
                   {notifications.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                    <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                       <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 flex items-center justify-center">
                         <CheckCircle className="w-8 h-8 text-green-500" />
                       </div>
@@ -1011,7 +1011,7 @@ function LayoutContent({ children, currentPageName }) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-8 pb-24 md:pb-8 bg-gray-50 dark:bg-gray-900 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+      <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
         <ErrorBoundary>{children}</ErrorBoundary>
       </main>
 

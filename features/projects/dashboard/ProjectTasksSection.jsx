@@ -104,7 +104,7 @@ export default function ProjectTasksSection({
 
       {tasks.length === 0 ? (
         <Card className="bg-gray-50 dark:bg-gray-800/50 border-dashed">
-          <CardContent className="p-6 text-center">
+          <CardContent className="p-4 text-center">
             <CheckSquare className="w-8 h-8 text-gray-400 mx-auto mb-2" />
             <p className="text-sm text-gray-500 dark:text-gray-400">No tasks found</p>
           </CardContent>

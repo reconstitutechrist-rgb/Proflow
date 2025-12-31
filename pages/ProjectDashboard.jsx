@@ -293,7 +293,7 @@ export default function ProjectDashboard() {
 
   return (
     <ErrorBoundary>
-      <div className="flex flex-col overflow-hidden -m-8 h-[calc(100vh-56px)]">
+      <div className="flex flex-col overflow-hidden h-[calc(100vh-56px)]">
         <PanelGroup
           direction={isMobile ? 'vertical' : 'horizontal'}
           onLayout={handlePanelResize}
@@ -319,7 +319,7 @@ export default function ProjectDashboard() {
 
               {/* Scrollable Content */}
               <ScrollArea className="flex-1">
-                <div className="p-4 space-y-6">
+                <div className="space-y-3">
                   {/* Team Notes Section */}
                   <ProjectTeamNotes projectId={projectId} workspaceId={currentWorkspaceId} />
 

@@ -175,7 +175,7 @@ Format as JSON with keys: executive_summary (string), key_points (array of strin
 
       {filteredDocs.length === 0 ? (
         <Card className="bg-gray-50 dark:bg-gray-800/50 border-dashed">
-          <CardContent className="p-6 text-center">
+          <CardContent className="p-4 text-center">
             <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
             <p className="text-sm text-gray-500 dark:text-gray-400">No documents found</p>
           </CardContent>
@@ -261,7 +261,7 @@ Format as JSON with keys: executive_summary (string), key_points (array of strin
                           <span>{summaryData.message}</span>
                         </div>
                       ) : summaryData?.data ? (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                           {/* Executive Summary */}
                           <div>
                             <div className="flex items-center gap-1 text-xs font-medium text-purple-600 dark:text-purple-400 mb-1">

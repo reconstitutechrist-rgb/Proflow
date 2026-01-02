@@ -107,13 +107,43 @@ export function useDebateSession() {
         db.entities.Note.filter({ project_id: project.id, workspace_id: currentWorkspaceId }),
       ]);
 
-      return setProflowContext(newContext, {
+      let updatedContext = setProflowContext(newContext, {
         project,
         tasks: tasks || [],
         assignments: assignments || [],
         documents: documents || [],
         notes: notes || [],
       });
+
+      // Load past debate insights for this project
+      try {
+        const pastContext = await loadPastContext(project.id, updatedContext.originalQuery, {
+          contextType: 'project',
+        });
+        if (pastContext.relevantInsights.length > 0 || pastContext.establishedFacts.length > 0) {
+          updatedContext = setPastInsights(
+            updatedContext,
+            pastContext.relevantInsights,
+            pastContext.establishedFacts
+          );
+          console.log(
+            `Loaded ${pastContext.relevantInsights.length} relevant insights, ${pastContext.establishedFacts.length} established facts for project`
+          );
+
+          // Pre-populate agreed points from established facts
+          if (pastContext.establishedFacts.length > 0) {
+            updatedContext.agreedPoints = pastContext.establishedFacts.map((f) => ({
+              point: f.insight_text,
+              round: 'established',
+              confidence: 'high',
+            }));
+          }
+        }
+      } catch (insightErr) {
+        console.warn('Failed to load past project insights:', insightErr);
+      }
+
+      return updatedContext;
     } catch (err) {
       console.warn('Failed to load project context:', err);
       return setProflowContext(newContext, { project });
@@ -135,11 +165,41 @@ export function useDebateSession() {
         doc.assigned_to_assignments?.includes(assignment.id)
       );
 
-      return setProflowContext(newContext, {
+      let updatedContext = setProflowContext(newContext, {
         assignment,
         tasks: tasks || [],
         documents: assignmentDocs || [],
       });
+
+      // Load past debate insights for this assignment
+      try {
+        const pastContext = await loadPastContext(assignment.id, updatedContext.originalQuery, {
+          contextType: 'assignment',
+        });
+        if (pastContext.relevantInsights.length > 0 || pastContext.establishedFacts.length > 0) {
+          updatedContext = setPastInsights(
+            updatedContext,
+            pastContext.relevantInsights,
+            pastContext.establishedFacts
+          );
+          console.log(
+            `Loaded ${pastContext.relevantInsights.length} relevant insights, ${pastContext.establishedFacts.length} established facts for assignment`
+          );
+
+          // Pre-populate agreed points from established facts
+          if (pastContext.establishedFacts.length > 0) {
+            updatedContext.agreedPoints = pastContext.establishedFacts.map((f) => ({
+              point: f.insight_text,
+              round: 'established',
+              confidence: 'high',
+            }));
+          }
+        }
+      } catch (insightErr) {
+        console.warn('Failed to load past assignment insights:', insightErr);
+      }
+
+      return updatedContext;
     } catch (err) {
       console.warn('Failed to load assignment context:', err);
       return setProflowContext(newContext, { assignment });
@@ -203,7 +263,9 @@ export function useDebateSession() {
 
       // Load past debate insights using semantic search
       try {
-        const pastContext = await loadPastContext(linkedRepo.id, updatedContext.originalQuery);
+        const pastContext = await loadPastContext(linkedRepo.id, updatedContext.originalQuery, {
+          contextType: 'github',
+        });
         if (pastContext.relevantInsights.length > 0 || pastContext.establishedFacts.length > 0) {
           updatedContext = setPastInsights(
             updatedContext,
@@ -418,7 +480,9 @@ export function useDebateSession() {
               session.id,
               insights,
               currentWorkspaceId,
-              session.repository_id // May be null for non-GitHub debates
+              session.repository_id, // For github context
+              session.project_id, // For project context
+              session.assignment_id // For assignment context
             );
             console.log(`Saved ${insights.length} insights from debate`);
           }

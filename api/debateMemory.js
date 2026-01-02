@@ -19,10 +19,19 @@ import { generateEmbedding, isOpenAIConfigured } from './openaiClient';
  * @param {string} sessionId - The debate session ID
  * @param {Array} insights - Array of insight objects
  * @param {string} workspaceId - The workspace ID
- * @param {string} repositoryId - The repository ID
+ * @param {string} repositoryId - The repository ID (for github context)
+ * @param {string} projectId - The project ID (for project context)
+ * @param {string} assignmentId - The assignment ID (for assignment context)
  * @returns {Promise<Array>} Created insight records
  */
-export async function saveDebateInsights(sessionId, insights, workspaceId, repositoryId) {
+export async function saveDebateInsights(
+  sessionId,
+  insights,
+  workspaceId,
+  repositoryId = null,
+  projectId = null,
+  assignmentId = null
+) {
   if (!insights || insights.length === 0) {
     return [];
   }
@@ -30,6 +39,12 @@ export async function saveDebateInsights(sessionId, insights, workspaceId, repos
   if (!isOpenAIConfigured()) {
     console.warn('OpenAI not configured - insights will be saved without embeddings');
   }
+
+  // Determine context type
+  let contextType = 'none';
+  if (repositoryId) contextType = 'github';
+  else if (projectId) contextType = 'project';
+  else if (assignmentId) contextType = 'assignment';
 
   try {
     // Generate embeddings for each insight
@@ -48,6 +63,9 @@ export async function saveDebateInsights(sessionId, insights, workspaceId, repos
         return {
           workspace_id: workspaceId,
           repository_id: repositoryId,
+          project_id: projectId,
+          assignment_id: assignmentId,
+          context_type: contextType,
           source_session_id: sessionId,
           insight_type: insight.insight_type || 'general',
           insight_text: insight.insight_text,
@@ -73,35 +91,41 @@ export async function saveDebateInsights(sessionId, insights, workspaceId, repos
 /**
  * Find relevant past insights using semantic search
  * @param {string} query - The search query
- * @param {string} repositoryId - The repository ID
+ * @param {string} entityId - The entity ID (repository, project, or assignment)
  * @param {Object} options - Search options
  * @param {number} options.limit - Max results (default: 10)
  * @param {number} options.threshold - Similarity threshold 0-1 (default: 0.7)
+ * @param {string} options.contextType - Context type: 'github', 'project', or 'assignment'
  * @returns {Promise<Array>} Matching insights with similarity scores
  */
-export async function findRelevantInsights(query, repositoryId, options = {}) {
-  const { limit = 10, threshold = 0.7 } = options;
+export async function findRelevantInsights(query, entityId, options = {}) {
+  const { limit = 10, threshold = 0.7, contextType = 'github' } = options;
 
   if (!isOpenAIConfigured()) {
     console.warn('OpenAI not configured - falling back to text-based search');
-    return fallbackTextSearch(query, repositoryId, limit);
+    return fallbackTextSearch(query, entityId, limit, contextType);
   }
 
   try {
     // Generate embedding for the query
     const queryEmbedding = await generateEmbedding(query);
 
-    // Call the semantic search function
-    const { data, error } = await supabase.rpc('match_debate_insights', {
+    // Build RPC parameters based on context type
+    const rpcParams = {
       query_embedding: queryEmbedding,
-      p_repository_id: repositoryId,
+      p_repository_id: contextType === 'github' ? entityId : null,
+      p_project_id: contextType === 'project' ? entityId : null,
+      p_assignment_id: contextType === 'assignment' ? entityId : null,
       match_threshold: threshold,
       match_count: limit,
-    });
+    };
+
+    // Call the semantic search function for all context types
+    const { data, error } = await supabase.rpc('match_debate_insights', rpcParams);
 
     if (error) {
       console.error('Semantic search error:', error);
-      return fallbackTextSearch(query, repositoryId, limit);
+      return fallbackTextSearch(query, entityId, limit, contextType);
     }
 
     // Update retrieval stats for matched insights
@@ -112,25 +136,35 @@ export async function findRelevantInsights(query, repositoryId, options = {}) {
     return data || [];
   } catch (error) {
     console.error('Error in findRelevantInsights:', error);
-    return fallbackTextSearch(query, repositoryId, limit);
+    return fallbackTextSearch(query, entityId, limit, contextType);
   }
 }
 
 /**
  * Fallback text-based search when embeddings are not available
  */
-async function fallbackTextSearch(query, repositoryId, limit) {
+async function fallbackTextSearch(query, entityId, limit, contextType = 'github') {
   try {
-    // Simple text search using ILIKE (case-insensitive)
-    const { data, error } = await supabase
+    // Build query based on context type
+    let queryBuilder = supabase
       .from('debate_insights')
       .select(
-        'id, insight_type, insight_text, confidence_score, agreed_by_both_ais, times_retrieved'
+        'id, insight_type, insight_text, confidence_score, agreed_by_both_ais, times_retrieved, project_id, assignment_id'
       )
-      .eq('repository_id', repositoryId)
       .ilike('insight_text', `%${query}%`)
       .order('confidence_score', { ascending: false })
       .limit(limit);
+
+    // Filter by context type
+    if (contextType === 'github') {
+      queryBuilder = queryBuilder.eq('repository_id', entityId);
+    } else if (contextType === 'project') {
+      queryBuilder = queryBuilder.eq('project_id', entityId);
+    } else if (contextType === 'assignment') {
+      queryBuilder = queryBuilder.eq('assignment_id', entityId);
+    }
+
+    const { data, error } = await queryBuilder;
 
     if (error) throw error;
 
@@ -176,51 +210,64 @@ async function updateRetrievalStats(insightIds) {
 }
 
 /**
- * Get established high-confidence insights for a repository
+ * Get established high-confidence insights for an entity
  * These are insights that both AIs agreed on with high confidence
- * @param {string} repositoryId - The repository ID
+ * @param {string} entityId - The entity ID (repository, project, or assignment)
  * @param {Object} options - Query options
  * @param {number} options.minConfidence - Minimum confidence (default: 0.85)
  * @param {number} options.limit - Max results (default: 20)
+ * @param {string} options.contextType - Context type: 'github', 'project', or 'assignment'
  * @returns {Promise<Array>} Established insights
  */
-export async function getEstablishedInsights(repositoryId, options = {}) {
-  const { minConfidence = 0.85, limit = 20 } = options;
+export async function getEstablishedInsights(entityId, options = {}) {
+  const { minConfidence = 0.85, limit = 20, contextType = 'github' } = options;
 
   try {
-    // Try to use the database function first
-    const { data, error } = await supabase.rpc('get_established_insights', {
-      p_repository_id: repositoryId,
-      min_confidence: minConfidence,
-    });
+    // Try to use the database function first (only works for github context)
+    if (contextType === 'github') {
+      const { data, error } = await supabase.rpc('get_established_insights', {
+        p_repository_id: entityId,
+        min_confidence: minConfidence,
+      });
 
-    if (error) {
-      // Fallback to direct query
+      if (!error) {
+        return data || [];
+      }
       console.warn('get_established_insights RPC failed, using direct query:', error.message);
-      return fallbackGetEstablished(repositoryId, minConfidence, limit);
     }
 
-    return data || [];
+    // Fallback to direct query for all context types
+    return fallbackGetEstablished(entityId, minConfidence, limit, contextType);
   } catch (error) {
     console.error('Error getting established insights:', error);
-    return fallbackGetEstablished(repositoryId, minConfidence, limit);
+    return fallbackGetEstablished(entityId, minConfidence, limit, contextType);
   }
 }
 
 /**
  * Fallback direct query for established insights
  */
-async function fallbackGetEstablished(repositoryId, minConfidence, limit) {
+async function fallbackGetEstablished(entityId, minConfidence, limit, contextType = 'github') {
   try {
-    const { data, error } = await supabase
+    let queryBuilder = supabase
       .from('debate_insights')
       .select('id, insight_type, insight_text, confidence_score, times_retrieved, created_date')
-      .eq('repository_id', repositoryId)
       .eq('agreed_by_both_ais', true)
       .gte('confidence_score', minConfidence)
       .order('confidence_score', { ascending: false })
       .order('times_retrieved', { ascending: false })
       .limit(limit);
+
+    // Filter by context type
+    if (contextType === 'github') {
+      queryBuilder = queryBuilder.eq('repository_id', entityId);
+    } else if (contextType === 'project') {
+      queryBuilder = queryBuilder.eq('project_id', entityId);
+    } else if (contextType === 'assignment') {
+      queryBuilder = queryBuilder.eq('assignment_id', entityId);
+    }
+
+    const { data, error } = await queryBuilder;
 
     if (error) throw error;
     return data || [];

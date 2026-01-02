@@ -340,18 +340,22 @@ export const setRepositoryMemory = (context, memory) => {
 };
 
 /**
- * Load past insights and established facts for a repository
+ * Load past insights and established facts for an entity
  * Called before starting a new debate session
  *
- * @param {string} repositoryId - The repository ID
+ * @param {string} entityId - The entity ID (repository, project, or assignment)
  * @param {string} query - The user's query (for semantic search)
+ * @param {Object} options - Load options
+ * @param {string} options.contextType - Context type: 'github', 'project', or 'assignment'
  * @returns {Promise<Object>} Object with relevantInsights and establishedFacts
  */
-export async function loadPastContext(repositoryId, query) {
+export async function loadPastContext(entityId, query, options = {}) {
+  const { contextType = 'github' } = options;
+
   try {
     const [relevantInsights, establishedFacts] = await Promise.all([
-      findRelevantInsights(query, repositoryId, { limit: 10, threshold: 0.7 }),
-      getEstablishedInsights(repositoryId, { minConfidence: 0.85, limit: 15 }),
+      findRelevantInsights(query, entityId, { limit: 10, threshold: 0.7, contextType }),
+      getEstablishedInsights(entityId, { minConfidence: 0.85, limit: 15, contextType }),
     ]);
 
     return {

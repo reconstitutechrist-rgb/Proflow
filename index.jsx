@@ -32,6 +32,7 @@ const Chat = React.lazy(() => import('@/pages/Chat'));
 const AskAI = React.lazy(() => import('@/pages/AskAI'));
 const AIHub = React.lazy(() => import('@/pages/AIHub'));
 const GitHubHub = React.lazy(() => import('@/pages/GitHubHub'));
+const DebateHub = React.lazy(() => import('@/pages/DebateHub'));
 const Preferences = React.lazy(() => import('@/pages/Preferences'));
 const Workspaces = React.lazy(() => import('@/pages/Workspaces'));
 const Documentation = React.lazy(() => import('@/pages/Documentation'));
@@ -42,6 +43,7 @@ const preloadPages = () => {
   import('@/pages/Users');
   import('@/pages/Chat');
   import('@/pages/AIHub');
+  import('@/pages/DebateHub');
   import('@/pages/GitHubHub');
   import('@/pages/ProjectDashboard');
 };
@@ -57,6 +59,8 @@ const PAGES = {
   Assignments,
   AskAI,
   AIHub,
+  Debate: DebateHub,
+  DebateHub,
   GitHub: GitHubHub,
   GitHubHub,
   Preferences,
@@ -169,6 +173,8 @@ function ProtectedContent() {
           <Route path="/Assignments" element={<Assignments />} />
           <Route path="/AskAI" element={<AskAI />} />
           <Route path="/AIHub" element={<AIHub />} />
+          <Route path="/Debate" element={<DebateHub />} />
+          <Route path="/DebateHub" element={<DebateHub />} />
           <Route path="/GitHub" element={<GitHubHub />} />
           <Route path="/GitHubHub" element={<GitHubHub />} />
           <Route path="/Preferences" element={<Preferences />} />

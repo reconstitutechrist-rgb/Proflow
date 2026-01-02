@@ -25,6 +25,7 @@ import {
   X,
   Briefcase,
   Loader2,
+  Swords,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -38,6 +39,7 @@ import {
 } from '@/features/ai/askAI';
 import AIResearchAssistant from '@/features/ai/AIResearchAssistant';
 import ResearchSuggestions from '@/features/research/ResearchSuggestions';
+import { DebateChatInterface } from '@/features/debate';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 import { db } from '@/api/db';
@@ -261,7 +263,7 @@ export default function AIHub() {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">AI Hub</h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Chat, Research, and Generate with AI assistance
+                  Chat, Research, and Debate with AI assistance
                 </p>
               </div>
             </div>
@@ -361,6 +363,13 @@ export default function AIHub() {
               >
                 <FileSearch className="w-4 h-4 mr-2" />
                 Research
+              </TabsTrigger>
+              <TabsTrigger
+                value="debate"
+                className="data-[state=active]:bg-linear-to-r data-[state=active]:from-blue-100 data-[state=active]:to-purple-100 dark:data-[state=active]:from-blue-900/30 dark:data-[state=active]:to-purple-900/30 data-[state=active]:text-purple-700 dark:data-[state=active]:text-purple-300 px-6 py-3 rounded-lg"
+              >
+                <Swords className="w-4 h-4 mr-2" />
+                AI Debate
               </TabsTrigger>
             </TabsList>
           </div>
@@ -697,6 +706,24 @@ export default function AIHub() {
                   </Card>
                 </TabsContent>
               </Tabs>
+            </ErrorBoundary>
+          </TabsContent>
+
+          {/* Debate Tab */}
+          <TabsContent value="debate" className="flex-1 overflow-hidden m-0">
+            <ErrorBoundary>
+              <div className="h-full p-4">
+                <DebateChatInterface
+                  contextType={contextType}
+                  contextData={
+                    contextType === 'project'
+                      ? selectedProject
+                      : contextType === 'assignment'
+                        ? selectedAssignment
+                        : null
+                  }
+                />
+              </div>
             </ErrorBoundary>
           </TabsContent>
         </Tabs>

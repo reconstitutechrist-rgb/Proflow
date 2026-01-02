@@ -11,12 +11,13 @@ export { RepositoryPicker } from './RepositoryPicker';
 export { RepositoryList } from './RepositoryList';
 export { RepositoryAnalysisStatus, RepositoryAnalysisProgress } from './RepositoryAnalysisStatus';
 
-// Debate System
+// Debate System - Re-export from the new generalized debate module for backwards compatibility
 export {
   useDebateSession,
   DebateChatInterface,
   DebateMessage,
   DebateControls,
   ConsensusIndicator,
+  ContextSelector,
   AI_MODELS,
-} from './debate';
+} from '@/features/debate';

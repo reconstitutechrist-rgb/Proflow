@@ -6,8 +6,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Github, ArrowLeft, Settings, Loader2, AlertCircle, Link as LinkIcon } from 'lucide-react';
 import { Link } from 'react-router';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import { useGitHubConnection } from '@/features/github';
-import { RepositoryList, DebateChatInterface } from '@/features/github';
+import { useGitHubConnection, RepositoryList } from '@/features/github';
+import { DebateChatInterface } from '@/features/debate';
 import { ROUTES } from '@/config/constants';
 
 /**
@@ -155,7 +155,8 @@ export default function GitHubHub() {
               {/* Debate Interface */}
               <div className="flex-1 min-h-0 overflow-hidden p-4">
                 <DebateChatInterface
-                  repoFullName={selectedRepo}
+                  contextType="github"
+                  contextData={{ repoFullName: selectedRepo, github_repo_full_name: selectedRepo }}
                   onBack={() => setSelectedRepo(null)}
                 />
               </div>

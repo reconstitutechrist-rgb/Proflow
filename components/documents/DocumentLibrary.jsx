@@ -41,7 +41,6 @@ import {
   RotateCcw,
   Archive,
   FolderInput,
-  Edit3,
   Calendar,
   User,
 } from 'lucide-react';
@@ -62,9 +61,7 @@ export default function DocumentLibrary({
   projects,
   assignments,
   currentUser,
-  onEditDocument,
   onDeleteDocument,
-  onCreateDocument,
   onRefresh,
 }) {
   // Local UI State
@@ -374,12 +371,8 @@ export default function DocumentLibrary({
                   No documents found
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  Try adjusting filters or create a new document
+                  Try adjusting filters or upload a document
                 </p>
-                <Button onClick={onCreateDocument} variant="outline">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Document
-                </Button>
               </div>
             ) : (
               <div
@@ -429,15 +422,6 @@ export default function DocumentLibrary({
                                         </Button>
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end">
-                                        <DropdownMenuItem
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            onEditDocument(doc);
-                                          }}
-                                        >
-                                          <Edit3 className="w-4 h-4 mr-2" />
-                                          Edit in Studio
-                                        </DropdownMenuItem>
                                         <DropdownMenuItem
                                           onClick={(e) => {
                                             e.stopPropagation();
@@ -554,15 +538,6 @@ export default function DocumentLibrary({
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                      <DropdownMenuItem
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          onEditDocument(doc);
-                                        }}
-                                      >
-                                        <Edit3 className="w-4 h-4 mr-2" />
-                                        Edit in Studio
-                                      </DropdownMenuItem>
                                       <DropdownMenuItem
                                         onClick={(e) => {
                                           e.stopPropagation();

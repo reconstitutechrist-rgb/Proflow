@@ -355,15 +355,32 @@ export default function DocumentLibraryNew({
             />
           </div>
 
-          {/* Activity panel - always visible */}
-          <DocumentActivityPanel
-            activities={activities}
-            currentUserEmail={currentUser?.email}
-            showOnlyMine={showActivityFilter}
-            onToggleFilter={setShowActivityFilter}
-            loading={activityLoading}
-            darkMode={darkMode}
-          />
+          {/* Third column - Preview Panel (when doc selected) or Activity Panel (default) */}
+          {selectedDoc ? (
+            <DocumentPreviewPanel
+              document={selectedDoc}
+              projects={projects}
+              assignments={assignments}
+              onClose={() => setSelectedDoc(null)}
+              onOpen={() => handleOpenFullPreview(selectedDoc)}
+              onStar={() => handleStarDoc(selectedDoc)}
+              onDelete={() =>
+                isViewingTrash ? handlePermanentDelete(selectedDoc) : handleDeleteDoc(selectedDoc)
+              }
+              onDownload={() => handleDownloadDoc(selectedDoc)}
+              onMove={() => handleMoveDoc(selectedDoc)}
+              darkMode={darkMode}
+            />
+          ) : (
+            <DocumentActivityPanel
+              activities={activities}
+              currentUserEmail={currentUser?.email}
+              showOnlyMine={showActivityFilter}
+              onToggleFilter={setShowActivityFilter}
+              loading={activityLoading}
+              darkMode={darkMode}
+            />
+          )}
         </div>
       </main>
 
@@ -381,29 +398,6 @@ export default function DocumentLibraryNew({
             onUploadComplete={handleUploadComplete}
             existingDocuments={documents}
           />
-        </DialogContent>
-      </Dialog>
-
-      {/* Document Preview Panel Modal */}
-      <Dialog open={!!selectedDoc} onOpenChange={(open) => !open && setSelectedDoc(null)}>
-        <DialogContent className="max-w-sm p-0 overflow-hidden">
-          {selectedDoc && (
-            <DocumentPreviewPanel
-              document={selectedDoc}
-              projects={projects}
-              assignments={assignments}
-              onClose={() => setSelectedDoc(null)}
-              onOpen={() => handleOpenFullPreview(selectedDoc)}
-              onStar={() => handleStarDoc(selectedDoc)}
-              onDelete={() =>
-                isViewingTrash ? handlePermanentDelete(selectedDoc) : handleDeleteDoc(selectedDoc)
-              }
-              onDownload={() => handleDownloadDoc(selectedDoc)}
-              onMove={() => handleMoveDoc(selectedDoc)}
-              darkMode={darkMode}
-              isModal
-            />
-          )}
         </DialogContent>
       </Dialog>
 

@@ -107,7 +107,6 @@ const getPreviewText = (doc) => {
  * @param {Function} props.onDownload - Callback to download document
  * @param {Function} props.onMove - Callback to move document
  * @param {boolean} props.darkMode - Whether dark mode is enabled
- * @param {boolean} props.isModal - Whether panel is displayed in a modal (adjusts styling)
  */
 export default function DocumentPreviewPanel({
   document,
@@ -120,7 +119,6 @@ export default function DocumentPreviewPanel({
   onDownload,
   onMove,
   darkMode = false,
-  isModal = false,
 }) {
   // Get project name - hooks must be called unconditionally
   const projectName = useMemo(() => {
@@ -156,12 +154,11 @@ export default function DocumentPreviewPanel({
   return (
     <div
       className={cn(
-        'flex flex-col',
-        isModal ? 'w-full' : 'w-80 flex-shrink-0 border-l h-full',
+        'w-80 flex-shrink-0 flex flex-col border-l h-full',
         darkMode ? 'bg-[#0A0A0B] border-white/10' : 'bg-white border-gray-200'
       )}
     >
-      {/* Header - only show close button in sidebar mode */}
+      {/* Header */}
       <div
         className={cn(
           'flex items-center justify-between px-4 py-3 border-b',
@@ -169,11 +166,9 @@ export default function DocumentPreviewPanel({
         )}
       >
         <h3 className={cn('font-medium', darkMode ? 'text-white' : 'text-gray-900')}>Preview</h3>
-        {!isModal && (
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7">
-            <X className="w-4 h-4" />
-          </Button>
-        )}
+        <Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7">
+          <X className="w-4 h-4" />
+        </Button>
       </div>
 
       <ScrollArea className="flex-1">

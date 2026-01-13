@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Search, List, LayoutGrid, Activity, Upload, X, Trash2, RotateCcw } from 'lucide-react';
+import { Search, List, LayoutGrid, Upload, X, Trash2, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,7 +63,6 @@ export default function DocumentLibraryNew({
     }
     return 'grid';
   });
-  const [showActivity, setShowActivity] = useState(false);
   const [showActivityFilter, setShowActivityFilter] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -79,6 +78,7 @@ export default function DocumentLibraryNew({
   const [restoreDialogDoc, setRestoreDialogDoc] = useState(null);
   const [deleteConfirmDoc, setDeleteConfirmDoc] = useState(null);
   const [permanentDeleteDoc, setPermanentDeleteDoc] = useState(null);
+  const [restoreConfirmDoc, setRestoreConfirmDoc] = useState(null);
 
   // Initialize hooks
   const {
@@ -159,7 +159,6 @@ export default function DocumentLibraryNew({
 
   const handleSelectDoc = useCallback((doc) => {
     setSelectedDoc(doc);
-    setShowActivity(false);
   }, []);
 
   const handleOpenFullPreview = useCallback((doc) => {
@@ -187,17 +186,17 @@ export default function DocumentLibraryNew({
   }, [deleteConfirmDoc, softDeleteDocument, selectedDoc]);
 
   const handleRestoreDoc = useCallback((doc) => {
-    setRestoreDialogDoc(doc);
+    setRestoreConfirmDoc(doc);
   }, []);
 
   const handleConfirmRestore = useCallback(async () => {
-    if (!restoreDialogDoc) return;
-    await restoreDocument(restoreDialogDoc);
-    setRestoreDialogDoc(null);
-    if (selectedDoc?.id === restoreDialogDoc.id) {
+    if (!restoreConfirmDoc) return;
+    await restoreDocument(restoreConfirmDoc);
+    setRestoreConfirmDoc(null);
+    if (selectedDoc?.id === restoreConfirmDoc.id) {
       setSelectedDoc(null);
     }
-  }, [restoreDialogDoc, restoreDocument, selectedDoc]);
+  }, [restoreConfirmDoc, restoreDocument, selectedDoc]);
 
   const handleMoveDoc = useCallback((doc) => {
     setMoveDialogDoc(doc);
@@ -244,13 +243,6 @@ export default function DocumentLibraryNew({
       setSelectedDoc(null);
     }
   }, [permanentDeleteDoc, permanentDeleteDocument, selectedDoc]);
-
-  const handleActivityToggle = useCallback(() => {
-    setShowActivity((prev) => !prev);
-    if (showActivity) {
-      setShowActivityFilter(false);
-    }
-  }, [showActivity]);
 
   const isViewingTrash = filters.quickFilter === QUICK_FILTERS.TRASH;
 
@@ -336,16 +328,6 @@ export default function DocumentLibraryNew({
             </Button>
           </div>
 
-          {/* Activity toggle */}
-          <Button
-            variant={showActivity ? 'default' : 'ghost'}
-            size="icon"
-            onClick={handleActivityToggle}
-            className={cn('h-9 w-9', darkMode && !showActivity ? 'hover:bg-white/10' : '')}
-          >
-            <Activity className="w-4 h-4" />
-          </Button>
-
           {/* Upload button */}
           <Button onClick={handleNewDocument}>
             <Upload className="w-4 h-4 mr-2" />
@@ -365,7 +347,7 @@ export default function DocumentLibraryNew({
               onStarDoc={handleStarDoc}
               onDeleteDoc={isViewingTrash ? handlePermanentDelete : handleDeleteDoc}
               onMoveDoc={handleMoveDoc}
-              onRestoreDoc={handleConfirmRestore}
+              onRestoreDoc={handleRestoreDoc}
               onOpenDoc={handleOpenFullPreview}
               projects={projects}
               darkMode={darkMode}
@@ -373,35 +355,15 @@ export default function DocumentLibraryNew({
             />
           </div>
 
-          {/* Preview/Activity panels */}
-          {selectedDoc && !showActivity && (
-            <DocumentPreviewPanel
-              document={selectedDoc}
-              projects={projects}
-              assignments={assignments}
-              onClose={() => setSelectedDoc(null)}
-              onOpen={() => handleOpenFullPreview(selectedDoc)}
-              onStar={() => handleStarDoc(selectedDoc)}
-              onDelete={() =>
-                isViewingTrash ? handlePermanentDelete(selectedDoc) : handleDeleteDoc(selectedDoc)
-              }
-              onDownload={() => handleDownloadDoc(selectedDoc)}
-              onMove={() => handleMoveDoc(selectedDoc)}
-              darkMode={darkMode}
-            />
-          )}
-
-          {showActivity && !selectedDoc && (
-            <DocumentActivityPanel
-              activities={activities}
-              currentUserEmail={currentUser?.email}
-              showOnlyMine={showActivityFilter}
-              onToggleFilter={setShowActivityFilter}
-              loading={activityLoading}
-              darkMode={darkMode}
-              onClose={() => setShowActivity(false)}
-            />
-          )}
+          {/* Activity panel - always visible */}
+          <DocumentActivityPanel
+            activities={activities}
+            currentUserEmail={currentUser?.email}
+            showOnlyMine={showActivityFilter}
+            onToggleFilter={setShowActivityFilter}
+            loading={activityLoading}
+            darkMode={darkMode}
+          />
         </div>
       </main>
 
@@ -419,6 +381,29 @@ export default function DocumentLibraryNew({
             onUploadComplete={handleUploadComplete}
             existingDocuments={documents}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Document Preview Panel Modal */}
+      <Dialog open={!!selectedDoc} onOpenChange={(open) => !open && setSelectedDoc(null)}>
+        <DialogContent className="max-w-sm p-0 overflow-hidden">
+          {selectedDoc && (
+            <DocumentPreviewPanel
+              document={selectedDoc}
+              projects={projects}
+              assignments={assignments}
+              onClose={() => setSelectedDoc(null)}
+              onOpen={() => handleOpenFullPreview(selectedDoc)}
+              onStar={() => handleStarDoc(selectedDoc)}
+              onDelete={() =>
+                isViewingTrash ? handlePermanentDelete(selectedDoc) : handleDeleteDoc(selectedDoc)
+              }
+              onDownload={() => handleDownloadDoc(selectedDoc)}
+              onMove={() => handleMoveDoc(selectedDoc)}
+              darkMode={darkMode}
+              isModal
+            />
+          )}
         </DialogContent>
       </Dialog>
 
@@ -511,6 +496,25 @@ export default function DocumentLibraryNew({
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Restore from Trash Confirmation */}
+      <AlertDialog open={!!restoreConfirmDoc} onOpenChange={() => setRestoreConfirmDoc(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restore Document?</AlertDialogTitle>
+            <AlertDialogDescription>
+              "{restoreConfirmDoc?.title}" will be restored from trash.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmRestore} disabled={isRestoring}>
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Restore
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

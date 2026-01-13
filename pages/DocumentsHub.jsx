@@ -126,14 +126,6 @@ export default function DocumentsHub() {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="flex-shrink-0 p-6 border-b bg-white dark:bg-gray-900">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Documents</h1>
-          <p className="text-sm text-gray-500">{documents.length} documents in workspace</p>
-        </div>
-      </div>
-
       {/* Content Area */}
       <div className="flex-1 overflow-hidden">
         <DocumentLibraryNew

@@ -1,5 +1,10 @@
 // Re-export all hooks for cleaner imports
 export { useDebouncedValue } from './useDebouncedValue';
+
+// Document Hub hooks
+export { useDocumentActivity, ACTIVITY_ACTIONS } from './useDocumentActivity';
+export { useDocumentActions } from './useDocumentActions';
+export { useDocumentFilters, QUICK_FILTERS } from './useDocumentFilters';
 export { useIsMobile } from './use-mobile';
 export { useAskAI, MEMORY_LIMITS } from './useAskAI';
 export { useChat } from './useChat';

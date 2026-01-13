@@ -16,7 +16,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useWorkspace } from '@/features/workspace/WorkspaceContext';
-import DocumentLibrary from '@/components/documents/DocumentLibrary';
+import DocumentLibraryNew from '@/components/documents/DocumentLibraryNew';
 
 export default function DocumentsHub() {
   const { currentWorkspaceId, loading: workspaceLoading } = useWorkspace();
@@ -136,7 +136,7 @@ export default function DocumentsHub() {
 
       {/* Content Area */}
       <div className="flex-1 overflow-hidden">
-        <DocumentLibrary
+        <DocumentLibraryNew
           documents={documents}
           projects={projects}
           assignments={assignments}

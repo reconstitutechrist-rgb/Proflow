@@ -19,6 +19,7 @@ import {
 import { Link, FolderOpen, Loader2 } from 'lucide-react';
 import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 import { toast } from 'sonner';
+import { storeProjectDocument, deleteProjectDocumentChunks } from '@/api/projectBrain';
 
 export default function LinkDocumentToProjectDialog({ document, isOpen, onClose, onLinked }) {
   const [selectedProject, setSelectedProject] = useState(null);
@@ -80,9 +81,27 @@ export default function LinkDocumentToProjectDialog({ document, isOpen, onClose,
         ? projects.find((p) => p.id === selectedProject)?.name || 'project'
         : null;
 
+      // Handle Project Brain indexing based on link/unlink action
       if (selectedProject) {
+        // Index document in Project Brain when linking to a project (non-blocking)
+        // Use extracted_text if available, otherwise use description as fallback
+        const documentContent = document.extracted_text || document.description || '';
+        if (documentContent) {
+          storeProjectDocument(selectedProject, currentWorkspaceId, {
+            documentId: document.id,
+            documentName: document.title,
+            content: documentContent,
+            contentHash: null,
+          }).catch((err) => console.warn('Failed to index linked document in project brain:', err));
+        }
         toast.success(`Document linked to "${projectName}"`);
       } else {
+        // When unlinking, delete indexed chunks from old project (non-blocking)
+        if (document.assigned_to_project) {
+          deleteProjectDocumentChunks(document.id, document.assigned_to_project).catch((err) =>
+            console.warn('Failed to remove document from project brain:', err)
+          );
+        }
         toast.success('Document unlinked from project');
       }
 

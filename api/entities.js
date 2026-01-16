@@ -25,6 +25,10 @@ export const GitHubDebateSession = db.entities.GitHubDebateSession;
 export const GitHubDebateMessage = db.entities.GitHubDebateMessage;
 export const RepositoryMemory = db.entities.RepositoryMemory;
 
+// Project Brain (verbatim recall)
+export const ProjectChatHistory = db.entities.ProjectChatHistory;
+export const ProjectDocumentChunk = db.entities.ProjectDocumentChunk;
+
 export default {
   Task,
   Document,
@@ -47,4 +51,7 @@ export default {
   GitHubDebateSession,
   GitHubDebateMessage,
   RepositoryMemory,
+  // Project Brain
+  ProjectChatHistory,
+  ProjectDocumentChunk,
 };

@@ -472,6 +472,93 @@ export const ragHelper = async (params) => {
     };
   }
 
+  if (endpoint === 'analyzeDocumentUpdates') {
+    // Document Control feature - analyze uploaded document and find matching sections
+    // This endpoint orchestrates the full analysis pipeline
+    const { uploadedContent, uploadedFileName, projectDocuments: _projectDocuments = [] } = params;
+
+    if (!uploadedContent) {
+      return {
+        data: {
+          success: false,
+          error: 'No content provided for analysis',
+          proposedChanges: [],
+        },
+      };
+    }
+
+    // Import the document control module dynamically to avoid circular deps
+    const { analyzeUploadedDocument, generateProposedChanges } = await import('./documentControl');
+
+    try {
+      // Step 1: Analyze the uploaded document
+      const analysis = await analyzeUploadedDocument(uploadedContent, uploadedFileName);
+
+      if (!analysis.success) {
+        return {
+          data: {
+            success: false,
+            error: analysis.error,
+            proposedChanges: [],
+          },
+        };
+      }
+
+      // Step 2: Find matching sections in project documents
+      // Project documents should already have their chunks from Project Brain
+      const matchingSections = _projectDocuments
+        .filter((doc) => doc.chunks && doc.chunks.length > 0)
+        .map((doc) => ({
+          documentId: doc.id,
+          documentName: doc.title || doc.file_name,
+          chunks: doc.chunks.map((chunk, idx) => ({
+            chunkIndex: idx,
+            chunkText: chunk.text || chunk,
+            similarity: 0.7, // Default - actual similarity calculated elsewhere
+            matchedQueries: [],
+          })),
+          maxSimilarity: 0.7,
+        }));
+
+      if (matchingSections.length === 0) {
+        return {
+          data: {
+            success: true,
+            noMatches: true,
+            message: 'No documents with indexed content found',
+            contentAnalysis: analysis.contentAnalysis,
+            proposedChanges: [],
+          },
+        };
+      }
+
+      // Step 3: Generate proposed changes
+      const changes = await generateProposedChanges(
+        analysis.contentAnalysis,
+        matchingSections,
+        uploadedFileName
+      );
+
+      return {
+        data: {
+          success: true,
+          contentAnalysis: analysis.contentAnalysis,
+          proposedChanges: changes.changes || [],
+          totalChanges: changes.totalChanges || 0,
+        },
+      };
+    } catch (error) {
+      console.error('analyzeDocumentUpdates error:', error);
+      return {
+        data: {
+          success: false,
+          error: error.message || 'Analysis failed',
+          proposedChanges: [],
+        },
+      };
+    }
+  }
+
   // Default fallback for unknown endpoints
   return {
     data: {

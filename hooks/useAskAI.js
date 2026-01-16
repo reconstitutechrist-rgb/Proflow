@@ -10,6 +10,7 @@ import {
   updateProjectMemoryFromChat,
   buildProjectMemoryPrompt,
 } from '@/api/projectMemory';
+import { storeProjectMessage, buildProjectBrainContext } from '@/api/projectBrain';
 import { MEMORY_LIMITS } from '@/config/constants';
 
 const DRAFT_STORAGE_KEY = 'askAI_draft_v1';
@@ -1090,9 +1091,24 @@ ${contentForRAG.substring(0, 30000)}`,
         if (selectedProject.description)
           systemPrompt += `\nDescription: ${selectedProject.description}`;
 
-        // Add project memory bank if available
+        // Add project memory bank if available (summary context)
         if (projectMemory) {
           systemPrompt += buildProjectMemoryPrompt(projectMemory);
+        }
+
+        // Add verbatim recall context from Project Brain
+        try {
+          const brainContext = await buildProjectBrainContext(
+            userMessage.content,
+            selectedProject.id,
+            { chatLimit: 20, docLimit: 15, threshold: 0.5 }
+          );
+          if (brainContext) {
+            systemPrompt += brainContext;
+          }
+        } catch (brainError) {
+          console.warn('Error fetching project brain context:', brainError);
+          // Continue without brain context - non-blocking
         }
       }
 
@@ -1135,6 +1151,36 @@ ${contentForRAG.substring(0, 30000)}`,
       };
 
       setMessages((prev) => [...prev, aiMessage]);
+
+      // Store messages in Project Brain for verbatim recall (non-blocking)
+      if (selectedProject && currentWorkspaceId) {
+        // Store user message
+        storeProjectMessage(
+          selectedProject.id,
+          currentWorkspaceId,
+          {
+            type: 'user',
+            content: userMessage.content,
+            createdBy: currentUser?.email,
+          },
+          currentSession?.id
+        ).catch((err) => {
+          console.warn('Failed to store user message in project brain:', err);
+        });
+
+        // Store AI response
+        storeProjectMessage(
+          selectedProject.id,
+          currentWorkspaceId,
+          {
+            type: 'assistant',
+            content: response,
+          },
+          currentSession?.id
+        ).catch((err) => {
+          console.warn('Failed to store AI message in project brain:', err);
+        });
+      }
     } catch (error) {
       console.error('Error processing message:', error);
 

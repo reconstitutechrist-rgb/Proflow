@@ -35,6 +35,7 @@ import { toast } from 'sonner';
 import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 import { useDocumentOutdating } from '@/hooks';
 import RelatedDocumentsSuggestionPanel from './RelatedDocumentsSuggestionPanel';
+import { storeProjectDocument } from '@/api/projectBrain';
 
 // File size limit: 100 MB
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
@@ -592,7 +593,7 @@ export default function DocumentUploader({
           }
         } else {
           // Create new document
-          await db.entities.Document.create({
+          const newDocument = await db.entities.Document.create({
             // Using db client
             workspace_id: currentWorkspaceId, // ADDED: Workspace scoping
             title: fileData.title,
@@ -609,6 +610,24 @@ export default function DocumentUploader({
             version_history: [], // No history yet
             selected_task_id: fileData.selected_task_id || null, // ADDED: selected_task_id
           });
+
+          // Index document in Project Brain for verbatim recall (non-blocking)
+          if (fileData.assigned_to_project && newDocument?.id) {
+            extractFileContent(fileData.file)
+              .then((content) => {
+                if (content) {
+                  storeProjectDocument(fileData.assigned_to_project, currentWorkspaceId, {
+                    documentId: newDocument.id,
+                    documentName: fileData.title,
+                    content: content,
+                    contentHash: null,
+                  }).catch((err) =>
+                    console.warn('Failed to index document in project brain:', err)
+                  );
+                }
+              })
+              .catch((err) => console.warn('Failed to extract content for indexing:', err));
+          }
 
           toast.success(`"${fileData.title}" uploaded successfully`);
         }

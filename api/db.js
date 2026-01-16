@@ -41,6 +41,9 @@ const entityToTableName = (entityName) => {
     // Generalized Debate (multi-context)
     DebateSession: 'debate_sessions',
     DebateMessage: 'debate_messages',
+    // Project Brain (verbatim recall)
+    ProjectChatHistory: 'project_chat_history',
+    ProjectDocumentChunk: 'project_document_chunks',
   };
 
   return tableMap[entityName] || entityName.toLowerCase();

@@ -42,6 +42,7 @@ import { getProjectMemory } from '@/api/projectMemory';
 import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { useAskAI } from '@/hooks/useAskAI';
+import DocumentControlPanel from '@/features/documents/DocumentControlPanel';
 
 const THEME_STORAGE_KEY = 'proflow_project_dashboard_theme';
 
@@ -828,129 +829,14 @@ Format as JSON with keys: executive_summary (string), key_points (array of strin
               <span className={`font-medium ${theme.text}`}>Document Control</span>
             </div>
 
-            <label className="block">
-              <div
-                className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
-                  uploadedFile
-                    ? 'border-emerald-500/50 bg-emerald-500/10'
-                    : isDarkMode
-                      ? 'border-white/20 hover:border-white/40'
-                      : 'border-gray-300 hover:border-gray-400'
-                }`}
-              >
-                {uploadedFile ? (
-                  <div className="flex items-center justify-center gap-3">
-                    <div
-                      className={`p-2 rounded-lg ${isDarkMode ? 'bg-emerald-500/20' : 'bg-emerald-100'}`}
-                    >
-                      <FileText
-                        className={`w-6 h-6 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}
-                      />
-                    </div>
-                    <div className="text-left">
-                      <p
-                        className={`font-medium ${isDarkMode ? 'text-emerald-300' : 'text-emerald-700'}`}
-                      >
-                        {uploadedFile.name}
-                      </p>
-                      <p className={`text-xs ${theme.textMuted}`}>
-                        {(uploadedFile.size / 1024).toFixed(1)} KB
-                      </p>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setUploadedFile(null);
-                      }}
-                      className={`p-1 rounded ${theme.btnGhost} ml-2`}
-                    >
-                      <X className={`w-4 h-4 ${theme.textMuted}`} />
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <Upload className={`w-10 h-10 mx-auto mb-3 ${theme.textMuted}`} />
-                    <p className={`text-sm ${theme.textMuted}`}>
-                      Drop file here or click to browse
-                    </p>
-                    <p
-                      className={`text-xs mt-1 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}
-                    >
-                      PDF, DOCX, TXT, MD (max 10MB)
-                    </p>
-                  </>
-                )}
-              </div>
-              <input
-                type="file"
-                className="hidden"
-                onChange={handleFileUpload}
-                accept=".pdf,.docx,.txt,.md"
-              />
-            </label>
-
-            <div className={`space-y-3 p-3 rounded-xl ${theme.surface}`}>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckSquare className="w-4 h-4 text-emerald-500" />
-                <span className={theme.textSecondary}>Auto-linked to:</span>
-                <span className={`font-medium ${theme.text}`}>{project?.name}</span>
-              </div>
-
-              <div>
-                <label className={`text-xs mb-1 block ${theme.textMuted}`}>
-                  Link to Assignment (optional)
-                </label>
-                <Select value={linkedAssignment} onValueChange={setLinkedAssignment}>
-                  <SelectTrigger className={`w-full ${theme.input}`}>
-                    <SelectValue placeholder="Select assignment..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">None</SelectItem>
-                    {assignments.map((a) => (
-                      <SelectItem key={a.id} value={a.id}>
-                        {a.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className={`text-xs mb-1 block ${theme.textMuted}`}>
-                  Link to Task (optional)
-                </label>
-                <Select value={linkedTask} onValueChange={setLinkedTask}>
-                  <SelectTrigger className={`w-full ${theme.input}`}>
-                    <SelectValue placeholder="Select task..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">None</SelectItem>
-                    {tasks.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setDocControlStep('chat')}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleAnalyze}
-                disabled={!uploadedFile}
-                className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white"
-              >
-                Analyze & Compare
-              </Button>
-            </div>
+            {/* New AI-powered Document Control Panel */}
+            <DocumentControlPanel
+              projectId={projectId}
+              workspaceId={currentWorkspaceId}
+              userId={_currentUser?.email}
+              assignments={assignments}
+              tasks={tasks}
+            />
           </div>
         );
 

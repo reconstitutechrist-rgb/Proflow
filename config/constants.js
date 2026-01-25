@@ -77,9 +77,16 @@ export const MESSAGE_TYPES = {
 
 // AI model options
 export const AI_MODELS = {
+  // Legacy models (for backwards compatibility)
   GPT4: 'gpt-4',
   GPT35: 'gpt-3.5-turbo',
   CLAUDE: 'claude-3-opus',
+
+  // Current Generation (2026)
+  GEMINI_ARCHITECT: 'gemini-3.0-pro-001',
+  CLAUDE_DEEP_THINKER: 'claude-opus-4-5-20251101',
+  CLAUDE_QA_REVIEWER: 'claude-sonnet-4-5-20250514',
+  CLAUDE_FAST: 'claude-haiku-4-5-20250514',
 };
 
 // File size limits (in bytes)

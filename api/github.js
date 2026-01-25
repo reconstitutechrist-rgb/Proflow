@@ -455,6 +455,113 @@ export const github = {
     return githubFetch(`/search/issues?${params}`);
   },
 
+  // ==================== WRITE OPERATIONS ====================
+
+  /**
+   * Create or update a file in a repository
+   * @param {string} owner - Repository owner
+   * @param {string} repo - Repository name
+   * @param {string} path - File path in repository
+   * @param {string} content - File content (will be base64 encoded)
+   * @param {string} message - Commit message
+   * @param {string} branch - Branch name
+   * @param {string} [sha] - SHA of file being replaced (required for updates)
+   * @returns {Promise<Object>} Commit and content info
+   */
+  createOrUpdateFile: async (owner, repo, path, content, message, branch, sha = null) => {
+    const body = {
+      message,
+      content: btoa(unescape(encodeURIComponent(content))), // UTF-8 safe base64 encoding
+      branch,
+    };
+
+    if (sha) {
+      body.sha = sha;
+    }
+
+    return githubFetch(`/repos/${owner}/${repo}/contents/${path}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+  },
+
+  /**
+   * Create a new branch from an existing branch
+   * @param {string} owner - Repository owner
+   * @param {string} repo - Repository name
+   * @param {string} branchName - Name for the new branch
+   * @param {string} fromBranch - Source branch to create from (default: default branch)
+   * @returns {Promise<Object>} Reference info for new branch
+   */
+  createBranch: async (owner, repo, branchName, fromBranch = 'main') => {
+    // First, get the SHA of the source branch
+    const sourceRef = await githubFetch(
+      `/repos/${owner}/${repo}/git/ref/heads/${encodeURIComponent(fromBranch)}`
+    );
+    const sha = sourceRef.object.sha;
+
+    // Create the new branch reference
+    return githubFetch(`/repos/${owner}/${repo}/git/refs`, {
+      method: 'POST',
+      body: JSON.stringify({
+        ref: `refs/heads/${branchName}`,
+        sha,
+      }),
+    });
+  },
+
+  /**
+   * Create a pull request
+   * @param {string} owner - Repository owner
+   * @param {string} repo - Repository name
+   * @param {string} title - PR title
+   * @param {string} body - PR description
+   * @param {string} head - Branch containing changes
+   * @param {string} base - Branch to merge into (default: main)
+   * @returns {Promise<Object>} Pull request info
+   */
+  createPullRequest: async (owner, repo, title, body, head, base = 'main') => {
+    return githubFetch(`/repos/${owner}/${repo}/pulls`, {
+      method: 'POST',
+      body: JSON.stringify({
+        title,
+        body,
+        head,
+        base,
+      }),
+    });
+  },
+
+  /**
+   * Check if a branch exists
+   * @param {string} owner - Repository owner
+   * @param {string} repo - Repository name
+   * @param {string} branch - Branch name
+   * @returns {Promise<boolean>} True if branch exists
+   */
+  branchExists: async (owner, repo, branch) => {
+    try {
+      await githubFetch(`/repos/${owner}/${repo}/git/ref/heads/${encodeURIComponent(branch)}`);
+      return true;
+    } catch (error) {
+      if (error.message.includes('not found')) {
+        return false;
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get repository default branch
+   * @param {string} owner - Repository owner
+   * @param {string} repo - Repository name
+   * @returns {Promise<string>} Default branch name
+   */
+  getDefaultBranch: async (owner, repo) => {
+    const repoInfo = await githubFetch(`/repos/${owner}/${repo}`);
+    return repoInfo.default_branch;
+  },
+
   // ==================== ACTIONS/WORKFLOWS ====================
 
   /**

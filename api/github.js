@@ -591,6 +591,30 @@ export const github = {
     if (options.branch) params.append('branch', options.branch);
     return githubFetch(`/repos/${owner}/${repo}/actions/runs?${params}`);
   },
+
+  /**
+   * Compare two commits
+   * @param {string} owner - Repository owner
+   * @param {string} repo - Repository name
+   * @param {string} base - Base commit/branch
+   * @param {string} head - Head commit/branch
+   */
+  compareCommits: (owner, repo, base, head) =>
+    githubFetch(`/repos/${owner}/${repo}/compare/${base}...${head}`),
+
+  /**
+   * List Dependabot alerts for a repository
+   * @param {string} owner - Repository owner
+   * @param {string} repo - Repository name
+   * @param {object} options - Query options
+   */
+  listDependabotAlerts: (owner, repo, options = {}) => {
+    const params = new URLSearchParams({
+      state: options.state || 'open',
+      per_page: String(options.perPage || 30),
+    });
+    return githubFetch(`/repos/${owner}/${repo}/dependabot/alerts?${params}`);
+  },
 };
 
 export default github;

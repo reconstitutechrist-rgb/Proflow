@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { invokeGemini, isGeminiConfigured } from '@/api/geminiClient';
 import { invokeLLM, isAnthropicConfigured } from '@/api/anthropicClient';
 import { AI_MODELS } from '@/config/aiModels';
+import { performSemanticSearch } from '@/api/repositoryAnalyzer';
+import { github } from '@/api/github';
 
 /**
  * Collaboration status states
@@ -163,9 +165,10 @@ export const useDualAICollaboration = () => {
    * @param {string} userPrompt - The user's input
    * @param {Array} contextFiles - Optional array of {path, content, language} objects
    * @param {Object} template - Optional template with geminiPrompt and claudePrompt
+   * @param {Object} repoContext - Optional context like { securityAlerts: [], repoFullName: 'owner/repo' }
    */
   const startParallelThinking = useCallback(
-    async (userPrompt, contextFiles = [], template = null) => {
+    async (userPrompt, contextFiles = [], template = null, repoContext = null) => {
       const configIssues = checkConfiguration();
       if (configIssues.length > 0) {
         toast.error(configIssues.join('. '));
@@ -187,7 +190,37 @@ export const useDualAICollaboration = () => {
         .map((f) => `File: ${f.path}\n\`\`\`${f.language || ''}\n${f.content}\n\`\`\``)
         .join('\n\n');
 
-      const fullPrompt = fileContext ? `${fileContext}\n\nUser Request: ${userPrompt}` : userPrompt;
+      // Add security context if available (Security Data Fusion - Rec #3)
+      let securityContext = '';
+      if (repoContext?.securityAlerts?.length > 0) {
+        securityContext = `\n\n[SECURITY ALERTS FOUND IN REPOSITORY]:\n${repoContext.securityAlerts
+          .map((a) => `- ${a.security_advisory?.summary} (${a.security_vulnerability?.severity}) in ${a.dependency?.package?.name}`)
+          .join('\n')}\nPlease consider these vulnerabilities in your response.`;
+      }
+
+      // Add semantic RAG context if repo is provided (Rec #1)
+      let semanticContext = '';
+      if (repoContext?.repoFullName) {
+        try {
+          const [owner, repo] = repoContext.repoFullName.split('/');
+          const repoData = await github.getRepo(owner, repo);
+          // Find memory ID for this repo
+          const memories = await import('@/api/db').then(m => m.db.entities.RepositoryMemory.list({ repository_id: repoData.id }));
+          
+          if (memories.length > 0) {
+            const relevantChunks = await performSemanticSearch(memories[0].id, userPrompt);
+            if (relevantChunks.length > 0) {
+              semanticContext = `\n\n[RELEVANT CODE SNIPPETS FOUND VIA SEMANTIC SEARCH]:\n${relevantChunks
+                .map(c => `File: ${c.file_path}\n\`\`\`\n${c.content}\n\`\`\``)
+                .join('\n\n')}`;
+            }
+          }
+        } catch (err) {
+          console.warn('Semantic search failed for context:', err);
+        }
+      }
+
+      const fullPrompt = `${fileContext}${securityContext}${semanticContext}\n\nUser Request: ${userPrompt}`;
       const userMsg = { role: 'user', content: userPrompt };
 
       // Add user message to both histories

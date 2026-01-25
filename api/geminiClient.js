@@ -188,6 +188,22 @@ export async function invokeGeminiStream({ model, systemPrompt, messages = [], t
 }
 
 /**
+ * Get embeddings for a text string
+ * @param {string} text - Text to embed
+ * @returns {Promise<Array<number>>} Vector embedding
+ */
+export async function getEmbeddings(text) {
+  if (!isGeminiConfigured()) {
+    throw new Error('Gemini API key not configured');
+  }
+
+  const client = getGeminiClient();
+  const model = client.getGenerativeModel({ model: 'text-embedding-004' });
+  const result = await model.embedContent(text);
+  return result.embedding.values;
+}
+
+/**
  * Estimate token count for a prompt (rough estimate)
  * @param {string} text - Text to estimate
  * @returns {Object} Token estimate
@@ -206,6 +222,7 @@ export default {
   invokeGemini,
   invokeGeminiStream,
   isGeminiConfigured,
+  getEmbeddings,
   estimateGeminiTokens,
   GEMINI_CONFIG,
 };

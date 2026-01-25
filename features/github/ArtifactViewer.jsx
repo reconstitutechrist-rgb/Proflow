@@ -18,6 +18,7 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
+  Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -38,6 +39,7 @@ import { Label } from '@/components/ui/label';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 import { github } from '@/api/github';
+import { checkAnalysisFreshness } from '@/api/repositoryAnalyzer';
 import { cn } from '@/lib/utils';
 
 /**
@@ -60,6 +62,7 @@ const ArtifactViewer = ({
     commitMessage: 'docs: add AI collaboration plan',
     createPR: true,
   });
+  const [safetyStatus, setSafetyStatus] = useState({ state: 'unknown', details: null });
 
   // Parse repo full name
   const [owner, repo] = repoFullName?.split('/') || [];
@@ -107,6 +110,20 @@ const ArtifactViewer = ({
     setIsCommitting(true);
 
     try {
+      // Safety Check: Verify analysis freshness
+      const repoData = await github.getRepo(owner, repo);
+      const freshness = await checkAnalysisFreshness(repoData.id, owner, repo);
+      
+      if (freshness.needsRefresh && freshness.reason === 'new_commits') {
+        const proceed = window.confirm(
+          `CAUTION: The repository has changed since the last AI analysis. Your artifact might be based on stale code. \n\nLast analyzed SHA: ${freshness.lastSha.substring(0, 7)}\nCurrent main SHA: ${freshness.currentSha.substring(0, 7)}\n\nDo you want to proceed anyway?`
+        );
+        if (!proceed) {
+          setIsCommitting(false);
+          return;
+        }
+      }
+
       const content = editedContent || artifact?.content || '';
       const timestamp = Date.now();
       const branchName = `feature/ai-collab-${timestamp}`;
@@ -345,9 +362,16 @@ Generated with [Proflow](https://proflow.dev)`;
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    A new branch will be created. Your changes won't affect the main branch.
+                    A new branch will be created. Your changes won't affect the main branch directly.
                   </AlertDescription>
                 </Alert>
+
+                {artifact?.generatedAt && (
+                   <Alert variant="outline" className="border-blue-200 bg-blue-50/30 text-xs">
+                     <Info className="h-3 w-3 mr-2" />
+                     Artifact generated at {new Date(artifact.generatedAt).toLocaleTimeString()}
+                   </Alert>
+                )}
 
                 <DialogFooter>
                   <Button

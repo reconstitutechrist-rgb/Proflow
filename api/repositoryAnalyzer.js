@@ -6,7 +6,9 @@
 
 import { db } from './db';
 import { github } from './github';
+import gemini from './geminiClient';
 import codeParser from './codeParser';
+import { supabase } from './supabaseClient';
 
 // Configuration for analysis
 const ANALYSIS_CONFIG = {
@@ -14,6 +16,8 @@ const ANALYSIS_CONFIG = {
   maxFileSizeKb: 500,
   delayBetweenFiles: 50, // ms
   maxContextLength: 15000,
+  chunkSize: 2000, // characters
+  chunkOverlap: 200,
 };
 
 /**
@@ -112,6 +116,9 @@ async function runAnalysis(memoryId, owner, repo) {
       analysis_completed_at: new Date().toISOString(),
     });
 
+    // Phase 4: Semantic Chunking & Embeddings (Rec #1)
+    await generateSemanticEmbeddings(memoryId, owner, repo, structureData.priorityFiles);
+
     console.log(`Analysis completed for ${owner}/${repo}`);
     return { success: true };
   } catch (error) {
@@ -121,6 +128,28 @@ async function runAnalysis(memoryId, owner, repo) {
       analysis_error: error.message,
     });
     throw error;
+  }
+}
+
+/**
+ * Perform semantic search over code chunks
+ */
+export async function performSemanticSearch(memoryId, query, matchCount = 5) {
+  try {
+    const embedding = await gemini.getEmbeddings(query);
+    
+    const { data, error } = await supabase.rpc('match_code_chunks', {
+      query_embedding: embedding,
+      match_threshold: 0.5,
+      match_count: matchCount,
+      filter_repo_memory_id: memoryId
+    });
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Semantic search failed:', err);
+    return [];
   }
 }
 
@@ -422,6 +451,67 @@ async function generateInsights(structureData, analysisData) {
 }
 
 /**
+ * Generate semantic embeddings for code chunks
+ */
+async function generateSemanticEmbeddings(memoryId, owner, repo, files) {
+  console.log(`Generating semantic embeddings for ${owner}/${repo}`);
+  
+  // Clear existing chunks for this memory
+  await supabase.from('repository_code_chunks').delete().eq('repository_memory_id', memoryId);
+
+  for (const file of files) {
+    try {
+      const content = await github.getFileContent(owner, repo, file.path);
+      if (!content.decodedContent) continue;
+
+      const text = content.decodedContent;
+      const chunks = chunkText(text, ANALYSIS_CONFIG.chunkSize, ANALYSIS_CONFIG.chunkOverlap);
+
+      const chunkData = [];
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        try {
+          const embedding = await gemini.getEmbeddings(chunk);
+          chunkData.push({
+            repository_memory_id: memoryId,
+            file_path: file.path,
+            content: chunk,
+            embedding: embedding,
+            metadata: { index: i, total: chunks.length }
+          });
+        } catch (e) {
+          console.warn(`Failed to embed chunk ${i} of ${file.path}:`, e.message);
+        }
+        
+        // Rate limiting
+        await new Promise(r => setTimeout(r, 100));
+      }
+
+      if (chunkData.length > 0) {
+        const { error } = await supabase.from('repository_code_chunks').insert(chunkData);
+        if (error) console.error(`Failed to store chunks for ${file.path}:`, error);
+      }
+    } catch (err) {
+      console.warn(`Failed to process ${file.path} for embeddings:`, err.message);
+    }
+  }
+}
+
+/**
+ * Helper to chunk text
+ */
+function chunkText(text, size, overlap) {
+  const chunks = [];
+  let start = 0;
+  while (start < text.length) {
+    let end = start + size;
+    chunks.push(text.substring(start, end));
+    start += size - overlap;
+  }
+  return chunks;
+}
+
+/**
  * Build architecture summary from analysis data
  */
 function buildArchitectureSummary(structureData, analysisData) {
@@ -684,16 +774,35 @@ export async function checkAnalysisFreshness(repositoryId, owner, repo) {
     // Check for new commits
     if (memory.last_commit_sha) {
       const commits = await github.listCommits(owner, repo, { perPage: 1 });
+      const analysisCompletedAt = memory.analysis_completed_at ? new Date(memory.analysis_completed_at) : null;
+      const now = new Date();
+      const ageHours = analysisCompletedAt ? (now - analysisCompletedAt) / (1000 * 60 * 60) : Infinity;
+
       if (commits[0]?.sha !== memory.last_commit_sha) {
         // Mark as stale
         await db.entities.RepositoryMemory.update(memory.id, {
           analysis_status: 'stale',
         });
-        return { needsRefresh: true, reason: 'new_commits' };
+        return { 
+          needsRefresh: true, 
+          reason: 'new_commits', 
+          lastSha: memory.last_commit_sha, 
+          currentSha: commits[0]?.sha,
+          ageHours
+        };
+      }
+
+      // If more than 24 hours old, even if no new commits, recommend refresh
+      if (ageHours > 24) {
+        return { needsRefresh: true, reason: 'stale_time', ageHours };
       }
     }
 
-    return { needsRefresh: false, reason: 'up_to_date' };
+    return { 
+      needsRefresh: false, 
+      reason: 'up_to_date',
+      ageHours: memory.analysis_completed_at ? (new Date() - new Date(memory.analysis_completed_at)) / (1000 * 60 * 60) : null
+    };
   } catch (error) {
     console.error('Error checking analysis freshness:', error);
     return { needsRefresh: true, reason: 'error' };

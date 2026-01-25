@@ -265,6 +265,7 @@ export default function GitHubHub() {
                 {/* Main Chat Area */}
                 <div className={`flex-1 p-4 ${artifact && !showAnalysis ? 'w-1/2' : ''}`}>
                   <DualAIChatInterface
+                    repoFullName={selectedRepo}
                     contextFiles={[]}
                     onArtifactGenerated={handleArtifactGenerated}
                   />

@@ -125,11 +125,12 @@ const AIPanelHeader = ({ type, isLoading }) => {
 /**
  * Main DualAIChatInterface component
  */
-const DualAIChatInterface = ({ contextFiles = [], onArtifactGenerated }) => {
+const DualAIChatInterface = ({ repoFullName, contextFiles = [], onArtifactGenerated }) => {
   const [input, setInput] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState('coding');
   const geminiScrollRef = useRef(null);
   const claudeScrollRef = useRef(null);
+  const [securityAlerts, setSecurityAlerts] = useState([]);
 
   const {
     geminiMessages,
@@ -146,6 +147,18 @@ const DualAIChatInterface = ({ contextFiles = [], onArtifactGenerated }) => {
     checkConfiguration,
     setTemplatePrompts,
   } = useDualAICollaboration();
+
+  // Fetch security alerts if repo selected (Security Data Fusion - Rec #3)
+  useEffect(() => {
+    if (repoFullName) {
+      const [owner, repo] = repoFullName.split('/');
+      import('@/api/github').then(({ github }) => {
+        github.listDependabotAlerts(owner, repo)
+          .then(alerts => setSecurityAlerts(alerts))
+          .catch(err => console.error('Failed to fetch security alerts:', err));
+      });
+    }
+  }, [repoFullName]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -177,7 +190,7 @@ const DualAIChatInterface = ({ contextFiles = [], onArtifactGenerated }) => {
   const handleSend = () => {
     if (!input.trim()) return;
     const template = getTemplateById(selectedTemplate);
-    startParallelThinking(input, contextFiles, template);
+    startParallelThinking(input, contextFiles, template, { securityAlerts, repoFullName });
     setInput('');
   };
 

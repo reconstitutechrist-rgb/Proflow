@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => ({
     extensions: ['.mjs', '.js', '.jsx', '.ts', '.tsx', '.json'],
   },
   optimizeDeps: {
+    include: ['@google/generative-ai'],
     esbuildOptions: {
       loader: {
         '.js': 'jsx',
@@ -66,6 +67,7 @@ export default defineConfig(({ mode }) => ({
           'vendor-utils': ['date-fns', 'clsx', 'class-variance-authority', 'tailwind-merge'],
           'vendor-supabase': ['@supabase/supabase-js'],
           'vendor-dnd': ['@hello-pangea/dnd'],
+          'vendor-ai': ['@google/generative-ai'],
         },
       },
     },

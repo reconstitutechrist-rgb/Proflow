@@ -24,9 +24,12 @@ export function GitHubConnectionCard() {
     useGitHubConnection();
 
   const handleConnect = async () => {
+    console.log('[GitHubCard] Connect button clicked');
     // Redirect back to preferences with integrations tab
     const redirectUrl = `${window.location.origin}/Preferences?tab=integrations`;
-    await connect(redirectUrl);
+    console.log('[GitHubCard] Redirect URL:', redirectUrl);
+    const result = await connect(redirectUrl);
+    console.log('[GitHubCard] Connect result:', result);
   };
 
   const handleDisconnect = async () => {

@@ -63,6 +63,7 @@ export const checkGitHubConnection = async () => {
  * @returns {Promise<{data: object, error: object|null}>}
  */
 export const connectGitHub = async (redirectTo = window.location.href) => {
+  console.log('[GitHub Connect] Calling linkIdentity with redirectTo:', redirectTo);
   const { data, error } = await supabase.auth.linkIdentity({
     provider: 'github',
     options: {
@@ -70,6 +71,11 @@ export const connectGitHub = async (redirectTo = window.location.href) => {
       redirectTo,
     },
   });
+
+  console.log('[GitHub Connect] linkIdentity result:', { data, error });
+  if (error) {
+    console.error('[GitHub Connect] linkIdentity error:', error.message, error);
+  }
 
   return { data, error };
 };

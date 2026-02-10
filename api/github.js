@@ -56,25 +56,38 @@ export const checkGitHubConnection = async () => {
 };
 
 /**
- * Connect GitHub account via Supabase Identity Linking
- * Uses linkIdentity to add GitHub as a linked provider to the current session.
- * Requires "Enable Manual Linking" in Supabase Auth dashboard settings.
+ * Connect GitHub account via Supabase OAuth
+ * Uses signInWithOAuth to get a provider_token for GitHub API access.
+ * We use skipBrowserRedirect to manually control the redirect and add diagnostics.
  * @param {string} redirectTo - URL to redirect to after OAuth
  * @returns {Promise<{data: object, error: object|null}>}
  */
 export const connectGitHub = async (redirectTo = window.location.href) => {
-  console.log('[GitHub Connect] Calling linkIdentity with redirectTo:', redirectTo);
-  const { data, error } = await supabase.auth.linkIdentity({
+  console.log('[GitHub Connect] Calling signInWithOAuth with redirectTo:', redirectTo);
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'github',
     options: {
       scopes: 'repo read:org read:user',
       redirectTo,
+      skipBrowserRedirect: true,
     },
   });
 
-  console.log('[GitHub Connect] linkIdentity result:', { data, error });
+  console.log('[GitHub Connect] signInWithOAuth result:', { data, error });
+
   if (error) {
-    console.error('[GitHub Connect] linkIdentity error:', error.message, error);
+    console.error('[GitHub Connect] signInWithOAuth error:', error.message, error);
+    return { data, error };
+  }
+
+  // data.url contains the GitHub OAuth URL — redirect manually
+  if (data?.url) {
+    console.log('[GitHub Connect] Redirecting to OAuth URL:', data.url);
+    window.location.href = data.url;
+  } else {
+    console.error('[GitHub Connect] No URL returned from signInWithOAuth');
+    return { data, error: new Error('No OAuth URL received from Supabase') };
   }
 
   return { data, error };

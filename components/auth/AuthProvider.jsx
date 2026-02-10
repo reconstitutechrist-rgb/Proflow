@@ -39,7 +39,11 @@ export function AuthProvider({ children }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.log('Auth state changed:', event);
+      console.log('[Auth] State changed:', event, {
+        hasProviderToken: !!newSession?.provider_token,
+        hasProviderRefreshToken: !!newSession?.provider_refresh_token,
+        identities: newSession?.user?.identities?.map(i => i.provider),
+      });
 
       setSession(newSession);
       setUser(newSession?.user || null);
@@ -51,6 +55,7 @@ export function AuthProvider({ children }) {
         if (newSession.provider_token) {
           const githubIdentity = newSession.user.identities?.find((id) => id.provider === 'github');
           if (githubIdentity) {
+            console.log('[Auth] Storing GitHub provider token');
             localStorage.setItem('github_provider_token', newSession.provider_token);
             if (newSession.provider_refresh_token) {
               localStorage.setItem(

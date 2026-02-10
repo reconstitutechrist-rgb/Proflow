@@ -56,13 +56,14 @@ export const checkGitHubConnection = async () => {
 };
 
 /**
- * Connect GitHub account via Supabase OAuth
- * Uses signInWithOAuth to get a provider_token for GitHub API access
+ * Connect GitHub account via Supabase Identity Linking
+ * Uses linkIdentity to add GitHub as a linked provider to the current session.
+ * Requires "Enable Manual Linking" in Supabase Auth dashboard settings.
  * @param {string} redirectTo - URL to redirect to after OAuth
  * @returns {Promise<{data: object, error: object|null}>}
  */
 export const connectGitHub = async (redirectTo = window.location.href) => {
-  const { data, error } = await supabase.auth.signInWithOAuth({
+  const { data, error } = await supabase.auth.linkIdentity({
     provider: 'github',
     options: {
       scopes: 'repo read:org read:user',

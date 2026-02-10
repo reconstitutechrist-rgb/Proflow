@@ -55,7 +55,15 @@ export function useGitHubConnection() {
       setError(null);
       const { error: connectError } = await connectGitHub(redirectTo);
       if (connectError) {
-        setError(connectError.message);
+        // Provide descriptive messages for common linkIdentity failures
+        const msg = connectError.message || '';
+        if (msg.includes('identity is already linked')) {
+          setError('This GitHub account is already linked to another user.');
+        } else if (msg.includes('Manual linking')) {
+          setError('Manual identity linking is not enabled. Please contact the administrator.');
+        } else {
+          setError(msg);
+        }
         return { success: false, error: connectError };
       }
       // OAuth redirect will happen, no need to update state

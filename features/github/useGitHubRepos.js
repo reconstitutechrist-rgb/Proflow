@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { github } from '@/api/github';
+import { githubPublicFetch, parseGitHubUrl } from '@/api/github';
 import { db } from '@/api/db';
 import { useWorkspace } from '@/features/workspace/WorkspaceContext';
 import repositoryAnalyzer from '@/api/repositoryAnalyzer';
@@ -125,6 +126,51 @@ export function useGitHubRepos() {
   }, []);
 
   /**
+   * Link a PUBLIC GitHub repository by its API metadata (no OAuth needed).
+   * @param {object} repoData - Raw repo object from githubPublicFetch
+   */
+  const linkPublicRepository = useCallback(
+    async (repoData) => {
+      if (!currentWorkspaceId || !currentUser) {
+        throw new Error('No workspace or user context');
+      }
+
+      // Check if already linked by full name
+      const existing = linkedRepos.find(
+        (r) => r.github_repo_full_name === repoData.full_name
+      );
+      if (existing) {
+        throw new Error('Repository already linked to this workspace');
+      }
+
+      const linkedRepo = await db.entities.WorkspaceRepository.create({
+        workspace_id: currentWorkspaceId,
+        github_repo_id: repoData.id,
+        github_repo_full_name: repoData.full_name,
+        github_repo_url: repoData.html_url,
+        github_repo_description: repoData.description || '',
+        github_default_branch: repoData.default_branch || 'main',
+        is_private: false, // Public repos only
+        linked_by: currentUser.id,
+        sync_enabled: true,
+        settings: {},
+      });
+
+      setLinkedRepos((prev) => [...prev, linkedRepo]);
+
+      // Trigger background analysis
+      repositoryAnalyzer
+        .startAnalysis(linkedRepo.id, currentWorkspaceId, repoData.full_name)
+        .catch((err) => {
+          console.warn('Background analysis failed to start:', err);
+        });
+
+      return linkedRepo;
+    },
+    [currentWorkspaceId, currentUser, linkedRepos]
+  );
+
+  /**
    * Select a repository for detailed browsing
    */
   const selectRepository = useCallback(async (repoFullName) => {
@@ -215,6 +261,7 @@ export function useGitHubRepos() {
     linkedError,
     fetchLinkedRepos,
     linkRepository,
+    linkPublicRepository,
     unlinkRepository,
 
     // Selected repo

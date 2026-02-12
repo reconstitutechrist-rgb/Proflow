@@ -94,6 +94,86 @@ export const connectGitHub = async (redirectTo = window.location.href) => {
 };
 
 /**
+ * Parse a GitHub URL or slug into { owner, repo } parts.
+ * Supports formats:
+ *   - https://github.com/owner/repo
+ *   - http://github.com/owner/repo/tree/main/...
+ *   - github.com/owner/repo
+ *   - owner/repo
+ * @param {string} input - GitHub URL or owner/repo slug
+ * @returns {{ owner: string, repo: string } | null} Parsed result or null if invalid
+ */
+export const parseGitHubUrl = (input) => {
+  if (!input || typeof input !== 'string') return null;
+
+  const trimmed = input.trim();
+
+  // Try to parse as URL first
+  try {
+    // Add protocol if missing for URL parsing
+    const urlString = trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
+    const url = new URL(urlString);
+
+    if (url.hostname === 'github.com' || url.hostname === 'www.github.com') {
+      const parts = url.pathname.split('/').filter(Boolean);
+      if (parts.length >= 2) {
+        return { owner: parts[0], repo: parts[1].replace(/\.git$/, '') };
+      }
+    }
+  } catch {
+    // Not a URL, try as owner/repo slug
+  }
+
+  // Try owner/repo format
+  const slugMatch = trimmed.match(/^([a-zA-Z0-9._-]+)\/([a-zA-Z0-9._-]+)$/);
+  if (slugMatch) {
+    return { owner: slugMatch[1], repo: slugMatch[2].replace(/\.git$/, '') };
+  }
+
+  return null;
+};
+
+/**
+ * Make an UNAUTHENTICATED GitHub API request (public repos only).
+ * Does not require OAuth connection. Rate limit: 60 requests/hour per IP.
+ * @param {string} endpoint - API endpoint (e.g., '/repos/facebook/react')
+ * @param {object} options - Fetch options
+ * @returns {Promise<object>} API response data
+ * @throws {Error} If the resource is not found or is private
+ */
+export const githubPublicFetch = async (endpoint, options = {}) => {
+  const response = await fetch(`${GITHUB_API_BASE}${endpoint}`, {
+    ...options,
+    headers: {
+      Accept: 'application/vnd.github.v3+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Repository not found. It may be private or the URL may be incorrect.');
+    }
+    if (response.status === 403) {
+      const remaining = response.headers.get('X-RateLimit-Remaining');
+      if (remaining === '0') {
+        const resetTime = response.headers.get('X-RateLimit-Reset');
+        const resetDate = new Date(parseInt(resetTime) * 1000);
+        throw new Error(
+          `GitHub API rate limit exceeded. Resets at ${resetDate.toLocaleTimeString()}`
+        );
+      }
+      throw new Error('GitHub API access forbidden.');
+    }
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `GitHub API request failed: ${response.status}`);
+  }
+
+  return response.json();
+};
+
+/**
  * Make authenticated GitHub API request
  * Uses Edge Function proxy in production to avoid CORS issues
  * @param {string} endpoint - API endpoint (e.g., '/user/repos')

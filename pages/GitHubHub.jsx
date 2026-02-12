@@ -14,6 +14,7 @@ import {
   MessageSquare,
   BrainCircuit,
   FileText,
+  Info,
 } from 'lucide-react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
@@ -117,55 +118,67 @@ export default function GitHubHub() {
     );
   }
 
-  // Not connected state
+  // Not connected state — still show repos tab with public URL input
   if (!isConnected) {
     return (
       <ErrorBoundary>
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full h-[calc(100vh-56px)]">
           {/* Header */}
           <div className="flex-shrink-0 border-b bg-gradient-to-r from-gray-800 to-gray-900 p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/10 rounded-xl">
-                <Github className="w-6 h-6 text-white" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/10 rounded-xl">
+                  <Github className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-white">GitHub Hub</h1>
+                  <p className="text-sm text-gray-300">Analyze repositories with dual-AI systems</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">GitHub Hub</h1>
-                <p className="text-sm text-gray-300">Analyze repositories with dual-AI systems</p>
-              </div>
+              <Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/10">
+                <Link to={`${ROUTES.PREFERENCES}?tab=integrations`}>
+                  <LinkIcon className="w-4 h-4 mr-2" />
+                  Connect GitHub for Full Access
+                </Link>
+              </Button>
             </div>
           </div>
 
-          {/* Not Connected Card */}
-          <div className="flex-1 flex items-center justify-center p-8">
-            <Card className="max-w-md w-full">
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                  <Github className="w-8 h-8 text-gray-500" />
-                </div>
-                <CardTitle>Connect GitHub to Get Started</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center space-y-4">
-                <p className="text-gray-500">
-                  Connect your GitHub account to link repositories and analyze them with our dual-AI
-                  systems.
-                </p>
-                <div className="flex flex-col gap-2">
-                  <Button asChild className="w-full">
-                    <Link to={`${ROUTES.PREFERENCES}?tab=integrations`}>
-                      <LinkIcon className="w-4 h-4 mr-2" />
-                      Connect in Settings
-                    </Link>
-                  </Button>
-                </div>
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-              </CardContent>
-            </Card>
+          {/* Optional OAuth banner */}
+          <div className="border-b bg-blue-50 dark:bg-blue-950/20 px-6 py-3">
+            <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
+              <Info className="w-4 h-4 shrink-0" />
+              <span>
+                Paste any public repository URL below to get started.
+                <Link
+                  to={`${ROUTES.PREFERENCES}?tab=integrations`}
+                  className="underline font-medium ml-1 hover:text-blue-900 dark:hover:text-blue-100"
+                >
+                  Connect your GitHub account
+                </Link>{' '}
+                for private repos and full access.
+              </span>
+            </div>
           </div>
+
+          {/* Main content — Repository list (works without OAuth) */}
+          <div className="flex-1 overflow-auto p-6">
+            <RepositoryList
+              onSelectRepository={(repo) => {
+                setSelectedRepo(repo);
+                setActiveTab('debate');
+              }}
+            />
+          </div>
+
+          {error && (
+            <div className="p-4 border-t">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            </div>
+          )}
         </div>
       </ErrorBoundary>
     );

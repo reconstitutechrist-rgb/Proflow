@@ -10,6 +10,7 @@ export { useDualAICollaboration, COLLABORATION_STATUS } from './useDualAICollabo
 export { GitHubConnectionCard } from './GitHubConnectionCard';
 export { RepositoryPicker } from './RepositoryPicker';
 export { RepositoryList } from './RepositoryList';
+export { PublicRepoUrlInput } from './PublicRepoUrlInput';
 export { RepositoryAnalysisStatus, RepositoryAnalysisProgress } from './RepositoryAnalysisStatus';
 export { default as DualAIChatInterface } from './DualAIChatInterface';
 export { default as ArtifactViewer } from './ArtifactViewer';

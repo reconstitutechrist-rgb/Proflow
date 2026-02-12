@@ -35,6 +35,7 @@ import {
 import { useGitHubRepos } from './useGitHubRepos';
 import { RepositoryPicker } from './RepositoryPicker';
 import { RepositoryAnalysisStatus } from './RepositoryAnalysisStatus';
+import { PublicRepoUrlInput } from './PublicRepoUrlInput';
 import { toast } from 'sonner';
 
 /**
@@ -42,11 +43,12 @@ import { toast } from 'sonner';
  * Shows linked repos with options to unlink, browse, or start a debate
  */
 export function RepositoryList({ onSelectRepository }) {
-  const { linkedRepos, isLoadingLinked, unlinkRepository } = useGitHubRepos();
+  const { linkedRepos, isLoadingLinked, unlinkRepository, linkPublicRepository } = useGitHubRepos();
 
   const [showPicker, setShowPicker] = useState(false);
   const [unlinkingId, setUnlinkingId] = useState(null);
   const [confirmUnlink, setConfirmUnlink] = useState(null);
+  const [isLinkingPublic, setIsLinkingPublic] = useState(false);
 
   const handleUnlink = async (repo) => {
     setUnlinkingId(repo.id);
@@ -89,6 +91,22 @@ export function RepositoryList({ onSelectRepository }) {
           Link Repository
         </Button>
       </div>
+
+      {/* Public Repo URL Input */}
+      <PublicRepoUrlInput
+        isLinking={isLinkingPublic}
+        onLink={async (repoData) => {
+          setIsLinkingPublic(true);
+          try {
+            await linkPublicRepository(repoData);
+            toast.success(`Linked ${repoData.full_name}`);
+          } catch (err) {
+            toast.error(`Failed to link: ${err.message}`);
+          } finally {
+            setIsLinkingPublic(false);
+          }
+        }}
+      />
 
       {/* Repository List */}
       {linkedRepos.length === 0 ? (
